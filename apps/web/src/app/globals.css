@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@grupon/ui/styles/tokens.css';
+
+@source '../../../../packages/ui/src';
+
+::selection {
+  background: var(--brand-tint);
+  color: var(--ink);
+}

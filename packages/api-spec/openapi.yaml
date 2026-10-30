@@ -1,0 +1,6 @@
+openapi: 3.1.0
+info:
+  title: Local Deals API
+  version: 0.0.0
+  description: Contract placeholder. The complete API contract is delivered in Phase 1.
+paths: {}

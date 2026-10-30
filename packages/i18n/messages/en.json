@@ -1,0 +1,22 @@
+{
+  "Metadata": {
+    "title": "{brand} — local deals",
+    "description": "Discover local discounts and experiences across Uzbekistan."
+  },
+  "Home": {
+    "eyebrow": "Coming soon",
+    "title": "Great offers in your city, all in one place",
+    "description": "We are preparing a convenient platform for local businesses, services and experiences.",
+    "status": "The platform foundation is ready"
+  },
+  "Navigation": {
+    "home": "Home",
+    "language": "Language",
+    "skipToContent": "Skip to main content"
+  },
+  "Locale": {
+    "uz": "O'zbekcha",
+    "ru": "Русский",
+    "en": "English"
+  }
+}

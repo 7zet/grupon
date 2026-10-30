@@ -1,0 +1,22 @@
+{
+  "Metadata": {
+    "title": "{brand} — mahalliy takliflar",
+    "description": "O'zbekistondagi mahalliy chegirmalar va taassurotlarni toping."
+  },
+  "Home": {
+    "eyebrow": "Tez orada",
+    "title": "Shaharingizdagi yaxshi takliflar bir joyda",
+    "description": "Mahalliy bizneslar, xizmatlar va taassurotlar uchun qulay platforma tayyorlanmoqda.",
+    "status": "Platforma poydevori tayyor"
+  },
+  "Navigation": {
+    "home": "Bosh sahifa",
+    "language": "Til",
+    "skipToContent": "Asosiy mazmunga o'tish"
+  },
+  "Locale": {
+    "uz": "O'zbekcha",
+    "ru": "Русский",
+    "en": "English"
+  }
+}
