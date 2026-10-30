@@ -1,0 +1,11 @@
+{
+  "name": "@grupon/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "go build ./...",
+    "dev": "concurrently -k -n api,worker \"go run ./cmd/api\" \"go run ./cmd/worker\"",
+    "lint": "go vet ./...",
+    "test": "go test ./..."
+  }
+}
