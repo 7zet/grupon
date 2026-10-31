@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "gen": "openapi-typescript ../api-spec/openapi.yaml --output src/schema.d.ts",
+    "gen": "openapi-typescript ../api-spec/openapi.yaml --output src/schema.d.ts && prettier --write src/schema.d.ts",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@grupon/tsconfig": "workspace:*",
     "openapi-typescript": "7.13.0",
+    "prettier": "3.9.10",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
