@@ -4,6 +4,7 @@
     "description": "Discover trusted local deals across Uzbekistan."
   },
   "Navigation": {
+    "businessSection": "Business owner",
     "home": "Home",
     "search": "Search deals",
     "searchPlaceholder": "What do you want to do?",
@@ -329,7 +330,8 @@
     "readOnly": "Your role can view but not change this.",
     "navMedia": "Media library",
     "navCreateDeal": "New deal",
-    "navRedeem": "Redeem voucher"
+    "navRedeem": "Redeem voucher",
+    "navDeals": "My deals"
   },
   "Deals": {
     "mediaTitle": "Media library",
@@ -392,7 +394,33 @@
     "submitted": "Submitted for review",
     "lang_uz": "Uzbek",
     "lang_ru": "Russian",
-    "lang_en": "English"
+    "lang_en": "English",
+    "myDealsTitle": "My deals",
+    "dealsEmpty": "No deals yet. Create your first one.",
+    "colDeal": "Deal",
+    "colStatus": "Status",
+    "colSold": "Sold",
+    "colEnds": "Ends",
+    "prevPage": "← Previous",
+    "nextPage": "Next →",
+    "pageInfo": "{page} / {pages}",
+    "pagination": "Pagination",
+    "navDeals": "My deals",
+    "status_draft": "Draft",
+    "status_pending_review": "Under review",
+    "status_rejected": "Rejected",
+    "status_scheduled": "Scheduled",
+    "status_active": "Active",
+    "status_paused": "Paused",
+    "status_sold_out": "Sold out",
+    "status_expired": "Expired",
+    "cropTitle": "Crop photo",
+    "cropHint": "Choose the part of the photo to show (4:3). Move and zoom.",
+    "cropZoom": "Zoom",
+    "cropX": "Horizontal position",
+    "cropY": "Vertical position",
+    "cropConfirm": "Crop and upload",
+    "cropCancel": "Cancel"
   },
   "Moderation": {
     "title": "Moderation queue",

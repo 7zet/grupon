@@ -4,6 +4,7 @@
     "description": "O‘zbekiston bo‘ylab ishonchli mahalliy takliflarni toping."
   },
   "Navigation": {
+    "businessSection": "Biznes egasi",
     "home": "Bosh sahifa",
     "search": "Takliflarni qidirish",
     "searchPlaceholder": "Nima qilishni xohlaysiz?",
@@ -329,7 +330,8 @@
     "readOnly": "Sizning rolingiz faqat ko‘rish uchun.",
     "navMedia": "Media kutubxona",
     "navCreateDeal": "Yangi aksiya",
-    "navRedeem": "Vaucher ishlatish"
+    "navRedeem": "Vaucher ishlatish",
+    "navDeals": "Mening aksiyalarim"
   },
   "Deals": {
     "mediaTitle": "Media kutubxona",
@@ -392,7 +394,33 @@
     "submitted": "Tekshiruvga yuborildi",
     "lang_uz": "O‘zbekcha",
     "lang_ru": "Ruscha",
-    "lang_en": "Inglizcha"
+    "lang_en": "Inglizcha",
+    "myDealsTitle": "Mening aksiyalarim",
+    "dealsEmpty": "Hali aksiya yo‘q. Yangi aksiya yarating.",
+    "colDeal": "Aksiya",
+    "colStatus": "Holat",
+    "colSold": "Sotildi",
+    "colEnds": "Tugaydi",
+    "prevPage": "← Oldingi",
+    "nextPage": "Keyingi →",
+    "pageInfo": "{page} / {pages}",
+    "pagination": "Sahifalash",
+    "navDeals": "Mening aksiyalarim",
+    "status_draft": "Qoralama",
+    "status_pending_review": "Tekshiruvda",
+    "status_rejected": "Rad etilgan",
+    "status_scheduled": "Rejalashtirilgan",
+    "status_active": "Faol",
+    "status_paused": "To‘xtatilgan",
+    "status_sold_out": "Sotib bo‘lingan",
+    "status_expired": "Muddati tugagan",
+    "cropTitle": "Rasmni qirqish",
+    "cropHint": "Rasmning qaysi qismi ko‘rinishini tanlang (4:3). Surib, kattalashtiring.",
+    "cropZoom": "Kattalashtirish",
+    "cropX": "Gorizontal o‘rni",
+    "cropY": "Vertikal o‘rni",
+    "cropConfirm": "Qirqib yuklash",
+    "cropCancel": "Bekor qilish"
   },
   "Moderation": {
     "title": "Moderatsiya navbati",

@@ -4,6 +4,7 @@ import { Heart, Home, Menu, Search, ShoppingCart, Ticket, UserRound } from 'luci
 import { getTranslations } from 'next-intl/server';
 import type { PropsWithChildren } from 'react';
 import { Link } from '@/i18n/navigation';
+import { BusinessNavLink } from './business-nav-link';
 import { CurrencySelect, LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
 
@@ -70,6 +71,7 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
             >
               <ShoppingCart />
             </Link>
+            <BusinessNavLink />
             <Link
               className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
               href="/login"
@@ -121,6 +123,7 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
             <Link className="mt-3 block text-small text-ink-muted" href="/coupons">
               {t('coupons')}
             </Link>
+            <BusinessNavLink variant="text" />
             <Link className="mt-2 block text-small text-ink-muted" href="/merchant">
               {t('sell')}
             </Link>

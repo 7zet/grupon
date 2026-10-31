@@ -141,8 +141,8 @@ function toBody(draft: Draft, media: MediaAsset[]) {
       url: media.find((asset) => asset.id === id)?.url ?? '',
       alt: localized(draft.title),
       sort_order: index,
-      width: 1,
-      height: 1,
+      width: media.find((asset) => asset.id === id)?.width ?? 1,
+      height: media.find((asset) => asset.id === id)?.height ?? 1,
       blurhash: '',
     })),
   };

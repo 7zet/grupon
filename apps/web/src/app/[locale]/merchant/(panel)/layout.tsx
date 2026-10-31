@@ -40,6 +40,12 @@ export default async function PanelLayout({
           {t('navBusiness')}
         </Link>
         <Link
+          href="/merchant/deals"
+          className="rounded-control-ui px-4 py-2 text-ink-muted hover:text-ink"
+        >
+          {t('navDeals')}
+        </Link>
+        <Link
           href="/merchant/deals/new"
           className="rounded-control-ui px-4 py-2 text-ink-muted hover:text-ink"
         >

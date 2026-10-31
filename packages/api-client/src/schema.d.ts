@@ -1908,6 +1908,8 @@ export interface components {
       content_type: string;
       /** Format: int64 */
       size: number;
+      width?: number;
+      height?: number;
       /** Format: date-time */
       created_at: string;
     };

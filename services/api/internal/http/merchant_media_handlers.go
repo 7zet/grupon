@@ -115,6 +115,8 @@ func (a *MerchantMediaAPI) mapAsset(asset merchant.Asset) gen.MediaAsset {
 		Url:         a.media.PublicURL(asset),
 		ContentType: asset.ContentType,
 		Size:        asset.Size,
+		Width:       optionalInt(asset.Width),
+		Height:      optionalInt(asset.Height),
 		CreatedAt:   asset.CreatedAt,
 	}
 }
@@ -142,4 +144,12 @@ func (a *MerchantMediaAPI) fail(w http.ResponseWriter, r *http.Request, err erro
 		)
 		writeProblem(w, r, http.StatusInternalServerError, "internal_error", nil, nil)
 	}
+}
+
+// optionalInt returns nil for an unknown size, so clients never mistake 0 for a real dimension.
+func optionalInt(value int) *int {
+	if value <= 0 {
+		return nil
+	}
+	return &value
 }

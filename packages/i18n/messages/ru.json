@@ -4,6 +4,7 @@
     "description": "Открывайте проверенные местные предложения по всему Узбекистану."
   },
   "Navigation": {
+    "businessSection": "Бизнес",
     "home": "Главная",
     "search": "Найти предложения",
     "searchPlaceholder": "Чем хотите заняться?",
@@ -329,7 +330,8 @@
     "readOnly": "Ваша роль позволяет только просмотр.",
     "navMedia": "Медиатека",
     "navCreateDeal": "Новая акция",
-    "navRedeem": "Погашение"
+    "navRedeem": "Погашение",
+    "navDeals": "Мои акции"
   },
   "Deals": {
     "mediaTitle": "Медиатека",
@@ -392,7 +394,33 @@
     "submitted": "Отправлено на проверку",
     "lang_uz": "Узбекский",
     "lang_ru": "Русский",
-    "lang_en": "Английский"
+    "lang_en": "Английский",
+    "myDealsTitle": "Мои акции",
+    "dealsEmpty": "Акций пока нет. Создайте новую.",
+    "colDeal": "Акция",
+    "colStatus": "Статус",
+    "colSold": "Продано",
+    "colEnds": "Окончание",
+    "prevPage": "← Назад",
+    "nextPage": "Далее →",
+    "pageInfo": "{page} / {pages}",
+    "pagination": "Страницы",
+    "navDeals": "Мои акции",
+    "status_draft": "Черновик",
+    "status_pending_review": "На проверке",
+    "status_rejected": "Отклонена",
+    "status_scheduled": "Запланирована",
+    "status_active": "Активна",
+    "status_paused": "Приостановлена",
+    "status_sold_out": "Распродана",
+    "status_expired": "Истекла",
+    "cropTitle": "Обрезка фото",
+    "cropHint": "Выберите часть фото (4:3). Двигайте и увеличивайте.",
+    "cropZoom": "Масштаб",
+    "cropX": "Положение по горизонтали",
+    "cropY": "Положение по вертикали",
+    "cropConfirm": "Обрезать и загрузить",
+    "cropCancel": "Отмена"
   },
   "Moderation": {
     "title": "Очередь модерации",

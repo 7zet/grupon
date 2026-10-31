@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 const UUID = '[0-9a-f-]{36}';
 
 const ALLOWED: { method: string; pattern: RegExp }[] = [
+  { method: 'GET', pattern: /^me$/ },
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
   { method: 'PATCH', pattern: /^merchant\/business$/ },
@@ -71,7 +72,12 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
   const upstream = await fetch(`${apiBaseUrl()}/${route}`, {
     method: request.method,
     headers,
-    body: binary ? await request.arrayBuffer() : await request.text(),
+    body:
+      request.method === 'GET'
+        ? null
+        : binary
+          ? await request.arrayBuffer()
+          : await request.text(),
     cache: 'no-store',
   });
   // A 204 response must not carry a body; the Response constructor rejects one.
@@ -82,6 +88,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
   });
 }
 
+export const GET = forward;
 export const POST = forward;
 export const PUT = forward;
 export const PATCH = forward;
