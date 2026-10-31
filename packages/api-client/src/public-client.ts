@@ -13,8 +13,19 @@ export type CollectionDetail = components['schemas']['CollectionDetail'];
 export type SuggestionList = components['schemas']['SuggestionList'];
 
 declare const process: { env: { NEXT_PUBLIC_API_BASE_URL?: string } };
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://api.mock/api/v1';
-type ApiRequestInit = RequestInit & { next?: { revalidate?: number } };
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1').replace(
+  /\/+$/,
+  '',
+);
+
+/** Cache tag shared by every catalog fetch; the API revalidates it via /api/revalidate. */
+export const CATALOG_CACHE_TAG = 'catalog';
+
+type ApiRequestInit = RequestInit & { next?: { revalidate?: number; tags?: string[] } };
+
+function cached(revalidate: number): ApiRequestInit {
+  return { next: { revalidate, tags: [CATALOG_CACHE_TAG] } };
+}
 
 async function request<T>(path: string, init?: ApiRequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -25,29 +36,39 @@ async function request<T>(path: string, init?: ApiRequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function withQuery(path: string, query?: URLSearchParams): string {
+  const qs = query?.toString() ?? '';
+  return qs ? `${path}?${qs}` : path;
+}
+
 export const publicApi = {
-  config: () => request<PublicConfig>('/config', { next: { revalidate: 3600 } }),
+  config: () => request<PublicConfig>('/config', cached(3600)),
   homepage: (city: string) =>
-    request<Homepage>(`/homepage?city=${encodeURIComponent(city)}`, { next: { revalidate: 300 } }),
-  deals: (query: URLSearchParams) =>
-    request<DealPage>(`/deals?${query.toString()}`, { next: { revalidate: 60 } }),
-  deal: (slug: string) =>
-    request<Deal>(`/deals/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } }),
+    request<Homepage>(withQuery('/homepage', new URLSearchParams({ city })), cached(300)),
+  deals: (query?: URLSearchParams) => request<DealPage>(withQuery('/deals', query), cached(60)),
+  deal: (slug: string) => request<Deal>(`/deals/${encodeURIComponent(slug)}`, cached(60)),
   reviews: (slug: string) =>
-    request<ReviewList>(`/deals/${encodeURIComponent(slug)}/reviews`, { next: { revalidate: 60 } }),
-  related: (slug: string) =>
-    request<DealPage>(`/deals/${encodeURIComponent(slug)}/related`, { next: { revalidate: 60 } }),
+    request<ReviewList>(`/deals/${encodeURIComponent(slug)}/reviews`, cached(60)),
+  related: (slug: string, city?: string) =>
+    request<DealPage>(
+      withQuery(
+        `/deals/${encodeURIComponent(slug)}/related`,
+        city ? new URLSearchParams({ city }) : undefined,
+      ),
+      cached(60),
+    ),
   merchant: (slug: string) =>
-    request<MerchantProfile>(`/businesses/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 60 },
-    }),
-  promoCodes: (page = 1) =>
-    request<PromoCodePage>(`/promo-codes?page=${page}`, { next: { revalidate: 300 } }),
-  collections: () => request<CollectionList>('/collections', { next: { revalidate: 300 } }),
+    request<MerchantProfile>(`/businesses/${encodeURIComponent(slug)}`, cached(60)),
+  promoCodes: (page = 1, category?: string) => {
+    const query = new URLSearchParams({ page: String(page) });
+    if (category) query.set('category', category);
+    return request<PromoCodePage>(withQuery('/promo-codes', query), cached(300));
+  },
+  collections: () => request<CollectionList>('/collections', cached(300)),
   collection: (slug: string) =>
-    request<CollectionDetail>(`/collections/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 300 },
-    }),
+    request<CollectionDetail>(`/collections/${encodeURIComponent(slug)}`, cached(300)),
   suggestions: (query: string) =>
-    request<SuggestionList>(`/search/suggestions?q=${encodeURIComponent(query)}`),
+    request<SuggestionList>(
+      withQuery('/search/suggestions', new URLSearchParams({ q: query })),
+    ),
 };

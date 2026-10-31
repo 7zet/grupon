@@ -31,7 +31,7 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := workerapp.Run(ctx, logger); err != nil {
+	if err := workerapp.Run(ctx, cfg, logger); err != nil {
 		logger.Error("worker process stopped with an error", slog.String("error", err.Error()))
 		return 1
 	}

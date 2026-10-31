@@ -3,6 +3,7 @@ import { localized, type Locale } from '@grupon/config';
 import { ChevronRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { buildDealQuery } from '@/lib/deal-query';
 import { getCurrency } from '@/lib/preferences';
 import { DealGrid } from './deal-grid';
 import { ListingControls } from './listing-controls';
@@ -16,10 +17,10 @@ export async function ListingPage({
   searchQuery,
 }: {
   locale: Locale;
-  citySlug?: string;
-  categorySlug?: string;
+  citySlug?: string | undefined;
+  categorySlug?: string | undefined;
   searchParams: Search;
-  searchQuery?: string;
+  searchQuery?: string | undefined;
 }) {
   const [config, t, common, currency] = await Promise.all([
     publicApi.config(),
@@ -29,13 +30,13 @@ export async function ListingPage({
   ]);
   const city = config.cities.find((item) => item.slug === citySlug) ?? config.cities[0]!;
   const category = config.categories.find((item) => item.slug === categorySlug);
-  const query = new URLSearchParams();
-  if (citySlug) query.set('city', citySlug);
-  if (categorySlug) query.set('category', categorySlug);
-  if (searchQuery) query.set('q', searchQuery);
-  for (const [key, value] of Object.entries(searchParams))
-    if (typeof value === 'string' && value) query.set(key, value);
+  const query = buildDealQuery({ citySlug, categorySlug, searchQuery, searchParams });
   const result = await publicApi.deals(query);
+  // Pagination links keep the friendly URL params (not the API names) so they round-trip.
+  const nextPageParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams))
+    if (typeof value === 'string' && value && key !== 'page') nextPageParams.set(key, value);
+  nextPageParams.set('page', String(result.page + 1));
   const title = searchQuery
     ? t('queryFor', { query: searchQuery })
     : category
@@ -69,7 +70,7 @@ export async function ListingPage({
         <div className="mt-10 text-center">
           <Link
             className="inline-block rounded-control-ui border bg-surface px-6 py-3 font-semibold text-brand"
-            href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(result.page + 1) })}`}
+            href={`?${nextPageParams}`}
           >
             {common('loadMore')}
           </Link>

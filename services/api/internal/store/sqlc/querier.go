@@ -11,27 +11,178 @@ import (
 )
 
 type Querier interface {
-	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) (DealOption, error)
-	GetActiveDealBySlug(ctx context.Context, slug string) (Deal, error)
-	GetOrderForUser(ctx context.Context, arg GetOrderForUserParams) (Order, error)
+	ActionOpenReviewReports(ctx context.Context, reviewID pgtype.UUID) error
+	// Background sweeps for deal lifecycle and denormalized counters. Each statement is idempotent: a
+	// second run changes no rows.
+	ActivateScheduledDeals(ctx context.Context) (int64, error)
+	ActiveCategoryExists(ctx context.Context, id pgtype.UUID) (bool, error)
+	ActiveCityExists(ctx context.Context, id pgtype.UUID) (bool, error)
+	AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error
+	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
+	ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error)
+	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
+	CountActivePromoCodes(ctx context.Context, category pgtype.Text) (int64, error)
+	CountAuditLogs(ctx context.Context) (int64, error)
+	CountCollectionDeals(ctx context.Context, collectionID pgtype.UUID) (int64, error)
+	CountOpenReviewReports(ctx context.Context) (int64, error)
+	CountOrdersForUser(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CountOwnedDeals(ctx context.Context, arg CountOwnedDealsParams) (int64, error)
+	CountOwnedLocations(ctx context.Context, arg CountOwnedLocationsParams) (int64, error)
+	CountPendingDeals(ctx context.Context) (int64, error)
+	CountPublishedDeals(ctx context.Context, arg CountPublishedDealsParams) (int64, error)
+	CountPublishedReviewsForDeal(ctx context.Context, dealID pgtype.UUID) (int64, error)
+	CountVouchersForUser(ctx context.Context, arg CountVouchersForUserParams) (int64, error)
+	CreateAuthToken(ctx context.Context, arg CreateAuthTokenParams) error
+	// Media library: uploaded images owned by a merchant. Assets are referenced by deals through deal_media.
+	CreateMediaAsset(ctx context.Context, arg CreateMediaAssetParams) (CreateMediaAssetRow, error)
+	// Merchant registration and lookups. Registration writes are composed in one transaction by the store.
+	CreateMerchant(ctx context.Context, arg CreateMerchantParams) (CreateMerchantRow, error)
+	CreateMerchantLocation(ctx context.Context, arg CreateMerchantLocationParams) (pgtype.UUID, error)
+	CreateMerchantLocationWithHours(ctx context.Context, arg CreateMerchantLocationWithHoursParams) (pgtype.UUID, error)
+	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
+	CreateRoleAssignment(ctx context.Context, arg CreateRoleAssignmentParams) error
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DashboardActiveDeals(ctx context.Context, merchantID pgtype.UUID) (int64, error)
+	DashboardLatestOrderIDs(ctx context.Context, arg DashboardLatestOrderIDsParams) ([]pgtype.UUID, error)
+	DashboardPendingDealIDs(ctx context.Context, arg DashboardPendingDealIDsParams) ([]pgtype.UUID, error)
+	DashboardSales(ctx context.Context, arg DashboardSalesParams) (int64, error)
+	DashboardSalesChart(ctx context.Context, arg DashboardSalesChartParams) ([]DashboardSalesChartRow, error)
+	DashboardVouchersRedeemed(ctx context.Context, arg DashboardVouchersRedeemedParams) (int64, error)
+	DashboardVouchersSold(ctx context.Context, arg DashboardVouchersSoldParams) (int64, error)
+	DeactivateDealOptionsExcept(ctx context.Context, arg DeactivateDealOptionsExceptParams) error
+	DeleteCartItems(ctx context.Context, cartID pgtype.UUID) error
+	DeleteDealLocations(ctx context.Context, dealID pgtype.UUID) error
+	DeleteDealMedia(ctx context.Context, dealID pgtype.UUID) error
+	DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerchantLocationRowParams) (int64, error)
+	DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error)
+	DismissOpenReviewReport(ctx context.Context, id pgtype.UUID) (int64, error)
+	ExpireDueVouchers(ctx context.Context, arg ExpireDueVouchersParams) ([]pgtype.UUID, error)
+	ExpireEndedDeals(ctx context.Context) (int64, error)
+	ExpiredUnpaidOrderIDs(ctx context.Context, arg ExpiredUnpaidOrderIDsParams) ([]pgtype.UUID, error)
+	FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (int64, error)
+	GetActiveCollectionBySlug(ctx context.Context, slug string) (GetActiveCollectionBySlugRow, error)
+	GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error)
+	GetDealDetailRowBySlug(ctx context.Context, slug string) (GetDealDetailRowBySlugRow, error)
+	GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error)
+	GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDealReviewRowRow, error)
+	GetLatestExchangeRate(ctx context.Context) (GetLatestExchangeRateRow, error)
+	GetMediaAssetForMerchant(ctx context.Context, arg GetMediaAssetForMerchantParams) (GetMediaAssetForMerchantRow, error)
+	GetMerchantWorkspace(ctx context.Context, id pgtype.UUID) (GetMerchantWorkspaceRow, error)
+	GetOrderByID(ctx context.Context, orderID pgtype.UUID) (GetOrderByIDRow, error)
+	GetOrderIDByIdempotencyKey(ctx context.Context, idempotencyKey string) (pgtype.UUID, error)
+	GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDetailRowParams) (GetOwnedDealDetailRowRow, error)
+	GetOwnedDealRecord(ctx context.Context, arg GetOwnedDealRecordParams) (GetOwnedDealRecordRow, error)
+	GetPaymentByID(ctx context.Context, id pgtype.UUID) (GetPaymentByIDRow, error)
+	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
+	GetReviewReportRow(ctx context.Context, id pgtype.UUID) (GetReviewReportRowRow, error)
+	GetReviewRow(ctx context.Context, id pgtype.UUID) (GetReviewRowRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByGoogleSub(ctx context.Context, googleSub pgtype.Text) (User, error)
-	GetVoucherByCode(ctx context.Context, code string) (Voucher, error)
-	GetVoucherByQRToken(ctx context.Context, qrToken string) (Voucher, error)
-	LatestExchangeRate(ctx context.Context, arg LatestExchangeRateParams) (ExchangeRate, error)
-	ListActiveCategories(ctx context.Context) ([]Category, error)
-	ListActiveCities(ctx context.Context) ([]City, error)
-	ListActivePromoCodes(ctx context.Context, arg ListActivePromoCodesParams) ([]PromoCode, error)
-	ListDealLocations(ctx context.Context, dealID pgtype.UUID) ([]MerchantLocation, error)
-	ListDealMedia(ctx context.Context, dealID pgtype.UUID) ([]DealMedium, error)
-	ListDealOptions(ctx context.Context, dealID pgtype.UUID) ([]DealOption, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetUserContact(ctx context.Context, userID pgtype.UUID) (GetUserContactRow, error)
+	GetVoucherByCode(ctx context.Context, code string) (GetVoucherByCodeRow, error)
+	GetVoucherByID(ctx context.Context, id pgtype.UUID) (GetVoucherByIDRow, error)
+	GetVoucherForReview(ctx context.Context, id pgtype.UUID) (GetVoucherForReviewRow, error)
+	GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error)
+	HideReviewRow(ctx context.Context, id pgtype.UUID) (int64, error)
+	IncrementPromoCodeClicks(ctx context.Context, id pgtype.UUID) (int64, error)
+	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	InsertCartItem(ctx context.Context, arg InsertCartItemParams) error
+	InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.UUID, error)
+	InsertDealLocation(ctx context.Context, arg InsertDealLocationParams) error
+	InsertDealMedia(ctx context.Context, arg InsertDealMediaParams) error
+	InsertOrder(ctx context.Context, arg InsertOrderParams) (InsertOrderRow, error)
+	InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error)
+	InsertPayment(ctx context.Context, arg InsertPaymentParams) error
+	InsertReview(ctx context.Context, arg InsertReviewParams) (InsertReviewRow, error)
+	InsertReviewReport(ctx context.Context, arg InsertReviewReportParams) (int64, error)
+	InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error
+	InsertStockReservation(ctx context.Context, arg InsertStockReservationParams) error
+	InsertVoucher(ctx context.Context, arg InsertVoucherParams) error
+	InvalidateUserAuthTokens(ctx context.Context, arg InvalidateUserAuthTokensParams) error
+	LinkUserGoogleSub(ctx context.Context, arg LinkUserGoogleSubParams) error
+	ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error)
+	// Public catalog read model. Every query here is read-only and filters to what the public may see.
+	ListActiveCities(ctx context.Context) ([]ListActiveCitiesRow, error)
+	ListActiveCollections(ctx context.Context) ([]ListActiveCollectionsRow, error)
+	ListActiveDealOptionsForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListActiveDealOptionsForDealsRow, error)
+	ListActiveHomepageSections(ctx context.Context) ([]ListActiveHomepageSectionsRow, error)
+	ListActivePromoCodes(ctx context.Context, arg ListActivePromoCodesParams) ([]ListActivePromoCodesRow, error)
+	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]ListAuditLogsRow, error)
+	ListCartItemRows(ctx context.Context, cartID pgtype.UUID) ([]ListCartItemRowsRow, error)
+	ListCartLinesForUser(ctx context.Context, userID pgtype.UUID) ([]ListCartLinesForUserRow, error)
+	ListDealLocationRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealLocationRowsRow, error)
+	ListDealMediaForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealMediaForDealsRow, error)
+	ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error)
+	ListMediaAssets(ctx context.Context, arg ListMediaAssetsParams) ([]ListMediaAssetsRow, error)
+	ListMerchantLocationRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantLocationRowsRow, error)
 	ListMerchantStaff(ctx context.Context, merchantID pgtype.UUID) ([]RoleAssignment, error)
-	ListSubcategoriesByCategory(ctx context.Context, categoryID pgtype.UUID) ([]Subcategory, error)
+	ListOpenReviewReports(ctx context.Context, arg ListOpenReviewReportsParams) ([]ListOpenReviewReportsRow, error)
+	ListOrderIDsForUser(ctx context.Context, arg ListOrderIDsForUserParams) ([]pgtype.UUID, error)
+	ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype.UUID) ([]ListOrderItemsForOrdersRow, error)
+	ListOwnedDealIDs(ctx context.Context, arg ListOwnedDealIDsParams) ([]pgtype.UUID, error)
+	ListPendingDealIDs(ctx context.Context, arg ListPendingDealIDsParams) ([]pgtype.UUID, error)
+	ListPublishedReviewsForDeal(ctx context.Context, arg ListPublishedReviewsForDealParams) ([]ListPublishedReviewsForDealRow, error)
+	ListPublishedReviewsForMerchant(ctx context.Context, arg ListPublishedReviewsForMerchantParams) ([]ListPublishedReviewsForMerchantRow, error)
+	ListRecentlyViewedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
+	ListRelatedDealIDs(ctx context.Context, arg ListRelatedDealIDsParams) ([]pgtype.UUID, error)
+	ListSavedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
+	ListSubcategories(ctx context.Context) ([]ListSubcategoriesRow, error)
+	ListUnreleasedReservations(ctx context.Context, orderID pgtype.UUID) ([]ListUnreleasedReservationsRow, error)
 	ListUserRoles(ctx context.Context, userID pgtype.UUID) ([]RoleAssignment, error)
-	ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]Voucher, error)
-	ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) (DealOption, error)
-	ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (DealOption, error)
+	ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error)
+	LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockOrderByIDRow, error)
+	LockPaymentByProviderID(ctx context.Context, arg LockPaymentByProviderIDParams) (LockPaymentByProviderIDRow, error)
+	LockUserForUpdate(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
+	MarkMediaAssetReady(ctx context.Context, arg MarkMediaAssetReadyParams) (int64, error)
+	MarkReservationsReleased(ctx context.Context, orderID pgtype.UUID) ([]MarkReservationsReleasedRow, error)
+	MarkSoldOutDeals(ctx context.Context) (int64, error)
+	MarkUserEmailVerified(ctx context.Context, id pgtype.UUID) error
+	MerchantLocationBelongsTo(ctx context.Context, arg MerchantLocationBelongsToParams) (bool, error)
+	// Merchant workspace: the signed-in merchant's business, branches and dashboard aggregates.
+	// Every query is scoped by merchant_id; callers never pass an unscoped id.
+	MerchantRoleForUser(ctx context.Context, userID pgtype.UUID) (MerchantRoleForUserRow, error)
+	NextOrderNumberSequence(ctx context.Context) (int64, error)
+	ReactivateRestockedDeals(ctx context.Context) (int64, error)
+	RecomputeDealRatings(ctx context.Context) (int64, error)
+	RecomputeDealSoldCounts(ctx context.Context) (int64, error)
+	RecomputeMerchantRatings(ctx context.Context) (int64, error)
+	RedeemVoucherIfActive(ctx context.Context, arg RedeemVoucherIfActiveParams) (int64, error)
+	ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) error
+	ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (pgtype.UUID, error)
+	RevokeAllUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	RevokeRefreshFamily(ctx context.Context, familyID pgtype.UUID) error
+	RevokeRefreshTokenByHash(ctx context.Context, tokenHash string) error
+	RevokeUserRefreshTokensExceptFamily(ctx context.Context, arg RevokeUserRefreshTokensExceptFamilyParams) error
+	SearchCollectionDealIDs(ctx context.Context, arg SearchCollectionDealIDsParams) ([]pgtype.UUID, error)
+	SearchPublishedDealIDs(ctx context.Context, arg SearchPublishedDealIDsParams) ([]pgtype.UUID, error)
+	SetOrderStatus(ctx context.Context, arg SetOrderStatusParams) error
+	SetOwnedDealStatus(ctx context.Context, arg SetOwnedDealStatusParams) (int64, error)
+	SetPaymentStatus(ctx context.Context, arg SetPaymentStatusParams) error
+	SoftDeleteOwnReview(ctx context.Context, arg SoftDeleteOwnReviewParams) (int64, error)
+	SoftDeleteOwnedDraftDeal(ctx context.Context, arg SoftDeleteOwnedDraftDealParams) (int64, error)
+	SoftDeleteUnusedMediaAsset(ctx context.Context, arg SoftDeleteUnusedMediaAssetParams) (int64, error)
+	// Deleted accounts keep a tombstone so the email and google_sub can be reused by a new account
+	// while the users_check constraint (a credential must exist) still holds.
+	SoftDeleteUser(ctx context.Context, id pgtype.UUID) error
+	SubcategoryCategoryID(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error)
+	SuggestCategories(ctx context.Context, arg SuggestCategoriesParams) ([]SuggestCategoriesRow, error)
+	SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]SuggestDealsRow, error)
+	SuggestMerchants(ctx context.Context, arg SuggestMerchantsParams) ([]SuggestMerchantsRow, error)
+	TouchUserLastLogin(ctx context.Context, id pgtype.UUID) error
+	TransitionPendingDeal(ctx context.Context, arg TransitionPendingDealParams) (int64, error)
+	TrimRecentlyViewed(ctx context.Context, userID pgtype.UUID) error
+	UpdateMerchantLocationRow(ctx context.Context, arg UpdateMerchantLocationRowParams) (int64, error)
+	UpdateMerchantWorkspace(ctx context.Context, arg UpdateMerchantWorkspaceParams) (UpdateMerchantWorkspaceRow, error)
+	UpdateOwnReview(ctx context.Context, arg UpdateOwnReviewParams) (int64, error)
+	UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams) (int64, error)
+	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
+	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error)
+	UpsertCart(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
+	UpsertDealOption(ctx context.Context, arg UpsertDealOptionParams) error
+	UpsertRecentlyViewed(ctx context.Context, arg UpsertRecentlyViewedParams) error
+	UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error)
+	VoucherCodeExists(ctx context.Context, code string) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

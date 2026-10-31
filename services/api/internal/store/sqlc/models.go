@@ -775,6 +775,16 @@ type AuditLog struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type AuthToken struct {
+	ID        pgtype.UUID        `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	Kind      string             `json:"kind"`
+	TokenHash string             `json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Banner struct {
 	ID        pgtype.UUID        `json:"id"`
 	ImageUrl  []byte             `json:"image_url"`
@@ -884,6 +894,7 @@ type Deal struct {
 	TitleUzSearch          interface{}        `json:"title_uz_search"`
 	TitleRuSearch          interface{}        `json:"title_ru_search"`
 	TitleEnSearch          interface{}        `json:"title_en_search"`
+	ReviewFingerprint      string             `json:"review_fingerprint"`
 }
 
 type DealLocation struct {
@@ -983,6 +994,21 @@ type MerchantLocation struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MerchantMediaAsset struct {
+	ID          pgtype.UUID        `json:"id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	Filename    string             `json:"filename"`
+	ContentType string             `json:"content_type"`
+	Size        int64              `json:"size"`
+	StorageKey  string             `json:"storage_key"`
+	Width       pgtype.Int4        `json:"width"`
+	Height      pgtype.Int4        `json:"height"`
+	Status      string             `json:"status"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+}
+
 type Order struct {
 	ID              pgtype.UUID        `json:"id"`
 	Number          string             `json:"number"`
@@ -996,6 +1022,7 @@ type Order struct {
 	PaidAt          pgtype.Timestamptz `json:"paid_at"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	RequestHash     pgtype.Text        `json:"request_hash"`
 }
 
 type OrderItem struct {

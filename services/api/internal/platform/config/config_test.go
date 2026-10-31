@@ -52,6 +52,8 @@ func TestLoadReadsEnvironment(t *testing.T) {
 		"HTTP_WRITE_TIMEOUT":       "3s",
 		"HTTP_IDLE_TIMEOUT":        "4s",
 		"SHUTDOWN_TIMEOUT":         "5s",
+		"JWT_SECRET":               "test-secret-with-at-least-32-bytes!!",
+		"VOUCHER_QR_SECRET":        "test-qr-secret-with-at-least-32-bytes",
 	}
 
 	got, err := load(mapEnvironment(environment))

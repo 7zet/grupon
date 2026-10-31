@@ -319,7 +319,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Revoke current refresh token */
+    /** Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired */
     post: operations['logout'];
     delete?: never;
     options?: never;
@@ -353,7 +353,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Request password-reset email */
+    /** Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed */
     post: operations['forgotPassword'];
     delete?: never;
     options?: never;
@@ -631,7 +631,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Atomically create order and ten-minute stock reservations */
+    /**
+     * Atomically create order and ten-minute stock reservations
+     * @description Same Idempotency-Key and body replays the order with 200. Same key with a different body is 422 idempotency_conflict.
+     */
     post: operations['createOrder'];
     delete?: never;
     options?: never;
@@ -1020,6 +1023,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/merchant/media/{id}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Store image bytes for a pending asset (local storage adapter only) */
+    put: operations['uploadMerchantMediaContent'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/merchant/settings': {
     parameters: {
       query?: never;
@@ -1072,6 +1092,125 @@ export interface paths {
     head?: never;
     /** Change staff role */
     patch: operations['updateMerchantStaff'];
+    trace?: never;
+  };
+  '/api/v1/admin/moderation/deals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Deals waiting for review */
+    get: operations['listModerationDeals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/deals/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a deal under review */
+    post: operations['approveDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/deals/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a deal under review with a reason */
+    post: operations['rejectDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/review-reports': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open review reports */
+    get: operations['listReviewReports'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/review-reports/{id}/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Close a report without changing the review */
+    post: operations['dismissReviewReport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/reviews/{id}/hide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Hide a review and close its open reports */
+    post: operations['hideReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/audit-logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Audit trail of admin and sensitive merchant actions */
+    get: operations['listAuditLogs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/api/v1/admin/status': {
@@ -1433,9 +1572,11 @@ export interface components {
       token: string;
       password: string;
     };
+    /** @description Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients. */
     AuthSession: {
       user: components['schemas']['User'];
       access_token: string;
+      refresh_token: string;
       /** @constant */
       expires_in: 900;
     };
@@ -1626,6 +1767,45 @@ export interface components {
       width: number;
       height: number;
       blurhash: string;
+    };
+    ReviewReport: {
+      id: components['schemas']['Uuid'];
+      reason: string;
+      /** @enum {string} */
+      status: 'pending' | 'resolved' | 'dismissed';
+      /** Format: date-time */
+      created_at: string;
+      review: components['schemas']['Review'];
+    };
+    ReviewReportPage: {
+      items: components['schemas']['ReviewReport'][];
+      page: number;
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    AuditLog: {
+      id: components['schemas']['Uuid'];
+      actor_user_id?: components['schemas']['Uuid'];
+      actor_role: string;
+      action: string;
+      entity_type: string;
+      entity_id?: components['schemas']['Uuid'];
+      after_data?: {
+        [key: string]: unknown;
+      };
+      /** Format: date-time */
+      created_at: string;
+    };
+    AuditLogPage: {
+      items: components['schemas']['AuditLog'][];
+      page: number;
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    RejectDealInput: {
+      reason: string;
     };
     DealInput: {
       slug: string;
@@ -2798,6 +2978,15 @@ export interface operations {
       };
     };
     responses: {
+      /** @description Replayed order for the same Idempotency-Key */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Order'];
+        };
+      };
       /** @description Order */
       201: {
         headers: {
@@ -3501,6 +3690,31 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
+  uploadMerchantMediaContent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/octet-stream': string;
+      };
+    };
+    responses: {
+      /** @description Stored */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
   getMerchantSettings: {
     parameters: {
       query?: never;
@@ -3633,6 +3847,167 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['StaffMember'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listModerationDeals: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DealPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  rejectDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectDealInput'];
+      };
+    };
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listReviewReports: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewReportPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  dismissReviewReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dismissed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  hideReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Hidden */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listAuditLogs: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Audit entries */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuditLogPage'];
         };
       };
       default: components['responses']['Problem'];

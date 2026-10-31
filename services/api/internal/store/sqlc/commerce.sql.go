@@ -11,11 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const convertReservedStock = `-- name: ConvertReservedStock :one
+const addDealSoldCount = `-- name: AddDealSoldCount :exec
+UPDATE deals SET sold_count = sold_count + $1, updated_at = now()
+WHERE id = $2
+`
+
+type AddDealSoldCountParams struct {
+	Quantity int32       `json:"quantity"`
+	DealID   pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error {
+	_, err := q.db.Exec(ctx, addDealSoldCount, arg.Quantity, arg.DealID)
+	return err
+}
+
+const convertReservedStock = `-- name: ConvertReservedStock :exec
 UPDATE deal_options
-SET stock_reserved = stock_reserved - $1, stock_sold = stock_sold + $1
+SET stock_reserved = stock_reserved - $1,
+    stock_sold = stock_sold + $1,
+    updated_at = now()
 WHERE id = $2 AND stock_reserved >= $1
-RETURNING id, deal_id, title, original_price, deal_price, currency, stock_total, stock_sold, stock_reserved, sort_order, is_active, created_at, updated_at
 `
 
 type ConvertReservedStockParams struct {
@@ -23,39 +39,242 @@ type ConvertReservedStockParams struct {
 	OptionID pgtype.UUID `json:"option_id"`
 }
 
-func (q *Queries) ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) (DealOption, error) {
-	row := q.db.QueryRow(ctx, convertReservedStock, arg.Quantity, arg.OptionID)
-	var i DealOption
-	err := row.Scan(
-		&i.ID,
-		&i.DealID,
-		&i.Title,
-		&i.OriginalPrice,
-		&i.DealPrice,
-		&i.Currency,
-		&i.StockTotal,
-		&i.StockSold,
-		&i.StockReserved,
-		&i.SortOrder,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error {
+	_, err := q.db.Exec(ctx, convertReservedStock, arg.Quantity, arg.OptionID)
+	return err
 }
 
-const getOrderForUser = `-- name: GetOrderForUser :one
-SELECT id, number, user_id, status, subtotal, total, currency, idempotency_key, shipping_address, paid_at, created_at, updated_at FROM orders WHERE id = $1 AND user_id = $2
+const countOrdersForUser = `-- name: CountOrdersForUser :one
+SELECT COUNT(*)::bigint AS total FROM orders WHERE user_id = $1
 `
 
-type GetOrderForUserParams struct {
-	ID     pgtype.UUID `json:"id"`
-	UserID pgtype.UUID `json:"user_id"`
+func (q *Queries) CountOrdersForUser(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countOrdersForUser, userID)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
 }
 
-func (q *Queries) GetOrderForUser(ctx context.Context, arg GetOrderForUserParams) (Order, error) {
-	row := q.db.QueryRow(ctx, getOrderForUser, arg.ID, arg.UserID)
-	var i Order
+const countVouchersForUser = `-- name: CountVouchersForUser :one
+SELECT COUNT(*)::bigint AS total FROM vouchers
+WHERE user_id = $1
+  AND ($2::text IS NULL OR status::text = $2::text)
+`
+
+type CountVouchersForUserParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	Status pgtype.Text `json:"status"`
+}
+
+func (q *Queries) CountVouchersForUser(ctx context.Context, arg CountVouchersForUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countVouchersForUser, arg.UserID, arg.Status)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
+const deleteCartItems = `-- name: DeleteCartItems :exec
+DELETE FROM cart_items WHERE cart_id = $1
+`
+
+func (q *Queries) DeleteCartItems(ctx context.Context, cartID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCartItems, cartID)
+	return err
+}
+
+const deleteSavedDeal = `-- name: DeleteSavedDeal :execrows
+DELETE FROM saved_deals WHERE user_id = $1 AND deal_id = $2
+`
+
+type DeleteSavedDealParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	DealID pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteSavedDeal, arg.UserID, arg.DealID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const expireDueVouchers = `-- name: ExpireDueVouchers :many
+UPDATE vouchers SET status = 'expired', updated_at = now()
+WHERE id IN (SELECT v.id FROM vouchers v WHERE v.status = 'active' AND v.valid_until <= $1
+             ORDER BY v.valid_until LIMIT $2 FOR UPDATE SKIP LOCKED)
+RETURNING id
+`
+
+type ExpireDueVouchersParams struct {
+	Now       pgtype.Timestamptz `json:"now"`
+	BatchSize int32              `json:"batch_size"`
+}
+
+func (q *Queries) ExpireDueVouchers(ctx context.Context, arg ExpireDueVouchersParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, expireDueVouchers, arg.Now, arg.BatchSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const expiredUnpaidOrderIDs = `-- name: ExpiredUnpaidOrderIDs :many
+SELECT DISTINCT o.id FROM orders o
+JOIN stock_reservations r ON r.order_id = o.id
+WHERE o.status = 'pending_payment' AND r.released_at IS NULL AND r.expires_at <= $1
+ORDER BY o.id LIMIT $2
+`
+
+type ExpiredUnpaidOrderIDsParams struct {
+	Now       pgtype.Timestamptz `json:"now"`
+	BatchSize int32              `json:"batch_size"`
+}
+
+func (q *Queries) ExpiredUnpaidOrderIDs(ctx context.Context, arg ExpiredUnpaidOrderIDsParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, expiredUnpaidOrderIDs, arg.Now, arg.BatchSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const failOpenPayments = `-- name: FailOpenPayments :execrows
+UPDATE payments SET status = 'failed', updated_at = now()
+WHERE order_id = $1 AND status IN ('created', 'pending')
+`
+
+func (q *Queries) FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, failOpenPayments, orderID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getDealOptionRows = `-- name: GetDealOptionRows :many
+SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
+       o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
+       d.status AS deal_status, d.kind AS deal_kind, d.starts_at, d.ends_at, d.max_per_user,
+       d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
+       m.status AS merchant_status
+FROM deal_options o
+JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.deleted_at IS NULL
+WHERE o.id = ANY($1::uuid[])
+`
+
+type GetDealOptionRowsRow struct {
+	OptionID          pgtype.UUID        `json:"option_id"`
+	DealID            pgtype.UUID        `json:"deal_id"`
+	OptionTitle       []byte             `json:"option_title"`
+	OriginalPrice     int64              `json:"original_price"`
+	DealPrice         int64              `json:"deal_price"`
+	StockTotal        int32              `json:"stock_total"`
+	StockSold         int32              `json:"stock_sold"`
+	StockReserved     int32              `json:"stock_reserved"`
+	OptionIsActive    bool               `json:"option_is_active"`
+	DealStatus        DealStatus         `json:"deal_status"`
+	DealKind          DealKind           `json:"deal_kind"`
+	StartsAt          pgtype.Timestamptz `json:"starts_at"`
+	EndsAt            pgtype.Timestamptz `json:"ends_at"`
+	MaxPerUser        int32              `json:"max_per_user"`
+	IsGiftable        bool               `json:"is_giftable"`
+	VoucherValidDays  pgtype.Int4        `json:"voucher_valid_days"`
+	VoucherValidUntil pgtype.Timestamptz `json:"voucher_valid_until"`
+	MerchantID        pgtype.UUID        `json:"merchant_id"`
+	MerchantStatus    MerchantStatus     `json:"merchant_status"`
+}
+
+func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error) {
+	rows, err := q.db.Query(ctx, getDealOptionRows, optionIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDealOptionRowsRow{}
+	for rows.Next() {
+		var i GetDealOptionRowsRow
+		if err := rows.Scan(
+			&i.OptionID,
+			&i.DealID,
+			&i.OptionTitle,
+			&i.OriginalPrice,
+			&i.DealPrice,
+			&i.StockTotal,
+			&i.StockSold,
+			&i.StockReserved,
+			&i.OptionIsActive,
+			&i.DealStatus,
+			&i.DealKind,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.MaxPerUser,
+			&i.IsGiftable,
+			&i.VoucherValidDays,
+			&i.VoucherValidUntil,
+			&i.MerchantID,
+			&i.MerchantStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOrderByID = `-- name: GetOrderByID :one
+SELECT o.id, o.number, o.user_id, o.status::text AS status, o.subtotal, o.total, o.shipping_address, o.paid_at,
+       o.created_at, o.request_hash,
+       (SELECT MAX(r.expires_at) FROM stock_reservations r
+        WHERE r.order_id = o.id AND r.released_at IS NULL)::timestamptz AS reservation_expires_at
+FROM orders o WHERE o.id = $1
+`
+
+type GetOrderByIDRow struct {
+	ID                   pgtype.UUID        `json:"id"`
+	Number               string             `json:"number"`
+	UserID               pgtype.UUID        `json:"user_id"`
+	Status               string             `json:"status"`
+	Subtotal             int64              `json:"subtotal"`
+	Total                int64              `json:"total"`
+	ShippingAddress      []byte             `json:"shipping_address"`
+	PaidAt               pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	RequestHash          pgtype.Text        `json:"request_hash"`
+	ReservationExpiresAt pgtype.Timestamptz `json:"reservation_expires_at"`
+}
+
+func (q *Queries) GetOrderByID(ctx context.Context, orderID pgtype.UUID) (GetOrderByIDRow, error) {
+	row := q.db.QueryRow(ctx, getOrderByID, orderID)
+	var i GetOrderByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Number,
@@ -63,23 +282,103 @@ func (q *Queries) GetOrderForUser(ctx context.Context, arg GetOrderForUserParams
 		&i.Status,
 		&i.Subtotal,
 		&i.Total,
-		&i.Currency,
-		&i.IdempotencyKey,
 		&i.ShippingAddress,
 		&i.PaidAt,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.RequestHash,
+		&i.ReservationExpiresAt,
 	)
 	return i, err
 }
 
-const getVoucherByCode = `-- name: GetVoucherByCode :one
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status, valid_from, valid_until, redeemed_at, redeemed_by_user_id, redeemed_location_id, created_at, updated_at FROM vouchers WHERE code = $1
+const getOrderIDByIdempotencyKey = `-- name: GetOrderIDByIdempotencyKey :one
+SELECT id FROM orders WHERE idempotency_key = $1
 `
 
-func (q *Queries) GetVoucherByCode(ctx context.Context, code string) (Voucher, error) {
-	row := q.db.QueryRow(ctx, getVoucherByCode, code)
-	var i Voucher
+func (q *Queries) GetOrderIDByIdempotencyKey(ctx context.Context, idempotencyKey string) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getOrderIDByIdempotencyKey, idempotencyKey)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getPaymentByID = `-- name: GetPaymentByID :one
+SELECT id, order_id, provider::text AS provider, provider_payment_id, status::text AS status, amount, raw_payload
+FROM payments WHERE id = $1
+`
+
+type GetPaymentByIDRow struct {
+	ID                pgtype.UUID `json:"id"`
+	OrderID           pgtype.UUID `json:"order_id"`
+	Provider          string      `json:"provider"`
+	ProviderPaymentID pgtype.Text `json:"provider_payment_id"`
+	Status            string      `json:"status"`
+	Amount            int64       `json:"amount"`
+	RawPayload        []byte      `json:"raw_payload"`
+}
+
+func (q *Queries) GetPaymentByID(ctx context.Context, id pgtype.UUID) (GetPaymentByIDRow, error) {
+	row := q.db.QueryRow(ctx, getPaymentByID, id)
+	var i GetPaymentByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.Provider,
+		&i.ProviderPaymentID,
+		&i.Status,
+		&i.Amount,
+		&i.RawPayload,
+	)
+	return i, err
+}
+
+const getUserContact = `-- name: GetUserContact :one
+SELECT email, name, locale::text AS locale FROM users WHERE id = $1 AND deleted_at IS NULL
+`
+
+type GetUserContactRow struct {
+	Email  string `json:"email"`
+	Name   string `json:"name"`
+	Locale string `json:"locale"`
+}
+
+func (q *Queries) GetUserContact(ctx context.Context, userID pgtype.UUID) (GetUserContactRow, error) {
+	row := q.db.QueryRow(ctx, getUserContact, userID)
+	var i GetUserContactRow
+	err := row.Scan(&i.Email, &i.Name, &i.Locale)
+	return i, err
+}
+
+const getVoucherForUser = `-- name: GetVoucherForUser :one
+SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
+       valid_from, valid_until, redeemed_at, redeemed_location_id
+FROM vouchers WHERE id = $1 AND user_id = $2
+`
+
+type GetVoucherForUserParams struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+}
+
+type GetVoucherForUserRow struct {
+	ID                 pgtype.UUID        `json:"id"`
+	OrderItemID        pgtype.UUID        `json:"order_item_id"`
+	UserID             pgtype.UUID        `json:"user_id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	DealOptionID       pgtype.UUID        `json:"deal_option_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	Code               string             `json:"code"`
+	QrToken            string             `json:"qr_token"`
+	Status             string             `json:"status"`
+	ValidFrom          pgtype.Timestamptz `json:"valid_from"`
+	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
+	RedeemedAt         pgtype.Timestamptz `json:"redeemed_at"`
+	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
+}
+
+func (q *Queries) GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error) {
+	row := q.db.QueryRow(ctx, getVoucherForUser, arg.ID, arg.UserID)
+	var i GetVoucherForUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.OrderItemID,
@@ -93,54 +392,484 @@ func (q *Queries) GetVoucherByCode(ctx context.Context, code string) (Voucher, e
 		&i.ValidFrom,
 		&i.ValidUntil,
 		&i.RedeemedAt,
-		&i.RedeemedByUserID,
 		&i.RedeemedLocationID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getVoucherByQRToken = `-- name: GetVoucherByQRToken :one
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status, valid_from, valid_until, redeemed_at, redeemed_by_user_id, redeemed_location_id, created_at, updated_at FROM vouchers WHERE qr_token = $1
+const insertCartItem = `-- name: InsertCartItem :exec
+INSERT INTO cart_items (cart_id, deal_option_id, quantity, is_gift)
+VALUES ($1, $2, $3, $4)
 `
 
-func (q *Queries) GetVoucherByQRToken(ctx context.Context, qrToken string) (Voucher, error) {
-	row := q.db.QueryRow(ctx, getVoucherByQRToken, qrToken)
-	var i Voucher
-	err := row.Scan(
-		&i.ID,
-		&i.OrderItemID,
-		&i.UserID,
-		&i.DealID,
-		&i.DealOptionID,
-		&i.MerchantID,
-		&i.Code,
-		&i.QrToken,
-		&i.Status,
-		&i.ValidFrom,
-		&i.ValidUntil,
-		&i.RedeemedAt,
-		&i.RedeemedByUserID,
-		&i.RedeemedLocationID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+type InsertCartItemParams struct {
+	CartID   pgtype.UUID `json:"cart_id"`
+	OptionID pgtype.UUID `json:"option_id"`
+	Quantity int32       `json:"quantity"`
+	IsGift   bool        `json:"is_gift"`
+}
+
+func (q *Queries) InsertCartItem(ctx context.Context, arg InsertCartItemParams) error {
+	_, err := q.db.Exec(ctx, insertCartItem,
+		arg.CartID,
+		arg.OptionID,
+		arg.Quantity,
+		arg.IsGift,
 	)
+	return err
+}
+
+const insertOrder = `-- name: InsertOrder :one
+INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash, shipping_address)
+VALUES ($1, $2, 'pending_payment', $3, $4, 'UZS',
+        $5, $6, $7::jsonb)
+RETURNING id, created_at
+`
+
+type InsertOrderParams struct {
+	Number          string      `json:"number"`
+	UserID          pgtype.UUID `json:"user_id"`
+	Subtotal        int64       `json:"subtotal"`
+	Total           int64       `json:"total"`
+	IdempotencyKey  string      `json:"idempotency_key"`
+	RequestHash     pgtype.Text `json:"request_hash"`
+	ShippingAddress []byte      `json:"shipping_address"`
+}
+
+type InsertOrderRow struct {
+	ID        pgtype.UUID        `json:"id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) InsertOrder(ctx context.Context, arg InsertOrderParams) (InsertOrderRow, error) {
+	row := q.db.QueryRow(ctx, insertOrder,
+		arg.Number,
+		arg.UserID,
+		arg.Subtotal,
+		arg.Total,
+		arg.IdempotencyKey,
+		arg.RequestHash,
+		arg.ShippingAddress,
+	)
+	var i InsertOrderRow
+	err := row.Scan(&i.ID, &i.CreatedAt)
 	return i, err
+}
+
+const insertOrderItem = `-- name: InsertOrderItem :one
+INSERT INTO order_items (order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
+                         original_price_snapshot, quantity, is_gift, gift_recipient_name,
+                         gift_recipient_email, gift_message, fulfillment_status)
+VALUES ($1, $2, $3, $4,
+        $5, $6, $7, $8,
+        $9, $10, $11,
+        $12::fulfillment_status)
+RETURNING id
+`
+
+type InsertOrderItemParams struct {
+	OrderID            pgtype.UUID       `json:"order_id"`
+	DealID             pgtype.UUID       `json:"deal_id"`
+	OptionID           pgtype.UUID       `json:"option_id"`
+	TitleSnapshot      []byte            `json:"title_snapshot"`
+	UnitPrice          int64             `json:"unit_price"`
+	OriginalPrice      int64             `json:"original_price"`
+	Quantity           int32             `json:"quantity"`
+	IsGift             bool              `json:"is_gift"`
+	GiftRecipientName  pgtype.Text       `json:"gift_recipient_name"`
+	GiftRecipientEmail pgtype.Text       `json:"gift_recipient_email"`
+	GiftMessage        pgtype.Text       `json:"gift_message"`
+	FulfillmentStatus  FulfillmentStatus `json:"fulfillment_status"`
+}
+
+func (q *Queries) InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, insertOrderItem,
+		arg.OrderID,
+		arg.DealID,
+		arg.OptionID,
+		arg.TitleSnapshot,
+		arg.UnitPrice,
+		arg.OriginalPrice,
+		arg.Quantity,
+		arg.IsGift,
+		arg.GiftRecipientName,
+		arg.GiftRecipientEmail,
+		arg.GiftMessage,
+		arg.FulfillmentStatus,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertPayment = `-- name: InsertPayment :exec
+INSERT INTO payments (id, order_id, provider, provider_payment_id, status, amount, currency, raw_payload)
+VALUES ($1, $2, $3::payment_provider, $4,
+        $5::payment_status, $6, 'UZS', $7)
+`
+
+type InsertPaymentParams struct {
+	ID                pgtype.UUID     `json:"id"`
+	OrderID           pgtype.UUID     `json:"order_id"`
+	Provider          PaymentProvider `json:"provider"`
+	ProviderPaymentID pgtype.Text     `json:"provider_payment_id"`
+	Status            PaymentStatus   `json:"status"`
+	Amount            int64           `json:"amount"`
+	RawPayload        []byte          `json:"raw_payload"`
+}
+
+func (q *Queries) InsertPayment(ctx context.Context, arg InsertPaymentParams) error {
+	_, err := q.db.Exec(ctx, insertPayment,
+		arg.ID,
+		arg.OrderID,
+		arg.Provider,
+		arg.ProviderPaymentID,
+		arg.Status,
+		arg.Amount,
+		arg.RawPayload,
+	)
+	return err
+}
+
+const insertSavedDeal = `-- name: InsertSavedDeal :exec
+INSERT INTO saved_deals (user_id, deal_id) VALUES ($1, $2)
+ON CONFLICT (user_id, deal_id) DO NOTHING
+`
+
+type InsertSavedDealParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	DealID pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error {
+	_, err := q.db.Exec(ctx, insertSavedDeal, arg.UserID, arg.DealID)
+	return err
+}
+
+const insertStockReservation = `-- name: InsertStockReservation :exec
+INSERT INTO stock_reservations (deal_option_id, order_id, quantity, expires_at)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertStockReservationParams struct {
+	OptionID  pgtype.UUID        `json:"option_id"`
+	OrderID   pgtype.UUID        `json:"order_id"`
+	Quantity  int32              `json:"quantity"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) InsertStockReservation(ctx context.Context, arg InsertStockReservationParams) error {
+	_, err := q.db.Exec(ctx, insertStockReservation,
+		arg.OptionID,
+		arg.OrderID,
+		arg.Quantity,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
+const insertVoucher = `-- name: InsertVoucher :exec
+INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
+                      status, valid_from, valid_until)
+VALUES ($1, $2, $3, $4, $5,
+        $6, $7, $8, 'active', $9, $10)
+`
+
+type InsertVoucherParams struct {
+	ID          pgtype.UUID        `json:"id"`
+	OrderItemID pgtype.UUID        `json:"order_item_id"`
+	UserID      pgtype.UUID        `json:"user_id"`
+	DealID      pgtype.UUID        `json:"deal_id"`
+	OptionID    pgtype.UUID        `json:"option_id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	Code        string             `json:"code"`
+	QrToken     string             `json:"qr_token"`
+	ValidFrom   pgtype.Timestamptz `json:"valid_from"`
+	ValidUntil  pgtype.Timestamptz `json:"valid_until"`
+}
+
+func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) error {
+	_, err := q.db.Exec(ctx, insertVoucher,
+		arg.ID,
+		arg.OrderItemID,
+		arg.UserID,
+		arg.DealID,
+		arg.OptionID,
+		arg.MerchantID,
+		arg.Code,
+		arg.QrToken,
+		arg.ValidFrom,
+		arg.ValidUntil,
+	)
+	return err
+}
+
+const listCartItemRows = `-- name: ListCartItemRows :many
+SELECT deal_option_id, quantity, is_gift FROM cart_items
+WHERE cart_id = $1 ORDER BY created_at, id
+`
+
+type ListCartItemRowsRow struct {
+	DealOptionID pgtype.UUID `json:"deal_option_id"`
+	Quantity     int32       `json:"quantity"`
+	IsGift       bool        `json:"is_gift"`
+}
+
+func (q *Queries) ListCartItemRows(ctx context.Context, cartID pgtype.UUID) ([]ListCartItemRowsRow, error) {
+	rows, err := q.db.Query(ctx, listCartItemRows, cartID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCartItemRowsRow{}
+	for rows.Next() {
+		var i ListCartItemRowsRow
+		if err := rows.Scan(&i.DealOptionID, &i.Quantity, &i.IsGift); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCartLinesForUser = `-- name: ListCartLinesForUser :many
+SELECT ci.deal_option_id, ci.quantity, ci.is_gift
+FROM cart_items ci JOIN carts c ON c.id = ci.cart_id
+WHERE c.user_id = $1 ORDER BY ci.created_at, ci.id
+`
+
+type ListCartLinesForUserRow struct {
+	DealOptionID pgtype.UUID `json:"deal_option_id"`
+	Quantity     int32       `json:"quantity"`
+	IsGift       bool        `json:"is_gift"`
+}
+
+func (q *Queries) ListCartLinesForUser(ctx context.Context, userID pgtype.UUID) ([]ListCartLinesForUserRow, error) {
+	rows, err := q.db.Query(ctx, listCartLinesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCartLinesForUserRow{}
+	for rows.Next() {
+		var i ListCartLinesForUserRow
+		if err := rows.Scan(&i.DealOptionID, &i.Quantity, &i.IsGift); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrderIDsForUser = `-- name: ListOrderIDsForUser :many
+SELECT id FROM orders WHERE user_id = $1
+ORDER BY created_at DESC, id DESC LIMIT $3 OFFSET $2
+`
+
+type ListOrderIDsForUserParams struct {
+	UserID     pgtype.UUID `json:"user_id"`
+	PageOffset int32       `json:"page_offset"`
+	PageSize   int32       `json:"page_size"`
+}
+
+func (q *Queries) ListOrderIDsForUser(ctx context.Context, arg ListOrderIDsForUserParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listOrderIDsForUser, arg.UserID, arg.PageOffset, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrderItemsForOrders = `-- name: ListOrderItemsForOrders :many
+SELECT id, order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
+       original_price_snapshot, quantity, is_gift, gift_recipient_name, gift_recipient_email,
+       gift_message, fulfillment_status::text AS fulfillment_status
+FROM order_items WHERE order_id = ANY($1::uuid[]) ORDER BY created_at, id
+`
+
+type ListOrderItemsForOrdersRow struct {
+	ID                    pgtype.UUID `json:"id"`
+	OrderID               pgtype.UUID `json:"order_id"`
+	DealID                pgtype.UUID `json:"deal_id"`
+	DealOptionID          pgtype.UUID `json:"deal_option_id"`
+	TitleSnapshot         []byte      `json:"title_snapshot"`
+	UnitPriceSnapshot     int64       `json:"unit_price_snapshot"`
+	OriginalPriceSnapshot int64       `json:"original_price_snapshot"`
+	Quantity              int32       `json:"quantity"`
+	IsGift                bool        `json:"is_gift"`
+	GiftRecipientName     pgtype.Text `json:"gift_recipient_name"`
+	GiftRecipientEmail    pgtype.Text `json:"gift_recipient_email"`
+	GiftMessage           pgtype.Text `json:"gift_message"`
+	FulfillmentStatus     string      `json:"fulfillment_status"`
+}
+
+func (q *Queries) ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype.UUID) ([]ListOrderItemsForOrdersRow, error) {
+	rows, err := q.db.Query(ctx, listOrderItemsForOrders, orderIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrderItemsForOrdersRow{}
+	for rows.Next() {
+		var i ListOrderItemsForOrdersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.DealID,
+			&i.DealOptionID,
+			&i.TitleSnapshot,
+			&i.UnitPriceSnapshot,
+			&i.OriginalPriceSnapshot,
+			&i.Quantity,
+			&i.IsGift,
+			&i.GiftRecipientName,
+			&i.GiftRecipientEmail,
+			&i.GiftMessage,
+			&i.FulfillmentStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRecentlyViewedDealIDs = `-- name: ListRecentlyViewedDealIDs :many
+SELECT deal_id FROM recently_viewed
+WHERE user_id = $1 AND viewed_at > now() - interval '30 days'
+ORDER BY viewed_at DESC, id DESC LIMIT 30
+`
+
+func (q *Queries) ListRecentlyViewedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listRecentlyViewedDealIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var deal_id pgtype.UUID
+		if err := rows.Scan(&deal_id); err != nil {
+			return nil, err
+		}
+		items = append(items, deal_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSavedDealIDs = `-- name: ListSavedDealIDs :many
+SELECT deal_id FROM saved_deals WHERE user_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100
+`
+
+func (q *Queries) ListSavedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listSavedDealIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var deal_id pgtype.UUID
+		if err := rows.Scan(&deal_id); err != nil {
+			return nil, err
+		}
+		items = append(items, deal_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnreleasedReservations = `-- name: ListUnreleasedReservations :many
+SELECT deal_option_id, quantity, expires_at FROM stock_reservations
+WHERE order_id = $1 AND released_at IS NULL ORDER BY deal_option_id
+`
+
+type ListUnreleasedReservationsRow struct {
+	DealOptionID pgtype.UUID        `json:"deal_option_id"`
+	Quantity     int32              `json:"quantity"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) ListUnreleasedReservations(ctx context.Context, orderID pgtype.UUID) ([]ListUnreleasedReservationsRow, error) {
+	rows, err := q.db.Query(ctx, listUnreleasedReservations, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUnreleasedReservationsRow{}
+	for rows.Next() {
+		var i ListUnreleasedReservationsRow
+		if err := rows.Scan(&i.DealOptionID, &i.Quantity, &i.ExpiresAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listVouchersForUser = `-- name: ListVouchersForUser :many
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status, valid_from, valid_until, redeemed_at, redeemed_by_user_id, redeemed_location_id, created_at, updated_at FROM vouchers WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT $4 OFFSET $3
+SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
+       valid_from, valid_until, redeemed_at, redeemed_location_id
+FROM vouchers
+WHERE user_id = $1
+  AND ($2::text IS NULL OR status::text = $2::text)
+ORDER BY valid_until, id
+LIMIT $4 OFFSET $3
 `
 
 type ListVouchersForUserParams struct {
-	UserID     pgtype.UUID   `json:"user_id"`
-	Status     VoucherStatus `json:"status"`
-	PageOffset int32         `json:"page_offset"`
-	PageSize   int32         `json:"page_size"`
+	UserID     pgtype.UUID `json:"user_id"`
+	Status     pgtype.Text `json:"status"`
+	PageOffset int32       `json:"page_offset"`
+	PageSize   int32       `json:"page_size"`
 }
 
-func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]Voucher, error) {
+type ListVouchersForUserRow struct {
+	ID                 pgtype.UUID        `json:"id"`
+	OrderItemID        pgtype.UUID        `json:"order_item_id"`
+	UserID             pgtype.UUID        `json:"user_id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	DealOptionID       pgtype.UUID        `json:"deal_option_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	Code               string             `json:"code"`
+	QrToken            string             `json:"qr_token"`
+	Status             string             `json:"status"`
+	ValidFrom          pgtype.Timestamptz `json:"valid_from"`
+	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
+	RedeemedAt         pgtype.Timestamptz `json:"redeemed_at"`
+	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
+}
+
+func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error) {
 	rows, err := q.db.Query(ctx, listVouchersForUser,
 		arg.UserID,
 		arg.Status,
@@ -151,9 +880,9 @@ func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUs
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Voucher{}
+	items := []ListVouchersForUserRow{}
 	for rows.Next() {
-		var i Voucher
+		var i ListVouchersForUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrderItemID,
@@ -167,10 +896,7 @@ func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUs
 			&i.ValidFrom,
 			&i.ValidUntil,
 			&i.RedeemedAt,
-			&i.RedeemedByUserID,
 			&i.RedeemedLocationID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -182,11 +908,133 @@ func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUs
 	return items, nil
 }
 
-const releaseOptionStock = `-- name: ReleaseOptionStock :one
+const lockOrderByID = `-- name: LockOrderByID :one
+SELECT id, number, user_id, status::text AS status, subtotal, total, shipping_address, paid_at, created_at
+FROM orders WHERE id = $1 FOR UPDATE
+`
+
+type LockOrderByIDRow struct {
+	ID              pgtype.UUID        `json:"id"`
+	Number          string             `json:"number"`
+	UserID          pgtype.UUID        `json:"user_id"`
+	Status          string             `json:"status"`
+	Subtotal        int64              `json:"subtotal"`
+	Total           int64              `json:"total"`
+	ShippingAddress []byte             `json:"shipping_address"`
+	PaidAt          pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockOrderByIDRow, error) {
+	row := q.db.QueryRow(ctx, lockOrderByID, orderID)
+	var i LockOrderByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Number,
+		&i.UserID,
+		&i.Status,
+		&i.Subtotal,
+		&i.Total,
+		&i.ShippingAddress,
+		&i.PaidAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const lockPaymentByProviderID = `-- name: LockPaymentByProviderID :one
+SELECT id, order_id, provider::text AS provider, provider_payment_id, status::text AS status, amount, raw_payload
+FROM payments WHERE provider = $1::payment_provider AND provider_payment_id = $2
+FOR UPDATE
+`
+
+type LockPaymentByProviderIDParams struct {
+	Provider          PaymentProvider `json:"provider"`
+	ProviderPaymentID pgtype.Text     `json:"provider_payment_id"`
+}
+
+type LockPaymentByProviderIDRow struct {
+	ID                pgtype.UUID `json:"id"`
+	OrderID           pgtype.UUID `json:"order_id"`
+	Provider          string      `json:"provider"`
+	ProviderPaymentID pgtype.Text `json:"provider_payment_id"`
+	Status            string      `json:"status"`
+	Amount            int64       `json:"amount"`
+	RawPayload        []byte      `json:"raw_payload"`
+}
+
+func (q *Queries) LockPaymentByProviderID(ctx context.Context, arg LockPaymentByProviderIDParams) (LockPaymentByProviderIDRow, error) {
+	row := q.db.QueryRow(ctx, lockPaymentByProviderID, arg.Provider, arg.ProviderPaymentID)
+	var i LockPaymentByProviderIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.Provider,
+		&i.ProviderPaymentID,
+		&i.Status,
+		&i.Amount,
+		&i.RawPayload,
+	)
+	return i, err
+}
+
+const lockUserForUpdate = `-- name: LockUserForUpdate :one
+SELECT id FROM users WHERE id = $1 AND deleted_at IS NULL FOR UPDATE
+`
+
+func (q *Queries) LockUserForUpdate(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, lockUserForUpdate, userID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const markReservationsReleased = `-- name: MarkReservationsReleased :many
+UPDATE stock_reservations SET released_at = now(), updated_at = now()
+WHERE order_id = $1 AND released_at IS NULL
+RETURNING deal_option_id, quantity
+`
+
+type MarkReservationsReleasedRow struct {
+	DealOptionID pgtype.UUID `json:"deal_option_id"`
+	Quantity     int32       `json:"quantity"`
+}
+
+func (q *Queries) MarkReservationsReleased(ctx context.Context, orderID pgtype.UUID) ([]MarkReservationsReleasedRow, error) {
+	rows, err := q.db.Query(ctx, markReservationsReleased, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MarkReservationsReleasedRow{}
+	for rows.Next() {
+		var i MarkReservationsReleasedRow
+		if err := rows.Scan(&i.DealOptionID, &i.Quantity); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const nextOrderNumberSequence = `-- name: NextOrderNumberSequence :one
+SELECT nextval('order_number_seq')::bigint AS value
+`
+
+func (q *Queries) NextOrderNumberSequence(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, nextOrderNumberSequence)
+	var value int64
+	err := row.Scan(&value)
+	return value, err
+}
+
+const releaseOptionStock = `-- name: ReleaseOptionStock :exec
 UPDATE deal_options
-SET stock_reserved = stock_reserved - $1
+SET stock_reserved = stock_reserved - $1, updated_at = now()
 WHERE id = $2 AND stock_reserved >= $1
-RETURNING id, deal_id, title, original_price, deal_price, currency, stock_total, stock_sold, stock_reserved, sort_order, is_active, created_at, updated_at
 `
 
 type ReleaseOptionStockParams struct {
@@ -194,34 +1042,18 @@ type ReleaseOptionStockParams struct {
 	OptionID pgtype.UUID `json:"option_id"`
 }
 
-func (q *Queries) ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) (DealOption, error) {
-	row := q.db.QueryRow(ctx, releaseOptionStock, arg.Quantity, arg.OptionID)
-	var i DealOption
-	err := row.Scan(
-		&i.ID,
-		&i.DealID,
-		&i.Title,
-		&i.OriginalPrice,
-		&i.DealPrice,
-		&i.Currency,
-		&i.StockTotal,
-		&i.StockSold,
-		&i.StockReserved,
-		&i.SortOrder,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) error {
+	_, err := q.db.Exec(ctx, releaseOptionStock, arg.Quantity, arg.OptionID)
+	return err
 }
 
 const reserveOptionStock = `-- name: ReserveOptionStock :one
 UPDATE deal_options
-SET stock_reserved = stock_reserved + $1
+SET stock_reserved = stock_reserved + $1, updated_at = now()
 WHERE id = $2
   AND is_active = true
   AND stock_total - stock_sold - stock_reserved >= $1
-RETURNING id, deal_id, title, original_price, deal_price, currency, stock_total, stock_sold, stock_reserved, sort_order, is_active, created_at, updated_at
+RETURNING id
 `
 
 type ReserveOptionStockParams struct {
@@ -229,23 +1061,117 @@ type ReserveOptionStockParams struct {
 	OptionID pgtype.UUID `json:"option_id"`
 }
 
-func (q *Queries) ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (DealOption, error) {
+func (q *Queries) ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, reserveOptionStock, arg.Quantity, arg.OptionID)
-	var i DealOption
-	err := row.Scan(
-		&i.ID,
-		&i.DealID,
-		&i.Title,
-		&i.OriginalPrice,
-		&i.DealPrice,
-		&i.Currency,
-		&i.StockTotal,
-		&i.StockSold,
-		&i.StockReserved,
-		&i.SortOrder,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const setOrderStatus = `-- name: SetOrderStatus :exec
+UPDATE orders SET status = $1::order_status,
+                  paid_at = COALESCE($2, paid_at), updated_at = now()
+WHERE id = $3
+`
+
+type SetOrderStatusParams struct {
+	Status  OrderStatus        `json:"status"`
+	PaidAt  pgtype.Timestamptz `json:"paid_at"`
+	OrderID pgtype.UUID        `json:"order_id"`
+}
+
+func (q *Queries) SetOrderStatus(ctx context.Context, arg SetOrderStatusParams) error {
+	_, err := q.db.Exec(ctx, setOrderStatus, arg.Status, arg.PaidAt, arg.OrderID)
+	return err
+}
+
+const setPaymentStatus = `-- name: SetPaymentStatus :exec
+UPDATE payments SET status = $1::payment_status,
+                    raw_payload = COALESCE($2::jsonb, raw_payload), updated_at = now()
+WHERE id = $3
+`
+
+type SetPaymentStatusParams struct {
+	Status     PaymentStatus `json:"status"`
+	RawPayload []byte        `json:"raw_payload"`
+	ID         pgtype.UUID   `json:"id"`
+}
+
+func (q *Queries) SetPaymentStatus(ctx context.Context, arg SetPaymentStatusParams) error {
+	_, err := q.db.Exec(ctx, setPaymentStatus, arg.Status, arg.RawPayload, arg.ID)
+	return err
+}
+
+const trimRecentlyViewed = `-- name: TrimRecentlyViewed :exec
+DELETE FROM recently_viewed AS stale
+WHERE stale.user_id = $1
+  AND stale.id NOT IN (SELECT keep.id FROM recently_viewed AS keep
+                       WHERE keep.user_id = $1
+                       ORDER BY keep.viewed_at DESC, keep.id DESC LIMIT 30)
+`
+
+func (q *Queries) TrimRecentlyViewed(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, trimRecentlyViewed, userID)
+	return err
+}
+
+const upsertCart = `-- name: UpsertCart :one
+INSERT INTO carts (user_id) VALUES ($1)
+ON CONFLICT (user_id) DO UPDATE SET updated_at = now()
+RETURNING id
+`
+
+func (q *Queries) UpsertCart(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, upsertCart, userID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const upsertRecentlyViewed = `-- name: UpsertRecentlyViewed :exec
+INSERT INTO recently_viewed (user_id, deal_id, viewed_at) VALUES ($1, $2, now())
+ON CONFLICT (user_id, deal_id) DO UPDATE SET viewed_at = now(), updated_at = now()
+`
+
+type UpsertRecentlyViewedParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	DealID pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) UpsertRecentlyViewed(ctx context.Context, arg UpsertRecentlyViewedParams) error {
+	_, err := q.db.Exec(ctx, upsertRecentlyViewed, arg.UserID, arg.DealID)
+	return err
+}
+
+const userUnitsForDeal = `-- name: UserUnitsForDeal :one
+SELECT COALESCE(SUM(oi.quantity), 0)::int AS units
+FROM order_items oi
+JOIN orders o ON o.id = oi.order_id
+WHERE o.user_id = $1 AND oi.deal_id = $2
+  AND (o.status = 'paid' OR (o.status = 'pending_payment' AND EXISTS (
+        SELECT 1 FROM stock_reservations r
+        WHERE r.order_id = o.id AND r.released_at IS NULL AND r.expires_at > now())))
+`
+
+type UserUnitsForDealParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	DealID pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error) {
+	row := q.db.QueryRow(ctx, userUnitsForDeal, arg.UserID, arg.DealID)
+	var units int32
+	err := row.Scan(&units)
+	return units, err
+}
+
+const voucherCodeExists = `-- name: VoucherCodeExists :one
+SELECT EXISTS (SELECT 1 FROM vouchers WHERE code = $1) AS taken
+`
+
+func (q *Queries) VoucherCodeExists(ctx context.Context, code string) (bool, error) {
+	row := q.db.QueryRow(ctx, voucherCodeExists, code)
+	var taken bool
+	err := row.Scan(&taken)
+	return taken, err
 }

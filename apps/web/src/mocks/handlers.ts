@@ -64,12 +64,12 @@ export const handlers = [
           Object.values(deal.title).some((title) => title.toLowerCase().includes(search)) ||
           deal.merchant.display_name.toLowerCase().includes(search),
       );
-    const minRating = Number(query.get('rating') ?? 0);
+    const minRating = Number(query.get('min_rating') ?? 0);
     if (minRating) result = result.filter((deal) => deal.rating_avg >= minRating);
     const sort = query.get('sort');
-    if (sort === 'price-asc')
+    if (sort === 'price_asc')
       result.sort((a, b) => a.options[0]!.deal_price.amount - b.options[0]!.deal_price.amount);
-    if (sort === 'price-desc')
+    if (sort === 'price_desc')
       result.sort((a, b) => b.options[0]!.deal_price.amount - a.options[0]!.deal_price.amount);
     if (sort === 'popular') result.sort((a, b) => b.sold_count - a.sold_count);
     return HttpResponse.json(page(result, Number(query.get('page') ?? 1)));

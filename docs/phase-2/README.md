@@ -1,8 +1,8 @@
 # Phase 2 verification
 
 The public frontend uses OpenAPI-generated types and the shared API client. In Phase 2, MSW serves
-deterministic catalog data expanded from `seed/data.json`; setting both `USE_MSW=false` and
-`NEXT_PUBLIC_USE_MSW=false` switches the same client to the configured Go API.
+deterministic catalog data expanded from `seed/data.json`; the real Go API is now the default (`USE_MSW=false`,
+`NEXT_PUBLIC_USE_MSW=false`). Set both to `true` to opt in to MSW mocks for development.
 
 ## Required viewport evidence
 

@@ -11,21 +11,263 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getActiveDealBySlug = `-- name: GetActiveDealBySlug :one
-SELECT id, slug, merchant_id, category_id, subcategory_id, kind, title, short_description, description, highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required, is_giftable, status, rejection_reason, starts_at, ends_at, voucher_valid_days, voucher_valid_until, max_per_user, sold_count, view_count, rating_avg, rating_count, featured_rank, deleted_at, created_at, updated_at, title_uz_search, title_ru_search, title_en_search FROM deals WHERE slug = $1 AND deleted_at IS NULL AND status IN ('scheduled', 'active', 'sold_out', 'expired')
+const countActivePromoCodes = `-- name: CountActivePromoCodes :one
+SELECT COUNT(*)
+FROM promo_codes pc
+LEFT JOIN categories cat ON cat.id = pc.category_id
+WHERE pc.is_active = true
+  AND pc.starts_at <= now()
+  AND pc.ends_at > now()
+  AND ($1::text IS NULL OR cat.slug = $1::text)
 `
 
-func (q *Queries) GetActiveDealBySlug(ctx context.Context, slug string) (Deal, error) {
-	row := q.db.QueryRow(ctx, getActiveDealBySlug, slug)
-	var i Deal
+func (q *Queries) CountActivePromoCodes(ctx context.Context, category pgtype.Text) (int64, error) {
+	row := q.db.QueryRow(ctx, countActivePromoCodes, category)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countCollectionDeals = `-- name: CountCollectionDeals :one
+SELECT COUNT(*)
+FROM collection_deals cd
+JOIN deals d ON d.id = cd.deal_id
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+WHERE cd.collection_id = $1
+  AND d.deleted_at IS NULL
+  AND d.status IN ('active', 'sold_out')
+  AND d.ends_at > now()
+`
+
+func (q *Queries) CountCollectionDeals(ctx context.Context, collectionID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countCollectionDeals, collectionID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPublishedDeals = `-- name: CountPublishedDeals :one
+SELECT COUNT(*)
+FROM deals d
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+JOIN subcategories sub ON sub.id = d.subcategory_id
+CROSS JOIN LATERAL (
+  SELECT MIN(o.deal_price) AS min_price,
+         MAX(((o.original_price - o.deal_price) * 200 + o.original_price) / (2 * o.original_price)) AS max_discount
+  FROM deal_options o
+  WHERE o.deal_id = d.id AND o.is_active = true
+) pr
+WHERE d.deleted_at IS NULL
+  AND d.status IN ('active', 'sold_out')
+  AND d.ends_at > now()
+  AND pr.min_price IS NOT NULL
+  AND ($1::text IS NULL OR m.slug = $1::text)
+  AND ($2::text IS NULL OR cat.slug = $2::text)
+  AND ($3::text IS NULL OR sub.slug = $3::text)
+  AND ($4::text IS NULL OR EXISTS (
+        SELECT 1
+        FROM deal_locations dl
+        JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+        JOIN cities ci ON ci.id = ml.city_id
+        WHERE dl.deal_id = d.id AND ci.slug = $4::text
+      ))
+  AND ($5::text IS NULL OR (
+        d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent($5::text))
+        OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent($5::text))
+        OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent($5::text))
+        OR word_similarity(immutable_unaccent($5::text),
+             immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
+        OR word_similarity(immutable_unaccent($5::text),
+             immutable_unaccent(m.display_name)) >= 0.35
+      ))
+  AND ($6::bigint IS NULL OR pr.min_price >= $6::bigint)
+  AND ($7::bigint IS NULL OR pr.min_price <= $7::bigint)
+  AND ($8::float8 IS NULL OR d.rating_avg >= $8::float8)
+  AND ($9::integer IS NULL OR pr.max_discount >= $9::integer)
+  AND ($10::boolean = false OR d.ends_at <= now() + interval '72 hours')
+`
+
+type CountPublishedDealsParams struct {
+	Merchant    pgtype.Text   `json:"merchant"`
+	Category    pgtype.Text   `json:"category"`
+	Subcategory pgtype.Text   `json:"subcategory"`
+	City        pgtype.Text   `json:"city"`
+	Query       pgtype.Text   `json:"query"`
+	MinPrice    pgtype.Int8   `json:"min_price"`
+	MaxPrice    pgtype.Int8   `json:"max_price"`
+	MinRating   pgtype.Float8 `json:"min_rating"`
+	MinDiscount pgtype.Int4   `json:"min_discount"`
+	EndingSoon  bool          `json:"ending_soon"`
+}
+
+func (q *Queries) CountPublishedDeals(ctx context.Context, arg CountPublishedDealsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPublishedDeals,
+		arg.Merchant,
+		arg.Category,
+		arg.Subcategory,
+		arg.City,
+		arg.Query,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.MinRating,
+		arg.MinDiscount,
+		arg.EndingSoon,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPublishedReviewsForDeal = `-- name: CountPublishedReviewsForDeal :one
+SELECT COUNT(*) FROM reviews r
+WHERE r.deal_id = $1 AND r.status = 'published' AND r.deleted_at IS NULL
+`
+
+func (q *Queries) CountPublishedReviewsForDeal(ctx context.Context, dealID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countPublishedReviewsForDeal, dealID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getActiveCollectionBySlug = `-- name: GetActiveCollectionBySlug :one
+SELECT id, slug, title, description, cover_url, starts_at, ends_at
+FROM collections
+WHERE slug = $1 AND is_active = true AND ends_at > now()
+`
+
+type GetActiveCollectionBySlugRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	Slug        string             `json:"slug"`
+	Title       []byte             `json:"title"`
+	Description []byte             `json:"description"`
+	CoverUrl    string             `json:"cover_url"`
+	StartsAt    pgtype.Timestamptz `json:"starts_at"`
+	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+}
+
+func (q *Queries) GetActiveCollectionBySlug(ctx context.Context, slug string) (GetActiveCollectionBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getActiveCollectionBySlug, slug)
+	var i GetActiveCollectionBySlugRow
 	err := row.Scan(
 		&i.ID,
 		&i.Slug,
-		&i.MerchantID,
-		&i.CategoryID,
-		&i.SubcategoryID,
+		&i.Title,
+		&i.Description,
+		&i.CoverUrl,
+		&i.StartsAt,
+		&i.EndsAt,
+	)
+	return i, err
+}
+
+const getActiveMerchantBySlug = `-- name: GetActiveMerchantBySlug :one
+SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
+       instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+FROM merchants
+WHERE slug = $1 AND deleted_at IS NULL AND status = 'active'
+`
+
+type GetActiveMerchantBySlugRow struct {
+	ID            pgtype.UUID    `json:"id"`
+	Slug          string         `json:"slug"`
+	LegalName     string         `json:"legal_name"`
+	DisplayName   string         `json:"display_name"`
+	Description   []byte         `json:"description"`
+	LogoUrl       pgtype.Text    `json:"logo_url"`
+	CoverUrl      pgtype.Text    `json:"cover_url"`
+	Phone         string         `json:"phone"`
+	Website       pgtype.Text    `json:"website"`
+	Instagram     pgtype.Text    `json:"instagram"`
+	Telegram      pgtype.Text    `json:"telegram"`
+	Status        MerchantStatus `json:"status"`
+	RatingAvg     float64        `json:"rating_avg"`
+	RatingCount   int32          `json:"rating_count"`
+	CommissionBps int32          `json:"commission_bps"`
+}
+
+func (q *Queries) GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getActiveMerchantBySlug, slug)
+	var i GetActiveMerchantBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.LegalName,
+		&i.DisplayName,
+		&i.Description,
+		&i.LogoUrl,
+		&i.CoverUrl,
+		&i.Phone,
+		&i.Website,
+		&i.Instagram,
+		&i.Telegram,
+		&i.Status,
+		&i.RatingAvg,
+		&i.RatingCount,
+		&i.CommissionBps,
+	)
+	return i, err
+}
+
+const getDealDetailRowBySlug = `-- name: GetDealDetailRowBySlug :one
+SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+       d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
+       d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
+       d.booking_required, d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
+       d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
+FROM deals d
+JOIN subcategories sc ON sc.id = d.subcategory_id
+WHERE d.slug = $1
+  AND d.deleted_at IS NULL
+  AND d.status IN ('scheduled', 'active', 'sold_out', 'expired')
+`
+
+type GetDealDetailRowBySlugRow struct {
+	ID                     pgtype.UUID        `json:"id"`
+	Slug                   string             `json:"slug"`
+	Kind                   DealKind           `json:"kind"`
+	Title                  []byte             `json:"title"`
+	Status                 DealStatus         `json:"status"`
+	SoldCount              int32              `json:"sold_count"`
+	RatingAvg              float64            `json:"rating_avg"`
+	RatingCount            int32              `json:"rating_count"`
+	StartsAt               pgtype.Timestamptz `json:"starts_at"`
+	EndsAt                 pgtype.Timestamptz `json:"ends_at"`
+	ShortDescription       []byte             `json:"short_description"`
+	Description            []byte             `json:"description"`
+	Highlights             []byte             `json:"highlights"`
+	WhatsIncluded          []byte             `json:"whats_included"`
+	Terms                  []byte             `json:"terms"`
+	Faq                    []byte             `json:"faq"`
+	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
+	RedemptionInstructions []byte             `json:"redemption_instructions"`
+	BookingRequired        bool               `json:"booking_required"`
+	IsGiftable             bool               `json:"is_giftable"`
+	VoucherValidDays       pgtype.Int4        `json:"voucher_valid_days"`
+	VoucherValidUntil      pgtype.Timestamptz `json:"voucher_valid_until"`
+	MaxPerUser             int32              `json:"max_per_user"`
+	MerchantID             pgtype.UUID        `json:"merchant_id"`
+	CategoryID             pgtype.UUID        `json:"category_id"`
+	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
+	SubcategoryName        []byte             `json:"subcategory_name"`
+	SubcategorySlug        string             `json:"subcategory_slug"`
+}
+
+func (q *Queries) GetDealDetailRowBySlug(ctx context.Context, slug string) (GetDealDetailRowBySlugRow, error) {
+	row := q.db.QueryRow(ctx, getDealDetailRowBySlug, slug)
+	var i GetDealDetailRowBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
 		&i.Kind,
 		&i.Title,
+		&i.Status,
+		&i.SoldCount,
+		&i.RatingAvg,
+		&i.RatingCount,
+		&i.StartsAt,
+		&i.EndsAt,
 		&i.ShortDescription,
 		&i.Description,
 		&i.Highlights,
@@ -36,75 +278,80 @@ func (q *Queries) GetActiveDealBySlug(ctx context.Context, slug string) (Deal, e
 		&i.RedemptionInstructions,
 		&i.BookingRequired,
 		&i.IsGiftable,
-		&i.Status,
-		&i.RejectionReason,
-		&i.StartsAt,
-		&i.EndsAt,
 		&i.VoucherValidDays,
 		&i.VoucherValidUntil,
 		&i.MaxPerUser,
-		&i.SoldCount,
-		&i.ViewCount,
-		&i.RatingAvg,
-		&i.RatingCount,
-		&i.FeaturedRank,
-		&i.DeletedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.TitleUzSearch,
-		&i.TitleRuSearch,
-		&i.TitleEnSearch,
+		&i.MerchantID,
+		&i.CategoryID,
+		&i.SubcategoryID,
+		&i.SubcategoryName,
+		&i.SubcategorySlug,
 	)
 	return i, err
 }
 
-const latestExchangeRate = `-- name: LatestExchangeRate :one
-SELECT id, base, quote, rate, source, effective_at, created_at, updated_at FROM exchange_rates WHERE base = $1 AND quote = $2 ORDER BY effective_at DESC LIMIT 1
+const getLatestExchangeRate = `-- name: GetLatestExchangeRate :one
+SELECT rate::text AS rate, effective_at
+FROM exchange_rates
+WHERE base = 'UZS' AND quote = 'USD'
+ORDER BY effective_at DESC
+LIMIT 1
 `
 
-type LatestExchangeRateParams struct {
-	Base  CurrencyCode `json:"base"`
-	Quote CurrencyCode `json:"quote"`
+type GetLatestExchangeRateRow struct {
+	Rate        string             `json:"rate"`
+	EffectiveAt pgtype.Timestamptz `json:"effective_at"`
 }
 
-func (q *Queries) LatestExchangeRate(ctx context.Context, arg LatestExchangeRateParams) (ExchangeRate, error) {
-	row := q.db.QueryRow(ctx, latestExchangeRate, arg.Base, arg.Quote)
-	var i ExchangeRate
-	err := row.Scan(
-		&i.ID,
-		&i.Base,
-		&i.Quote,
-		&i.Rate,
-		&i.Source,
-		&i.EffectiveAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
+func (q *Queries) GetLatestExchangeRate(ctx context.Context) (GetLatestExchangeRateRow, error) {
+	row := q.db.QueryRow(ctx, getLatestExchangeRate)
+	var i GetLatestExchangeRateRow
+	err := row.Scan(&i.Rate, &i.EffectiveAt)
 	return i, err
+}
+
+const incrementPromoCodeClicks = `-- name: IncrementPromoCodeClicks :execrows
+UPDATE promo_codes
+SET click_count = click_count + 1
+WHERE id = $1 AND is_active = true AND ends_at > now()
+`
+
+func (q *Queries) IncrementPromoCodeClicks(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, incrementPromoCodeClicks, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const listActiveCategories = `-- name: ListActiveCategories :many
-SELECT id, slug, name, icon, sort_order, is_active, created_at, updated_at FROM categories WHERE is_active = true ORDER BY sort_order, slug
+SELECT id, slug, name, icon
+FROM categories
+WHERE is_active = true
+ORDER BY sort_order, slug
 `
 
-func (q *Queries) ListActiveCategories(ctx context.Context) ([]Category, error) {
+type ListActiveCategoriesRow struct {
+	ID   pgtype.UUID `json:"id"`
+	Slug string      `json:"slug"`
+	Name []byte      `json:"name"`
+	Icon string      `json:"icon"`
+}
+
+func (q *Queries) ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error) {
 	rows, err := q.db.Query(ctx, listActiveCategories)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Category{}
+	items := []ListActiveCategoriesRow{}
 	for rows.Next() {
-		var i Category
+		var i ListActiveCategoriesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Slug,
 			&i.Name,
 			&i.Icon,
-			&i.SortOrder,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -117,28 +364,178 @@ func (q *Queries) ListActiveCategories(ctx context.Context) ([]Category, error) 
 }
 
 const listActiveCities = `-- name: ListActiveCities :many
-SELECT id, slug, name, lat, lng, is_active, sort_order, created_at, updated_at FROM cities WHERE is_active = true ORDER BY sort_order, slug
+
+SELECT id, slug, name, lat::float8 AS lat, lng::float8 AS lng
+FROM cities
+WHERE is_active = true
+ORDER BY sort_order, slug
 `
 
-func (q *Queries) ListActiveCities(ctx context.Context) ([]City, error) {
+type ListActiveCitiesRow struct {
+	ID   pgtype.UUID `json:"id"`
+	Slug string      `json:"slug"`
+	Name []byte      `json:"name"`
+	Lat  float64     `json:"lat"`
+	Lng  float64     `json:"lng"`
+}
+
+// Public catalog read model. Every query here is read-only and filters to what the public may see.
+func (q *Queries) ListActiveCities(ctx context.Context) ([]ListActiveCitiesRow, error) {
 	rows, err := q.db.Query(ctx, listActiveCities)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []City{}
+	items := []ListActiveCitiesRow{}
 	for rows.Next() {
-		var i City
+		var i ListActiveCitiesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Slug,
 			&i.Name,
 			&i.Lat,
 			&i.Lng,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveCollections = `-- name: ListActiveCollections :many
+SELECT id, slug, title, description, cover_url, starts_at, ends_at
+FROM collections
+WHERE is_active = true AND ends_at > now()
+ORDER BY starts_at, slug
+`
+
+type ListActiveCollectionsRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	Slug        string             `json:"slug"`
+	Title       []byte             `json:"title"`
+	Description []byte             `json:"description"`
+	CoverUrl    string             `json:"cover_url"`
+	StartsAt    pgtype.Timestamptz `json:"starts_at"`
+	EndsAt      pgtype.Timestamptz `json:"ends_at"`
+}
+
+func (q *Queries) ListActiveCollections(ctx context.Context) ([]ListActiveCollectionsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveCollections)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveCollectionsRow{}
+	for rows.Next() {
+		var i ListActiveCollectionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Title,
+			&i.Description,
+			&i.CoverUrl,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveDealOptionsForDeals = `-- name: ListActiveDealOptionsForDeals :many
+SELECT id, deal_id, title, original_price, deal_price, stock_total, stock_sold, stock_reserved, is_active
+FROM deal_options
+WHERE deal_id = ANY($1::uuid[]) AND is_active = true
+ORDER BY deal_id, sort_order, id
+`
+
+type ListActiveDealOptionsForDealsRow struct {
+	ID            pgtype.UUID `json:"id"`
+	DealID        pgtype.UUID `json:"deal_id"`
+	Title         []byte      `json:"title"`
+	OriginalPrice int64       `json:"original_price"`
+	DealPrice     int64       `json:"deal_price"`
+	StockTotal    int32       `json:"stock_total"`
+	StockSold     int32       `json:"stock_sold"`
+	StockReserved int32       `json:"stock_reserved"`
+	IsActive      bool        `json:"is_active"`
+}
+
+func (q *Queries) ListActiveDealOptionsForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListActiveDealOptionsForDealsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveDealOptionsForDeals, dealIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveDealOptionsForDealsRow{}
+	for rows.Next() {
+		var i ListActiveDealOptionsForDealsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DealID,
+			&i.Title,
+			&i.OriginalPrice,
+			&i.DealPrice,
+			&i.StockTotal,
+			&i.StockSold,
+			&i.StockReserved,
 			&i.IsActive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveHomepageSections = `-- name: ListActiveHomepageSections :many
+SELECT id, key, title, type, deal_ids, rule, sort_order
+FROM homepage_sections
+WHERE is_active = true
+  AND (starts_at IS NULL OR starts_at <= now())
+  AND (ends_at IS NULL OR ends_at > now())
+ORDER BY sort_order, key
+`
+
+type ListActiveHomepageSectionsRow struct {
+	ID        pgtype.UUID         `json:"id"`
+	Key       string              `json:"key"`
+	Title     []byte              `json:"title"`
+	Type      HomepageSectionType `json:"type"`
+	DealIds   []pgtype.UUID       `json:"deal_ids"`
+	Rule      []byte              `json:"rule"`
+	SortOrder int32               `json:"sort_order"`
+}
+
+func (q *Queries) ListActiveHomepageSections(ctx context.Context) ([]ListActiveHomepageSectionsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveHomepageSections)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveHomepageSectionsRow{}
+	for rows.Next() {
+		var i ListActiveHomepageSectionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Key,
+			&i.Title,
+			&i.Type,
+			&i.DealIds,
+			&i.Rule,
 			&i.SortOrder,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -151,23 +548,46 @@ func (q *Queries) ListActiveCities(ctx context.Context) ([]City, error) {
 }
 
 const listActivePromoCodes = `-- name: ListActivePromoCodes :many
-SELECT id, brand_name, brand_logo_url, title, code, discount_label, url, category_id, starts_at, ends_at, is_active, click_count, is_verified, created_at, updated_at FROM promo_codes WHERE is_active = true AND starts_at <= now() AND ends_at > now() ORDER BY is_verified DESC, ends_at LIMIT $1 OFFSET $2
+SELECT pc.id, pc.brand_name, pc.brand_logo_url, pc.title, pc.code, pc.discount_label, pc.url,
+       pc.starts_at, pc.ends_at, pc.is_verified
+FROM promo_codes pc
+LEFT JOIN categories cat ON cat.id = pc.category_id
+WHERE pc.is_active = true
+  AND pc.starts_at <= now()
+  AND pc.ends_at > now()
+  AND ($1::text IS NULL OR cat.slug = $1::text)
+ORDER BY pc.is_verified DESC, pc.ends_at ASC, pc.id ASC
+LIMIT $3 OFFSET $2
 `
 
 type ListActivePromoCodesParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Category   pgtype.Text `json:"category"`
+	PageOffset int32       `json:"page_offset"`
+	PageLimit  int32       `json:"page_limit"`
 }
 
-func (q *Queries) ListActivePromoCodes(ctx context.Context, arg ListActivePromoCodesParams) ([]PromoCode, error) {
-	rows, err := q.db.Query(ctx, listActivePromoCodes, arg.Limit, arg.Offset)
+type ListActivePromoCodesRow struct {
+	ID            pgtype.UUID        `json:"id"`
+	BrandName     string             `json:"brand_name"`
+	BrandLogoUrl  pgtype.Text        `json:"brand_logo_url"`
+	Title         []byte             `json:"title"`
+	Code          pgtype.Text        `json:"code"`
+	DiscountLabel []byte             `json:"discount_label"`
+	Url           string             `json:"url"`
+	StartsAt      pgtype.Timestamptz `json:"starts_at"`
+	EndsAt        pgtype.Timestamptz `json:"ends_at"`
+	IsVerified    bool               `json:"is_verified"`
+}
+
+func (q *Queries) ListActivePromoCodes(ctx context.Context, arg ListActivePromoCodesParams) ([]ListActivePromoCodesRow, error) {
+	rows, err := q.db.Query(ctx, listActivePromoCodes, arg.Category, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []PromoCode{}
+	items := []ListActivePromoCodesRow{}
 	for rows.Next() {
-		var i PromoCode
+		var i ListActivePromoCodesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.BrandName,
@@ -176,14 +596,9 @@ func (q *Queries) ListActivePromoCodes(ctx context.Context, arg ListActivePromoC
 			&i.Code,
 			&i.DiscountLabel,
 			&i.Url,
-			&i.CategoryID,
 			&i.StartsAt,
 			&i.EndsAt,
-			&i.IsActive,
-			&i.ClickCount,
 			&i.IsVerified,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -195,30 +610,54 @@ func (q *Queries) ListActivePromoCodes(ctx context.Context, arg ListActivePromoC
 	return items, nil
 }
 
-const listDealLocations = `-- name: ListDealLocations :many
-SELECT ml.id, ml.merchant_id, ml.city_id, ml.address, ml.lat, ml.lng, ml.opening_hours, ml.phone, ml.created_at, ml.updated_at FROM merchant_locations ml JOIN deal_locations dl ON dl.merchant_location_id = ml.id WHERE dl.deal_id = $1 ORDER BY ml.id
+const listDealLocationRows = `-- name: ListDealLocationRows :many
+SELECT ml.id, ml.address, ml.lat::float8 AS lat, ml.lng::float8 AS lng, ml.opening_hours, ml.phone,
+       ci.id AS city_id, ci.slug AS city_slug, ci.name AS city_name, ci.lat::float8 AS city_lat,
+       ci.lng::float8 AS city_lng, dl.deal_id
+FROM deal_locations dl
+JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+JOIN cities ci ON ci.id = ml.city_id
+WHERE dl.deal_id = ANY($1::uuid[])
+ORDER BY dl.deal_id, ml.created_at, ml.id
 `
 
-func (q *Queries) ListDealLocations(ctx context.Context, dealID pgtype.UUID) ([]MerchantLocation, error) {
-	rows, err := q.db.Query(ctx, listDealLocations, dealID)
+type ListDealLocationRowsRow struct {
+	ID           pgtype.UUID `json:"id"`
+	Address      string      `json:"address"`
+	Lat          float64     `json:"lat"`
+	Lng          float64     `json:"lng"`
+	OpeningHours []byte      `json:"opening_hours"`
+	Phone        string      `json:"phone"`
+	CityID       pgtype.UUID `json:"city_id"`
+	CitySlug     string      `json:"city_slug"`
+	CityName     []byte      `json:"city_name"`
+	CityLat      float64     `json:"city_lat"`
+	CityLng      float64     `json:"city_lng"`
+	DealID       pgtype.UUID `json:"deal_id"`
+}
+
+func (q *Queries) ListDealLocationRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealLocationRowsRow, error) {
+	rows, err := q.db.Query(ctx, listDealLocationRows, dealIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []MerchantLocation{}
+	items := []ListDealLocationRowsRow{}
 	for rows.Next() {
-		var i MerchantLocation
+		var i ListDealLocationRowsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.MerchantID,
-			&i.CityID,
 			&i.Address,
 			&i.Lat,
 			&i.Lng,
 			&i.OpeningHours,
 			&i.Phone,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.CityID,
+			&i.CitySlug,
+			&i.CityName,
+			&i.CityLat,
+			&i.CityLng,
+			&i.DealID,
 		); err != nil {
 			return nil, err
 		}
@@ -230,19 +669,33 @@ func (q *Queries) ListDealLocations(ctx context.Context, dealID pgtype.UUID) ([]
 	return items, nil
 }
 
-const listDealMedia = `-- name: ListDealMedia :many
-SELECT id, deal_id, url, alt, sort_order, width, height, blurhash, created_at, updated_at FROM deal_media WHERE deal_id = $1 ORDER BY sort_order, id
+const listDealMediaForDeals = `-- name: ListDealMediaForDeals :many
+SELECT id, deal_id, url, alt, sort_order, width, height, blurhash
+FROM deal_media
+WHERE deal_id = ANY($1::uuid[])
+ORDER BY deal_id, sort_order, id
 `
 
-func (q *Queries) ListDealMedia(ctx context.Context, dealID pgtype.UUID) ([]DealMedium, error) {
-	rows, err := q.db.Query(ctx, listDealMedia, dealID)
+type ListDealMediaForDealsRow struct {
+	ID        pgtype.UUID `json:"id"`
+	DealID    pgtype.UUID `json:"deal_id"`
+	Url       string      `json:"url"`
+	Alt       []byte      `json:"alt"`
+	SortOrder int32       `json:"sort_order"`
+	Width     int32       `json:"width"`
+	Height    int32       `json:"height"`
+	Blurhash  string      `json:"blurhash"`
+}
+
+func (q *Queries) ListDealMediaForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealMediaForDealsRow, error) {
+	rows, err := q.db.Query(ctx, listDealMediaForDeals, dealIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DealMedium{}
+	items := []ListDealMediaForDealsRow{}
 	for rows.Next() {
-		var i DealMedium
+		var i ListDealMediaForDealsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.DealID,
@@ -252,8 +705,6 @@ func (q *Queries) ListDealMedia(ctx context.Context, dealID pgtype.UUID) ([]Deal
 			&i.Width,
 			&i.Height,
 			&i.Blurhash,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -265,33 +716,216 @@ func (q *Queries) ListDealMedia(ctx context.Context, dealID pgtype.UUID) ([]Deal
 	return items, nil
 }
 
-const listDealOptions = `-- name: ListDealOptions :many
-SELECT id, deal_id, title, original_price, deal_price, currency, stock_total, stock_sold, stock_reserved, sort_order, is_active, created_at, updated_at FROM deal_options WHERE deal_id = $1 ORDER BY sort_order, id
+const listDealSummaryRows = `-- name: ListDealSummaryRows :many
+SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+       d.rating_count, d.starts_at, d.ends_at,
+       m.id AS merchant_id, m.slug AS merchant_slug, m.legal_name AS merchant_legal_name,
+       m.display_name AS merchant_display_name, m.description AS merchant_description,
+       m.logo_url AS merchant_logo_url, m.cover_url AS merchant_cover_url, m.phone AS merchant_phone,
+       m.website AS merchant_website, m.instagram AS merchant_instagram, m.telegram AS merchant_telegram,
+       m.status AS merchant_status, m.rating_avg::float8 AS merchant_rating_avg,
+       m.rating_count AS merchant_rating_count, m.commission_bps AS merchant_commission_bps,
+       c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon
+FROM deals d
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN categories c ON c.id = d.category_id
+WHERE d.id = ANY($1::uuid[])
+  AND d.deleted_at IS NULL
 `
 
-func (q *Queries) ListDealOptions(ctx context.Context, dealID pgtype.UUID) ([]DealOption, error) {
-	rows, err := q.db.Query(ctx, listDealOptions, dealID)
+type ListDealSummaryRowsRow struct {
+	ID                    pgtype.UUID        `json:"id"`
+	Slug                  string             `json:"slug"`
+	Kind                  DealKind           `json:"kind"`
+	Title                 []byte             `json:"title"`
+	Status                DealStatus         `json:"status"`
+	SoldCount             int32              `json:"sold_count"`
+	RatingAvg             float64            `json:"rating_avg"`
+	RatingCount           int32              `json:"rating_count"`
+	StartsAt              pgtype.Timestamptz `json:"starts_at"`
+	EndsAt                pgtype.Timestamptz `json:"ends_at"`
+	MerchantID            pgtype.UUID        `json:"merchant_id"`
+	MerchantSlug          string             `json:"merchant_slug"`
+	MerchantLegalName     string             `json:"merchant_legal_name"`
+	MerchantDisplayName   string             `json:"merchant_display_name"`
+	MerchantDescription   []byte             `json:"merchant_description"`
+	MerchantLogoUrl       pgtype.Text        `json:"merchant_logo_url"`
+	MerchantCoverUrl      pgtype.Text        `json:"merchant_cover_url"`
+	MerchantPhone         string             `json:"merchant_phone"`
+	MerchantWebsite       pgtype.Text        `json:"merchant_website"`
+	MerchantInstagram     pgtype.Text        `json:"merchant_instagram"`
+	MerchantTelegram      pgtype.Text        `json:"merchant_telegram"`
+	MerchantStatus        MerchantStatus     `json:"merchant_status"`
+	MerchantRatingAvg     float64            `json:"merchant_rating_avg"`
+	MerchantRatingCount   int32              `json:"merchant_rating_count"`
+	MerchantCommissionBps int32              `json:"merchant_commission_bps"`
+	CategoryID            pgtype.UUID        `json:"category_id"`
+	CategorySlug          string             `json:"category_slug"`
+	CategoryName          []byte             `json:"category_name"`
+	CategoryIcon          string             `json:"category_icon"`
+}
+
+func (q *Queries) ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error) {
+	rows, err := q.db.Query(ctx, listDealSummaryRows, dealIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DealOption{}
+	items := []ListDealSummaryRowsRow{}
 	for rows.Next() {
-		var i DealOption
+		var i ListDealSummaryRowsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Kind,
+			&i.Title,
+			&i.Status,
+			&i.SoldCount,
+			&i.RatingAvg,
+			&i.RatingCount,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.MerchantID,
+			&i.MerchantSlug,
+			&i.MerchantLegalName,
+			&i.MerchantDisplayName,
+			&i.MerchantDescription,
+			&i.MerchantLogoUrl,
+			&i.MerchantCoverUrl,
+			&i.MerchantPhone,
+			&i.MerchantWebsite,
+			&i.MerchantInstagram,
+			&i.MerchantTelegram,
+			&i.MerchantStatus,
+			&i.MerchantRatingAvg,
+			&i.MerchantRatingCount,
+			&i.MerchantCommissionBps,
+			&i.CategoryID,
+			&i.CategorySlug,
+			&i.CategoryName,
+			&i.CategoryIcon,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMerchantLocationRows = `-- name: ListMerchantLocationRows :many
+SELECT ml.id, ml.address, ml.lat::float8 AS lat, ml.lng::float8 AS lng, ml.opening_hours, ml.phone,
+       ci.id AS city_id, ci.slug AS city_slug, ci.name AS city_name, ci.lat::float8 AS city_lat,
+       ci.lng::float8 AS city_lng
+FROM merchant_locations ml
+JOIN cities ci ON ci.id = ml.city_id
+WHERE ml.merchant_id = $1
+ORDER BY ml.created_at, ml.id
+`
+
+type ListMerchantLocationRowsRow struct {
+	ID           pgtype.UUID `json:"id"`
+	Address      string      `json:"address"`
+	Lat          float64     `json:"lat"`
+	Lng          float64     `json:"lng"`
+	OpeningHours []byte      `json:"opening_hours"`
+	Phone        string      `json:"phone"`
+	CityID       pgtype.UUID `json:"city_id"`
+	CitySlug     string      `json:"city_slug"`
+	CityName     []byte      `json:"city_name"`
+	CityLat      float64     `json:"city_lat"`
+	CityLng      float64     `json:"city_lng"`
+}
+
+func (q *Queries) ListMerchantLocationRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantLocationRowsRow, error) {
+	rows, err := q.db.Query(ctx, listMerchantLocationRows, merchantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMerchantLocationRowsRow{}
+	for rows.Next() {
+		var i ListMerchantLocationRowsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Address,
+			&i.Lat,
+			&i.Lng,
+			&i.OpeningHours,
+			&i.Phone,
+			&i.CityID,
+			&i.CitySlug,
+			&i.CityName,
+			&i.CityLat,
+			&i.CityLng,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPublishedReviewsForDeal = `-- name: ListPublishedReviewsForDeal :many
+SELECT r.id, r.deal_id, r.merchant_id, r.user_id, r.voucher_id, r.rating, r.text, r.locale, r.status,
+       r.created_at, rr.id AS reply_id, rr.text AS reply_text, rr.created_at AS reply_created_at
+FROM reviews r
+LEFT JOIN review_replies rr ON rr.review_id = r.id
+WHERE r.deal_id = $1 AND r.status = 'published' AND r.deleted_at IS NULL
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListPublishedReviewsForDealParams struct {
+	DealID     pgtype.UUID `json:"deal_id"`
+	PageOffset int32       `json:"page_offset"`
+	PageLimit  int32       `json:"page_limit"`
+}
+
+type ListPublishedReviewsForDealRow struct {
+	ID             pgtype.UUID        `json:"id"`
+	DealID         pgtype.UUID        `json:"deal_id"`
+	MerchantID     pgtype.UUID        `json:"merchant_id"`
+	UserID         pgtype.UUID        `json:"user_id"`
+	VoucherID      pgtype.UUID        `json:"voucher_id"`
+	Rating         int16              `json:"rating"`
+	Text           string             `json:"text"`
+	Locale         LocaleCode         `json:"locale"`
+	Status         ReviewStatus       `json:"status"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	ReplyID        pgtype.UUID        `json:"reply_id"`
+	ReplyText      pgtype.Text        `json:"reply_text"`
+	ReplyCreatedAt pgtype.Timestamptz `json:"reply_created_at"`
+}
+
+func (q *Queries) ListPublishedReviewsForDeal(ctx context.Context, arg ListPublishedReviewsForDealParams) ([]ListPublishedReviewsForDealRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedReviewsForDeal, arg.DealID, arg.PageOffset, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPublishedReviewsForDealRow{}
+	for rows.Next() {
+		var i ListPublishedReviewsForDealRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.DealID,
-			&i.Title,
-			&i.OriginalPrice,
-			&i.DealPrice,
-			&i.Currency,
-			&i.StockTotal,
-			&i.StockSold,
-			&i.StockReserved,
-			&i.SortOrder,
-			&i.IsActive,
+			&i.MerchantID,
+			&i.UserID,
+			&i.VoucherID,
+			&i.Rating,
+			&i.Text,
+			&i.Locale,
+			&i.Status,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ReplyID,
+			&i.ReplyText,
+			&i.ReplyCreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -303,28 +937,432 @@ func (q *Queries) ListDealOptions(ctx context.Context, dealID pgtype.UUID) ([]De
 	return items, nil
 }
 
-const listSubcategoriesByCategory = `-- name: ListSubcategoriesByCategory :many
-SELECT id, category_id, slug, name, sort_order, created_at, updated_at FROM subcategories WHERE category_id = $1 ORDER BY sort_order, slug
+const listPublishedReviewsForMerchant = `-- name: ListPublishedReviewsForMerchant :many
+SELECT r.id, r.deal_id, r.merchant_id, r.user_id, r.voucher_id, r.rating, r.text, r.locale, r.status,
+       r.created_at, rr.id AS reply_id, rr.text AS reply_text, rr.created_at AS reply_created_at
+FROM reviews r
+LEFT JOIN review_replies rr ON rr.review_id = r.id
+WHERE r.merchant_id = $1 AND r.status = 'published' AND r.deleted_at IS NULL
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT $2
 `
 
-func (q *Queries) ListSubcategoriesByCategory(ctx context.Context, categoryID pgtype.UUID) ([]Subcategory, error) {
-	rows, err := q.db.Query(ctx, listSubcategoriesByCategory, categoryID)
+type ListPublishedReviewsForMerchantParams struct {
+	MerchantID pgtype.UUID `json:"merchant_id"`
+	Limit      int32       `json:"limit"`
+}
+
+type ListPublishedReviewsForMerchantRow struct {
+	ID             pgtype.UUID        `json:"id"`
+	DealID         pgtype.UUID        `json:"deal_id"`
+	MerchantID     pgtype.UUID        `json:"merchant_id"`
+	UserID         pgtype.UUID        `json:"user_id"`
+	VoucherID      pgtype.UUID        `json:"voucher_id"`
+	Rating         int16              `json:"rating"`
+	Text           string             `json:"text"`
+	Locale         LocaleCode         `json:"locale"`
+	Status         ReviewStatus       `json:"status"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	ReplyID        pgtype.UUID        `json:"reply_id"`
+	ReplyText      pgtype.Text        `json:"reply_text"`
+	ReplyCreatedAt pgtype.Timestamptz `json:"reply_created_at"`
+}
+
+func (q *Queries) ListPublishedReviewsForMerchant(ctx context.Context, arg ListPublishedReviewsForMerchantParams) ([]ListPublishedReviewsForMerchantRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedReviewsForMerchant, arg.MerchantID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Subcategory{}
+	items := []ListPublishedReviewsForMerchantRow{}
 	for rows.Next() {
-		var i Subcategory
+		var i ListPublishedReviewsForMerchantRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DealID,
+			&i.MerchantID,
+			&i.UserID,
+			&i.VoucherID,
+			&i.Rating,
+			&i.Text,
+			&i.Locale,
+			&i.Status,
+			&i.CreatedAt,
+			&i.ReplyID,
+			&i.ReplyText,
+			&i.ReplyCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRelatedDealIDs = `-- name: ListRelatedDealIDs :many
+SELECT d.id
+FROM deals d
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+WHERE d.subcategory_id = $1
+  AND d.id <> $2
+  AND d.deleted_at IS NULL
+  AND d.status IN ('active', 'sold_out')
+  AND d.ends_at > now()
+  AND ($3::text = '' OR EXISTS (
+    SELECT 1
+    FROM deal_locations dl
+    JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+    JOIN cities ci ON ci.id = ml.city_id
+    WHERE dl.deal_id = d.id AND ci.slug = $3::text
+  ))
+ORDER BY d.sold_count DESC, d.id
+LIMIT $4
+`
+
+type ListRelatedDealIDsParams struct {
+	SubcategoryID pgtype.UUID `json:"subcategory_id"`
+	ExcludeDealID pgtype.UUID `json:"exclude_deal_id"`
+	City          string      `json:"city"`
+	PageLimit     int32       `json:"page_limit"`
+}
+
+func (q *Queries) ListRelatedDealIDs(ctx context.Context, arg ListRelatedDealIDsParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listRelatedDealIDs,
+		arg.SubcategoryID,
+		arg.ExcludeDealID,
+		arg.City,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSubcategories = `-- name: ListSubcategories :many
+SELECT id, category_id, slug, name
+FROM subcategories
+ORDER BY sort_order, slug
+`
+
+type ListSubcategoriesRow struct {
+	ID         pgtype.UUID `json:"id"`
+	CategoryID pgtype.UUID `json:"category_id"`
+	Slug       string      `json:"slug"`
+	Name       []byte      `json:"name"`
+}
+
+func (q *Queries) ListSubcategories(ctx context.Context) ([]ListSubcategoriesRow, error) {
+	rows, err := q.db.Query(ctx, listSubcategories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSubcategoriesRow{}
+	for rows.Next() {
+		var i ListSubcategoriesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CategoryID,
 			&i.Slug,
 			&i.Name,
-			&i.SortOrder,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchCollectionDealIDs = `-- name: SearchCollectionDealIDs :many
+SELECT cd.deal_id
+FROM collection_deals cd
+JOIN deals d ON d.id = cd.deal_id
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+WHERE cd.collection_id = $1
+  AND d.deleted_at IS NULL
+  AND d.status IN ('active', 'sold_out')
+  AND d.ends_at > now()
+ORDER BY cd.sort_order, cd.deal_id
+LIMIT $3 OFFSET $2
+`
+
+type SearchCollectionDealIDsParams struct {
+	CollectionID pgtype.UUID `json:"collection_id"`
+	PageOffset   int32       `json:"page_offset"`
+	PageLimit    int32       `json:"page_limit"`
+}
+
+func (q *Queries) SearchCollectionDealIDs(ctx context.Context, arg SearchCollectionDealIDsParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, searchCollectionDealIDs, arg.CollectionID, arg.PageOffset, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var deal_id pgtype.UUID
+		if err := rows.Scan(&deal_id); err != nil {
+			return nil, err
+		}
+		items = append(items, deal_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchPublishedDealIDs = `-- name: SearchPublishedDealIDs :many
+WITH candidates AS (
+  SELECT d.id, d.sold_count, d.starts_at, d.ends_at, d.featured_rank,
+         pr.min_price, pr.max_discount
+  FROM deals d
+  JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+  JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+  JOIN subcategories sub ON sub.id = d.subcategory_id
+  CROSS JOIN LATERAL (
+    SELECT MIN(o.deal_price) AS min_price,
+           MAX(((o.original_price - o.deal_price) * 200 + o.original_price) / (2 * o.original_price)) AS max_discount
+    FROM deal_options o
+    WHERE o.deal_id = d.id AND o.is_active = true
+  ) pr
+  WHERE d.deleted_at IS NULL
+    AND d.status IN ('active', 'sold_out')
+    AND d.ends_at > now()
+    AND pr.min_price IS NOT NULL
+    AND ($4::text IS NULL OR m.slug = $4::text)
+    AND ($5::text IS NULL OR cat.slug = $5::text)
+    AND ($6::text IS NULL OR sub.slug = $6::text)
+    AND ($7::text IS NULL OR EXISTS (
+          SELECT 1
+          FROM deal_locations dl
+          JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+          JOIN cities ci ON ci.id = ml.city_id
+          WHERE dl.deal_id = d.id AND ci.slug = $7::text
+        ))
+    AND ($8::text IS NULL OR (
+          d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent($8::text))
+          OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent($8::text))
+          OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent($8::text))
+          OR word_similarity(immutable_unaccent($8::text),
+               immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
+          OR word_similarity(immutable_unaccent($8::text),
+               immutable_unaccent(m.display_name)) >= 0.35
+        ))
+    AND ($9::bigint IS NULL OR pr.min_price >= $9::bigint)
+    AND ($10::bigint IS NULL OR pr.min_price <= $10::bigint)
+    AND ($11::float8 IS NULL OR d.rating_avg >= $11::float8)
+    AND ($12::integer IS NULL OR pr.max_discount >= $12::integer)
+    AND ($13::boolean = false OR d.ends_at <= now() + interval '72 hours')
+)
+SELECT id
+FROM candidates
+ORDER BY
+  CASE WHEN $1::text = 'price_asc' THEN min_price END ASC NULLS LAST,
+  CASE WHEN $1::text = 'price_desc' THEN min_price END DESC NULLS LAST,
+  CASE WHEN $1::text = 'biggest_discount' THEN max_discount END DESC NULLS LAST,
+  CASE WHEN $1::text = 'popular' THEN sold_count END DESC,
+  CASE WHEN $1::text = 'newest' THEN starts_at END DESC NULLS LAST,
+  CASE WHEN $1::text = 'ending_soon' THEN ends_at END ASC,
+  featured_rank ASC NULLS LAST,
+  sold_count DESC,
+  ends_at ASC,
+  id ASC
+LIMIT $3 OFFSET $2
+`
+
+type SearchPublishedDealIDsParams struct {
+	Sort        string        `json:"sort"`
+	PageOffset  int32         `json:"page_offset"`
+	PageLimit   int32         `json:"page_limit"`
+	Merchant    pgtype.Text   `json:"merchant"`
+	Category    pgtype.Text   `json:"category"`
+	Subcategory pgtype.Text   `json:"subcategory"`
+	City        pgtype.Text   `json:"city"`
+	Query       pgtype.Text   `json:"query"`
+	MinPrice    pgtype.Int8   `json:"min_price"`
+	MaxPrice    pgtype.Int8   `json:"max_price"`
+	MinRating   pgtype.Float8 `json:"min_rating"`
+	MinDiscount pgtype.Int4   `json:"min_discount"`
+	EndingSoon  bool          `json:"ending_soon"`
+}
+
+func (q *Queries) SearchPublishedDealIDs(ctx context.Context, arg SearchPublishedDealIDsParams) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, searchPublishedDealIDs,
+		arg.Sort,
+		arg.PageOffset,
+		arg.PageLimit,
+		arg.Merchant,
+		arg.Category,
+		arg.Subcategory,
+		arg.City,
+		arg.Query,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.MinRating,
+		arg.MinDiscount,
+		arg.EndingSoon,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const suggestCategories = `-- name: SuggestCategories :many
+SELECT slug, name
+FROM categories
+WHERE is_active = true
+  AND (
+    strpos(lower(immutable_unaccent(concat_ws(' ', name->>'uz', name->>'ru', name->>'en'))),
+           lower(immutable_unaccent($1::text))) > 0
+    OR word_similarity(immutable_unaccent($1::text),
+         immutable_unaccent(concat_ws(' ', name->>'uz', name->>'ru', name->>'en'))) >= 0.35
+  )
+ORDER BY sort_order, slug
+LIMIT $2
+`
+
+type SuggestCategoriesParams struct {
+	Query     string `json:"query"`
+	PageLimit int32  `json:"page_limit"`
+}
+
+type SuggestCategoriesRow struct {
+	Slug string `json:"slug"`
+	Name []byte `json:"name"`
+}
+
+func (q *Queries) SuggestCategories(ctx context.Context, arg SuggestCategoriesParams) ([]SuggestCategoriesRow, error) {
+	rows, err := q.db.Query(ctx, suggestCategories, arg.Query, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SuggestCategoriesRow{}
+	for rows.Next() {
+		var i SuggestCategoriesRow
+		if err := rows.Scan(&i.Slug, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const suggestDeals = `-- name: SuggestDeals :many
+SELECT d.slug, d.title
+FROM deals d
+JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+WHERE d.deleted_at IS NULL
+  AND d.status IN ('active', 'sold_out')
+  AND d.ends_at > now()
+  AND (
+    strpos(lower(immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))),
+           lower(immutable_unaccent($1::text))) > 0
+    OR word_similarity(immutable_unaccent($1::text),
+         immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
+  )
+ORDER BY d.sold_count DESC, d.id
+LIMIT $2
+`
+
+type SuggestDealsParams struct {
+	Query     string `json:"query"`
+	PageLimit int32  `json:"page_limit"`
+}
+
+type SuggestDealsRow struct {
+	Slug  string `json:"slug"`
+	Title []byte `json:"title"`
+}
+
+func (q *Queries) SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]SuggestDealsRow, error) {
+	rows, err := q.db.Query(ctx, suggestDeals, arg.Query, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SuggestDealsRow{}
+	for rows.Next() {
+		var i SuggestDealsRow
+		if err := rows.Scan(&i.Slug, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const suggestMerchants = `-- name: SuggestMerchants :many
+SELECT m.slug, m.display_name
+FROM merchants m
+WHERE m.status = 'active' AND m.deleted_at IS NULL
+  AND (
+    strpos(lower(immutable_unaccent(m.display_name)), lower(immutable_unaccent($1::text))) > 0
+    OR word_similarity(immutable_unaccent($1::text), immutable_unaccent(m.display_name)) >= 0.35
+  )
+ORDER BY m.rating_count DESC, m.id
+LIMIT $2
+`
+
+type SuggestMerchantsParams struct {
+	Query     string `json:"query"`
+	PageLimit int32  `json:"page_limit"`
+}
+
+type SuggestMerchantsRow struct {
+	Slug        string `json:"slug"`
+	DisplayName string `json:"display_name"`
+}
+
+func (q *Queries) SuggestMerchants(ctx context.Context, arg SuggestMerchantsParams) ([]SuggestMerchantsRow, error) {
+	rows, err := q.db.Query(ctx, suggestMerchants, arg.Query, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SuggestMerchantsRow{}
+	for rows.Next() {
+		var i SuggestMerchantsRow
+		if err := rows.Scan(&i.Slug, &i.DisplayName); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

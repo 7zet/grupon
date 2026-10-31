@@ -12,7 +12,7 @@ export function Providers({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>
-        {process.env.NEXT_PUBLIC_USE_MSW !== 'false' && <BrowserMockProvider />}
+        {process.env.NEXT_PUBLIC_USE_MSW === 'true' && <BrowserMockProvider />}
         {children}
       </NuqsAdapter>
     </QueryClientProvider>

@@ -124,3 +124,88 @@ Status: complete on 2026-10-31.
 
 - Phase 2 intentionally uses deterministic MSW catalog data. Phase 3 replaces that adapter with the
   real Go catalog API without changing page-level response shapes.
+
+## Phase 3 — Catalog API
+
+Status: complete on 2026-10-31.
+
+### Built
+
+- Go catalog endpoints for config, cities, categories, homepage, deal listing (filters, sort,
+  pagination), deal detail, related deals, reviews, merchant profile, search suggestions, promo codes
+  with click tracking, collections and collection detail. Errors are RFC 9457 problems with stable codes.
+- Domain service (`internal/domain/catalog`) with pure validation and visibility rules; PostgreSQL
+  read model (`internal/store/catalog_repository.go`) on sqlc queries with batched option/media loads.
+- Optional Redis read-through cache with namespace-version invalidation, Redis-backed readiness,
+  and an internal token-protected invalidation hook that revalidates the web `catalog` tag.
+- Web switched to the real API by default; MSW is opt-in. Listing parameters map to the contract
+  (`price_asc`, `biggest_discount`, `min_rating`, `ending_soon`). Revalidation route added.
+- Seed loader extracted to `internal/seed` for reuse by tests.
+
+### Verified
+
+- `go test ./...`, `go vet ./...`, `go build ./...`, `go generate` (no drift).
+- Catalog integration tests against a freshly seeded PostgreSQL 16 (15 subtests: listing, sort,
+  paging, city filter, search, detail, expired visibility, reviews, suspension, promo clicks,
+  collections, homepage, suggestions). Redis round-trip and invalidation test against Memurai.
+- HTTP contract tests for problems, binding errors, 501 fallback, promo click and internal token.
+- Latency (300 sequential requests, client-side): p95 between 9 and 18 ms across listing,
+  search, detail, reviews, related, merchant, homepage, config, suggestions and promo endpoints.
+- Web workspace typecheck, lint, vitest, and `next build`; production server returned 200 for
+  homepage, category, search, coupons, collection, deal and business routes; Playwright public suite 7/7.
+- Revalidation route: correct secret 202, missing or wrong secret 401, unknown tag 400.
+
+### Left
+
+- Phases 4–8 remain; the admin app, cart/checkout, auth and merchant panels are not started.
+- Docker Desktop was not running, so the Testcontainers-backed catalog and constraint tests skip
+  locally; they run in CI, and the same suite was run against a local PostgreSQL 16 instead.
+- `pnpm dev` now needs PostgreSQL for the API; start `make seed` / compose first.
+
+### Known issues
+
+- Unknown deal or merchant slugs return HTTP 200 with a not-found UI instead of HTTP 404 (the
+  `notFound()` flow in the deal and business pages). This hurts SEO and should be fixed before launch.
+- `turbo run` fails on this Windows machine with "Unable to find package manager binary"; the
+  same tasks pass when run through `pnpm -r`.
+
+
+## Phase 4 — Identity (in progress)
+
+Status: identity part only. Cart, checkout, payments, vouchers, order emails and worker jobs are not started, so Phase 4 is not complete.
+
+### Built
+
+- Migration `00002_auth_tokens.sql` (single-use verification and reset tokens) and identity sqlc queries, including tombstoning on account deletion.
+- `internal/domain/identity`: argon2id hashing, opaque tokens (hashed at rest), HS256 access tokens, the service (register, login, Google sign-in, refresh rotation with reuse detection, logout, verify email, forgot and reset password, change password, profile, account deletion, `Authenticate`), the repository, limiter and Google ports, and uz/ru/en email copy.
+- `internal/domain/identity/identitytest`: in-memory repository, mailer and limiter for tests.
+- `internal/platform/mail` (SMTP and log senders), `internal/platform/ratelimit` (Redis fixed window and a disabled limiter), `internal/platform/google` (PKCE code exchange and ID token claim checks).
+- `internal/store/identity_repository.go`: PostgreSQL adapter; user creation and refresh rotation run in transactions.
+- `internal/http/auth_handlers.go`: all twelve auth and `/me` operations, cookies (httpOnly, SameSite=Lax, Secure outside development), Bearer support, 64 KB body limit, problem codes, `RequireRole`. Operations are served through one combined generated server in `router.go`.
+- Configuration: `JWT_SECRET`, `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL`, `WEB_PUBLIC_URL`, `BRAND_NAME`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `TRUST_PROXY_HEADERS`.
+
+### Verified
+
+- `go build ./...`, `go vet ./services/...`, `gofmt -l services` (clean).
+- `go test ./services/... -count=1` with `TEST_DATABASE_URL` (PostgreSQL 16, migrated to version 2) and `TEST_REDIS_URL` (local Redis) passes.
+- Unit tests: password hashing and policy, token hashing, JWT round trip, expiry and forgery rejection; service flows for uniform login errors, refresh rotation and family revocation, expiry, single-use verification and reset, change-password session handling, deletion, rate limits, limiter outage fail-open, and Google linking.
+- Integration tests on PostgreSQL: register, duplicate email, verify, login, rotation, reuse, reset, old-password rejection, deletion; eight concurrent refreshes yield exactly one rotation.
+- HTTP tests: cookie flags (secure and non-secure), 429 with `Retry-After`, uniform login problem bodies, refresh reuse 401, logout clears cookies, Bearer access, `RequireRole` 403 and 204, 413 body limit, unknown-field rejection, forgot-password 202, password change error code.
+- Google client tests against an httptest token endpoint: claim validation, redirect mismatch, Google error responses.
+- Config tests for the secret rule, the Google all-or-nothing rule, SMTP port, and defaults.
+
+### Left
+
+- CSRF double-submit token (Section 14).
+- Google flow against real Google (not tested with live credentials).
+- SMTP delivery through mailpit (not run; the SMTP sender is covered only by render tests).
+- Web pages for `/{locale}/verify-email` and `/{locale}/reset-password`, and the apps/web auth UI.
+- Worker jobs that expire `auth_tokens` and `refresh_tokens` rows.
+- A resend-verification endpoint (none in the contract).
+- Admin and merchant routes that use `RequireRole`.
+
+### Known issues
+
+- `AuthSession` has no `refresh_token` field, so native clients cannot receive a refresh token from the contract. A spec decision is needed before mobile work. `refreshSession` also declares `bearerAuth` with `bearerFormat: JWT`, which does not match the opaque refresh token.
+- `logout` requires a valid access token (its `cookieAuth` requirement). A client whose access token has expired must refresh first.
+- The rate limiter fails open on Redis errors (logged), as recorded in DECISIONS.

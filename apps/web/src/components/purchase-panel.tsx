@@ -30,10 +30,19 @@ export function PurchasePanel({
   const remaining = option.stock_total - option.stock_sold - option.stock_reserved;
   const unavailable = deal.status !== 'active' || remaining < 1;
   const savings = (option.original_price.amount - option.deal_price.amount) * quantity;
-  const item = { optionId: option.id, quantity, isGift: gift };
+  const cartLine = () => ({
+    optionId: option.id,
+    quantity,
+    isGift: gift,
+    title: localized(option.title, locale),
+    dealSlug: deal.slug,
+    kind: deal.kind,
+    unitPrice: option.deal_price.amount,
+    originalPrice: option.original_price.amount,
+  });
   const buy = () => {
-    add(item);
-    router.push(`/login?returnTo=${encodeURIComponent(`/deal/${deal.slug}?option=${selected}`)}`);
+    add(cartLine());
+    router.push('/checkout');
   };
 
   return (
@@ -131,7 +140,7 @@ export function PurchasePanel({
           className="h-11 rounded-control-ui border border-brand bg-brand-tint px-3 text-small font-semibold text-brand"
           disabled={unavailable}
           onClick={() => {
-            add(item);
+            add(cartLine());
             setNotice(true);
           }}
           type="button"

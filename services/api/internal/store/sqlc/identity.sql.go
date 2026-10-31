@@ -7,9 +7,182 @@ package store
 
 import (
 	"context"
+	"net/netip"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const claimRefreshToken = `-- name: ClaimRefreshToken :one
+UPDATE refresh_tokens SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING id, user_id, token_hash, family_id, expires_at, revoked_at, user_agent, ip, created_at, updated_at
+`
+
+func (q *Queries) ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error) {
+	row := q.db.QueryRow(ctx, claimRefreshToken, id)
+	var i RefreshToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenHash,
+		&i.FamilyID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.UserAgent,
+		&i.Ip,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const consumeAuthToken = `-- name: ConsumeAuthToken :one
+UPDATE auth_tokens SET used_at = now()
+WHERE token_hash = $1 AND kind = $2 AND used_at IS NULL AND expires_at > now()
+RETURNING user_id
+`
+
+type ConsumeAuthTokenParams struct {
+	TokenHash string `json:"token_hash"`
+	Kind      string `json:"kind"`
+}
+
+func (q *Queries) ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, consumeAuthToken, arg.TokenHash, arg.Kind)
+	var user_id pgtype.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const createAuthToken = `-- name: CreateAuthToken :exec
+INSERT INTO auth_tokens (user_id, kind, token_hash, expires_at) VALUES ($1, $2, $3, $4)
+`
+
+type CreateAuthTokenParams struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	Kind      string             `json:"kind"`
+	TokenHash string             `json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateAuthToken(ctx context.Context, arg CreateAuthTokenParams) error {
+	_, err := q.db.Exec(ctx, createAuthToken,
+		arg.UserID,
+		arg.Kind,
+		arg.TokenHash,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
+const createRefreshToken = `-- name: CreateRefreshToken :exec
+INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at, user_agent, ip)
+VALUES ($1, $2, $3, $4, $5, $6::inet)
+`
+
+type CreateRefreshTokenParams struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	TokenHash string             `json:"token_hash"`
+	FamilyID  pgtype.UUID        `json:"family_id"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UserAgent pgtype.Text        `json:"user_agent"`
+	Ip        *netip.Addr        `json:"ip"`
+}
+
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
+	_, err := q.db.Exec(ctx, createRefreshToken,
+		arg.UserID,
+		arg.TokenHash,
+		arg.FamilyID,
+		arg.ExpiresAt,
+		arg.UserAgent,
+		arg.Ip,
+	)
+	return err
+}
+
+const createRoleAssignment = `-- name: CreateRoleAssignment :exec
+INSERT INTO role_assignments (user_id, role, merchant_id) VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING
+`
+
+type CreateRoleAssignmentParams struct {
+	UserID     pgtype.UUID `json:"user_id"`
+	Role       AppRole     `json:"role"`
+	MerchantID pgtype.UUID `json:"merchant_id"`
+}
+
+func (q *Queries) CreateRoleAssignment(ctx context.Context, arg CreateRoleAssignmentParams) error {
+	_, err := q.db.Exec(ctx, createRoleAssignment, arg.UserID, arg.Role, arg.MerchantID)
+	return err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (email, password_hash, google_sub, name, locale, currency, email_verified_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
+`
+
+type CreateUserParams struct {
+	Email           string             `json:"email"`
+	PasswordHash    pgtype.Text        `json:"password_hash"`
+	GoogleSub       pgtype.Text        `json:"google_sub"`
+	Name            string             `json:"name"`
+	Locale          LocaleCode         `json:"locale"`
+	Currency        CurrencyCode       `json:"currency"`
+	EmailVerifiedAt pgtype.Timestamptz `json:"email_verified_at"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Email,
+		arg.PasswordHash,
+		arg.GoogleSub,
+		arg.Name,
+		arg.Locale,
+		arg.Currency,
+		arg.EmailVerifiedAt,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.GoogleSub,
+		&i.Name,
+		&i.Phone,
+		&i.AvatarUrl,
+		&i.Locale,
+		&i.Currency,
+		&i.EmailVerifiedAt,
+		&i.Status,
+		&i.LastLoginAt,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getRefreshTokenByHash = `-- name: GetRefreshTokenByHash :one
+SELECT id, user_id, token_hash, family_id, expires_at, revoked_at, user_agent, ip, created_at, updated_at FROM refresh_tokens WHERE token_hash = $1
+`
+
+func (q *Queries) GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error) {
+	row := q.db.QueryRow(ctx, getRefreshTokenByHash, tokenHash)
+	var i RefreshToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenHash,
+		&i.FamilyID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.UserAgent,
+		&i.Ip,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE email = $1 AND deleted_at IS NULL
@@ -63,6 +236,61 @@ func (q *Queries) GetUserByGoogleSub(ctx context.Context, googleSub pgtype.Text)
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.GoogleSub,
+		&i.Name,
+		&i.Phone,
+		&i.AvatarUrl,
+		&i.Locale,
+		&i.Currency,
+		&i.EmailVerifiedAt,
+		&i.Status,
+		&i.LastLoginAt,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const invalidateUserAuthTokens = `-- name: InvalidateUserAuthTokens :exec
+UPDATE auth_tokens SET used_at = now() WHERE user_id = $1 AND kind = $2 AND used_at IS NULL
+`
+
+type InvalidateUserAuthTokensParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	Kind   string      `json:"kind"`
+}
+
+func (q *Queries) InvalidateUserAuthTokens(ctx context.Context, arg InvalidateUserAuthTokensParams) error {
+	_, err := q.db.Exec(ctx, invalidateUserAuthTokens, arg.UserID, arg.Kind)
+	return err
+}
+
+const linkUserGoogleSub = `-- name: LinkUserGoogleSub :exec
+UPDATE users SET google_sub = $2 WHERE id = $1 AND google_sub IS NULL
+`
+
+type LinkUserGoogleSubParams struct {
+	ID        pgtype.UUID `json:"id"`
+	GoogleSub pgtype.Text `json:"google_sub"`
+}
+
+func (q *Queries) LinkUserGoogleSub(ctx context.Context, arg LinkUserGoogleSubParams) error {
+	_, err := q.db.Exec(ctx, linkUserGoogleSub, arg.ID, arg.GoogleSub)
+	return err
 }
 
 const listMerchantStaff = `-- name: ListMerchantStaff :many
@@ -127,6 +355,24 @@ func (q *Queries) ListUserRoles(ctx context.Context, userID pgtype.UUID) ([]Role
 	return items, nil
 }
 
+const markUserEmailVerified = `-- name: MarkUserEmailVerified :exec
+UPDATE users SET email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $1
+`
+
+func (q *Queries) MarkUserEmailVerified(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, markUserEmailVerified, id)
+	return err
+}
+
+const revokeAllUserRefreshTokens = `-- name: RevokeAllUserRefreshTokens :exec
+UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeAllUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, revokeAllUserRefreshTokens, userID)
+	return err
+}
+
 const revokeRefreshFamily = `-- name: RevokeRefreshFamily :exec
 UPDATE refresh_tokens SET revoked_at = now() WHERE family_id = $1 AND revoked_at IS NULL
 `
@@ -134,4 +380,109 @@ UPDATE refresh_tokens SET revoked_at = now() WHERE family_id = $1 AND revoked_at
 func (q *Queries) RevokeRefreshFamily(ctx context.Context, familyID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, revokeRefreshFamily, familyID)
 	return err
+}
+
+const revokeRefreshTokenByHash = `-- name: RevokeRefreshTokenByHash :exec
+UPDATE refresh_tokens SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeRefreshTokenByHash(ctx context.Context, tokenHash string) error {
+	_, err := q.db.Exec(ctx, revokeRefreshTokenByHash, tokenHash)
+	return err
+}
+
+const revokeUserRefreshTokensExceptFamily = `-- name: RevokeUserRefreshTokensExceptFamily :exec
+UPDATE refresh_tokens SET revoked_at = now()
+WHERE user_id = $1 AND revoked_at IS NULL AND family_id <> $2::uuid
+`
+
+type RevokeUserRefreshTokensExceptFamilyParams struct {
+	UserID       pgtype.UUID `json:"user_id"`
+	KeepFamilyID pgtype.UUID `json:"keep_family_id"`
+}
+
+func (q *Queries) RevokeUserRefreshTokensExceptFamily(ctx context.Context, arg RevokeUserRefreshTokensExceptFamilyParams) error {
+	_, err := q.db.Exec(ctx, revokeUserRefreshTokensExceptFamily, arg.UserID, arg.KeepFamilyID)
+	return err
+}
+
+const softDeleteUser = `-- name: SoftDeleteUser :exec
+UPDATE users SET deleted_at = now(),
+  email = 'deleted+' || id::text || '@deleted.invalid',
+  google_sub = CASE WHEN google_sub IS NULL THEN NULL ELSE 'deleted:' || id::text END,
+  password_hash = CASE WHEN google_sub IS NULL THEN 'deleted' ELSE NULL END
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+// Deleted accounts keep a tombstone so the email and google_sub can be reused by a new account
+// while the users_check constraint (a credential must exist) still holds.
+func (q *Queries) SoftDeleteUser(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, softDeleteUser, id)
+	return err
+}
+
+const touchUserLastLogin = `-- name: TouchUserLastLogin :exec
+UPDATE users SET last_login_at = now() WHERE id = $1
+`
+
+func (q *Queries) TouchUserLastLogin(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, touchUserLastLogin, id)
+	return err
+}
+
+const updateUserPasswordHash = `-- name: UpdateUserPasswordHash :exec
+UPDATE users SET password_hash = $2 WHERE id = $1
+`
+
+type UpdateUserPasswordHashParams struct {
+	ID           pgtype.UUID `json:"id"`
+	PasswordHash pgtype.Text `json:"password_hash"`
+}
+
+func (q *Queries) UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error {
+	_, err := q.db.Exec(ctx, updateUserPasswordHash, arg.ID, arg.PasswordHash)
+	return err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :one
+UPDATE users SET name = $2, phone = $3, locale = $4, currency = $5
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
+`
+
+type UpdateUserProfileParams struct {
+	ID       pgtype.UUID  `json:"id"`
+	Name     string       `json:"name"`
+	Phone    pgtype.Text  `json:"phone"`
+	Locale   LocaleCode   `json:"locale"`
+	Currency CurrencyCode `json:"currency"`
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserProfile,
+		arg.ID,
+		arg.Name,
+		arg.Phone,
+		arg.Locale,
+		arg.Currency,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.GoogleSub,
+		&i.Name,
+		&i.Phone,
+		&i.AvatarUrl,
+		&i.Locale,
+		&i.Currency,
+		&i.EmailVerifiedAt,
+		&i.Status,
+		&i.LastLoginAt,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

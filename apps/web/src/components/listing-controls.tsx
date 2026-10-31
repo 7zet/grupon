@@ -69,10 +69,10 @@ export function ListingControls({
         <option value="recommended">{t('recommended')}</option>
         <option value="popular">{t('popular')}</option>
         <option value="newest">{t('newest')}</option>
-        <option value="price-asc">{t('priceLow')}</option>
-        <option value="price-desc">{t('priceHigh')}</option>
-        <option value="discount">{t('biggestDiscount')}</option>
-        <option value="ending-soon">{t('soon')}</option>
+        <option value="price_asc">{t('priceLow')}</option>
+        <option value="price_desc">{t('priceHigh')}</option>
+        <option value="biggest_discount">{t('biggestDiscount')}</option>
+        <option value="ending_soon">{t('soon')}</option>
       </select>
     </div>
   );

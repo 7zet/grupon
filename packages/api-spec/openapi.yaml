@@ -323,8 +323,8 @@ paths:
     post:
       tags: [Authentication]
       operationId: logout
-      summary: Revoke current refresh token
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      summary: 'Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired'
+      security: [{ refreshCookie: [] }, { cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         { '204': { description: Signed out }, default: { $ref: '#/components/responses/Problem' } }
   /api/v1/auth/verify-email:
@@ -346,7 +346,7 @@ paths:
     post:
       tags: [Authentication]
       operationId: forgotPassword
-      summary: Request password-reset email
+      summary: 'Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed'
       requestBody:
         {
           required: true,
@@ -689,6 +689,7 @@ paths:
       tags: [Orders]
       operationId: createOrder
       summary: Atomically create order and ten-minute stock reservations
+      description: 'Same Idempotency-Key and body replays the order with 200. Same key with a different body is 422 idempotency_conflict.'
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         [
@@ -707,6 +708,11 @@ paths:
         }
       responses:
         {
+          '200':
+            {
+              description: Replayed order for the same Idempotency-Key,
+              content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } },
+            },
           '201':
             {
               description: Order,
@@ -1231,6 +1237,19 @@ paths:
       parameters: [{ $ref: '#/components/parameters/Id' }]
       responses:
         { '204': { description: Deleted }, default: { $ref: '#/components/responses/Problem' } }
+  /api/v1/merchant/media/{id}/content:
+    put:
+      tags: [Merchant]
+      operationId: uploadMerchantMediaContent
+      summary: Store image bytes for a pending asset (local storage adapter only)
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/octet-stream: { schema: { type: string, format: binary } }
+      responses:
+        { '204': { description: Stored }, default: { $ref: '#/components/responses/Problem' } }
   /api/v1/merchant/settings:
     get:
       tags: [Merchant]
@@ -1316,6 +1335,109 @@ paths:
       parameters: [{ $ref: '#/components/parameters/Id' }]
       responses:
         { '204': { description: Removed }, default: { $ref: '#/components/responses/Problem' } }
+  /api/v1/admin/moderation/deals:
+    get:
+      tags: [Admin]
+      operationId: listModerationDeals
+      summary: Deals waiting for review
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }]
+      responses:
+        {
+          '200':
+            {
+              description: Deals,
+              content: { application/json: { schema: { $ref: '#/components/schemas/DealPage' } } },
+            },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/deals/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveDeal
+      summary: Approve a deal under review
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        {
+          '200':
+            {
+              description: Deal,
+              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
+            },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/deals/{id}/reject:
+    post:
+      tags: [Admin]
+      operationId: rejectDeal
+      summary: Reject a deal under review with a reason
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/RejectDealInput' } } },
+        }
+      responses:
+        {
+          '200':
+            {
+              description: Deal,
+              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
+            },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/review-reports:
+    get:
+      tags: [Admin]
+      operationId: listReviewReports
+      summary: Open review reports
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }]
+      responses:
+        {
+          '200':
+            {
+              description: Reports,
+              content: { application/json: { schema: { $ref: '#/components/schemas/ReviewReportPage' } } },
+            },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/review-reports/{id}/dismiss:
+    post:
+      tags: [Admin]
+      operationId: dismissReviewReport
+      summary: Close a report without changing the review
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        { '204': { description: Dismissed }, default: { $ref: '#/components/responses/Problem' } }
+  /api/v1/admin/reviews/{id}/hide:
+    post:
+      tags: [Admin]
+      operationId: hideReview
+      summary: Hide a review and close its open reports
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        { '204': { description: Hidden }, default: { $ref: '#/components/responses/Problem' } }
+  /api/v1/admin/audit-logs:
+    get:
+      tags: [Admin]
+      operationId: listAuditLogs
+      summary: Audit trail of admin and sensitive merchant actions
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }]
+      responses:
+        {
+          '200':
+            {
+              description: Audit entries,
+              content: { application/json: { schema: { $ref: '#/components/schemas/AuditLogPage' } } },
+            },
+          default: { $ref: '#/components/responses/Problem' },
+        }
   /api/v1/admin/status:
     get:
       tags: [Admin]
@@ -1829,11 +1951,13 @@ components:
     AuthSession:
       {
         type: object,
-        required: [user, access_token, expires_in],
+        required: [user, access_token, refresh_token, expires_in],
+        description: 'Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients.',
         properties:
           {
             user: { $ref: '#/components/schemas/User' },
             access_token: { type: string },
+            refresh_token: { type: string },
             expires_in: { type: integer, const: 900 },
           },
       }
@@ -2126,6 +2250,48 @@ components:
           height: { type: integer, minimum: 1 },
           blurhash: { type: string },
         }
+    ReviewReport:
+      type: object
+      required: [id, reason, status, created_at, review]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        reason: { type: string }
+        status: { type: string, enum: [pending, resolved, dismissed] }
+        created_at: { type: string, format: date-time }
+        review: { $ref: '#/components/schemas/Review' }
+    ReviewReportPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ReviewReport' } }
+        page: { type: integer, minimum: 1 }
+        page_size: { type: integer, minimum: 1 }
+        total: { type: integer, format: int64 }
+    AuditLog:
+      type: object
+      required: [id, actor_role, action, entity_type, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        actor_user_id: { $ref: '#/components/schemas/Uuid' }
+        actor_role: { type: string }
+        action: { type: string }
+        entity_type: { type: string }
+        entity_id: { $ref: '#/components/schemas/Uuid' }
+        after_data: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+    AuditLogPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/AuditLog' } }
+        page: { type: integer, minimum: 1 }
+        page_size: { type: integer, minimum: 1 }
+        total: { type: integer, format: int64 }
+    RejectDealInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 500 }
     DealInput:
       type: object
       required:
