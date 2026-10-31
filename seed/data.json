@@ -1,0 +1,101 @@
+{
+  "cities": [
+    {
+      "slug": "tashkent",
+      "name": { "uz": "Toshkent", "ru": "Ташкент", "en": "Tashkent" },
+      "lat": 41.2995,
+      "lng": 69.2401
+    },
+    {
+      "slug": "samarkand",
+      "name": { "uz": "Samarqand", "ru": "Самарканд", "en": "Samarkand" },
+      "lat": 39.6542,
+      "lng": 66.9597
+    },
+    {
+      "slug": "bukhara",
+      "name": { "uz": "Buxoro", "ru": "Бухара", "en": "Bukhara" },
+      "lat": 39.7681,
+      "lng": 64.4556
+    }
+  ],
+  "categories": [
+    {
+      "slug": "coupons",
+      "name": { "uz": "Kuponlar", "ru": "Купоны", "en": "Coupons" },
+      "icon": "ticket",
+      "subcategories": ["daily-deals", "services", "entertainment", "online"]
+    },
+    {
+      "slug": "beauty-and-spas",
+      "name": { "uz": "Go'zallik va spa", "ru": "Красота и спа", "en": "Beauty & Spas" },
+      "icon": "sparkles",
+      "subcategories": ["massage", "hair", "nails", "facial", "spa-day"]
+    },
+    {
+      "slug": "things-to-do",
+      "name": { "uz": "Ko'ngilochar", "ru": "Развлечения", "en": "Things To Do" },
+      "icon": "party-popper",
+      "subcategories": ["activities", "cinema", "kids", "sports", "culture"]
+    },
+    {
+      "slug": "gifts",
+      "name": { "uz": "Sovg'alar", "ru": "Подарки", "en": "Gifts" },
+      "icon": "gift",
+      "subcategories": ["experiences", "for-her", "for-him", "family"]
+    },
+    {
+      "slug": "auto-and-home",
+      "name": { "uz": "Avto va uy", "ru": "Авто и дом", "en": "Auto & Home" },
+      "icon": "car",
+      "subcategories": ["car-wash", "car-service", "cleaning", "repair", "interior"]
+    },
+    {
+      "slug": "food-and-drink",
+      "name": { "uz": "Taom va ichimlik", "ru": "Еда и напитки", "en": "Food & Drink" },
+      "icon": "utensils",
+      "subcategories": ["restaurants", "cafes", "delivery", "desserts", "national-cuisine"]
+    },
+    {
+      "slug": "local",
+      "name": { "uz": "Mahalliy", "ru": "Местное", "en": "Local" },
+      "icon": "map-pin",
+      "subcategories": ["education", "photo", "health", "services"]
+    },
+    {
+      "slug": "travel",
+      "name": { "uz": "Sayohat", "ru": "Путешествия", "en": "Travel" },
+      "icon": "plane",
+      "subcategories": ["hotels", "tours", "day-trips", "resorts"]
+    },
+    {
+      "slug": "goods",
+      "name": { "uz": "Tovarlar", "ru": "Товары", "en": "Goods" },
+      "icon": "package",
+      "subcategories": ["electronics", "home-goods", "fashion", "health-goods", "kids-goods"]
+    },
+    {
+      "slug": "seasonal-deals",
+      "name": { "uz": "Mavsumiy takliflar", "ru": "Сезонные предложения", "en": "Seasonal Deals" },
+      "icon": "calendar",
+      "subcategories": ["navruz", "new-year", "spring", "summer"]
+    }
+  ],
+  "merchantNames": [
+    "Atlas Wellness",
+    "Silk Road Cafe",
+    "Orzu Studio",
+    "Chinar Family",
+    "Zarafshan Travel",
+    "Nafis Beauty",
+    "Usta Home",
+    "Tandir Kitchen",
+    "Marvarid Gifts",
+    "Yulduz Activity"
+  ],
+  "reviewTexts": {
+    "uz": "Xizmat juda yoqdi, xodimlar e'tiborli va hammasi kelishilganidek bo'ldi.",
+    "ru": "Отличный сервис, внимательный персонал и всё прошло именно так, как было обещано.",
+    "en": "Excellent service, attentive staff, and everything was delivered exactly as promised."
+  }
+}

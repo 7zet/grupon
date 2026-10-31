@@ -41,3 +41,28 @@
     upstream source, while preserving the required S3-compatible behavior.
 12. **Deferred shared schemas.** `packages/types` is not created until a non-API Zod schema is truly
     shared. API shapes always come from OpenAPI generation.
+
+## 2026-10-31 — Phase 1 assumptions
+
+1. **Localized database values.** Translated content is stored as a JSONB object with exactly the
+   `uz`, `ru`, and `en` keys. Database checks guarantee the shape and require at least one non-empty
+   value where the product model requires merchant content. Locale fallback remains application
+   logic because it depends on the requested locale.
+2. **Deal locations are normalized.** The specification's conceptual `location_ids[]` is persisted
+   as `deal_locations`. This provides foreign keys, prevents duplicate branch assignments, and
+   makes merchant isolation enforceable without array parsing.
+3. **Portable UUIDv7.** The migration defines an RFC 9562-compatible `public.uuidv7()` backed by
+   `pgcrypto`. It supplies the required UUIDv7 defaults on PostgreSQL 16 and shadows the equivalent
+   built-in safely on PostgreSQL 18, which is the pinned local container version.
+4. **OpenAPI 3.1 generation.** The checked-in 3.1 contract is bundled and validated by Redocly,
+   generates TypeScript with `openapi-typescript`, and generates Go models plus strict chi server
+   interfaces with `oapi-codegen`. The latest `openapi-typescript` release still declares a
+   TypeScript 5 peer range; pnpm permits its verified CLI use with the repository's TypeScript 6
+   while all generated output is typechecked in CI.
+5. **Phase boundary for internal workflow storage.** Phase 1 creates every Section 8 table. API
+   contracts for later-phase workflows such as presigned media uploads and pending staff invites
+   are defined now, while any additional workflow-only persistence is introduced with the phase
+   that implements that workflow instead of silently extending the locked Section 8 model.
+6. **Deterministic development seed.** Compact JSON sources contain taxonomy, translation, review,
+   and licensed-image inputs; the Go loader deterministically expands them to the required dataset
+   sizes in one transaction. It is rerunnable, applies migrations first, and refuses production.
