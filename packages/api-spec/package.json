@@ -1,5 +1,15 @@
 {
   "name": "@grupon/api-spec",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "redocly bundle openapi.yaml --output dist/openapi.yaml",
+    "gen": "redocly bundle openapi.yaml --output dist/openapi.yaml",
+    "lint": "redocly lint openapi.yaml",
+    "test": "redocly lint openapi.yaml",
+    "typecheck": "redocly lint openapi.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.72.1"
+  }
 }

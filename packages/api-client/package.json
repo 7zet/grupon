@@ -1,5 +1,22 @@
 {
   "name": "@grupon/api-client",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "gen": "openapi-typescript ../api-spec/openapi.yaml --output src/schema.d.ts",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@grupon/tsconfig": "workspace:*",
+    "openapi-typescript": "7.13.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
 }

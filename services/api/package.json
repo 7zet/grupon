@@ -5,7 +5,9 @@
   "scripts": {
     "build": "go build ./...",
     "dev": "concurrently -k -n api,worker \"go run ./cmd/api\" \"go run ./cmd/worker\"",
+    "gen": "go generate ./...",
     "lint": "go vet ./...",
+    "seed": "go run ./cmd/seed",
     "test": "go test ./..."
   }
 }

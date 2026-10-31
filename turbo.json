@@ -3,21 +3,23 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": []
+      "outputs": ["dist/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "gen": {
-      "cache": false
+      "cache": false,
+      "dependsOn": ["^gen"]
     },
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []
     },
     "seed": {
-      "cache": false
+      "cache": false,
+      "env": ["APP_ENV", "DATABASE_URL"]
     },
     "test": {
       "dependsOn": ["^build"],
