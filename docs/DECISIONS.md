@@ -66,3 +66,34 @@
 6. **Deterministic development seed.** Compact JSON sources contain taxonomy, translation, review,
    and licensed-image inputs; the Go loader deterministically expands them to the required dataset
    sizes in one transaction. It is rerunnable, applies migrations first, and refuses production.
+
+## 2026-10-31 — Phase 2 assumptions
+
+1. **Mock-to-live API switch.** Public pages always call the typed runtime client from
+   `packages/api-client`. MSW intercepts that same `/api/v1` contract in both the Next.js server and
+   the browser while `USE_MSW`/`NEXT_PUBLIC_USE_MSW` are enabled. Disabling both flags switches to
+   the configured Go API without changing a page or component.
+2. **Phase 2 catalog data.** The MSW catalog deterministically expands the Phase 1 seed taxonomy,
+   merchants, translations, images, and review text into OpenAPI-generated response shapes. Mock
+   data is confined to the MSW adapter; public pages never import it directly.
+3. **Money conversion.** The Phase 1 seeded UZS/USD rate is represented as integer UZS per USD.
+   Display conversion rounds once to integer USD cents, so frontend money logic never uses a
+   floating-point amount as its source of truth.
+4. **Next.js type-check ownership.** `next build` skips its duplicate child-process type check. The
+   mandatory root `pnpm typecheck` remains the authoritative strict check and runs independently in
+   local development and CI before the production build. This also keeps builds viable in restricted
+   Windows environments that deny child-process creation.
+5. **next-intl configuration.** Next.js receives the standard `next-intl/config` alias directly in
+   its Turbopack and Webpack configuration. This preserves the documented request-config behavior
+   without loading next-intl's optional build-time compiler plugin.
+6. **Public performance budgets.** Homepage, category, and deal routes target performance 90 and
+   accessibility/best-practices/SEO 95, with LCP ≤2.5s, CLS ≤0.1, and TBT ≤200ms. These thresholds
+   are checked by `apps/web/lighthouserc.cjs` against a production server.
+7. **Old-price contrast.** Section 4 names `--ink-faint` for struck-through prices, while Section 15
+   requires WCAG 2.2 AA. At 14px the locked faint value has only 2.56:1 contrast on white, so old
+   prices use the next approved neutral token, `--ink-muted`, to satisfy the higher accessibility
+   requirement without inventing a color.
+8. **Narrow first screen.** At 360×640 the complete option panel extends behind the persistent mobile
+   navigation. The sticky Buy control therefore appears whenever the original Buy button is not
+   fully unobscured and invokes the same purchase action; this preserves both the first-screen law
+   and the required bottom navigation.

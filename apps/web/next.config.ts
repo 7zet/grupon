@@ -1,11 +1,17 @@
 import type { NextConfig } from 'next';
-import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'node:path';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@grupon/config', '@grupon/i18n', '@grupon/ui'],
+  allowedDevOrigins: ['127.0.0.1'],
+  transpilePackages: ['@grupon/api-client', '@grupon/config', '@grupon/i18n', '@grupon/ui'],
+  images: { remotePatterns: [{ protocol: 'https', hostname: 'images.unsplash.com' }] },
+  experimental: { useTypeScriptCli: true, workerThreads: true },
+  typescript: { ignoreBuildErrors: true },
+  turbopack: { resolveAlias: { 'next-intl/config': './src/i18n/request.ts' } },
+  webpack(config) {
+    config.resolve.alias['next-intl/config'] = path.resolve(process.cwd(), 'src/i18n/request.ts');
+    return config;
+  },
 };
-
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
-
-export default withNextIntl(nextConfig);
+export default nextConfig;

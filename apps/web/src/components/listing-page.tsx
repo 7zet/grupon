@@ -1,0 +1,80 @@
+import { publicApi } from '@grupon/api-client';
+import { localized, type Locale } from '@grupon/config';
+import { ChevronRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
+import { getCurrency } from '@/lib/preferences';
+import { DealGrid } from './deal-grid';
+import { ListingControls } from './listing-controls';
+
+type Search = Record<string, string | string[] | undefined>;
+export async function ListingPage({
+  locale,
+  citySlug,
+  categorySlug,
+  searchParams,
+  searchQuery,
+}: {
+  locale: Locale;
+  citySlug?: string;
+  categorySlug?: string;
+  searchParams: Search;
+  searchQuery?: string;
+}) {
+  const [config, t, common, currency] = await Promise.all([
+    publicApi.config(),
+    getTranslations('Listing'),
+    getTranslations('Common'),
+    getCurrency(),
+  ]);
+  const city = config.cities.find((item) => item.slug === citySlug) ?? config.cities[0]!;
+  const category = config.categories.find((item) => item.slug === categorySlug);
+  const query = new URLSearchParams();
+  if (citySlug) query.set('city', citySlug);
+  if (categorySlug) query.set('category', categorySlug);
+  if (searchQuery) query.set('q', searchQuery);
+  for (const [key, value] of Object.entries(searchParams))
+    if (typeof value === 'string' && value) query.set(key, value);
+  const result = await publicApi.deals(query);
+  const title = searchQuery
+    ? t('queryFor', { query: searchQuery })
+    : category
+      ? t('categoryTitle', {
+          category: localized(category.name, locale),
+          city: localized(city.name, locale),
+        })
+      : t('allDeals', { city: localized(city.name, locale) });
+  const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
+  return (
+    <div className="mx-auto max-w-layout px-4 py-10 sm:px-6 lg:px-8">
+      <nav className="mb-4 flex items-center gap-1 text-small text-ink-muted">
+        <Link href="/">{(await getTranslations('Navigation'))('home')}</Link>
+        <ChevronRight className="size-4" />
+        <span>{title}</span>
+      </nav>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-title font-bold tracking-tight">{title}</h1>
+          <p className="mt-2 text-ink-muted">{common('results', { count: result.total })}</p>
+        </div>
+      </div>
+      <ListingControls
+        subcategories={(category?.subcategories ?? []).map((item) => ({
+          slug: item.slug,
+          label: localized(item.name, locale),
+        }))}
+      />
+      <DealGrid deals={result.items} locale={locale} currency={currency} />
+      {result.page < totalPages && (
+        <div className="mt-10 text-center">
+          <Link
+            className="inline-block rounded-control-ui border bg-surface px-6 py-3 font-semibold text-brand"
+            href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(result.page + 1) })}`}
+          >
+            {common('loadMore')}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}

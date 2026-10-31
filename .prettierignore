@@ -1,6 +1,8 @@
 .next
 AGENTS.md
 coverage
+**/test-results
+playwright-report
 dist
 node_modules
 pnpm-lock.yaml

@@ -1,86 +1,208 @@
-import { brandConfig, locales, type Locale } from '@grupon/config';
+import { publicApi } from '@grupon/api-client';
+import { localized, type Locale } from '@grupon/config';
+import { ArrowRight, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-
+import { DealGrid } from '@/components/deal-grid';
+import { HeroMotion } from '@/components/hero-motion';
+import { SectionHeading } from '@/components/section-heading';
 import { Link } from '@/i18n/navigation';
+import { getCurrency } from '@/lib/preferences';
 
-type HomePageProps = {
-  params: Promise<{ locale: Locale }>;
-};
+const homeRenderTime = Date.now();
 
-export default async function HomePage({ params }: HomePageProps) {
+export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-
-  const home = await getTranslations('Home');
-  const localeName = await getTranslations('Locale');
-  const navigation = await getTranslations('Navigation');
-
+  const t = await getTranslations('Home');
+  const common = await getTranslations('Common');
+  const [config, homepage, allDeals, promos, collections, currency] = await Promise.all([
+    publicApi.config(),
+    publicApi.homepage('tashkent'),
+    publicApi.deals(new URLSearchParams({ city: 'tashkent', sort: 'popular', page: '1' })),
+    publicApi.promoCodes(),
+    publicApi.collections(),
+    getCurrency(),
+  ]);
+  const featured =
+    homepage.sections.find((section) => section.key === 'featured')?.deals ??
+    allDeals.items.slice(0, 8);
+  const popular =
+    homepage.sections.find((section) => section.key === 'popular')?.deals ??
+    allDeals.items.slice(8, 16);
+  const limited = allDeals.items
+    .filter((deal) => new Date(deal.ends_at).getTime() < homeRenderTime + 3 * 86400000)
+    .slice(0, 4);
   return (
     <>
-      <a
-        className="sr-only z-50 rounded-control-ui bg-surface px-4 py-3 text-small text-brand focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
-        href="#main-content"
-      >
-        {navigation('skipToContent')}
-      </a>
-
-      <header className="border-b bg-surface">
-        <div className="mx-auto flex max-w-layout items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            className="text-subtitle font-bold tracking-tight text-brand"
-            href="/"
-            locale={locale}
-          >
-            {brandConfig.name}
-          </Link>
-
-          <nav aria-label={navigation('language')}>
-            <ul className="flex items-center gap-1">
-              {locales.map((targetLocale) => {
-                const isCurrent = targetLocale === locale;
-
-                return (
-                  <li key={targetLocale}>
-                    <Link
-                      aria-current={isCurrent ? 'page' : undefined}
-                      className={
-                        isCurrent
-                          ? 'block rounded-control-ui bg-brand-tint px-3 py-2 text-small font-semibold text-brand'
-                          : 'block rounded-control-ui px-3 py-2 text-small text-ink-muted hover:bg-page hover:text-ink'
-                      }
-                      href="/"
-                      locale={targetLocale}
-                    >
-                      {localeName(targetLocale)}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
-      </header>
-
-      <main
-        className="mx-auto flex [min-height:calc(100dvh-var(--header-height))] max-w-layout items-center px-4 py-12 sm:px-6 lg:px-8"
-        id="main-content"
-      >
-        <section className="max-w-3xl py-12 sm:py-20">
-          <p className="mb-4 text-small font-semibold uppercase tracking-widest text-brand">
-            {home('eyebrow')}
-          </p>
-          <h1 className="max-w-3xl text-title font-bold tracking-tight text-ink sm:text-display">
-            {home('title')}
-          </h1>
-          <p className="mt-6 max-w-2xl text-body leading-7 text-ink-muted sm:text-lead">
-            {home('description')}
-          </p>
-          <p className="mt-8 inline-flex items-center gap-2 rounded-control-ui bg-brand-tint px-4 py-3 text-small font-semibold text-brand">
-            <span aria-hidden="true" className="size-2 rounded-round-ui bg-brand" />
-            {home('status')}
-          </p>
+      <section className="overflow-hidden border-b bg-surface">
+        <HeroMotion>
+          <div className="mx-auto grid max-w-layout items-center gap-10 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[1.05fr_.95fr] lg:px-8">
+            <div>
+              <p
+                data-hero
+                className="mb-4 text-small font-semibold uppercase tracking-widest text-brand"
+              >
+                {t('eyebrow')}
+              </p>
+              <h1
+                data-hero
+                className="max-w-3xl text-title font-bold tracking-tight sm:text-display"
+              >
+                {t('title')}
+              </h1>
+              <p data-hero className="mt-5 max-w-xl text-lead leading-8 text-ink-muted">
+                {t('description')}
+              </p>
+              <form data-hero action={`/${locale}/search`} className="relative mt-8 max-w-xl">
+                <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted" />
+                <input
+                  name="q"
+                  className="h-14 w-full rounded-card-ui border bg-page pl-12 pr-32 shadow-floating-ui"
+                  placeholder={(await getTranslations('Navigation'))('searchPlaceholder')}
+                />
+                <button
+                  className="absolute bottom-1.5 right-1.5 top-1.5 rounded-control-ui bg-deal px-5 text-small font-semibold text-surface"
+                  type="submit"
+                >
+                  {(await getTranslations('Navigation'))('search')}
+                </button>
+              </form>
+              <div data-hero className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="text-small text-ink-muted">{t('searches')}:</span>
+                {config.categories.slice(1, 5).map((category) => (
+                  <Link
+                    className="rounded-round-ui border bg-surface px-3 py-1.5 text-small hover:bg-brand-tint hover:text-brand"
+                    href={`/tashkent/${category.slug}`}
+                    key={category.id}
+                  >
+                    {localized(category.name, locale)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div
+              data-hero
+              className="relative hidden aspect-[4/3] overflow-hidden rounded-panel-ui lg:block"
+            >
+              <Image
+                className="object-cover"
+                src={featured[0]!.media[0]!.url}
+                alt={localized(featured[0]!.media[0]!.alt, locale)}
+                fill
+                priority
+                sizes="45vw"
+              />
+              <div className="absolute bottom-5 left-5 flex items-center gap-3 rounded-card-ui bg-surface/95 px-4 py-3 shadow-floating-ui">
+                <Sparkles className="text-brand" />
+                <span className="font-semibold">{localized(featured[0]!.title, locale)}</span>
+              </div>
+            </div>
+          </div>
+        </HeroMotion>
+      </section>
+      <div className="mx-auto max-w-layout space-y-18 px-4 py-14 sm:px-6 lg:px-8">
+        <section>
+          <SectionHeading title={t('featured')} href="/tashkent" />
+          <DealGrid deals={featured} locale={locale} currency={currency} />
         </section>
-      </main>
+        <section>
+          <SectionHeading title={t('trending')} href="/coupons" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {promos.items.slice(0, 4).map((promo) => (
+              <Link
+                className="rounded-card-ui border bg-surface p-5 transition hover:shadow-floating-ui"
+                href="/coupons?tab=promo"
+                key={promo.id}
+              >
+                <div className="flex items-center gap-3">
+                  {promo.brand_logo_url && (
+                    <Image
+                      className="size-12 rounded-control-ui object-cover"
+                      src={promo.brand_logo_url}
+                      width={48}
+                      height={48}
+                      alt=""
+                    />
+                  )}
+                  <strong>{promo.brand_name}</strong>
+                </div>
+                <div className="mt-5 text-subtitle font-bold text-ink">
+                  {localized(promo.discount_label, locale)}
+                </div>
+                <div className="mt-2 flex items-center gap-1 text-small text-brand">
+                  <ShieldCheck className="size-4" />
+                  {common('verified')}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+        <section>
+          <SectionHeading title={t('popular')} href="/tashkent?sort=popular" />
+          <DealGrid deals={popular} locale={locale} currency={currency} />
+        </section>
+        <section>
+          <SectionHeading title={t('categories')} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {config.categories.map((category, index) => (
+              <Link
+                className="group relative min-h-36 overflow-hidden rounded-card-ui border bg-surface p-5"
+                href={`/${category.slug}`}
+                key={category.id}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-tint to-surface opacity-70" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <span className="text-title-small font-bold text-brand/20">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="font-semibold">{localized(category.name, locale)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+        {limited.length > 0 && (
+          <section>
+            <SectionHeading title={t('limited')} href="/tashkent?endingSoon=true" />
+            <DealGrid deals={limited} locale={locale} currency={currency} />
+          </section>
+        )}
+        <section>
+          <SectionHeading title={t('recommended')} />
+          <DealGrid deals={allDeals.items.slice(4, 12)} locale={locale} currency={currency} />
+        </section>
+        <section>
+          <SectionHeading title={t('recent')} />
+          <DealGrid deals={allDeals.items.slice(16, 20)} locale={locale} currency={currency} />
+        </section>
+        <section className="grid overflow-hidden rounded-panel-ui bg-brand text-surface lg:grid-cols-2">
+          <div className="p-8 sm:p-12">
+            <p className="text-small font-semibold uppercase tracking-widest text-surface/70">
+              {t('merchantTitle')}
+            </p>
+            <h2 className="mt-3 text-title-small font-bold">{t('merchantText')}</h2>
+            <Link
+              className="mt-7 inline-flex items-center gap-2 rounded-control-ui bg-surface px-5 py-3 font-semibold text-brand"
+              href="/merchant"
+            >
+              {t('merchantCta')}
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+          {collections.items[0] && (
+            <div className="relative min-h-64">
+              <Image
+                className="object-cover"
+                fill
+                src={collections.items[0].cover_url}
+                alt={localized(collections.items[0].title, locale)}
+                sizes="50vw"
+              />
+            </div>
+          )}
+        </section>
+      </div>
     </>
   );
 }

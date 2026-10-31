@@ -84,3 +84,43 @@ Status: complete on 2026-10-31.
 - Docker Desktop is not installed in this environment. Container-backed tests skip locally when no
   provider exists; the same migrations, seed, and constraint suite were instead run successfully
   against an isolated temporary PostgreSQL cluster. CI runners execute the Testcontainers path.
+
+## Phase 2 — Public marketplace frontend
+
+Status: complete on 2026-10-31.
+
+### Built
+
+- Responsive public shell with search suggestions, exact category navigation, desktop mega-menu,
+  mobile menu/tab bar, city/currency/language controls, footer, and locale-aware routing.
+- All eight homepage sections, GSAP-enhanced hero, Motion deal-card interactions, Embla galleries,
+  skeleton/empty/error states, and token-only responsive styling.
+- City, category, and search listings with nuqs URL filters, sorting, pagination, and shared deal
+  cards; coupons with voucher/promo tabs and reveal/copy behavior.
+- Full deal detail with the first-screen purchase layout, option/quantity/gift state, integer money
+  formatting, gallery, content/terms/locations, provider-agnostic Leaflet map, reviews, FAQ, related
+  deals, localized metadata, hreflang, OpenGraph, and Product/Offer JSON-LD.
+- Merchant profiles and merchant landing, seasonal collections, help/terms/privacy, and localized
+  404/500 routes.
+- Typed OpenAPI public client plus server/browser MSW handlers generated from Phase 1 seed inputs;
+  environment-only switching to the live Go API.
+- Unit/component coverage for money, route namespaces, deal cards, purchase controls, and filters;
+  authored Playwright public-route/viewport specs and Lighthouse budgets.
+
+### Verified
+
+- `pnpm build`, `pnpm lint`, `pnpm typecheck`, and `pnpm test` pass.
+- `go build ./...`, `go vet ./...`, and `go test ./...` pass from the repository root.
+- `pnpm gen` completed without generated contract drift.
+- Homepage, city, category, search, deal, coupons, merchant, collection, and static routes returned
+  HTTP 200 from a production Next.js server; homepage returned 200 in Uzbek, Russian, and English.
+- Playwright passed all 7 public-route, locale, URL-filter, and first-screen tests against the
+  production build. The 360×640, 390×844, and 1440×900 screenshots were visually reviewed; the
+  compact viewport uses a functional sticky Buy action above the mobile navigation.
+- Lighthouse CI ran homepage, category, and deal three times each. Scores were performance 98–100,
+  accessibility 100, best practices 96, and SEO 100; worst LCP was 1,045 ms, CLS 0, and TBT 0 ms.
+
+### Known limitations
+
+- Phase 2 intentionally uses deterministic MSW catalog data. Phase 3 replaces that adapter with the
+  real Go catalog API without changing page-level response shapes.

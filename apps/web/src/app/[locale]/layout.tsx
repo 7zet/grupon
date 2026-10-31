@@ -1,12 +1,16 @@
-import { brandConfig, isLocale, locales } from '@grupon/config';
+import { publicApi } from '@grupon/api-client';
+import { brandConfig, isCurrency, isLocale, locales } from '@grupon/config';
 import { BaseLayout, appFont } from '@grupon/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import type { PropsWithChildren } from 'react';
 
 import '../globals.css';
+import { Providers } from '../providers';
+import { SiteShell } from '@/components/site-shell';
 
 type LocaleLayoutProps = PropsWithChildren<{
   params: Promise<{ locale: string }>;
@@ -27,6 +31,7 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
 
   return {
     description: t('description'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
     title: t('title', { brand: brandConfig.name }),
   };
 }
@@ -40,12 +45,22 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   setRequestLocale(locale);
   const messages = await getMessages();
+  const cookieStore = await cookies();
+  const rawCurrency = cookieStore.get('currency')?.value;
+  const currency = isCurrency(rawCurrency) ? rawCurrency : 'UZS';
+  const config = await publicApi.config();
 
   return (
     <html lang={locale}>
       <body className={appFont.variable}>
         <NextIntlClientProvider messages={messages}>
-          <BaseLayout>{children}</BaseLayout>
+          <Providers>
+            <BaseLayout>
+              <SiteShell config={config} locale={locale} currency={currency}>
+                {children}
+              </SiteShell>
+            </BaseLayout>
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

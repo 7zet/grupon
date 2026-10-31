@@ -11,11 +11,15 @@
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "eslint src --max-warnings=0",
+    "test": "vitest run --pool=threads",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "next": "^16.4.3",
     "react": "^19.3.1"
+  },
+  "dependencies": {
+    "@grupon/config": "workspace:*"
   },
   "devDependencies": {
     "@grupon/eslint-config": "workspace:*",
@@ -23,6 +27,7 @@
     "@types/react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -7,7 +7,14 @@ node_modules/
 .turbo/
 dist/
 coverage/
+**/test-results/
+playwright-report/
 *.tsbuildinfo
+.cache/
+.lighthouseci/
+.edge-profile/
+.swc-secure/
+.tools/
 
 # Local configuration
 .env
