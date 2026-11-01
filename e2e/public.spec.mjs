@@ -8,8 +8,6 @@ for (const locale of ['uz', 'ru', 'en']) {
       '/tashkent/beauty-and-spas',
       '/coupons',
       '/business/seed-merchant-08',
-      '/seasonal-deals',
-      '/collections/navruz',
       '/merchant',
       '/help',
       '/terms',

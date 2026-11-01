@@ -123,7 +123,6 @@ function toBody(draft: Draft, media: MediaAsset[]) {
     redemption_method: draft.redemptionMethod,
     redemption_instructions: localized(draft.redemptionInstructions),
     booking_required: false,
-    is_giftable: false,
     starts_at: new Date(draft.startsAt).toISOString(),
     ends_at: new Date(draft.endsAt).toISOString(),
     voucher_valid_days: draft.validDays,

@@ -9,28 +9,6 @@ import (
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 )
 
-// SaveDeal adds a deal to the user's saved list. Saving twice is harmless.
-func (s *Service) SaveDeal(ctx context.Context, userID, dealID uuid.UUID) error {
-	if err := s.requireDeal(ctx, dealID); err != nil {
-		return err
-	}
-	return s.repo.SaveDeal(ctx, userID, dealID)
-}
-
-// UnsaveDeal removes a deal from the saved list. Removing a missing entry succeeds.
-func (s *Service) UnsaveDeal(ctx context.Context, userID, dealID uuid.UUID) error {
-	return s.repo.UnsaveDeal(ctx, userID, dealID)
-}
-
-// SavedDeals returns the saved deals that can still be shown to buyers.
-func (s *Service) SavedDeals(ctx context.Context, userID uuid.UUID) ([]catalog.DealSummary, error) {
-	ids, err := s.repo.SavedDealIDs(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	return s.publishedDeals(ctx, ids)
-}
-
 // RecordView notes that the user opened a deal. The store keeps only the most recent entries.
 func (s *Service) RecordView(ctx context.Context, userID, dealID uuid.UUID) error {
 	if err := s.requireDeal(ctx, dealID); err != nil {

@@ -5,21 +5,17 @@ import "errors"
 
 // Sentinel errors. The HTTP layer maps them to stable problem codes.
 var (
-	ErrNotFound              = errors.New("identity: not found")
-	ErrEmailTaken            = errors.New("identity: email already registered")
-	ErrInvalidCredentials    = errors.New("identity: invalid credentials")
-	ErrCurrentPasswordWrong  = errors.New("identity: current password incorrect")
-	ErrAccountBlocked        = errors.New("identity: account blocked")
-	ErrInvalidToken          = errors.New("identity: invalid or expired token")
-	ErrRefreshTokenInvalid   = errors.New("identity: refresh token invalid")
-	ErrRefreshTokenReused    = errors.New("identity: refresh token reused")
-	ErrUnauthenticated       = errors.New("identity: unauthenticated")
-	ErrForbidden             = errors.New("identity: forbidden")
-	ErrRateLimited           = errors.New("identity: rate limited")
-	ErrGoogleNotConfigured   = errors.New("identity: google sign-in not configured")
-	ErrGoogleExchangeFailed  = errors.New("identity: google code exchange failed")
-	ErrGoogleEmailUnverified = errors.New("identity: google email not verified")
-	ErrGoogleAccountConflict = errors.New("identity: google account conflicts with existing user")
+	ErrNotFound             = errors.New("identity: not found")
+	ErrEmailTaken           = errors.New("identity: email already registered")
+	ErrInvalidCredentials   = errors.New("identity: invalid credentials")
+	ErrCurrentPasswordWrong = errors.New("identity: current password incorrect")
+	ErrAccountBlocked       = errors.New("identity: account blocked")
+	ErrInvalidToken         = errors.New("identity: invalid or expired token")
+	ErrRefreshTokenInvalid  = errors.New("identity: refresh token invalid")
+	ErrRefreshTokenReused   = errors.New("identity: refresh token reused")
+	ErrUnauthenticated      = errors.New("identity: unauthenticated")
+	ErrForbidden            = errors.New("identity: forbidden")
+	ErrRateLimited          = errors.New("identity: rate limited")
 )
 
 // ValidationError reports one invalid input field with a stable code.

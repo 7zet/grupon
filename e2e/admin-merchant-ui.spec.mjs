@@ -68,7 +68,6 @@ async function submitDeal(owner, title) {
     redemption_method: 'qr_or_code',
     redemption_instructions: text('Ko‘rsating'),
     booking_required: false,
-    is_giftable: false,
     starts_at: new Date(Date.now() - 3600_000).toISOString(),
     ends_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
     voucher_valid_days: 30,

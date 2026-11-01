@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 )
 
 // LineTotal multiplies a unit price by a quantity in integer minor units. It refuses amounts
@@ -42,28 +41,6 @@ func ValidateQuantity(field string, quantity int) error {
 	return nil
 }
 
-// ValidateGiftFields checks gift recipient data. Gift fields without is_gift are rejected so that
-// stale form state cannot silently attach a recipient to a normal purchase.
-func ValidateGiftFields(field string, item OrderItemInput) error {
-	name, email, message := item.GiftRecipientName, item.GiftRecipientEmail, item.GiftMessage
-	if !item.IsGift {
-		if name != nil || email != nil || message != nil {
-			return invalid(field, "gift_fields_without_gift")
-		}
-		return nil
-	}
-	if name != nil && len(*name) > MaxGiftNameBytes {
-		return invalid(field+".gift_recipient_name", "too_long")
-	}
-	if message != nil && len(*message) > MaxGiftMsgBytes {
-		return invalid(field+".gift_message", "too_long")
-	}
-	if email != nil && (!strings.Contains(*email, "@") || len(*email) > 320) {
-		return invalid(field+".gift_recipient_email", "invalid_email")
-	}
-	return nil
-}
-
 // ValidateIdempotencyKey checks the header length rules from the contract.
 func ValidateIdempotencyKey(key string) error {
 	if len(key) < MinIdempotencyKey || len(key) > MaxIdempotencyKey {
@@ -76,28 +53,19 @@ func ValidateIdempotencyKey(key string) error {
 // formatting differences in the JSON body do not count as a different request.
 func RequestFingerprint(input OrderInput) (string, error) {
 	type normalizedItem struct {
-		OptionID string  `json:"option_id"`
-		Quantity int     `json:"quantity"`
-		IsGift   bool    `json:"is_gift"`
-		Name     *string `json:"name,omitempty"`
-		Email    *string `json:"email,omitempty"`
-		Message  *string `json:"message,omitempty"`
+		OptionID string `json:"option_id"`
+		Quantity int    `json:"quantity"`
 	}
 	items := make([]normalizedItem, 0, len(input.Items))
 	for _, item := range input.Items {
 		items = append(items, normalizedItem{
 			OptionID: item.OptionID.String(),
 			Quantity: item.Quantity,
-			IsGift:   item.IsGift,
-			Name:     item.GiftRecipientName,
-			Email:    item.GiftRecipientEmail,
-			Message:  item.GiftMessage,
 		})
 	}
 	raw, err := json.Marshal(struct {
-		Items    []normalizedItem `json:"items"`
-		Shipping map[string]any   `json:"shipping_address"`
-	}{Items: items, Shipping: input.ShippingAddress})
+		Items []normalizedItem `json:"items"`
+	}{Items: items})
 	if err != nil {
 		return "", fmt.Errorf("encode request fingerprint: %w", err)
 	}

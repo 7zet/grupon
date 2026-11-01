@@ -19,19 +19,17 @@ var (
 	ErrOptionUnavailable = errors.New("commerce: option unavailable")
 	ErrDealUnavailable   = errors.New("commerce: deal unavailable")
 	// ErrInsufficientStock means the conditional stock reservation matched no rows.
-	ErrInsufficientStock       = errors.New("commerce: insufficient stock")
-	ErrMaxPerUserExceeded      = errors.New("commerce: max per user exceeded")
-	ErrGiftNotAllowed          = errors.New("commerce: deal is not giftable")
-	ErrShippingAddressRequired = errors.New("commerce: shipping address required")
-	ErrIdempotencyConflict     = errors.New("commerce: idempotency key reused with a different body")
-	ErrReservationExpired      = errors.New("commerce: stock reservation expired")
-	ErrOrderNotPayable         = errors.New("commerce: order is not awaiting payment")
-	ErrPaymentNotPending       = errors.New("commerce: payment is already settled")
-	ErrProviderUnavailable     = errors.New("commerce: payment provider unavailable")
-	ErrInvalidSignature        = payments.ErrInvalidSignature
-	ErrMalformedWebhook        = payments.ErrMalformedWebhook
-	ErrInvalidQRToken          = errors.New("commerce: invalid qr token")
-	ErrQRExpired               = errors.New("commerce: qr token rotated, fetch a new one")
+	ErrInsufficientStock   = errors.New("commerce: insufficient stock")
+	ErrMaxPerUserExceeded  = errors.New("commerce: max per user exceeded")
+	ErrIdempotencyConflict = errors.New("commerce: idempotency key reused with a different body")
+	ErrReservationExpired  = errors.New("commerce: stock reservation expired")
+	ErrOrderNotPayable     = errors.New("commerce: order is not awaiting payment")
+	ErrPaymentNotPending   = errors.New("commerce: payment is already settled")
+	ErrProviderUnavailable = errors.New("commerce: payment provider unavailable")
+	ErrInvalidSignature    = payments.ErrInvalidSignature
+	ErrMalformedWebhook    = payments.ErrMalformedWebhook
+	ErrInvalidQRToken      = errors.New("commerce: invalid qr token")
+	ErrQRExpired           = errors.New("commerce: qr token rotated, fetch a new one")
 )
 
 // ValidationError reports one invalid input field with a stable code.

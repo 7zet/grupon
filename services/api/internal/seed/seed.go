@@ -139,7 +139,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if len(data.Cities) != 5 || len(data.Categories) != 11 || len(images) == 0 {
 		return errors.New("seed source counts are invalid")
 	}
-	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, collections, promo_codes, exchange_rates, homepage_sections, banners, journal_lines, journal_entries, ledger_accounts, redemptions, payout_runs, refunds, disputes, merchant_payout_holds, fraud_signals, outbox, reconciliation_findings CASCADE`)
+	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, homepage_sections, journal_lines, journal_entries, ledger_accounts, redemptions, payout_runs, refunds, disputes, merchant_payout_holds, fraud_signals, outbox, reconciliation_findings CASCADE`)
 	if err != nil {
 		return err
 	}
@@ -216,10 +216,6 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	for i := range deals {
 		merchant := i % len(merchantIDs)
 		category := i % len(categoryIDs)
-		kind := "voucher"
-		if i%10 == 0 {
-			kind = "product"
-		}
 		titleMap := localized{"uz": fmt.Sprintf("%s uchun maxsus taklif %d", data.Categories[category].Name["uz"], i+1), "ru": fmt.Sprintf("Специальное предложение %d", i+1), "en": fmt.Sprintf("Special local offer %d", i+1)}
 		title, _ := json.Marshal(titleMap)
 		short, _ := json.Marshal(localized{"uz": "Cheklangan muddatli foydali taklif", "ru": "Выгодное предложение на ограниченное время", "en": "A valuable limited-time local offer"})
@@ -236,7 +232,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			start = time.Now().UTC().Add(-20 * 24 * time.Hour)
 			end = time.Now().UTC().Add(-24 * time.Hour)
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,kind,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,is_giftable,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$8,$10,$8,$11,true,$12,$13,$14,30,5,$15) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchant], categoryIDs[category], subcategoryIDs[category][i%len(subcategoryIDs[category])], kind, title, short, detail, highlights, faq, i%4 == 0, statuses[i%len(statuses)], start, end, i*3).Scan(&deals[i].ID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$8,$7,$9,$7,$10,$11,$12,$13,30,5,$14) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchant], categoryIDs[category], subcategoryIDs[category][i%len(subcategoryIDs[category])], title, short, detail, highlights, faq, i%4 == 0, statuses[i%len(statuses)], start, end, i*3).Scan(&deals[i].ID); err != nil {
 			return err
 		}
 		deals[i].MerchantID, deals[i].LocationID, deals[i].Title = merchantIDs[merchant], locationIDs[merchant][0], title
@@ -258,29 +254,6 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		for j := 0; j < 3; j++ {
 			if _, err := tx.Exec(ctx, `INSERT INTO deal_media(deal_id,url,alt,sort_order,width,height,blurhash) VALUES($1,$2,$3,$4,1200,900,'L6PZfSi_.AyE_3t7t7R**0o#DgR4')`, deals[i].ID, images[(i+j)%len(images)].URL+"?auto=format&fit=crop&w=1200&q=80", title, j); err != nil {
-				return err
-			}
-		}
-	}
-	for i := 0; i < 25; i++ {
-		title, _ := json.Marshal(localized{"uz": fmt.Sprintf("Hamkor taklifi %d", i+1), "ru": fmt.Sprintf("Предложение партнёра %d", i+1), "en": fmt.Sprintf("Partner offer %d", i+1)})
-		discount, _ := json.Marshal(localized{"uz": "20% gacha", "ru": "До 20%", "en": "Up to 20%"})
-		var code any = fmt.Sprintf("SEED%02d", i+1)
-		if i%5 == 0 {
-			code = nil
-		}
-		if _, err := tx.Exec(ctx, `INSERT INTO promo_codes(brand_name,title,code,discount_label,url,category_id,starts_at,ends_at,is_verified) VALUES($1,$2,$3,$4,$5,$6,now()-interval '1 day',now()+interval '90 days',$7)`, fmt.Sprintf("Fictional Partner %02d", i+1), title, code, discount, fmt.Sprintf("https://local.test/promo/%d", i+1), categoryIDs[i%len(categoryIDs)], i%3 != 0); err != nil {
-			return err
-		}
-	}
-	collectionIDs := make([]string, 3)
-	for i, slug := range []string{"navruz", "summer-local", "new-year"} {
-		title, _ := json.Marshal(localized{"uz": strings.Title(strings.ReplaceAll(slug, "-", " ")), "ru": "Сезонная коллекция", "en": "Seasonal collection"}) //nolint:staticcheck
-		if err := tx.QueryRow(ctx, `INSERT INTO collections(slug,title,description,cover_url,starts_at,ends_at) VALUES($1,$2,$2,$3,now()-interval '1 day',now()+interval '120 days') RETURNING id`, slug, title, images[i].URL).Scan(&collectionIDs[i]); err != nil {
-			return err
-		}
-		for j := 0; j < 12; j++ {
-			if _, err := tx.Exec(ctx, `INSERT INTO collection_deals(collection_id,deal_id,sort_order) VALUES($1,$2,$3)`, collectionIDs[i], deals[i*12+j].ID, j); err != nil {
 				return err
 			}
 		}
@@ -330,9 +303,6 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if _, err := tx.Exec(ctx, `INSERT INTO payouts(merchant_id,period_start,period_end,gross,commission,net,status) VALUES($1,current_date-30,current_date,$2,$3,$4,'pending')`, merchantID, gross, gross*15/100, gross*85/100); err != nil {
 			return err
 		}
-	}
-	if _, err := tx.Exec(ctx, `INSERT INTO exchange_rates(base,quote,rate,source,effective_at) VALUES('UZS','USD',12500,'seed-static',now())`); err != nil {
-		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO homepage_sections(key,title,type,deal_ids,sort_order) VALUES('featured',$1,'deals',$2,1),('popular',$1,'deals',$2,2),('limited',$1,'deals',$2,3)`, description, []string{deals[0].ID, deals[1].ID, deals[2].ID}); err != nil {
 		return err

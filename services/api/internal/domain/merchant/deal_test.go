@@ -63,7 +63,6 @@ func validDeal() DealInput {
 		Slug:                   "spa-day",
 		CategoryID:             uuid.New(),
 		SubcategoryID:          uuid.New(),
-		Kind:                   "voucher",
 		Title:                  text,
 		ShortDescription:       text,
 		Description:            text,

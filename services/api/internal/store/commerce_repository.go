@@ -102,11 +102,9 @@ func (s *commerceStore) OptionRecords(ctx context.Context, optionIDs []uuid.UUID
 			StockReserved:      int(row.StockReserved),
 			IsActive:           row.OptionIsActive,
 			DealStatus:         string(row.DealStatus),
-			DealKind:           string(row.DealKind),
 			StartsAt:           row.StartsAt.Time,
 			EndsAt:             row.EndsAt.Time,
 			MaxPerUser:         int(row.MaxPerUser),
-			IsGiftable:         row.IsGiftable,
 			VoucherValidDays:   int32PtrToInt(row.VoucherValidDays),
 			VoucherValidUntil:  timePtr(row.VoucherValidUntil),
 			MerchantID:         toUUID(row.MerchantID),
@@ -147,39 +145,6 @@ func (s *commerceStore) AddDealSoldCount(ctx context.Context, dealID uuid.UUID, 
 	return s.q.AddDealSoldCount(ctx, sqlc.AddDealSoldCountParams{Quantity: int32(quantity), DealID: toPgUUID(dealID)})
 }
 
-func (s *commerceStore) CartLines(ctx context.Context, userID uuid.UUID) ([]commerce.CartLine, error) {
-	rows, err := s.q.ListCartLinesForUser(ctx, toPgUUID(userID))
-	if err != nil {
-		return nil, fmt.Errorf("list cart lines: %w", err)
-	}
-	lines := make([]commerce.CartLine, 0, len(rows))
-	for _, row := range rows {
-		lines = append(lines, commerce.CartLine{OptionID: toUUID(row.DealOptionID), Quantity: int(row.Quantity), IsGift: row.IsGift})
-	}
-	return lines, nil
-}
-
-func (s *commerceStore) UpsertCart(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-	id, err := s.q.UpsertCart(ctx, toPgUUID(userID))
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("upsert cart: %w", err)
-	}
-	return toUUID(id), nil
-}
-
-func (s *commerceStore) DeleteCartLines(ctx context.Context, cartID uuid.UUID) error {
-	return s.q.DeleteCartItems(ctx, toPgUUID(cartID))
-}
-
-func (s *commerceStore) InsertCartLine(ctx context.Context, cartID uuid.UUID, line commerce.CartLine) error {
-	return s.q.InsertCartItem(ctx, sqlc.InsertCartItemParams{
-		CartID:   toPgUUID(cartID),
-		OptionID: toPgUUID(line.OptionID),
-		Quantity: int32(line.Quantity),
-		IsGift:   line.IsGift,
-	})
-}
-
 func (s *commerceStore) NextOrderNumber(ctx context.Context) (int64, error) {
 	value, err := s.q.NextOrderNumberSequence(ctx)
 	if err != nil {
@@ -200,18 +165,13 @@ func (s *commerceStore) OrderIDByIdempotencyKey(ctx context.Context, key string)
 }
 
 func (s *commerceStore) InsertOrder(ctx context.Context, order commerce.Order, idempotencyKey string) (commerce.Order, error) {
-	shipping, err := marshalOptionalObject(order.ShippingAddress)
-	if err != nil {
-		return commerce.Order{}, err
-	}
 	row, err := s.q.InsertOrder(ctx, sqlc.InsertOrderParams{
-		Number:          order.Number,
-		UserID:          toPgUUID(order.UserID),
-		Subtotal:        order.Subtotal,
-		Total:           order.Total,
-		IdempotencyKey:  idempotencyKey,
-		RequestHash:     optText(order.RequestHash),
-		ShippingAddress: shipping,
+		Number:         order.Number,
+		UserID:         toPgUUID(order.UserID),
+		Subtotal:       order.Subtotal,
+		Total:          order.Total,
+		IdempotencyKey: idempotencyKey,
+		RequestHash:    optText(order.RequestHash),
 	})
 	if err != nil {
 		return commerce.Order{}, fmt.Errorf("insert order: %w", err)
@@ -228,18 +188,13 @@ func (s *commerceStore) InsertOrderItem(ctx context.Context, orderID uuid.UUID, 
 		return uuid.Nil, fmt.Errorf("encode item title: %w", err)
 	}
 	id, err := s.q.InsertOrderItem(ctx, sqlc.InsertOrderItemParams{
-		OrderID:            toPgUUID(orderID),
-		DealID:             toPgUUID(item.DealID),
-		OptionID:           toPgUUID(item.OptionID),
-		TitleSnapshot:      title,
-		UnitPrice:          item.UnitPrice,
-		OriginalPrice:      item.OriginalPrice,
-		Quantity:           int32(item.Quantity),
-		IsGift:             item.IsGift,
-		GiftRecipientName:  optTextPtr(item.GiftRecipientName),
-		GiftRecipientEmail: optTextPtr(item.GiftRecipientEmail),
-		GiftMessage:        optTextPtr(item.GiftMessage),
-		FulfillmentStatus:  sqlc.FulfillmentStatus(item.FulfillmentStatus),
+		OrderID:       toPgUUID(orderID),
+		DealID:        toPgUUID(item.DealID),
+		OptionID:      toPgUUID(item.OptionID),
+		TitleSnapshot: title,
+		UnitPrice:     item.UnitPrice,
+		OriginalPrice: item.OriginalPrice,
+		Quantity:      int32(item.Quantity),
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("insert order item: %w", err)
@@ -265,7 +220,7 @@ func (s *commerceStore) OrderByID(ctx context.Context, orderID uuid.UUID) (comme
 		return commerce.Order{}, fmt.Errorf("load order: %w", err)
 	}
 	order, err := orderFromFields(row.ID, row.Number, row.UserID, row.Status, row.Subtotal, row.Total,
-		row.ShippingAddress, row.PaidAt, row.CreatedAt, row.RequestHash.String)
+		row.PaidAt, row.CreatedAt, row.RequestHash.String)
 	if err != nil {
 		return commerce.Order{}, err
 	}
@@ -287,7 +242,7 @@ func (s *commerceStore) LockOrder(ctx context.Context, orderID uuid.UUID) (comme
 		return commerce.Order{}, fmt.Errorf("lock order: %w", err)
 	}
 	return orderFromFields(row.ID, row.Number, row.UserID, row.Status, row.Subtotal, row.Total,
-		row.ShippingAddress, row.PaidAt, row.CreatedAt, "")
+		row.PaidAt, row.CreatedAt, "")
 }
 
 func (s *commerceStore) ListOrders(ctx context.Context, userID uuid.UUID, limit, offset int) ([]commerce.Order, int64, error) {
@@ -340,19 +295,14 @@ func (s *commerceStore) orderItems(ctx context.Context, orderIDs []uuid.UUID) (m
 		}
 		orderID := toUUID(row.OrderID)
 		grouped[orderID] = append(grouped[orderID], commerce.OrderItem{
-			ID:                 toUUID(row.ID),
-			OrderID:            orderID,
-			DealID:             toUUID(row.DealID),
-			OptionID:           toUUID(row.DealOptionID),
-			Title:              title,
-			UnitPrice:          row.UnitPriceSnapshot,
-			OriginalPrice:      row.OriginalPriceSnapshot,
-			Quantity:           int(row.Quantity),
-			IsGift:             row.IsGift,
-			GiftRecipientName:  textPtr(row.GiftRecipientName),
-			GiftRecipientEmail: textPtr(row.GiftRecipientEmail),
-			GiftMessage:        textPtr(row.GiftMessage),
-			FulfillmentStatus:  row.FulfillmentStatus,
+			ID:            toUUID(row.ID),
+			OrderID:       orderID,
+			DealID:        toUUID(row.DealID),
+			OptionID:      toUUID(row.DealOptionID),
+			Title:         title,
+			UnitPrice:     row.UnitPriceSnapshot,
+			OriginalPrice: row.OriginalPriceSnapshot,
+			Quantity:      int(row.Quantity),
 		})
 	}
 	return grouped, nil
@@ -540,23 +490,6 @@ func (s *commerceStore) ExpireDueVouchers(ctx context.Context, now time.Time, ba
 	return len(ids), nil
 }
 
-func (s *commerceStore) SaveDeal(ctx context.Context, userID, dealID uuid.UUID) error {
-	return s.q.InsertSavedDeal(ctx, sqlc.InsertSavedDealParams{UserID: toPgUUID(userID), DealID: toPgUUID(dealID)})
-}
-
-func (s *commerceStore) UnsaveDeal(ctx context.Context, userID, dealID uuid.UUID) error {
-	_, err := s.q.DeleteSavedDeal(ctx, sqlc.DeleteSavedDealParams{UserID: toPgUUID(userID), DealID: toPgUUID(dealID)})
-	return err
-}
-
-func (s *commerceStore) SavedDealIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
-	ids, err := s.q.ListSavedDealIDs(ctx, toPgUUID(userID))
-	if err != nil {
-		return nil, fmt.Errorf("list saved deals: %w", err)
-	}
-	return toUUIDs(ids), nil
-}
-
 func (s *commerceStore) RecordView(ctx context.Context, userID, dealID uuid.UUID) error {
 	if err := s.q.UpsertRecentlyViewed(ctx, sqlc.UpsertRecentlyViewedParams{UserID: toPgUUID(userID), DealID: toPgUUID(dealID)}); err != nil {
 		return fmt.Errorf("record view: %w", err)
@@ -576,24 +509,17 @@ func (s *commerceStore) RecentDealIDs(ctx context.Context, userID uuid.UUID) ([]
 }
 
 func orderFromFields(id pgtype.UUID, number string, userID pgtype.UUID, status string, subtotal, total int64,
-	shipping []byte, paidAt, createdAt pgtype.Timestamptz, requestHash string) (commerce.Order, error) {
-	var address map[string]any
-	if len(shipping) > 0 {
-		if err := json.Unmarshal(shipping, &address); err != nil {
-			return commerce.Order{}, fmt.Errorf("decode shipping address: %w", err)
-		}
-	}
+	paidAt, createdAt pgtype.Timestamptz, requestHash string) (commerce.Order, error) {
 	return commerce.Order{
-		ID:              toUUID(id),
-		Number:          number,
-		UserID:          toUUID(userID),
-		Status:          status,
-		Subtotal:        subtotal,
-		Total:           total,
-		ShippingAddress: address,
-		PaidAt:          timePtr(paidAt),
-		CreatedAt:       createdAt.Time,
-		RequestHash:     requestHash,
+		ID:          toUUID(id),
+		Number:      number,
+		UserID:      toUUID(userID),
+		Status:      status,
+		Subtotal:    subtotal,
+		Total:       total,
+		PaidAt:      timePtr(paidAt),
+		CreatedAt:   createdAt.Time,
+		RequestHash: requestHash,
 	}, nil
 }
 
@@ -627,17 +553,6 @@ func optTimestamp(value *time.Time) pgtype.Timestamptz {
 		return pgtype.Timestamptz{}
 	}
 	return pgtype.Timestamptz{Time: *value, Valid: true}
-}
-
-func marshalOptionalObject(value map[string]any) ([]byte, error) {
-	if len(value) == 0 {
-		return nil, nil
-	}
-	raw, err := json.Marshal(value)
-	if err != nil {
-		return nil, fmt.Errorf("encode shipping address: %w", err)
-	}
-	return raw, nil
 }
 
 // PostLedger writes a balanced journal entry inside the current transaction.

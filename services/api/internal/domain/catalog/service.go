@@ -3,7 +3,6 @@ package catalog
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -118,17 +117,11 @@ type SuggestionRow struct {
 	Label string
 }
 
-// PromoCodeFilter scopes the promo-code list.
-type PromoCodeFilter struct {
-	Category string
-}
-
 // Repository is the persistence port. Implementations must return only publishable data where the
 // method name says "Published" and must preserve no ordering promises beyond what is documented.
 type Repository interface {
 	ListCities(ctx context.Context) ([]City, error)
 	ListCategories(ctx context.Context) ([]Category, error)
-	LatestExchangeRate(ctx context.Context) (ExchangeRate, error)
 
 	SearchDealIDs(ctx context.Context, filter DealFilter, sort Sort, page Page) ([]uuid.UUID, error)
 	CountDeals(ctx context.Context, filter DealFilter) (int64, error)
@@ -143,13 +136,6 @@ type Repository interface {
 	SuggestDeals(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
 	SuggestMerchants(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
 	SuggestCategories(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
-
-	PromoCodes(ctx context.Context, filter PromoCodeFilter, page Page) ([]PromoCode, int64, error)
-	IncrementPromoCodeClicks(ctx context.Context, id uuid.UUID) (bool, error)
-
-	ActiveCollections(ctx context.Context) ([]Collection, error)
-	CollectionBySlug(ctx context.Context, slug string) (Collection, error)
-	CollectionDealIDs(ctx context.Context, collectionID uuid.UUID, page Page) ([]uuid.UUID, int64, error)
 
 	HomepageRows(ctx context.Context) ([]HomepageRow, error)
 }
@@ -214,16 +200,11 @@ func (s *Service) PublicConfig(ctx context.Context) (PublicConfig, error) {
 		if err != nil {
 			return PublicConfig{}, err
 		}
-		rate, err := s.repo.LatestExchangeRate(ctx)
-		if err != nil {
-			return PublicConfig{}, fmt.Errorf("load exchange rate: %w", err)
-		}
 		return PublicConfig{
-			Locales:      []string{"uz", "ru", "en"},
-			Currencies:   []string{"UZS"},
-			Cities:       cities,
-			Categories:   categories,
-			ExchangeRate: rate,
+			Locales:    []string{"uz", "ru", "en"},
+			Currencies: []string{"UZS"},
+			Cities:     cities,
+			Categories: categories,
 		}, nil
 	})
 }
@@ -281,20 +262,6 @@ func (s *Service) resolveSection(ctx context.Context, row HomepageRow) (Homepage
 		}
 		section.Categories = categories
 		return section, len(categories) > 0, nil
-	case "collection":
-		slug, _ := row.Rule["collection_slug"].(string)
-		if slug == "" {
-			return section, false, nil
-		}
-		collection, err := s.repo.CollectionBySlug(ctx, slug)
-		if errors.Is(err, ErrNotFound) {
-			return section, false, nil
-		}
-		if err != nil {
-			return section, false, err
-		}
-		section.Collection = &collection
-		return section, true, nil
 	default:
 		// Banners have their own placement contract and are not rendered as deal sections.
 		return section, false, nil
@@ -444,60 +411,6 @@ func keyOf(value any) string {
 		return "unkeyed"
 	}
 	return string(encoded)
-}
-
-// PromoCodes lists active promo codes, optionally scoped to a category.
-func (s *Service) PromoCodes(ctx context.Context, filter PromoCodeFilter, page Page) (PromoCodePage, error) {
-	key := fmt.Sprintf("promo:%s:%d:%d", keyOf(filter), page.Number, page.Size)
-	return cached(ctx, s, key, cacheTTL, func() (PromoCodePage, error) {
-		items, total, err := s.repo.PromoCodes(ctx, filter, page)
-		if err != nil {
-			return PromoCodePage{}, fmt.Errorf("list promo codes: %w", err)
-		}
-		return PromoCodePage{PageInfo: PageInfo{Page: page.Number, PageSize: page.Size, Total: total}, Items: items}, nil
-	})
-}
-
-// TrackPromoCodeClick counts one outbound click on an active promo code.
-func (s *Service) TrackPromoCodeClick(ctx context.Context, id uuid.UUID) error {
-	tracked, err := s.repo.IncrementPromoCodeClicks(ctx, id)
-	if err != nil {
-		return fmt.Errorf("track promo click: %w", err)
-	}
-	if !tracked {
-		return ErrNotFound
-	}
-	return nil
-}
-
-// Collections lists active seasonal collections.
-func (s *Service) Collections(ctx context.Context) ([]Collection, error) {
-	return cached(ctx, s, "collections", cacheTTL, func() ([]Collection, error) {
-		return s.repo.ActiveCollections(ctx)
-	})
-}
-
-// Collection returns a collection and one page of its publishable deals.
-func (s *Service) Collection(ctx context.Context, slug string, page Page) (CollectionDetail, error) {
-	key := fmt.Sprintf("collection:%s:%d:%d", slug, page.Number, page.Size)
-	return cached(ctx, s, key, cacheTTL, func() (CollectionDetail, error) {
-		collection, err := s.repo.CollectionBySlug(ctx, slug)
-		if err != nil {
-			return CollectionDetail{}, err
-		}
-		ids, total, err := s.repo.CollectionDealIDs(ctx, collection.ID, page)
-		if err != nil {
-			return CollectionDetail{}, fmt.Errorf("list collection deals: %w", err)
-		}
-		items, err := s.publishedSummaries(ctx, ids)
-		if err != nil {
-			return CollectionDetail{}, err
-		}
-		return CollectionDetail{
-			Collection: collection,
-			Deals:      DealPage{PageInfo: PageInfo{Page: page.Number, PageSize: page.Size, Total: total}, Items: items},
-		}, nil
-	})
 }
 
 // publishedSummaries loads the given deals and keeps only those a visitor may see, in input order.

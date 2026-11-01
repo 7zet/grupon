@@ -110,14 +110,6 @@ type Session struct {
 	RefreshToken string
 }
 
-// GoogleIdentity is the verified subject of a Google ID token.
-type GoogleIdentity struct {
-	Subject       string
-	Email         string
-	EmailVerified bool
-	Name          string
-}
-
 // LocaleValid reports whether a locale is supported.
 func LocaleValid(locale string) bool { return validLocales[locale] }
 

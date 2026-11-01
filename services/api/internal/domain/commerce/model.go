@@ -14,12 +14,9 @@ const (
 	ReservationTTL    = 10 * time.Minute
 	MaxLineQuantity   = 100
 	MaxOrderItems     = 100
-	MaxCartItems      = 100
 	MaxMoneyAmount    = int64(1_000_000_000_000_000) // 1e15 minor units; far above any real price
 	MinIdempotencyKey = 16
 	MaxIdempotencyKey = 200
-	MaxGiftNameBytes  = 200
-	MaxGiftMsgBytes   = 500
 	recentWindowSize  = 30
 )
 
@@ -47,18 +44,6 @@ const (
 	VoucherExpired  = "expired"
 )
 
-// Deal kinds that change checkout rules.
-const (
-	KindVoucher = "voucher"
-	KindProduct = "product"
-)
-
-// Fulfillment statuses for order items.
-const (
-	FulfillmentNotApplicable = "not_applicable"
-	FulfillmentProcessing    = "processing"
-)
-
 // OptionRecord is the purchase-relevant state of one deal option, read in one query.
 type OptionRecord struct {
 	ID                 uuid.UUID
@@ -72,11 +57,9 @@ type OptionRecord struct {
 	RedemptionsAllowed int
 	IsActive           bool
 	DealStatus         string
-	DealKind           string
 	StartsAt           time.Time
 	EndsAt             time.Time
 	MaxPerUser         int
-	IsGiftable         bool
 	VoucherValidDays   *int
 	VoucherValidUntil  *time.Time
 	MerchantID         uuid.UUID
@@ -108,42 +91,16 @@ func (o OptionRecord) VoucherWindow(now time.Time) (time.Time, time.Time, bool) 
 	return now, validUntil, validUntil.After(now)
 }
 
-// CartLine is one stored cart row.
-type CartLine struct {
-	OptionID uuid.UUID
-	Quantity int
-	IsGift   bool
-}
-
-// CartItem is a cart line with its display data.
-type CartItem struct {
-	Line      CartLine
-	Option    OptionRecord
-	Deal      catalog.DealSummary
-	LineTotal int64
-}
-
-// Cart is the server-side cart of one user.
-type Cart struct {
-	Items    []CartItem
-	Subtotal int64
-}
-
 // OrderItemInput is one requested purchase line.
 type OrderItemInput struct {
-	OptionID           uuid.UUID
-	Quantity           int
-	IsGift             bool
-	GiftRecipientName  *string
-	GiftRecipientEmail *string
-	GiftMessage        *string
+	OptionID uuid.UUID
+	Quantity int
 }
 
 // OrderInput is a validated-at-the-edge checkout request.
 type OrderInput struct {
-	IdempotencyKey  string
-	Items           []OrderItemInput
-	ShippingAddress map[string]any
+	IdempotencyKey string
+	Items          []OrderItemInput
 }
 
 // Order is a purchase with its items.
@@ -154,7 +111,6 @@ type Order struct {
 	Status               string
 	Subtotal             int64
 	Total                int64
-	ShippingAddress      map[string]any
 	PaidAt               *time.Time
 	CreatedAt            time.Time
 	ReservationExpiresAt *time.Time
@@ -164,19 +120,14 @@ type Order struct {
 
 // OrderItem is one purchased line with price snapshots.
 type OrderItem struct {
-	ID                 uuid.UUID
-	OrderID            uuid.UUID
-	DealID             uuid.UUID
-	OptionID           uuid.UUID
-	Title              catalog.Text
-	UnitPrice          int64
-	OriginalPrice      int64
-	Quantity           int
-	IsGift             bool
-	GiftRecipientName  *string
-	GiftRecipientEmail *string
-	GiftMessage        *string
-	FulfillmentStatus  string
+	ID            uuid.UUID
+	OrderID       uuid.UUID
+	DealID        uuid.UUID
+	OptionID      uuid.UUID
+	Title         catalog.Text
+	UnitPrice     int64
+	OriginalPrice int64
+	Quantity      int
 }
 
 // Reservation is a stock hold on one option for one order.

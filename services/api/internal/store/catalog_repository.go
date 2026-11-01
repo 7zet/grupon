@@ -77,17 +77,6 @@ func (r *CatalogRepository) ListCategories(ctx context.Context) ([]catalog.Categ
 	return categories, nil
 }
 
-func (r *CatalogRepository) LatestExchangeRate(ctx context.Context) (catalog.ExchangeRate, error) {
-	row, err := r.queries.GetLatestExchangeRate(ctx)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return catalog.ExchangeRate{}, catalog.ErrNotFound
-	}
-	if err != nil {
-		return catalog.ExchangeRate{}, fmt.Errorf("latest exchange rate: %w", err)
-	}
-	return catalog.ExchangeRate{Rate: row.Rate, EffectiveAt: row.EffectiveAt.Time}, nil
-}
-
 func (r *CatalogRepository) SearchDealIDs(ctx context.Context, filter catalog.DealFilter, sort catalog.Sort, page catalog.Page) ([]uuid.UUID, error) {
 	rows, err := r.queries.SearchPublishedDealIDs(ctx, sqlc.SearchPublishedDealIDsParams{
 		Sort:        string(sort),
@@ -358,96 +347,6 @@ func (r *CatalogRepository) SuggestCategories(ctx context.Context, query, locale
 	return result, nil
 }
 
-func (r *CatalogRepository) PromoCodes(ctx context.Context, filter catalog.PromoCodeFilter, page catalog.Page) ([]catalog.PromoCode, int64, error) {
-	rows, err := r.queries.ListActivePromoCodes(ctx, sqlc.ListActivePromoCodesParams{
-		Category:   optText(filter.Category),
-		PageOffset: int32(page.Offset()),
-		PageLimit:  int32(page.Size),
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("list promo codes: %w", err)
-	}
-	total, err := r.queries.CountActivePromoCodes(ctx, optText(filter.Category))
-	if err != nil {
-		return nil, 0, fmt.Errorf("count promo codes: %w", err)
-	}
-	codes := make([]catalog.PromoCode, 0, len(rows))
-	for _, row := range rows {
-		title, err := catalog.ParseText(row.Title)
-		if err != nil {
-			return nil, 0, err
-		}
-		label, err := catalog.ParseText(row.DiscountLabel)
-		if err != nil {
-			return nil, 0, err
-		}
-		codes = append(codes, catalog.PromoCode{
-			ID:            toUUID(row.ID),
-			BrandName:     row.BrandName,
-			BrandLogoURL:  textPtr(row.BrandLogoUrl),
-			Title:         title,
-			Code:          textPtr(row.Code),
-			DiscountLabel: label,
-			URL:           row.Url,
-			StartsAt:      row.StartsAt.Time,
-			EndsAt:        row.EndsAt.Time,
-			IsVerified:    row.IsVerified,
-		})
-	}
-	return codes, total, nil
-}
-
-func (r *CatalogRepository) IncrementPromoCodeClicks(ctx context.Context, id uuid.UUID) (bool, error) {
-	rows, err := r.queries.IncrementPromoCodeClicks(ctx, toPgUUID(id))
-	if err != nil {
-		return false, fmt.Errorf("increment promo clicks: %w", err)
-	}
-	return rows > 0, nil
-}
-
-func (r *CatalogRepository) ActiveCollections(ctx context.Context) ([]catalog.Collection, error) {
-	rows, err := r.queries.ListActiveCollections(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list collections: %w", err)
-	}
-	collections := make([]catalog.Collection, 0, len(rows))
-	for _, row := range rows {
-		collection, err := collectionFromRow(row.ID, row.Slug, row.Title, row.Description, row.CoverUrl, row.StartsAt, row.EndsAt)
-		if err != nil {
-			return nil, err
-		}
-		collections = append(collections, collection)
-	}
-	return collections, nil
-}
-
-func (r *CatalogRepository) CollectionBySlug(ctx context.Context, slug string) (catalog.Collection, error) {
-	row, err := r.queries.GetActiveCollectionBySlug(ctx, slug)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return catalog.Collection{}, catalog.ErrNotFound
-	}
-	if err != nil {
-		return catalog.Collection{}, fmt.Errorf("get collection: %w", err)
-	}
-	return collectionFromRow(row.ID, row.Slug, row.Title, row.Description, row.CoverUrl, row.StartsAt, row.EndsAt)
-}
-
-func (r *CatalogRepository) CollectionDealIDs(ctx context.Context, collectionID uuid.UUID, page catalog.Page) ([]uuid.UUID, int64, error) {
-	rows, err := r.queries.SearchCollectionDealIDs(ctx, sqlc.SearchCollectionDealIDsParams{
-		CollectionID: toPgUUID(collectionID),
-		PageOffset:   int32(page.Offset()),
-		PageLimit:    int32(page.Size),
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("list collection deal ids: %w", err)
-	}
-	total, err := r.queries.CountCollectionDeals(ctx, toPgUUID(collectionID))
-	if err != nil {
-		return nil, 0, fmt.Errorf("count collection deals: %w", err)
-	}
-	return toUUIDs(rows), total, nil
-}
-
 func (r *CatalogRepository) HomepageRows(ctx context.Context) ([]catalog.HomepageRow, error) {
 	rows, err := r.queries.ListActiveHomepageSections(ctx)
 	if err != nil {
@@ -517,7 +416,6 @@ func summaryFromRow(row sqlc.ListDealSummaryRowsRow) (catalog.DealSummary, error
 			Icon:          row.CategoryIcon,
 			Subcategories: []catalog.Subcategory{},
 		},
-		Kind:        string(row.Kind),
 		Title:       title,
 		Status:      string(row.Status),
 		SoldCount:   int(row.SoldCount),
@@ -580,7 +478,6 @@ func detailFromRow(row sqlc.GetDealDetailRowBySlugRow) (catalog.Deal, error) {
 		RedemptionMethod:       string(row.RedemptionMethod),
 		RedemptionInstructions: instructions,
 		BookingRequired:        row.BookingRequired,
-		IsGiftable:             row.IsGiftable,
 		VoucherValidDays:       int32PtrToInt(row.VoucherValidDays),
 		VoucherValidUntil:      timePtr(row.VoucherValidUntil),
 		MaxPerUser:             int(row.MaxPerUser),
@@ -646,27 +543,6 @@ func locationFromRow(id pgtype.UUID, address string, lat, lng float64, hours []b
 			Lng:  cityLng,
 		},
 		OpeningHours: openingHours,
-	}, nil
-}
-
-func collectionFromRow(id pgtype.UUID, slug string, title, description []byte, cover string,
-	startsAt, endsAt pgtype.Timestamptz) (catalog.Collection, error) {
-	parsedTitle, err := catalog.ParseText(title)
-	if err != nil {
-		return catalog.Collection{}, err
-	}
-	parsedDescription, err := catalog.ParseText(description)
-	if err != nil {
-		return catalog.Collection{}, err
-	}
-	return catalog.Collection{
-		ID:          toUUID(id),
-		Slug:        slug,
-		Title:       parsedTitle,
-		Description: parsedDescription,
-		CoverURL:    cover,
-		StartsAt:    startsAt.Time,
-		EndsAt:      endsAt.Time,
 	}, nil
 }
 

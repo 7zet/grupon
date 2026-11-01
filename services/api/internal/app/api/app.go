@@ -27,7 +27,6 @@ import (
 	"github.com/grupon/grupon/services/api/internal/platform/cache"
 	"github.com/grupon/grupon/services/api/internal/platform/config"
 	"github.com/grupon/grupon/services/api/internal/platform/database"
-	"github.com/grupon/grupon/services/api/internal/platform/google"
 	"github.com/grupon/grupon/services/api/internal/platform/mail"
 	"github.com/grupon/grupon/services/api/internal/platform/ratelimit"
 	"github.com/grupon/grupon/services/api/internal/platform/revalidate"
@@ -163,21 +162,11 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		logger.Warn("SMTP_HOST is not set; emails are logged without bodies and not delivered")
 	}
 
-	var exchanger identity.GoogleExchanger
-	if client := google.NewClient(google.Config{
-		ClientID:     cfg.Auth.Google.ClientID,
-		ClientSecret: cfg.Auth.Google.ClientSecret,
-		RedirectURI:  cfg.Auth.Google.RedirectURI,
-	}, time.Now); client != nil {
-		exchanger = client
-	}
-
 	return identity.NewService(identity.Dependencies{
 		Repository: store.NewIdentityRepository(pool),
 		Tokens:     tokens,
 		Mailer:     mailer,
 		Limiter:    limiter,
-		Google:     exchanger,
 		Logger:     logger,
 		Now:        time.Now,
 		CodeSender: codeSender,

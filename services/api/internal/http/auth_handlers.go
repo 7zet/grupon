@@ -57,58 +57,6 @@ func NewAuthAPI(service *identity.Service, logger *slog.Logger, options AuthOpti
 	return &AuthAPI{identity: service, logger: logger, options: options}
 }
 
-// Register creates an account and opens a session.
-func (a *AuthAPI) Register(w http.ResponseWriter, r *http.Request) {
-	var body gen.RegisterRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	session, err := a.identity.Register(r.Context(), a.meta(r), identity.RegisterInput{
-		Email:    string(body.Email),
-		Password: body.Password,
-		Name:     body.Name,
-		Locale:   string(body.Locale),
-		Currency: string(body.Currency),
-	})
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	a.writeSession(w, http.StatusCreated, session)
-}
-
-// Login signs in with email and password.
-func (a *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
-	var body gen.LoginRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	session, err := a.identity.Login(r.Context(), a.meta(r), string(body.Email), body.Password)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	a.writeSession(w, http.StatusOK, session)
-}
-
-// ExchangeGoogleCode signs in with a Google authorization code and PKCE verifier.
-func (a *AuthAPI) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	var body gen.GoogleCodeRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	session, err := a.identity.GoogleSignIn(r.Context(), a.meta(r), identity.GoogleSignInInput{
-		Code:         body.Code,
-		CodeVerifier: body.CodeVerifier,
-		RedirectURI:  body.RedirectUri,
-	})
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	a.writeSession(w, http.StatusOK, session)
-}
-
 // RefreshSession rotates the refresh token from the cookie or the bearer header.
 func (a *AuthAPI) RefreshSession(w http.ResponseWriter, r *http.Request) {
 	session, err := a.identity.Refresh(r.Context(), a.meta(r), refreshTokenFrom(r))
@@ -124,46 +72,6 @@ func (a *AuthAPI) RefreshSession(w http.ResponseWriter, r *http.Request) {
 // refresh token, so it still works after the access token has expired.
 func (a *AuthAPI) Logout(w http.ResponseWriter, r *http.Request) {
 	if err := a.identity.Logout(r.Context(), refreshTokenFrom(r)); err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	a.clearSessionCookies(w)
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// VerifyEmail consumes an email verification token.
-func (a *AuthAPI) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	var body gen.TokenRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	if err := a.identity.VerifyEmail(r.Context(), body.Token); err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// ForgotPassword always answers 202 so that account existence is not revealed.
-func (a *AuthAPI) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var body gen.EmailRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	if err := a.identity.ForgotPassword(r.Context(), a.meta(r), string(body.Email)); err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	w.WriteHeader(http.StatusAccepted)
-}
-
-// ResetPassword sets a new password with a reset token and revokes every session.
-func (a *AuthAPI) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var body gen.ResetPasswordRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	if err := a.identity.ResetPassword(r.Context(), a.meta(r), body.Token, body.Password); err != nil {
 		a.fail(w, r, err)
 		return
 	}
@@ -239,23 +147,6 @@ func (a *AuthAPI) DeleteMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.clearSessionCookies(w)
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// ChangePassword changes the password and revokes the other sessions of the account.
-func (a *AuthAPI) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	account, ok := a.authenticate(w, r)
-	if !ok {
-		return
-	}
-	var body gen.ChangePasswordRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	if err := a.identity.ChangePassword(r.Context(), account.ID, body.CurrentPassword, body.NewPassword, refreshCookieValue(r)); err != nil {
-		a.fail(w, r, err)
-		return
-	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -364,14 +255,6 @@ func (a *AuthAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusUnauthorized, "unauthenticated", nil, nil)
 	case errors.Is(err, identity.ErrForbidden):
 		writeProblem(w, r, http.StatusForbidden, "forbidden", nil, nil)
-	case errors.Is(err, identity.ErrGoogleNotConfigured):
-		writeProblem(w, r, http.StatusServiceUnavailable, "google_not_configured", nil, nil)
-	case errors.Is(err, identity.ErrGoogleExchangeFailed):
-		writeProblem(w, r, http.StatusBadRequest, "google_exchange_failed", nil, nil)
-	case errors.Is(err, identity.ErrGoogleEmailUnverified):
-		writeProblem(w, r, http.StatusBadRequest, "google_email_unverified", nil, nil)
-	case errors.Is(err, identity.ErrGoogleAccountConflict):
-		writeProblem(w, r, http.StatusConflict, "google_account_conflict", nil, nil)
 	case errors.Is(err, identity.ErrNotFound):
 		writeProblem(w, r, http.StatusNotFound, "not_found", nil, nil)
 	default:

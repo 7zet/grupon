@@ -7,10 +7,8 @@ import { persist } from 'zustand/middleware';
 export type CartItem = {
   optionId: string;
   quantity: number;
-  isGift: boolean;
   title: string;
   dealSlug: string;
-  kind: 'voucher' | 'product';
   unitPrice: number;
   originalPrice: number;
 };

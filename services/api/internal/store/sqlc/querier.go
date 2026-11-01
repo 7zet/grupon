@@ -27,12 +27,9 @@ type Querier interface {
 	AttachRedemptionToRun(ctx context.Context, arg AttachRedemptionToRunParams) (int64, error)
 	ClaimOutboxBatch(ctx context.Context, batchSize int32) ([]ClaimOutboxBatchRow, error)
 	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
-	ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error)
 	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
 	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
-	CountActivePromoCodes(ctx context.Context, category pgtype.Text) (int64, error)
 	CountAuditLogs(ctx context.Context) (int64, error)
-	CountCollectionDeals(ctx context.Context, collectionID pgtype.UUID) (int64, error)
 	CountOpenReviewReports(ctx context.Context) (int64, error)
 	CountOrdersForUser(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountOwnedDeals(ctx context.Context, arg CountOwnedDealsParams) (int64, error)
@@ -41,7 +38,6 @@ type Querier interface {
 	CountPublishedDeals(ctx context.Context, arg CountPublishedDealsParams) (int64, error)
 	CountPublishedReviewsForDeal(ctx context.Context, dealID pgtype.UUID) (int64, error)
 	CountVouchersForUser(ctx context.Context, arg CountVouchersForUserParams) (int64, error)
-	CreateAuthToken(ctx context.Context, arg CreateAuthTokenParams) error
 	// Media library: uploaded images owned by a merchant. Assets are referenced by deals through deal_media.
 	CreateMediaAsset(ctx context.Context, arg CreateMediaAssetParams) (CreateMediaAssetRow, error)
 	// Merchant registration and lookups. Registration writes are composed in one transaction by the store.
@@ -61,11 +57,9 @@ type Querier interface {
 	DashboardVouchersRedeemed(ctx context.Context, arg DashboardVouchersRedeemedParams) (int64, error)
 	DashboardVouchersSold(ctx context.Context, arg DashboardVouchersSoldParams) (int64, error)
 	DeactivateDealOptionsExcept(ctx context.Context, arg DeactivateDealOptionsExceptParams) error
-	DeleteCartItems(ctx context.Context, cartID pgtype.UUID) error
 	DeleteDealLocations(ctx context.Context, dealID pgtype.UUID) error
 	DeleteDealMedia(ctx context.Context, dealID pgtype.UUID) error
 	DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerchantLocationRowParams) (int64, error)
-	DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error)
 	DismissOpenReviewReport(ctx context.Context, id pgtype.UUID) (int64, error)
 	DisputeForResolution(ctx context.Context, id pgtype.UUID) (DisputeForResolutionRow, error)
 	EnsureLedgerAccount(ctx context.Context, arg EnsureLedgerAccountParams) (pgtype.UUID, error)
@@ -76,12 +70,10 @@ type Querier interface {
 	// Vouchers whose window closed more than 90 days ago and still hold unused value (PRD §8.5).
 	ExpiredVouchersForBreakage(ctx context.Context, arg ExpiredVouchersForBreakageParams) ([]ExpiredVouchersForBreakageRow, error)
 	FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (int64, error)
-	GetActiveCollectionBySlug(ctx context.Context, slug string) (GetActiveCollectionBySlugRow, error)
 	GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error)
 	GetDealDetailRowBySlug(ctx context.Context, slug string) (GetDealDetailRowBySlugRow, error)
 	GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error)
 	GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDealReviewRowRow, error)
-	GetLatestExchangeRate(ctx context.Context) (GetLatestExchangeRateRow, error)
 	GetMediaAssetForMerchant(ctx context.Context, arg GetMediaAssetForMerchantParams) (GetMediaAssetForMerchantRow, error)
 	GetMerchantWorkspace(ctx context.Context, id pgtype.UUID) (GetMerchantWorkspaceRow, error)
 	GetOrderByID(ctx context.Context, orderID pgtype.UUID) (GetOrderByIDRow, error)
@@ -93,7 +85,6 @@ type Querier interface {
 	GetReviewReportRow(ctx context.Context, id pgtype.UUID) (GetReviewReportRowRow, error)
 	GetReviewRow(ctx context.Context, id pgtype.UUID) (GetReviewRowRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
-	GetUserByGoogleSub(ctx context.Context, googleSub pgtype.Text) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, error)
 	GetUserContact(ctx context.Context, userID pgtype.UUID) (GetUserContactRow, error)
@@ -103,9 +94,7 @@ type Querier interface {
 	GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error)
 	HideReviewRow(ctx context.Context, id pgtype.UUID) (int64, error)
 	IncrementPhoneOTPAttempts(ctx context.Context, id pgtype.UUID) error
-	IncrementPromoCodeClicks(ctx context.Context, id pgtype.UUID) (int64, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
-	InsertCartItem(ctx context.Context, arg InsertCartItemParams) error
 	InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.UUID, error)
 	InsertDealLocation(ctx context.Context, arg InsertDealLocationParams) error
 	InsertDealMedia(ctx context.Context, arg InsertDealMediaParams) error
@@ -124,27 +113,20 @@ type Querier interface {
 	InsertRefund(ctx context.Context, arg InsertRefundParams) (pgtype.UUID, error)
 	InsertReview(ctx context.Context, arg InsertReviewParams) (InsertReviewRow, error)
 	InsertReviewReport(ctx context.Context, arg InsertReviewReportParams) (int64, error)
-	InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error
 	InsertStockReservation(ctx context.Context, arg InsertStockReservationParams) error
 	InsertVoucher(ctx context.Context, arg InsertVoucherParams) error
-	InvalidateUserAuthTokens(ctx context.Context, arg InvalidateUserAuthTokensParams) error
 	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
 	LatestOpenRedemption(ctx context.Context, arg LatestOpenRedemptionParams) (LatestOpenRedemptionRow, error)
 	LatestPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
 	LatestRedemptionForVoucher(ctx context.Context, voucherID pgtype.UUID) (LatestRedemptionForVoucherRow, error)
 	LedgerBalance(ctx context.Context, code string) (int64, error)
 	LedgerEntryExists(ctx context.Context, idempotencyKey string) (bool, error)
-	LinkUserGoogleSub(ctx context.Context, arg LinkUserGoogleSubParams) error
 	ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error)
 	// Public catalog read model. Every query here is read-only and filters to what the public may see.
 	ListActiveCities(ctx context.Context) ([]ListActiveCitiesRow, error)
-	ListActiveCollections(ctx context.Context) ([]ListActiveCollectionsRow, error)
 	ListActiveDealOptionsForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListActiveDealOptionsForDealsRow, error)
 	ListActiveHomepageSections(ctx context.Context) ([]ListActiveHomepageSectionsRow, error)
-	ListActivePromoCodes(ctx context.Context, arg ListActivePromoCodesParams) ([]ListActivePromoCodesRow, error)
 	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]ListAuditLogsRow, error)
-	ListCartItemRows(ctx context.Context, cartID pgtype.UUID) ([]ListCartItemRowsRow, error)
-	ListCartLinesForUser(ctx context.Context, userID pgtype.UUID) ([]ListCartLinesForUserRow, error)
 	ListDealLocationRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealLocationRowsRow, error)
 	ListDealMediaForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealMediaForDealsRow, error)
 	ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error)
@@ -160,7 +142,6 @@ type Querier interface {
 	ListPublishedReviewsForMerchant(ctx context.Context, arg ListPublishedReviewsForMerchantParams) ([]ListPublishedReviewsForMerchantRow, error)
 	ListRecentlyViewedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
 	ListRelatedDealIDs(ctx context.Context, arg ListRelatedDealIDsParams) ([]pgtype.UUID, error)
-	ListSavedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
 	ListSubcategories(ctx context.Context) ([]ListSubcategoriesRow, error)
 	ListUnreleasedReservations(ctx context.Context, orderID pgtype.UUID) ([]ListUnreleasedReservationsRow, error)
 	ListUserRoles(ctx context.Context, userID pgtype.UUID) ([]RoleAssignment, error)
@@ -206,7 +187,6 @@ type Querier interface {
 	RevokeRefreshTokenByHash(ctx context.Context, tokenHash string) error
 	RevokeUserRefreshTokensExceptFamily(ctx context.Context, arg RevokeUserRefreshTokensExceptFamilyParams) error
 	RollBackVoucherUse(ctx context.Context, id pgtype.UUID) (int64, error)
-	SearchCollectionDealIDs(ctx context.Context, arg SearchCollectionDealIDsParams) ([]pgtype.UUID, error)
 	SearchPublishedDealIDs(ctx context.Context, arg SearchPublishedDealIDsParams) ([]pgtype.UUID, error)
 	SetOrderStatus(ctx context.Context, arg SetOrderStatusParams) error
 	SetOwnedDealStatus(ctx context.Context, arg SetOwnedDealStatusParams) (int64, error)
@@ -229,9 +209,7 @@ type Querier interface {
 	UpdateMerchantWorkspace(ctx context.Context, arg UpdateMerchantWorkspaceParams) (UpdateMerchantWorkspaceRow, error)
 	UpdateOwnReview(ctx context.Context, arg UpdateOwnReviewParams) (int64, error)
 	UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams) (int64, error)
-	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error)
-	UpsertCart(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
 	UpsertDealOption(ctx context.Context, arg UpsertDealOptionParams) error
 	UpsertRecentlyViewed(ctx context.Context, arg UpsertRecentlyViewedParams) error
 	UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error)

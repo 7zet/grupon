@@ -76,12 +76,6 @@ type Category struct {
 	Subcategories []Subcategory `json:"subcategories"`
 }
 
-// ExchangeRate is the stored UZS to USD display rate.
-type ExchangeRate struct {
-	Rate        string    `json:"rate"`
-	EffectiveAt time.Time `json:"effective_at"`
-}
-
 // Merchant is a business that publishes deals.
 type Merchant struct {
 	ID            uuid.UUID  `json:"id"`
@@ -141,7 +135,6 @@ type DealSummary struct {
 	Slug        string     `json:"slug"`
 	Merchant    Merchant   `json:"merchant"`
 	Category    Category   `json:"category"`
-	Kind        string     `json:"kind"`
 	Title       Text       `json:"title"`
 	Status      string     `json:"status"`
 	Options     []Option   `json:"options"`
@@ -172,7 +165,6 @@ type Deal struct {
 	RedemptionMethod       string      `json:"redemption_method"`
 	RedemptionInstructions *Text       `json:"redemption_instructions,omitempty"`
 	BookingRequired        bool        `json:"booking_required"`
-	IsGiftable             bool        `json:"is_giftable"`
 	VoucherValidDays       *int        `json:"voucher_valid_days,omitempty"`
 	VoucherValidUntil      *time.Time  `json:"voucher_valid_until,omitempty"`
 	MaxPerUser             int         `json:"max_per_user"`
@@ -201,31 +193,6 @@ type ReviewReply struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// PromoCode is a brand coupon shown on the coupons page.
-type PromoCode struct {
-	ID            uuid.UUID `json:"id"`
-	BrandName     string    `json:"brand_name"`
-	BrandLogoURL  *string   `json:"brand_logo_url,omitempty"`
-	Title         Text      `json:"title"`
-	Code          *string   `json:"code,omitempty"`
-	DiscountLabel Text      `json:"discount_label"`
-	URL           string    `json:"url"`
-	StartsAt      time.Time `json:"starts_at"`
-	EndsAt        time.Time `json:"ends_at"`
-	IsVerified    bool      `json:"is_verified"`
-}
-
-// Collection is a seasonal set of deals.
-type Collection struct {
-	ID          uuid.UUID `json:"id"`
-	Slug        string    `json:"slug"`
-	Title       Text      `json:"title"`
-	Description Text      `json:"description"`
-	CoverURL    string    `json:"cover_url"`
-	StartsAt    time.Time `json:"starts_at"`
-	EndsAt      time.Time `json:"ends_at"`
-}
-
 // HomepageSection is one curated homepage block with its resolved content.
 type HomepageSection struct {
 	ID         uuid.UUID     `json:"id"`
@@ -234,7 +201,6 @@ type HomepageSection struct {
 	Type       string        `json:"type"`
 	SortOrder  int           `json:"sort_order"`
 	Deals      []DealSummary `json:"deals,omitempty"`
-	Collection *Collection   `json:"collection,omitempty"`
 	Categories []Category    `json:"categories,omitempty"`
 }
 
@@ -249,18 +215,6 @@ type PageInfo struct {
 type DealPage struct {
 	PageInfo
 	Items []DealSummary `json:"items"`
-}
-
-// PromoCodePage is one page of active promo codes.
-type PromoCodePage struct {
-	PageInfo
-	Items []PromoCode `json:"items"`
-}
-
-// CollectionDetail is a collection with its paged, publishable deals.
-type CollectionDetail struct {
-	Collection
-	Deals DealPage `json:"deals"`
 }
 
 // MerchantProfile is a merchant with its active deals and recent reviews.
@@ -279,9 +233,8 @@ type Suggestion struct {
 
 // PublicConfig is the bootstrap payload for every page.
 type PublicConfig struct {
-	Locales      []string     `json:"locales"`
-	Currencies   []string     `json:"currencies"`
-	Cities       []City       `json:"cities"`
-	Categories   []Category   `json:"categories"`
-	ExchangeRate ExchangeRate `json:"exchange_rate"`
+	Locales    []string   `json:"locales"`
+	Currencies []string   `json:"currencies"`
+	Cities     []City     `json:"cities"`
+	Categories []Category `json:"categories"`
 }

@@ -80,10 +80,10 @@ func (q *Queries) DeleteDealMedia(ctx context.Context, dealID pgtype.UUID) error
 }
 
 const getOwnedDealDetailRow = `-- name: GetOwnedDealDetailRow :one
-SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
        d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
        d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
-       d.booking_required, d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
+       d.booking_required, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
        d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
 FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
@@ -98,7 +98,6 @@ type GetOwnedDealDetailRowParams struct {
 type GetOwnedDealDetailRowRow struct {
 	ID                     pgtype.UUID        `json:"id"`
 	Slug                   string             `json:"slug"`
-	Kind                   DealKind           `json:"kind"`
 	Title                  []byte             `json:"title"`
 	Status                 DealStatus         `json:"status"`
 	SoldCount              int32              `json:"sold_count"`
@@ -115,7 +114,6 @@ type GetOwnedDealDetailRowRow struct {
 	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
 	RedemptionInstructions []byte             `json:"redemption_instructions"`
 	BookingRequired        bool               `json:"booking_required"`
-	IsGiftable             bool               `json:"is_giftable"`
 	VoucherValidDays       pgtype.Int4        `json:"voucher_valid_days"`
 	VoucherValidUntil      pgtype.Timestamptz `json:"voucher_valid_until"`
 	MaxPerUser             int32              `json:"max_per_user"`
@@ -132,7 +130,6 @@ func (q *Queries) GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDet
 	err := row.Scan(
 		&i.ID,
 		&i.Slug,
-		&i.Kind,
 		&i.Title,
 		&i.Status,
 		&i.SoldCount,
@@ -149,7 +146,6 @@ func (q *Queries) GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDet
 		&i.RedemptionMethod,
 		&i.RedemptionInstructions,
 		&i.BookingRequired,
-		&i.IsGiftable,
 		&i.VoucherValidDays,
 		&i.VoucherValidUntil,
 		&i.MaxPerUser,
@@ -214,16 +210,16 @@ func (q *Queries) InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) 
 }
 
 const insertDeal = `-- name: InsertDeal :one
-INSERT INTO deals (slug, merchant_id, category_id, subcategory_id, kind, title, short_description, description,
-  highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required, is_giftable,
+INSERT INTO deals (slug, merchant_id, category_id, subcategory_id, title, short_description, description,
+  highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required,
   status, starts_at, ends_at, voucher_valid_days, voucher_valid_until, max_per_user, review_fingerprint)
 VALUES ($1, $2, $3, $4,
-  $5::deal_kind, $6, $7, $8,
-  $9, $10, $11, $12,
-  $13::redemption_method, $14,
-  $15, $16, $17::deal_status,
-  $18, $19, $20, $21,
-  $22, $23)
+  $5, $6, $7,
+  $8, $9, $10, $11,
+  $12::redemption_method, $13,
+  $14, $15::deal_status,
+  $16, $17, $18, $19,
+  $20, $21)
 RETURNING id
 `
 
@@ -232,7 +228,6 @@ type InsertDealParams struct {
 	MerchantID             pgtype.UUID        `json:"merchant_id"`
 	CategoryID             pgtype.UUID        `json:"category_id"`
 	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
-	Kind                   DealKind           `json:"kind"`
 	Title                  []byte             `json:"title"`
 	ShortDescription       []byte             `json:"short_description"`
 	Description            []byte             `json:"description"`
@@ -243,7 +238,6 @@ type InsertDealParams struct {
 	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
 	RedemptionInstructions []byte             `json:"redemption_instructions"`
 	BookingRequired        bool               `json:"booking_required"`
-	IsGiftable             bool               `json:"is_giftable"`
 	Status                 DealStatus         `json:"status"`
 	StartsAt               pgtype.Timestamptz `json:"starts_at"`
 	EndsAt                 pgtype.Timestamptz `json:"ends_at"`
@@ -259,7 +253,6 @@ func (q *Queries) InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.
 		arg.MerchantID,
 		arg.CategoryID,
 		arg.SubcategoryID,
-		arg.Kind,
 		arg.Title,
 		arg.ShortDescription,
 		arg.Description,
@@ -270,7 +263,6 @@ func (q *Queries) InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.
 		arg.RedemptionMethod,
 		arg.RedemptionInstructions,
 		arg.BookingRequired,
-		arg.IsGiftable,
 		arg.Status,
 		arg.StartsAt,
 		arg.EndsAt,
@@ -416,22 +408,21 @@ func (q *Queries) SubcategoryCategoryID(ctx context.Context, id pgtype.UUID) (pg
 
 const updateOwnedDeal = `-- name: UpdateOwnedDeal :execrows
 UPDATE deals SET slug = $1, category_id = $2, subcategory_id = $3,
-  kind = $4::deal_kind, title = $5, short_description = $6,
-  description = $7, highlights = $8, whats_included = $9,
-  terms = $10, faq = $11, redemption_method = $12::redemption_method,
-  redemption_instructions = $13, booking_required = $14,
-  is_giftable = $15, status = $16::deal_status, rejection_reason = NULL,
-  starts_at = $17, ends_at = $18, voucher_valid_days = $19,
-  voucher_valid_until = $20, max_per_user = $21,
-  review_fingerprint = $22, updated_at = now()
-WHERE id = $23 AND merchant_id = $24 AND deleted_at IS NULL
+  title = $4, short_description = $5,
+  description = $6, highlights = $7, whats_included = $8,
+  terms = $9, faq = $10, redemption_method = $11::redemption_method,
+  redemption_instructions = $12, booking_required = $13,
+  status = $14::deal_status, rejection_reason = NULL,
+  starts_at = $15, ends_at = $16, voucher_valid_days = $17,
+  voucher_valid_until = $18, max_per_user = $19,
+  review_fingerprint = $20, updated_at = now()
+WHERE id = $21 AND merchant_id = $22 AND deleted_at IS NULL
 `
 
 type UpdateOwnedDealParams struct {
 	Slug                   string             `json:"slug"`
 	CategoryID             pgtype.UUID        `json:"category_id"`
 	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
-	Kind                   DealKind           `json:"kind"`
 	Title                  []byte             `json:"title"`
 	ShortDescription       []byte             `json:"short_description"`
 	Description            []byte             `json:"description"`
@@ -442,7 +433,6 @@ type UpdateOwnedDealParams struct {
 	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
 	RedemptionInstructions []byte             `json:"redemption_instructions"`
 	BookingRequired        bool               `json:"booking_required"`
-	IsGiftable             bool               `json:"is_giftable"`
 	Status                 DealStatus         `json:"status"`
 	StartsAt               pgtype.Timestamptz `json:"starts_at"`
 	EndsAt                 pgtype.Timestamptz `json:"ends_at"`
@@ -459,7 +449,6 @@ func (q *Queries) UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams
 		arg.Slug,
 		arg.CategoryID,
 		arg.SubcategoryID,
-		arg.Kind,
 		arg.Title,
 		arg.ShortDescription,
 		arg.Description,
@@ -470,7 +459,6 @@ func (q *Queries) UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams
 		arg.RedemptionMethod,
 		arg.RedemptionInstructions,
 		arg.BookingRequired,
-		arg.IsGiftable,
 		arg.Status,
 		arg.StartsAt,
 		arg.EndsAt,

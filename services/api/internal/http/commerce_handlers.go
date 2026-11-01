@@ -37,87 +37,6 @@ func NewCommerceAPI(service *commerce.Service, auth *AuthAPI, logger *slog.Logge
 	return &CommerceAPI{service: service, auth: auth, logger: logger}
 }
 
-// GetCart returns the stored cart.
-func (a *CommerceAPI) GetCart(w http.ResponseWriter, r *http.Request) {
-	account, ok := a.auth.authenticate(w, r)
-	if !ok {
-		return
-	}
-	cart, err := a.service.GetCart(r.Context(), account.ID)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
-}
-
-// ReplaceCart stores the cart, or merges it into the stored cart when merge is set.
-func (a *CommerceAPI) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-	account, ok := a.auth.authenticate(w, r)
-	if !ok {
-		return
-	}
-	var body gen.CartInput
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	lines := make([]commerce.CartLine, 0, len(body.Items))
-	for _, item := range body.Items {
-		lines = append(lines, commerce.CartLine{OptionID: uuid.UUID(item.DealOptionId), Quantity: item.Quantity, IsGift: item.IsGift})
-	}
-	merge := body.Merge != nil && *body.Merge
-	cart, err := a.service.ReplaceCart(r.Context(), account.ID, lines, merge)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
-}
-
-// ListSavedDeals returns the saved deals.
-func (a *CommerceAPI) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	account, ok := a.auth.authenticate(w, r)
-	if !ok {
-		return
-	}
-	deals, err := a.service.SavedDeals(r.Context(), account.ID)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, gen.DealList{Items: mapDealSummaries(deals)})
-}
-
-// SaveDeal saves a deal.
-func (a *CommerceAPI) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	account, ok := a.auth.authenticate(w, r)
-	if !ok {
-		return
-	}
-	var body gen.DealIdRequest
-	if _, ok := decodeBody(w, r, &body); !ok {
-		return
-	}
-	if err := a.service.SaveDeal(r.Context(), account.ID, uuid.UUID(body.DealId)); err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// UnsaveDeal removes a saved deal by deal id.
-func (a *CommerceAPI) UnsaveDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
-	account, ok := a.auth.authenticate(w, r)
-	if !ok {
-		return
-	}
-	if err := a.service.UnsaveDeal(r.Context(), account.ID, uuid.UUID(id)); err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
 // ListRecentlyViewed returns the recently viewed deals.
 func (a *CommerceAPI) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 	account, ok := a.auth.authenticate(w, r)
@@ -163,16 +82,9 @@ func (a *CommerceAPI) CreateOrder(w http.ResponseWriter, r *http.Request, params
 	input := commerce.OrderInput{IdempotencyKey: params.IdempotencyKey}
 	for _, item := range body.Items {
 		input.Items = append(input.Items, commerce.OrderItemInput{
-			OptionID:           uuid.UUID(item.DealOptionId),
-			Quantity:           item.Quantity,
-			IsGift:             item.IsGift,
-			GiftRecipientName:  item.GiftRecipientName,
-			GiftRecipientEmail: emailString(item.GiftRecipientEmail),
-			GiftMessage:        item.GiftMessage,
+			OptionID: uuid.UUID(item.DealOptionId),
+			Quantity: item.Quantity,
 		})
-	}
-	if body.ShippingAddress != nil {
-		input.ShippingAddress = *body.ShippingAddress
 	}
 	order, replayed, err := a.service.CreateOrder(r.Context(), account.ID, input)
 	if err != nil {
@@ -317,12 +229,8 @@ func (a *CommerceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 			map[string][]string{validation.Field: {validation.Code}})
 	case errors.Is(err, commerce.ErrOptionUnavailable):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "option_unavailable", nil, nil)
-	case errors.Is(err, commerce.ErrGiftNotAllowed):
-		writeProblem(w, r, http.StatusUnprocessableEntity, "gift_not_allowed", nil, nil)
 	case errors.Is(err, commerce.ErrMaxPerUserExceeded):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "max_per_user_exceeded", nil, nil)
-	case errors.Is(err, commerce.ErrShippingAddressRequired):
-		writeProblem(w, r, http.StatusUnprocessableEntity, "shipping_address_required", nil, nil)
 	case errors.Is(err, commerce.ErrIdempotencyConflict):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "idempotency_conflict", nil, nil)
 	case errors.Is(err, commerce.ErrInsufficientStock):
@@ -386,21 +294,6 @@ func emailValue(value *string) *openapi_types.Email {
 	return &email
 }
 
-func mapCart(cart commerce.Cart) gen.Cart {
-	items := make([]gen.CartItem, 0, len(cart.Items))
-	for _, item := range cart.Items {
-		items = append(items, gen.CartItem{
-			Deal:         mapDealSummary(item.Deal),
-			DealOptionId: gen.Uuid(item.Line.OptionID),
-			IsGift:       item.Line.IsGift,
-			LineTotal:    gen.Money{Amount: item.LineTotal, Currency: gen.MoneyCurrencyUZS},
-			Option:       mapOptionRecord(item.Option),
-			Quantity:     item.Line.Quantity,
-		})
-	}
-	return gen.Cart{Items: items, Subtotal: gen.Money{Amount: cart.Subtotal, Currency: gen.MoneyCurrencyUZS}}
-}
-
 func mapOptionRecord(option commerce.OptionRecord) gen.DealOption {
 	return gen.DealOption{
 		Id:            gen.Uuid(option.ID),
@@ -417,25 +310,15 @@ func mapOptionRecord(option commerce.OptionRecord) gen.DealOption {
 func mapOrder(order commerce.Order) gen.Order {
 	items := make([]gen.OrderItem, 0, len(order.Items))
 	for _, item := range order.Items {
-		isGift := item.IsGift
 		items = append(items, gen.OrderItem{
-			Id:                 gen.Uuid(item.ID),
-			DealId:             gen.Uuid(item.DealID),
-			DealOptionId:       gen.Uuid(item.OptionID),
-			TitleSnapshot:      mapText(item.Title),
-			UnitPrice:          gen.Money{Amount: item.UnitPrice, Currency: gen.MoneyCurrencyUZS},
-			OriginalPrice:      gen.Money{Amount: item.OriginalPrice, Currency: gen.MoneyCurrencyUZS},
-			Quantity:           item.Quantity,
-			IsGift:             &isGift,
-			GiftRecipientName:  item.GiftRecipientName,
-			GiftRecipientEmail: emailValue(item.GiftRecipientEmail),
-			GiftMessage:        item.GiftMessage,
-			FulfillmentStatus:  gen.OrderItemFulfillmentStatus(item.FulfillmentStatus),
+			Id:            gen.Uuid(item.ID),
+			DealId:        gen.Uuid(item.DealID),
+			DealOptionId:  gen.Uuid(item.OptionID),
+			TitleSnapshot: mapText(item.Title),
+			UnitPrice:     gen.Money{Amount: item.UnitPrice, Currency: gen.MoneyCurrencyUZS},
+			OriginalPrice: gen.Money{Amount: item.OriginalPrice, Currency: gen.MoneyCurrencyUZS},
+			Quantity:      item.Quantity,
 		})
-	}
-	var shipping *map[string]interface{}
-	if order.ShippingAddress != nil {
-		shipping = &order.ShippingAddress
 	}
 	return gen.Order{
 		Id:                   gen.Uuid(order.ID),
@@ -443,7 +326,6 @@ func mapOrder(order commerce.Order) gen.Order {
 		Status:               gen.OrderStatus(order.Status),
 		Subtotal:             gen.Money{Amount: order.Subtotal, Currency: gen.MoneyCurrencyUZS},
 		Total:                gen.Money{Amount: order.Total, Currency: gen.MoneyCurrencyUZS},
-		ShippingAddress:      shipping,
 		Items:                items,
 		ReservationExpiresAt: order.ReservationExpiresAt,
 		PaidAt:               order.PaidAt,

@@ -44,7 +44,7 @@ func pendingDeal(t *testing.T, fixture catalogFixture, ownerID, merchantID uuid.
 	text := catalog.Text{Uz: "matn", Ru: "текст", En: "text"}
 	days := 30
 	in := merchant.DealInput{
-		Slug: "audit-" + uuid.NewString(), CategoryID: categoryID, SubcategoryID: subcategoryID, Kind: "voucher",
+		Slug: "audit-" + uuid.NewString(), CategoryID: categoryID, SubcategoryID: subcategoryID,
 		Title: text, ShortDescription: text, Description: text, Highlights: []catalog.Text{text, text, text},
 		Terms: text, RedemptionMethod: "qr_or_code", RedemptionInstructions: text,
 		StartsAt: fixture.now.Add(-time.Hour), EndsAt: fixture.now.Add(30 * 24 * time.Hour), VoucherValidDays: &days,

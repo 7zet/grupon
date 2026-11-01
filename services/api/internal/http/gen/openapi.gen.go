@@ -54,24 +54,6 @@ func (e Currency) Valid() bool {
 	}
 }
 
-// Defines values for DealKind.
-const (
-	DealKindProduct DealKind = "product"
-	DealKindVoucher DealKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealKind enum.
-func (e DealKind) Valid() bool {
-	switch e {
-	case DealKindProduct:
-		return true
-	case DealKindVoucher:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for DealRedemptionMethod.
 const (
 	DealRedemptionMethodCode     DealRedemptionMethod = "code"
@@ -87,24 +69,6 @@ func (e DealRedemptionMethod) Valid() bool {
 	case DealRedemptionMethodQr:
 		return true
 	case DealRedemptionMethodQrOrCode:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DealInputKind.
-const (
-	DealInputKindProduct DealInputKind = "product"
-	DealInputKindVoucher DealInputKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealInputKind enum.
-func (e DealInputKind) Valid() bool {
-	switch e {
-	case DealInputKindProduct:
-		return true
-	case DealInputKindVoucher:
 		return true
 	default:
 		return false
@@ -168,72 +132,18 @@ func (e DealStatus) Valid() bool {
 	}
 }
 
-// Defines values for DealSummaryKind.
-const (
-	DealSummaryKindProduct DealSummaryKind = "product"
-	DealSummaryKindVoucher DealSummaryKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealSummaryKind enum.
-func (e DealSummaryKind) Valid() bool {
-	switch e {
-	case DealSummaryKindProduct:
-		return true
-	case DealSummaryKindVoucher:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ExchangeRateBase.
-const (
-	ExchangeRateBaseUZS ExchangeRateBase = "UZS"
-)
-
-// Valid indicates whether the value is a known member of the ExchangeRateBase enum.
-func (e ExchangeRateBase) Valid() bool {
-	switch e {
-	case ExchangeRateBaseUZS:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ExchangeRateQuote.
-const (
-	USD ExchangeRateQuote = "USD"
-)
-
-// Valid indicates whether the value is a known member of the ExchangeRateQuote enum.
-func (e ExchangeRateQuote) Valid() bool {
-	switch e {
-	case USD:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for HomepageSectionType.
 const (
-	HomepageSectionTypeBanner     HomepageSectionType = "banner"
-	HomepageSectionTypeCategories HomepageSectionType = "categories"
-	HomepageSectionTypeCollection HomepageSectionType = "collection"
-	HomepageSectionTypeDeals      HomepageSectionType = "deals"
+	Categories HomepageSectionType = "categories"
+	Deals      HomepageSectionType = "deals"
 )
 
 // Valid indicates whether the value is a known member of the HomepageSectionType enum.
 func (e HomepageSectionType) Valid() bool {
 	switch e {
-	case HomepageSectionTypeBanner:
+	case Categories:
 		return true
-	case HomepageSectionTypeCategories:
-		return true
-	case HomepageSectionTypeCollection:
-		return true
-	case HomepageSectionTypeDeals:
+	case Deals:
 		return true
 	default:
 		return false
@@ -345,33 +255,6 @@ const (
 func (e MoneyCurrency) Valid() bool {
 	switch e {
 	case MoneyCurrencyUZS:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for OrderItemFulfillmentStatus.
-const (
-	OrderItemFulfillmentStatusDelivered     OrderItemFulfillmentStatus = "delivered"
-	OrderItemFulfillmentStatusNotApplicable OrderItemFulfillmentStatus = "not_applicable"
-	OrderItemFulfillmentStatusProcessing    OrderItemFulfillmentStatus = "processing"
-	OrderItemFulfillmentStatusReturned      OrderItemFulfillmentStatus = "returned"
-	OrderItemFulfillmentStatusShipped       OrderItemFulfillmentStatus = "shipped"
-)
-
-// Valid indicates whether the value is a known member of the OrderItemFulfillmentStatus enum.
-func (e OrderItemFulfillmentStatus) Valid() bool {
-	switch e {
-	case OrderItemFulfillmentStatusDelivered:
-		return true
-	case OrderItemFulfillmentStatusNotApplicable:
-		return true
-	case OrderItemFulfillmentStatusProcessing:
-		return true
-	case OrderItemFulfillmentStatusReturned:
-		return true
-	case OrderItemFulfillmentStatusShipped:
 		return true
 	default:
 		return false
@@ -843,39 +726,6 @@ type AuthSession struct {
 // AuthSessionExpiresIn defines model for AuthSession.ExpiresIn.
 type AuthSessionExpiresIn int
 
-// Cart defines model for Cart.
-type Cart struct {
-	Items []CartItem `json:"items"`
-
-	// Subtotal Integer minor units; never floating point.
-	Subtotal Money `json:"subtotal"`
-}
-
-// CartInput defines model for CartInput.
-type CartInput struct {
-	Items []CartItemInput `json:"items"`
-	Merge *bool           `json:"merge,omitempty"`
-}
-
-// CartItem defines model for CartItem.
-type CartItem struct {
-	Deal         DealSummary `json:"deal"`
-	DealOptionId Uuid        `json:"deal_option_id"`
-	IsGift       bool        `json:"is_gift"`
-
-	// LineTotal Integer minor units; never floating point.
-	LineTotal Money      `json:"line_total"`
-	Option    DealOption `json:"option"`
-	Quantity  int        `json:"quantity"`
-}
-
-// CartItemInput defines model for CartItemInput.
-type CartItemInput struct {
-	DealOptionId Uuid `json:"deal_option_id"`
-	IsGift       bool `json:"is_gift"`
-	Quantity     int  `json:"quantity"`
-}
-
 // Category defines model for Category.
 type Category struct {
 	Icon          string        `json:"icon"`
@@ -888,12 +738,6 @@ type Category struct {
 // CategoryList defines model for CategoryList.
 type CategoryList struct {
 	Items []Category `json:"items"`
-}
-
-// ChangePasswordRequest defines model for ChangePasswordRequest.
-type ChangePasswordRequest struct {
-	CurrentPassword string `json:"current_password"`
-	NewPassword     string `json:"new_password"`
 }
 
 // ChartPoint defines model for ChartPoint.
@@ -916,48 +760,15 @@ type CityList struct {
 	Items []City `json:"items"`
 }
 
-// Collection defines model for Collection.
-type Collection struct {
-	CoverUrl    string        `json:"cover_url"`
-	Description LocalizedText `json:"description"`
-	EndsAt      time.Time     `json:"ends_at"`
-	Id          Uuid          `json:"id"`
-	Slug        string        `json:"slug"`
-	StartsAt    time.Time     `json:"starts_at"`
-	Title       LocalizedText `json:"title"`
-}
-
-// CollectionDetail defines model for CollectionDetail.
-type CollectionDetail struct {
-	CoverUrl    string        `json:"cover_url"`
-	Deals       DealPage      `json:"deals"`
-	Description LocalizedText `json:"description"`
-	EndsAt      time.Time     `json:"ends_at"`
-	Id          Uuid          `json:"id"`
-	Slug        string        `json:"slug"`
-	StartsAt    time.Time     `json:"starts_at"`
-	Title       LocalizedText `json:"title"`
-}
-
-// CollectionList defines model for CollectionList.
-type CollectionList struct {
-	Items []Collection `json:"items"`
-}
-
 // CreateOrderItem defines model for CreateOrderItem.
 type CreateOrderItem struct {
-	DealOptionId       Uuid                 `json:"deal_option_id"`
-	GiftMessage        *string              `json:"gift_message,omitempty"`
-	GiftRecipientEmail *openapi_types.Email `json:"gift_recipient_email,omitempty"`
-	GiftRecipientName  *string              `json:"gift_recipient_name,omitempty"`
-	IsGift             bool                 `json:"is_gift"`
-	Quantity           int                  `json:"quantity"`
+	DealOptionId Uuid `json:"deal_option_id"`
+	Quantity     int  `json:"quantity"`
 }
 
 // CreateOrderRequest defines model for CreateOrderRequest.
 type CreateOrderRequest struct {
-	Items           []CreateOrderItem       `json:"items"`
-	ShippingAddress *map[string]interface{} `json:"shipping_address,omitempty"`
+	Items []CreateOrderItem `json:"items"`
 }
 
 // CreateReviewRequest defines model for CreateReviewRequest.
@@ -985,8 +796,6 @@ type Deal struct {
 	Faq                    []FaqItem            `json:"faq"`
 	Highlights             []LocalizedText      `json:"highlights"`
 	Id                     Uuid                 `json:"id"`
-	IsGiftable             bool                 `json:"is_giftable"`
-	Kind                   DealKind             `json:"kind"`
 	Locations              []MerchantLocation   `json:"locations"`
 	MaxPerUser             int                  `json:"max_per_user"`
 	Media                  []DealMedia          `json:"media"`
@@ -1009,9 +818,6 @@ type Deal struct {
 	WhatsIncluded          []LocalizedText      `json:"whats_included"`
 }
 
-// DealKind defines model for Deal.Kind.
-type DealKind string
-
 // DealRedemptionMethod defines model for Deal.RedemptionMethod.
 type DealRedemptionMethod string
 
@@ -1028,8 +834,6 @@ type DealInput struct {
 	EndsAt                 time.Time                 `json:"ends_at"`
 	Faq                    []FaqItem                 `json:"faq"`
 	Highlights             []LocalizedText           `json:"highlights"`
-	IsGiftable             bool                      `json:"is_giftable"`
-	Kind                   DealInputKind             `json:"kind"`
 	LocationIds            []Uuid                    `json:"location_ids"`
 	MaxPerUser             int                       `json:"max_per_user"`
 	Media                  []DealMediaInput          `json:"media"`
@@ -1046,9 +850,6 @@ type DealInput struct {
 	VoucherValidUntil      *time.Time                `json:"voucher_valid_until,omitempty"`
 	WhatsIncluded          []LocalizedText           `json:"whats_included"`
 }
-
-// DealInputKind defines model for DealInput.Kind.
-type DealInputKind string
 
 // DealInputRedemptionMethod defines model for DealInput.RedemptionMethod.
 type DealInputRedemptionMethod string
@@ -1120,55 +921,25 @@ type DealStatus string
 
 // DealSummary defines model for DealSummary.
 type DealSummary struct {
-	Category    Category        `json:"category"`
-	EndsAt      time.Time       `json:"ends_at"`
-	Id          Uuid            `json:"id"`
-	Kind        DealSummaryKind `json:"kind"`
-	Media       []DealMedia     `json:"media"`
-	Merchant    Merchant        `json:"merchant"`
-	Options     []DealOption    `json:"options"`
-	RatingAvg   float32         `json:"rating_avg"`
-	RatingCount int             `json:"rating_count"`
-	Slug        string          `json:"slug"`
-	SoldCount   int             `json:"sold_count"`
-	StartsAt    *time.Time      `json:"starts_at,omitempty"`
-	Status      DealStatus      `json:"status"`
-	Title       LocalizedText   `json:"title"`
+	Category    Category      `json:"category"`
+	EndsAt      time.Time     `json:"ends_at"`
+	Id          Uuid          `json:"id"`
+	Media       []DealMedia   `json:"media"`
+	Merchant    Merchant      `json:"merchant"`
+	Options     []DealOption  `json:"options"`
+	RatingAvg   float32       `json:"rating_avg"`
+	RatingCount int           `json:"rating_count"`
+	Slug        string        `json:"slug"`
+	SoldCount   int           `json:"sold_count"`
+	StartsAt    *time.Time    `json:"starts_at,omitempty"`
+	Status      DealStatus    `json:"status"`
+	Title       LocalizedText `json:"title"`
 }
-
-// DealSummaryKind defines model for DealSummary.Kind.
-type DealSummaryKind string
-
-// EmailRequest defines model for EmailRequest.
-type EmailRequest struct {
-	Email openapi_types.Email `json:"email"`
-}
-
-// ExchangeRate defines model for ExchangeRate.
-type ExchangeRate struct {
-	Base        ExchangeRateBase  `json:"base"`
-	EffectiveAt time.Time         `json:"effective_at"`
-	Quote       ExchangeRateQuote `json:"quote"`
-	Rate        string            `json:"rate"`
-}
-
-// ExchangeRateBase defines model for ExchangeRate.Base.
-type ExchangeRateBase string
-
-// ExchangeRateQuote defines model for ExchangeRate.Quote.
-type ExchangeRateQuote string
 
 // FaqItem defines model for FaqItem.
 type FaqItem struct {
 	A LocalizedText `json:"a"`
 	Q LocalizedText `json:"q"`
-}
-
-// GoogleCodeRequest defines model for GoogleCodeRequest.
-type GoogleCodeRequest struct {
-	Code         string `json:"code"`
-	CodeVerifier string `json:"code_verifier"`
-	RedirectUri  string `json:"redirect_uri"`
 }
 
 // Homepage defines model for Homepage.
@@ -1179,7 +950,6 @@ type Homepage struct {
 // HomepageSection defines model for HomepageSection.
 type HomepageSection struct {
 	Categories *[]Category         `json:"categories,omitempty"`
-	Collection *Collection         `json:"collection,omitempty"`
 	Deals      *[]DealSummary      `json:"deals,omitempty"`
 	Id         Uuid                `json:"id"`
 	Key        string              `json:"key"`
@@ -1214,12 +984,6 @@ type LocationInput struct {
 // LocationList defines model for LocationList.
 type LocationList struct {
 	Items []MerchantLocation `json:"items"`
-}
-
-// LoginRequest defines model for LoginRequest.
-type LoginRequest struct {
-	Email    openapi_types.Email `json:"email"`
-	Password string              `json:"password"`
 }
 
 // MediaAsset defines model for MediaAsset.
@@ -1393,14 +1157,13 @@ type MoneyCurrency string
 
 // Order defines model for Order.
 type Order struct {
-	CreatedAt            time.Time               `json:"created_at"`
-	Id                   Uuid                    `json:"id"`
-	Items                []OrderItem             `json:"items"`
-	Number               string                  `json:"number"`
-	PaidAt               *time.Time              `json:"paid_at,omitempty"`
-	ReservationExpiresAt *time.Time              `json:"reservation_expires_at,omitempty"`
-	ShippingAddress      *map[string]interface{} `json:"shipping_address,omitempty"`
-	Status               OrderStatus             `json:"status"`
+	CreatedAt            time.Time   `json:"created_at"`
+	Id                   Uuid        `json:"id"`
+	Items                []OrderItem `json:"items"`
+	Number               string      `json:"number"`
+	PaidAt               *time.Time  `json:"paid_at,omitempty"`
+	ReservationExpiresAt *time.Time  `json:"reservation_expires_at,omitempty"`
+	Status               OrderStatus `json:"status"`
 
 	// Subtotal Integer minor units; never floating point.
 	Subtotal Money `json:"subtotal"`
@@ -1411,14 +1174,9 @@ type Order struct {
 
 // OrderItem defines model for OrderItem.
 type OrderItem struct {
-	DealId             Uuid                       `json:"deal_id"`
-	DealOptionId       Uuid                       `json:"deal_option_id"`
-	FulfillmentStatus  OrderItemFulfillmentStatus `json:"fulfillment_status"`
-	GiftMessage        *string                    `json:"gift_message,omitempty"`
-	GiftRecipientEmail *openapi_types.Email       `json:"gift_recipient_email,omitempty"`
-	GiftRecipientName  *string                    `json:"gift_recipient_name,omitempty"`
-	Id                 Uuid                       `json:"id"`
-	IsGift             *bool                      `json:"is_gift,omitempty"`
+	DealId       Uuid `json:"deal_id"`
+	DealOptionId Uuid `json:"deal_option_id"`
+	Id           Uuid `json:"id"`
 
 	// OriginalPrice Integer minor units; never floating point.
 	OriginalPrice Money         `json:"original_price"`
@@ -1428,9 +1186,6 @@ type OrderItem struct {
 	// UnitPrice Integer minor units; never floating point.
 	UnitPrice Money `json:"unit_price"`
 }
-
-// OrderItemFulfillmentStatus defines model for OrderItem.FulfillmentStatus.
-type OrderItemFulfillmentStatus string
 
 // OrderPage defines model for OrderPage.
 type OrderPage struct {
@@ -1531,35 +1286,12 @@ type Problem struct {
 	Type     string               `json:"type"`
 }
 
-// PromoCode defines model for PromoCode.
-type PromoCode struct {
-	BrandLogoUrl  *string       `json:"brand_logo_url,omitempty"`
-	BrandName     string        `json:"brand_name"`
-	Code          *string       `json:"code,omitempty"`
-	DiscountLabel LocalizedText `json:"discount_label"`
-	EndsAt        time.Time     `json:"ends_at"`
-	Id            Uuid          `json:"id"`
-	IsVerified    bool          `json:"is_verified"`
-	StartsAt      time.Time     `json:"starts_at"`
-	Title         LocalizedText `json:"title"`
-	Url           string        `json:"url"`
-}
-
-// PromoCodePage defines model for PromoCodePage.
-type PromoCodePage struct {
-	Items    []PromoCode `json:"items"`
-	Page     int         `json:"page"`
-	PageSize int         `json:"page_size"`
-	Total    int64       `json:"total"`
-}
-
 // PublicConfig defines model for PublicConfig.
 type PublicConfig struct {
-	Categories   []Category   `json:"categories"`
-	Cities       []City       `json:"cities"`
-	Currencies   []Currency   `json:"currencies"`
-	ExchangeRate ExchangeRate `json:"exchange_rate"`
-	Locales      []Locale     `json:"locales"`
+	Categories []Category `json:"categories"`
+	Cities     []City     `json:"cities"`
+	Currencies []Currency `json:"currencies"`
+	Locales    []Locale   `json:"locales"`
 }
 
 // RedeemRequest defines model for RedeemRequest.
@@ -1582,15 +1314,6 @@ type RegisterMerchantRequest struct {
 	Phone       string  `json:"phone"`
 }
 
-// RegisterRequest defines model for RegisterRequest.
-type RegisterRequest struct {
-	Currency Currency            `json:"currency"`
-	Email    openapi_types.Email `json:"email"`
-	Locale   Locale              `json:"locale"`
-	Name     string              `json:"name"`
-	Password string              `json:"password"`
-}
-
 // RejectDealInput defines model for RejectDealInput.
 type RejectDealInput struct {
 	Reason string `json:"reason"`
@@ -1604,12 +1327,6 @@ type ReplyRequest struct {
 // ReportRequest defines model for ReportRequest.
 type ReportRequest struct {
 	Reason string `json:"reason"`
-}
-
-// ResetPasswordRequest defines model for ResetPasswordRequest.
-type ResetPasswordRequest struct {
-	Password string `json:"password"`
-	Token    string `json:"token"`
 }
 
 // ResolveDisputeRequest defines model for ResolveDisputeRequest.
@@ -1731,11 +1448,6 @@ type SuggestionList struct {
 	Items []Suggestion `json:"items"`
 }
 
-// TokenRequest defines model for TokenRequest.
-type TokenRequest struct {
-	Token string `json:"token"`
-}
-
 // UpdateProfileRequest defines model for UpdateProfileRequest.
 type UpdateProfileRequest struct {
 	Currency *Currency `json:"currency,omitempty"`
@@ -1844,17 +1556,6 @@ type GetAdminStatus200JSONResponseBodyAvailable bool
 // GetBusinessParams defines parameters for GetBusiness.
 type GetBusinessParams struct {
 	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-}
-
-// ListCollectionsParams defines parameters for ListCollections.
-type ListCollectionsParams struct {
-	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-}
-
-// GetCollectionParams defines parameters for GetCollection.
-type GetCollectionParams struct {
-	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-	Page   *Page   `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // ListDealsParams defines parameters for ListDeals.
@@ -1977,13 +1678,6 @@ type ReceivePaymentWebhookParams struct {
 // ReceivePaymentWebhookParamsProvider defines parameters for ReceivePaymentWebhook.
 type ReceivePaymentWebhookParamsProvider string
 
-// ListPromoCodesParams defines parameters for ListPromoCodes.
-type ListPromoCodesParams struct {
-	Locale   *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-	Category *string `form:"category,omitempty" json:"category,omitempty"`
-	Page     *Page   `form:"page,omitempty" json:"page,omitempty"`
-}
-
 // GetSearchSuggestionsParams defines parameters for GetSearchSuggestions.
 type GetSearchSuggestionsParams struct {
 	Q      string    `form:"q" json:"q"`
@@ -2000,44 +1694,17 @@ type ResolveDisputeJSONRequestBody = ResolveDisputeRequest
 // ApprovePayoutJSONRequestBody defines body for ApprovePayout for application/json ContentType.
 type ApprovePayoutJSONRequestBody = ApprovePayoutRequest
 
-// ForgotPasswordJSONRequestBody defines body for ForgotPassword for application/json ContentType.
-type ForgotPasswordJSONRequestBody = EmailRequest
-
-// ExchangeGoogleCodeJSONRequestBody defines body for ExchangeGoogleCode for application/json ContentType.
-type ExchangeGoogleCodeJSONRequestBody = GoogleCodeRequest
-
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody = LoginRequest
-
 // RequestPhoneCodeJSONRequestBody defines body for RequestPhoneCode for application/json ContentType.
 type RequestPhoneCodeJSONRequestBody = PhoneCodeRequest
 
 // VerifyPhoneCodeJSONRequestBody defines body for VerifyPhoneCode for application/json ContentType.
 type VerifyPhoneCodeJSONRequestBody = PhoneCodeVerify
 
-// RegisterJSONRequestBody defines body for Register for application/json ContentType.
-type RegisterJSONRequestBody = RegisterRequest
-
-// ResetPasswordJSONRequestBody defines body for ResetPassword for application/json ContentType.
-type ResetPasswordJSONRequestBody = ResetPasswordRequest
-
-// VerifyEmailJSONRequestBody defines body for VerifyEmail for application/json ContentType.
-type VerifyEmailJSONRequestBody = TokenRequest
-
-// ReplaceCartJSONRequestBody defines body for ReplaceCart for application/json ContentType.
-type ReplaceCartJSONRequestBody = CartInput
-
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateProfileRequest
 
-// ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
-type ChangePasswordJSONRequestBody = ChangePasswordRequest
-
 // RecordRecentlyViewedJSONRequestBody defines body for RecordRecentlyViewed for application/json ContentType.
 type RecordRecentlyViewedJSONRequestBody = DealIdRequest
-
-// SaveDealJSONRequestBody defines body for SaveDeal for application/json ContentType.
-type SaveDealJSONRequestBody = DealIdRequest
 
 // OpenVoucherDisputeJSONRequestBody defines body for OpenVoucherDispute for application/json ContentType.
 type OpenVoucherDisputeJSONRequestBody = ReverseRequest
@@ -2262,15 +1929,6 @@ type ServerInterface interface {
 	// GetAdminStatus Phase 1 admin API stub
 	// (GET /api/v1/admin/status)
 	GetAdminStatus(w http.ResponseWriter, r *http.Request)
-	// ForgotPassword Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed
-	// (POST /api/v1/auth/forgot-password)
-	ForgotPassword(w http.ResponseWriter, r *http.Request)
-	// ExchangeGoogleCode Exchange Google authorization code with PKCE
-	// (POST /api/v1/auth/google)
-	ExchangeGoogleCode(w http.ResponseWriter, r *http.Request)
-	// Login Sign in with email and password
-	// (POST /api/v1/auth/login)
-	Login(w http.ResponseWriter, r *http.Request)
 	// Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 	// (POST /api/v1/auth/logout)
 	Logout(w http.ResponseWriter, r *http.Request)
@@ -2283,36 +1941,15 @@ type ServerInterface interface {
 	// RefreshSession Rotate refresh token and detect reuse
 	// (POST /api/v1/auth/refresh)
 	RefreshSession(w http.ResponseWriter, r *http.Request)
-	// Register Register with email and password
-	// (POST /api/v1/auth/register)
-	Register(w http.ResponseWriter, r *http.Request)
-	// ResetPassword Reset password with token
-	// (POST /api/v1/auth/reset-password)
-	ResetPassword(w http.ResponseWriter, r *http.Request)
-	// VerifyEmail Verify email token
-	// (POST /api/v1/auth/verify-email)
-	VerifyEmail(w http.ResponseWriter, r *http.Request)
 	// GetBusiness Get merchant profile, locations, deals, and reviews
 	// (GET /api/v1/businesses/{slug})
 	GetBusiness(w http.ResponseWriter, r *http.Request, slug Slug, params GetBusinessParams)
-	// GetCart Get server-side cart
-	// (GET /api/v1/cart)
-	GetCart(w http.ResponseWriter, r *http.Request)
-	// ReplaceCart Replace or merge guest cart
-	// (PUT /api/v1/cart)
-	ReplaceCart(w http.ResponseWriter, r *http.Request)
 	// ListCategories List active categories and subcategories
 	// (GET /api/v1/categories)
 	ListCategories(w http.ResponseWriter, r *http.Request)
 	// ListCities List active cities
 	// (GET /api/v1/cities)
 	ListCities(w http.ResponseWriter, r *http.Request)
-	// ListCollections List active seasonal collections
-	// (GET /api/v1/collections)
-	ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams)
-	// GetCollection Get collection and deals
-	// (GET /api/v1/collections/{slug})
-	GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams)
 	// GetPublicConfig Get locales, currencies, cities, categories, and exchange rate
 	// (GET /api/v1/config)
 	GetPublicConfig(w http.ResponseWriter, r *http.Request)
@@ -2346,9 +1983,6 @@ type ServerInterface interface {
 	// GetMyOrder Get current-user order
 	// (GET /api/v1/me/orders/{id})
 	GetMyOrder(w http.ResponseWriter, r *http.Request, id Id)
-	// ChangePassword Change current password
-	// (PUT /api/v1/me/password)
-	ChangePassword(w http.ResponseWriter, r *http.Request)
 	// ListRecentlyViewed List deals viewed in last 30 days
 	// (GET /api/v1/me/recently-viewed)
 	ListRecentlyViewed(w http.ResponseWriter, r *http.Request)
@@ -2358,15 +1992,6 @@ type ServerInterface interface {
 	// ListMyReviews List current-user reviews
 	// (GET /api/v1/me/reviews)
 	ListMyReviews(w http.ResponseWriter, r *http.Request)
-	// ListSavedDeals List saved deals
-	// (GET /api/v1/me/saved-deals)
-	ListSavedDeals(w http.ResponseWriter, r *http.Request)
-	// SaveDeal Save a deal or merge a guest save
-	// (POST /api/v1/me/saved-deals)
-	SaveDeal(w http.ResponseWriter, r *http.Request)
-	// UnsaveDeal Remove saved deal
-	// (DELETE /api/v1/me/saved-deals/{id})
-	UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id)
 	// ListMyVouchers List active, used, or expired vouchers
 	// (GET /api/v1/me/vouchers)
 	ListMyVouchers(w http.ResponseWriter, r *http.Request, params ListMyVouchersParams)
@@ -2493,12 +2118,6 @@ type ServerInterface interface {
 	// ReceivePaymentWebhook Receive signed provider webhook idempotently
 	// (POST /api/v1/payments/webhooks/{provider})
 	ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider ReceivePaymentWebhookParamsProvider, params ReceivePaymentWebhookParams)
-	// ListPromoCodes List active promo codes
-	// (GET /api/v1/promo-codes)
-	ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams)
-	// TrackPromoCodeClick Track promo-code outbound click
-	// (POST /api/v1/promo-codes/{id}/click)
-	TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id)
 	// CreateReview Review one redeemed voucher once
 	// (POST /api/v1/reviews)
 	CreateReview(w http.ResponseWriter, r *http.Request)
@@ -2604,24 +2223,6 @@ func (_ Unimplemented) GetAdminStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ForgotPassword Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed
-// (POST /api/v1/auth/forgot-password)
-func (_ Unimplemented) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ExchangeGoogleCode Exchange Google authorization code with PKCE
-// (POST /api/v1/auth/google)
-func (_ Unimplemented) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Login Sign in with email and password
-// (POST /api/v1/auth/login)
-func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 // (POST /api/v1/auth/logout)
 func (_ Unimplemented) Logout(w http.ResponseWriter, r *http.Request) {
@@ -2646,39 +2247,9 @@ func (_ Unimplemented) RefreshSession(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Register Register with email and password
-// (POST /api/v1/auth/register)
-func (_ Unimplemented) Register(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ResetPassword Reset password with token
-// (POST /api/v1/auth/reset-password)
-func (_ Unimplemented) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// VerifyEmail Verify email token
-// (POST /api/v1/auth/verify-email)
-func (_ Unimplemented) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // GetBusiness Get merchant profile, locations, deals, and reviews
 // (GET /api/v1/businesses/{slug})
 func (_ Unimplemented) GetBusiness(w http.ResponseWriter, r *http.Request, slug Slug, params GetBusinessParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// GetCart Get server-side cart
-// (GET /api/v1/cart)
-func (_ Unimplemented) GetCart(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ReplaceCart Replace or merge guest cart
-// (PUT /api/v1/cart)
-func (_ Unimplemented) ReplaceCart(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2691,18 +2262,6 @@ func (_ Unimplemented) ListCategories(w http.ResponseWriter, r *http.Request) {
 // ListCities List active cities
 // (GET /api/v1/cities)
 func (_ Unimplemented) ListCities(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListCollections List active seasonal collections
-// (GET /api/v1/collections)
-func (_ Unimplemented) ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// GetCollection Get collection and deals
-// (GET /api/v1/collections/{slug})
-func (_ Unimplemented) GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2772,12 +2331,6 @@ func (_ Unimplemented) GetMyOrder(w http.ResponseWriter, r *http.Request, id Id)
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ChangePassword Change current password
-// (PUT /api/v1/me/password)
-func (_ Unimplemented) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ListRecentlyViewed List deals viewed in last 30 days
 // (GET /api/v1/me/recently-viewed)
 func (_ Unimplemented) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
@@ -2793,24 +2346,6 @@ func (_ Unimplemented) RecordRecentlyViewed(w http.ResponseWriter, r *http.Reque
 // ListMyReviews List current-user reviews
 // (GET /api/v1/me/reviews)
 func (_ Unimplemented) ListMyReviews(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListSavedDeals List saved deals
-// (GET /api/v1/me/saved-deals)
-func (_ Unimplemented) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// SaveDeal Save a deal or merge a guest save
-// (POST /api/v1/me/saved-deals)
-func (_ Unimplemented) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// UnsaveDeal Remove saved deal
-// (DELETE /api/v1/me/saved-deals/{id})
-func (_ Unimplemented) UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3063,18 +2598,6 @@ func (_ Unimplemented) CompleteMockPayment(w http.ResponseWriter, r *http.Reques
 // ReceivePaymentWebhook Receive signed provider webhook idempotently
 // (POST /api/v1/payments/webhooks/{provider})
 func (_ Unimplemented) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider ReceivePaymentWebhookParamsProvider, params ReceivePaymentWebhookParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListPromoCodes List active promo codes
-// (GET /api/v1/promo-codes)
-func (_ Unimplemented) ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// TrackPromoCodeClick Track promo-code outbound click
-// (POST /api/v1/promo-codes/{id}/click)
-func (_ Unimplemented) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3490,48 +3013,6 @@ func (siw *ServerInterfaceWrapper) GetAdminStatus(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
-// ForgotPassword operation middleware
-func (siw *ServerInterfaceWrapper) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ForgotPassword(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ExchangeGoogleCode operation middleware
-func (siw *ServerInterfaceWrapper) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ExchangeGoogleCode(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // Logout operation middleware
 func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
 
@@ -3588,48 +3069,6 @@ func (siw *ServerInterfaceWrapper) RefreshSession(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
-// Register operation middleware
-func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Register(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ResetPassword operation middleware
-func (siw *ServerInterfaceWrapper) ResetPassword(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResetPassword(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// VerifyEmail operation middleware
-func (siw *ServerInterfaceWrapper) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VerifyEmail(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // GetBusiness operation middleware
 func (siw *ServerInterfaceWrapper) GetBusiness(w http.ResponseWriter, r *http.Request) {
 
@@ -3672,34 +3111,6 @@ func (siw *ServerInterfaceWrapper) GetBusiness(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// GetCart operation middleware
-func (siw *ServerInterfaceWrapper) GetCart(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCart(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ReplaceCart operation middleware
-func (siw *ServerInterfaceWrapper) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReplaceCart(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListCategories operation middleware
 func (siw *ServerInterfaceWrapper) ListCategories(w http.ResponseWriter, r *http.Request) {
 
@@ -3719,94 +3130,6 @@ func (siw *ServerInterfaceWrapper) ListCities(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCities(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListCollections operation middleware
-func (siw *ServerInterfaceWrapper) ListCollections(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListCollectionsParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListCollections(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetCollection operation middleware
-func (siw *ServerInterfaceWrapper) GetCollection(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "slug" -------------
-	var slug Slug
-
-	err = runtime.BindStyledParameterWithOptions("simple", "slug", chi.URLParam(r, "slug"), &slug, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "slug", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCollectionParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCollection(w, r, slug, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4357,20 +3680,6 @@ func (siw *ServerInterfaceWrapper) GetMyOrder(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// ChangePassword operation middleware
-func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ChangePassword(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListRecentlyViewed operation middleware
 func (siw *ServerInterfaceWrapper) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 
@@ -4404,60 +3713,6 @@ func (siw *ServerInterfaceWrapper) ListMyReviews(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListMyReviews(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListSavedDeals operation middleware
-func (siw *ServerInterfaceWrapper) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListSavedDeals(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SaveDeal operation middleware
-func (siw *ServerInterfaceWrapper) SaveDeal(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SaveDeal(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnsaveDeal operation middleware
-func (siw *ServerInterfaceWrapper) UnsaveDeal(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Id
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnsaveDeal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5578,91 +4833,6 @@ func (siw *ServerInterfaceWrapper) ReceivePaymentWebhook(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
-// ListPromoCodes operation middleware
-func (siw *ServerInterfaceWrapper) ListPromoCodes(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListPromoCodesParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "category" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPromoCodes(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// TrackPromoCodeClick operation middleware
-func (siw *ServerInterfaceWrapper) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Id
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TrackPromoCodeClick(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // CreateReview operation middleware
 func (siw *ServerInterfaceWrapper) CreateReview(w http.ResponseWriter, r *http.Request) {
 
@@ -5958,46 +5128,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/v1/search/suggestions", wrapper.GetSearchSuggestions)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/promo-codes", wrapper.ListPromoCodes)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/promo-codes/{id}/click", wrapper.TrackPromoCodeClick)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/collections", wrapper.ListCollections)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/collections/{slug}", wrapper.GetCollection)
-	})
-	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/phone/code", wrapper.RequestPhoneCode)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/phone/verify", wrapper.VerifyPhoneCode)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/register", wrapper.Register)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/login", wrapper.Login)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/google", wrapper.ExchangeGoogleCode)
-	})
-	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/logout", wrapper.Logout)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/verify-email", wrapper.VerifyEmail)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/forgot-password", wrapper.ForgotPassword)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/reset-password", wrapper.ResetPassword)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/api/v1/me", wrapper.DeleteMe)
@@ -6007,9 +5147,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/api/v1/me", wrapper.UpdateMe)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/api/v1/me/password", wrapper.ChangePassword)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/orders", wrapper.ListMyOrders)
@@ -6022,15 +5159,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/vouchers/{id}", wrapper.GetMyVoucher)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/me/saved-deals", wrapper.ListSavedDeals)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/me/saved-deals", wrapper.SaveDeal)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/api/v1/me/saved-deals/{id}", wrapper.UnsaveDeal)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/recently-viewed", wrapper.ListRecentlyViewed)
@@ -6052,12 +5180,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/reviews/{id}/report", wrapper.ReportReview)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/cart", wrapper.GetCart)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/api/v1/cart", wrapper.ReplaceCart)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/orders", wrapper.CreateOrder)
@@ -6729,117 +5851,6 @@ func (response GetAdminStatusdefaultApplicationProblemPlusJSONResponse) VisitGet
 	return err
 }
 
-type ForgotPasswordRequestObject struct {
-	Body *ForgotPasswordJSONRequestBody
-}
-
-type ForgotPasswordResponseObject interface {
-	VisitForgotPasswordResponse(w http.ResponseWriter) error
-}
-
-type ForgotPassword202Response struct {
-}
-
-func (response ForgotPassword202Response) VisitForgotPasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(202)
-	return nil
-}
-
-type ForgotPassworddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ForgotPassworddefaultApplicationProblemPlusJSONResponse) VisitForgotPasswordResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ExchangeGoogleCodeRequestObject struct {
-	Body *ExchangeGoogleCodeJSONRequestBody
-}
-
-type ExchangeGoogleCodeResponseObject interface {
-	VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error
-}
-
-type ExchangeGoogleCode200JSONResponse AuthSession
-
-func (response ExchangeGoogleCode200JSONResponse) VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ExchangeGoogleCodedefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ExchangeGoogleCodedefaultApplicationProblemPlusJSONResponse) VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type LoginRequestObject struct {
-	Body *LoginJSONRequestBody
-}
-
-type LoginResponseObject interface {
-	VisitLoginResponse(w http.ResponseWriter) error
-}
-
-type Login200JSONResponse AuthSession
-
-func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type LogindefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response LogindefaultApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type LogoutRequestObject struct {
 }
 
@@ -6988,111 +5999,6 @@ func (response RefreshSessiondefaultApplicationProblemPlusJSONResponse) VisitRef
 	return err
 }
 
-type RegisterRequestObject struct {
-	Body *RegisterJSONRequestBody
-}
-
-type RegisterResponseObject interface {
-	VisitRegisterResponse(w http.ResponseWriter) error
-}
-
-type Register201JSONResponse AuthSession
-
-func (response Register201JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response RegisterdefaultApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResetPasswordRequestObject struct {
-	Body *ResetPasswordJSONRequestBody
-}
-
-type ResetPasswordResponseObject interface {
-	VisitResetPasswordResponse(w http.ResponseWriter) error
-}
-
-type ResetPassword204Response struct {
-}
-
-func (response ResetPassword204Response) VisitResetPasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type ResetPassworddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ResetPassworddefaultApplicationProblemPlusJSONResponse) VisitResetPasswordResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type VerifyEmailRequestObject struct {
-	Body *VerifyEmailJSONRequestBody
-}
-
-type VerifyEmailResponseObject interface {
-	VisitVerifyEmailResponse(w http.ResponseWriter) error
-}
-
-type VerifyEmail204Response struct {
-}
-
-func (response VerifyEmail204Response) VisitVerifyEmailResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type VerifyEmaildefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response VerifyEmaildefaultApplicationProblemPlusJSONResponse) VisitVerifyEmailResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type GetBusinessRequestObject struct {
 	Slug   Slug `json:"slug"`
 	Params GetBusinessParams
@@ -7122,83 +6028,6 @@ type GetBusinessdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetBusinessdefaultApplicationProblemPlusJSONResponse) VisitGetBusinessResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCartRequestObject struct {
-}
-
-type GetCartResponseObject interface {
-	VisitGetCartResponse(w http.ResponseWriter) error
-}
-
-type GetCart200JSONResponse Cart
-
-func (response GetCart200JSONResponse) VisitGetCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCartdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response GetCartdefaultApplicationProblemPlusJSONResponse) VisitGetCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ReplaceCartRequestObject struct {
-	Body *ReplaceCartJSONRequestBody
-}
-
-type ReplaceCartResponseObject interface {
-	VisitReplaceCartResponse(w http.ResponseWriter) error
-}
-
-type ReplaceCart200JSONResponse Cart
-
-func (response ReplaceCart200JSONResponse) VisitReplaceCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ReplaceCartdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ReplaceCartdefaultApplicationProblemPlusJSONResponse) VisitReplaceCartResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -7248,68 +6077,6 @@ func (response ListCities200JSONResponse) VisitListCitiesResponse(w http.Respons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListCollectionsRequestObject struct {
-	Params ListCollectionsParams
-}
-
-type ListCollectionsResponseObject interface {
-	VisitListCollectionsResponse(w http.ResponseWriter) error
-}
-
-type ListCollections200JSONResponse CollectionList
-
-func (response ListCollections200JSONResponse) VisitListCollectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCollectionRequestObject struct {
-	Slug   Slug `json:"slug"`
-	Params GetCollectionParams
-}
-
-type GetCollectionResponseObject interface {
-	VisitGetCollectionResponse(w http.ResponseWriter) error
-}
-
-type GetCollection200JSONResponse CollectionDetail
-
-func (response GetCollection200JSONResponse) VisitGetCollectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCollectiondefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response GetCollectiondefaultApplicationProblemPlusJSONResponse) VisitGetCollectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7720,39 +6487,6 @@ func (response GetMyOrderdefaultApplicationProblemPlusJSONResponse) VisitGetMyOr
 	return err
 }
 
-type ChangePasswordRequestObject struct {
-	Body *ChangePasswordJSONRequestBody
-}
-
-type ChangePasswordResponseObject interface {
-	VisitChangePasswordResponse(w http.ResponseWriter) error
-}
-
-type ChangePassword204Response struct {
-}
-
-func (response ChangePassword204Response) VisitChangePasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type ChangePassworddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ChangePassworddefaultApplicationProblemPlusJSONResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListRecentlyViewedRequestObject struct {
 }
 
@@ -7824,93 +6558,6 @@ func (response ListMyReviews200JSONResponse) VisitListMyReviewsResponse(w http.R
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListSavedDealsRequestObject struct {
-}
-
-type ListSavedDealsResponseObject interface {
-	VisitListSavedDealsResponse(w http.ResponseWriter) error
-}
-
-type ListSavedDeals200JSONResponse DealList
-
-func (response ListSavedDeals200JSONResponse) VisitListSavedDealsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SaveDealRequestObject struct {
-	Body *SaveDealJSONRequestBody
-}
-
-type SaveDealResponseObject interface {
-	VisitSaveDealResponse(w http.ResponseWriter) error
-}
-
-type SaveDeal204Response struct {
-}
-
-func (response SaveDeal204Response) VisitSaveDealResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type SaveDealdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response SaveDealdefaultApplicationProblemPlusJSONResponse) VisitSaveDealResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnsaveDealRequestObject struct {
-	Id Id `json:"id"`
-}
-
-type UnsaveDealResponseObject interface {
-	VisitUnsaveDealResponse(w http.ResponseWriter) error
-}
-
-type UnsaveDeal204Response struct {
-}
-
-func (response UnsaveDeal204Response) VisitUnsaveDealResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type UnsaveDealdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response UnsaveDealdefaultApplicationProblemPlusJSONResponse) VisitUnsaveDealResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -9357,78 +8004,6 @@ func (response ReceivePaymentWebhookdefaultApplicationProblemPlusJSONResponse) V
 	return err
 }
 
-type ListPromoCodesRequestObject struct {
-	Params ListPromoCodesParams
-}
-
-type ListPromoCodesResponseObject interface {
-	VisitListPromoCodesResponse(w http.ResponseWriter) error
-}
-
-type ListPromoCodes200JSONResponse PromoCodePage
-
-func (response ListPromoCodes200JSONResponse) VisitListPromoCodesResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPromoCodesdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ListPromoCodesdefaultApplicationProblemPlusJSONResponse) VisitListPromoCodesResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type TrackPromoCodeClickRequestObject struct {
-	Id Id `json:"id"`
-}
-
-type TrackPromoCodeClickResponseObject interface {
-	VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error
-}
-
-type TrackPromoCodeClick204Response struct {
-}
-
-func (response TrackPromoCodeClick204Response) VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type TrackPromoCodeClickdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response TrackPromoCodeClickdefaultApplicationProblemPlusJSONResponse) VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type CreateReviewRequestObject struct {
 	Body *CreateReviewJSONRequestBody
 }
@@ -9658,15 +8233,6 @@ type StrictServerInterface interface {
 	// GetAdminStatus Phase 1 admin API stub
 	// (GET /api/v1/admin/status)
 	GetAdminStatus(ctx context.Context, request GetAdminStatusRequestObject) (GetAdminStatusResponseObject, error)
-	// ForgotPassword Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed
-	// (POST /api/v1/auth/forgot-password)
-	ForgotPassword(ctx context.Context, request ForgotPasswordRequestObject) (ForgotPasswordResponseObject, error)
-	// ExchangeGoogleCode Exchange Google authorization code with PKCE
-	// (POST /api/v1/auth/google)
-	ExchangeGoogleCode(ctx context.Context, request ExchangeGoogleCodeRequestObject) (ExchangeGoogleCodeResponseObject, error)
-	// Login Sign in with email and password
-	// (POST /api/v1/auth/login)
-	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
 	// Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 	// (POST /api/v1/auth/logout)
 	Logout(ctx context.Context, request LogoutRequestObject) (LogoutResponseObject, error)
@@ -9679,36 +8245,15 @@ type StrictServerInterface interface {
 	// RefreshSession Rotate refresh token and detect reuse
 	// (POST /api/v1/auth/refresh)
 	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
-	// Register Register with email and password
-	// (POST /api/v1/auth/register)
-	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
-	// ResetPassword Reset password with token
-	// (POST /api/v1/auth/reset-password)
-	ResetPassword(ctx context.Context, request ResetPasswordRequestObject) (ResetPasswordResponseObject, error)
-	// VerifyEmail Verify email token
-	// (POST /api/v1/auth/verify-email)
-	VerifyEmail(ctx context.Context, request VerifyEmailRequestObject) (VerifyEmailResponseObject, error)
 	// GetBusiness Get merchant profile, locations, deals, and reviews
 	// (GET /api/v1/businesses/{slug})
 	GetBusiness(ctx context.Context, request GetBusinessRequestObject) (GetBusinessResponseObject, error)
-	// GetCart Get server-side cart
-	// (GET /api/v1/cart)
-	GetCart(ctx context.Context, request GetCartRequestObject) (GetCartResponseObject, error)
-	// ReplaceCart Replace or merge guest cart
-	// (PUT /api/v1/cart)
-	ReplaceCart(ctx context.Context, request ReplaceCartRequestObject) (ReplaceCartResponseObject, error)
 	// ListCategories List active categories and subcategories
 	// (GET /api/v1/categories)
 	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
 	// ListCities List active cities
 	// (GET /api/v1/cities)
 	ListCities(ctx context.Context, request ListCitiesRequestObject) (ListCitiesResponseObject, error)
-	// ListCollections List active seasonal collections
-	// (GET /api/v1/collections)
-	ListCollections(ctx context.Context, request ListCollectionsRequestObject) (ListCollectionsResponseObject, error)
-	// GetCollection Get collection and deals
-	// (GET /api/v1/collections/{slug})
-	GetCollection(ctx context.Context, request GetCollectionRequestObject) (GetCollectionResponseObject, error)
 	// GetPublicConfig Get locales, currencies, cities, categories, and exchange rate
 	// (GET /api/v1/config)
 	GetPublicConfig(ctx context.Context, request GetPublicConfigRequestObject) (GetPublicConfigResponseObject, error)
@@ -9742,9 +8287,6 @@ type StrictServerInterface interface {
 	// GetMyOrder Get current-user order
 	// (GET /api/v1/me/orders/{id})
 	GetMyOrder(ctx context.Context, request GetMyOrderRequestObject) (GetMyOrderResponseObject, error)
-	// ChangePassword Change current password
-	// (PUT /api/v1/me/password)
-	ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error)
 	// ListRecentlyViewed List deals viewed in last 30 days
 	// (GET /api/v1/me/recently-viewed)
 	ListRecentlyViewed(ctx context.Context, request ListRecentlyViewedRequestObject) (ListRecentlyViewedResponseObject, error)
@@ -9754,15 +8296,6 @@ type StrictServerInterface interface {
 	// ListMyReviews List current-user reviews
 	// (GET /api/v1/me/reviews)
 	ListMyReviews(ctx context.Context, request ListMyReviewsRequestObject) (ListMyReviewsResponseObject, error)
-	// ListSavedDeals List saved deals
-	// (GET /api/v1/me/saved-deals)
-	ListSavedDeals(ctx context.Context, request ListSavedDealsRequestObject) (ListSavedDealsResponseObject, error)
-	// SaveDeal Save a deal or merge a guest save
-	// (POST /api/v1/me/saved-deals)
-	SaveDeal(ctx context.Context, request SaveDealRequestObject) (SaveDealResponseObject, error)
-	// UnsaveDeal Remove saved deal
-	// (DELETE /api/v1/me/saved-deals/{id})
-	UnsaveDeal(ctx context.Context, request UnsaveDealRequestObject) (UnsaveDealResponseObject, error)
 	// ListMyVouchers List active, used, or expired vouchers
 	// (GET /api/v1/me/vouchers)
 	ListMyVouchers(ctx context.Context, request ListMyVouchersRequestObject) (ListMyVouchersResponseObject, error)
@@ -9889,12 +8422,6 @@ type StrictServerInterface interface {
 	// ReceivePaymentWebhook Receive signed provider webhook idempotently
 	// (POST /api/v1/payments/webhooks/{provider})
 	ReceivePaymentWebhook(ctx context.Context, request ReceivePaymentWebhookRequestObject) (ReceivePaymentWebhookResponseObject, error)
-	// ListPromoCodes List active promo codes
-	// (GET /api/v1/promo-codes)
-	ListPromoCodes(ctx context.Context, request ListPromoCodesRequestObject) (ListPromoCodesResponseObject, error)
-	// TrackPromoCodeClick Track promo-code outbound click
-	// (POST /api/v1/promo-codes/{id}/click)
-	TrackPromoCodeClick(ctx context.Context, request TrackPromoCodeClickRequestObject) (TrackPromoCodeClickResponseObject, error)
 	// CreateReview Review one redeemed voucher once
 	// (POST /api/v1/reviews)
 	CreateReview(ctx context.Context, request CreateReviewRequestObject) (CreateReviewResponseObject, error)
@@ -10334,99 +8861,6 @@ func (sh *strictHandler) GetAdminStatus(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// ForgotPassword operation middleware
-func (sh *strictHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var request ForgotPasswordRequestObject
-
-	var body ForgotPasswordJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ForgotPassword(ctx, request.(ForgotPasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ForgotPassword")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ForgotPasswordResponseObject); ok {
-		if err := validResponse.VisitForgotPasswordResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ExchangeGoogleCode operation middleware
-func (sh *strictHandler) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	var request ExchangeGoogleCodeRequestObject
-
-	var body ExchangeGoogleCodeJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ExchangeGoogleCode(ctx, request.(ExchangeGoogleCodeRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ExchangeGoogleCode")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ExchangeGoogleCodeResponseObject); ok {
-		if err := validResponse.VisitExchangeGoogleCodeResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// Login operation middleware
-func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var request LoginRequestObject
-
-	var body LoginJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Login(ctx, request.(LoginRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Login")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(LoginResponseObject); ok {
-		if err := validResponse.VisitLoginResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // Logout operation middleware
 func (sh *strictHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	var request LogoutRequestObject
@@ -10537,99 +8971,6 @@ func (sh *strictHandler) RefreshSession(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// Register operation middleware
-func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var request RegisterRequestObject
-
-	var body RegisterJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Register(ctx, request.(RegisterRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Register")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterResponseObject); ok {
-		if err := validResponse.VisitRegisterResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ResetPassword operation middleware
-func (sh *strictHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var request ResetPasswordRequestObject
-
-	var body ResetPasswordJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ResetPassword(ctx, request.(ResetPasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ResetPassword")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ResetPasswordResponseObject); ok {
-		if err := validResponse.VisitResetPasswordResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// VerifyEmail operation middleware
-func (sh *strictHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	var request VerifyEmailRequestObject
-
-	var body VerifyEmailJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.VerifyEmail(ctx, request.(VerifyEmailRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "VerifyEmail")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(VerifyEmailResponseObject); ok {
-		if err := validResponse.VisitVerifyEmailResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // GetBusiness operation middleware
 func (sh *strictHandler) GetBusiness(w http.ResponseWriter, r *http.Request, slug Slug, params GetBusinessParams) {
 	var request GetBusinessRequestObject
@@ -10650,61 +8991,6 @@ func (sh *strictHandler) GetBusiness(w http.ResponseWriter, r *http.Request, slu
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBusinessResponseObject); ok {
 		if err := validResponse.VisitGetBusinessResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetCart operation middleware
-func (sh *strictHandler) GetCart(w http.ResponseWriter, r *http.Request) {
-	var request GetCartRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCart(ctx, request.(GetCartRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCart")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetCartResponseObject); ok {
-		if err := validResponse.VisitGetCartResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ReplaceCart operation middleware
-func (sh *strictHandler) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-	var request ReplaceCartRequestObject
-
-	var body ReplaceCartJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ReplaceCart(ctx, request.(ReplaceCartRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ReplaceCart")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ReplaceCartResponseObject); ok {
-		if err := validResponse.VisitReplaceCartResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -10753,59 +9039,6 @@ func (sh *strictHandler) ListCities(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListCitiesResponseObject); ok {
 		if err := validResponse.VisitListCitiesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListCollections operation middleware
-func (sh *strictHandler) ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams) {
-	var request ListCollectionsRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListCollections(ctx, request.(ListCollectionsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListCollections")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListCollectionsResponseObject); ok {
-		if err := validResponse.VisitListCollectionsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetCollection operation middleware
-func (sh *strictHandler) GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams) {
-	var request GetCollectionRequestObject
-
-	request.Slug = slug
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCollection(ctx, request.(GetCollectionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCollection")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetCollectionResponseObject); ok {
-		if err := validResponse.VisitGetCollectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -11101,37 +9334,6 @@ func (sh *strictHandler) GetMyOrder(w http.ResponseWriter, r *http.Request, id I
 	}
 }
 
-// ChangePassword operation middleware
-func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var request ChangePasswordRequestObject
-
-	var body ChangePasswordJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ChangePassword(ctx, request.(ChangePasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ChangePassword")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ChangePasswordResponseObject); ok {
-		if err := validResponse.VisitChangePasswordResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // ListRecentlyViewed operation middleware
 func (sh *strictHandler) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 	var request ListRecentlyViewedRequestObject
@@ -11204,87 +9406,6 @@ func (sh *strictHandler) ListMyReviews(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListMyReviewsResponseObject); ok {
 		if err := validResponse.VisitListMyReviewsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListSavedDeals operation middleware
-func (sh *strictHandler) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	var request ListSavedDealsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListSavedDeals(ctx, request.(ListSavedDealsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListSavedDeals")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListSavedDealsResponseObject); ok {
-		if err := validResponse.VisitListSavedDealsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// SaveDeal operation middleware
-func (sh *strictHandler) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	var request SaveDealRequestObject
-
-	var body SaveDealJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SaveDeal(ctx, request.(SaveDealRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SaveDeal")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SaveDealResponseObject); ok {
-		if err := validResponse.VisitSaveDealResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnsaveDeal operation middleware
-func (sh *strictHandler) UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id) {
-	var request UnsaveDealRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnsaveDeal(ctx, request.(UnsaveDealRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnsaveDeal")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnsaveDealResponseObject); ok {
-		if err := validResponse.VisitUnsaveDealResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -12501,58 +10622,6 @@ func (sh *strictHandler) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// ListPromoCodes operation middleware
-func (sh *strictHandler) ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams) {
-	var request ListPromoCodesRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListPromoCodes(ctx, request.(ListPromoCodesRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListPromoCodes")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListPromoCodesResponseObject); ok {
-		if err := validResponse.VisitListPromoCodesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// TrackPromoCodeClick operation middleware
-func (sh *strictHandler) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id) {
-	var request TrackPromoCodeClickRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.TrackPromoCodeClick(ctx, request.(TrackPromoCodeClickRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TrackPromoCodeClick")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(TrackPromoCodeClickResponseObject); ok {
-		if err := validResponse.VisitTrackPromoCodeClickResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // CreateReview operation middleware
 func (sh *strictHandler) CreateReview(w http.ResponseWriter, r *http.Request) {
 	var request CreateReviewRequestObject
@@ -12707,170 +10776,148 @@ func (sh *strictHandler) GetSearchSuggestions(w http.ResponseWriter, r *http.Req
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"2fup6B9d/OK5BMsP9X25D7cP/z8AAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -77,10 +77,9 @@ export function CheckoutForm() {
   async function submit() {
     setError(null);
     const orderBody = {
-      items: items.map(({ optionId, quantity, isGift }: CartItem) => ({
+      items: items.map(({ optionId, quantity }: CartItem) => ({
         deal_option_id: optionId,
         quantity,
-        is_gift: isGift,
       })),
     };
 

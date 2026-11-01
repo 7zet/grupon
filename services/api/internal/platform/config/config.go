@@ -77,20 +77,6 @@ type AuthConfig struct {
 	WebPublicURL string
 	// BrandName appears in email subjects.
 	BrandName string
-	// Google is empty when Google sign-in is disabled.
-	Google GoogleConfig
-}
-
-// GoogleConfig holds the OAuth client settings for Google sign-in.
-type GoogleConfig struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURI  string
-}
-
-// Enabled reports whether all Google settings are present.
-func (g GoogleConfig) Enabled() bool {
-	return g.ClientID != "" && g.ClientSecret != "" && g.RedirectURI != ""
 }
 
 // SMTPConfig holds the relay used for transactional email.
@@ -310,22 +296,12 @@ func loadAuth(lookup lookupEnv, environment string) (AuthConfig, error) {
 		return AuthConfig{}, err
 	}
 
-	google := GoogleConfig{
-		ClientID:     optionalString(lookup, "GOOGLE_CLIENT_ID"),
-		ClientSecret: optionalString(lookup, "GOOGLE_CLIENT_SECRET"),
-		RedirectURI:  optionalString(lookup, "GOOGLE_REDIRECT_URI"),
-	}
-	if google != (GoogleConfig{}) && !google.Enabled() {
-		return AuthConfig{}, fmt.Errorf("GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI must be set together")
-	}
-
 	return AuthConfig{
 		JWTSecret:       secret,
 		AccessTokenTTL:  accessTTL,
 		RefreshTokenTTL: refreshTTL,
 		WebPublicURL:    strings.TrimSuffix(webURL, "/"),
 		BrandName:       brand,
-		Google:          google,
 	}, nil
 }
 

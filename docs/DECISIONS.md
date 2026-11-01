@@ -216,3 +216,11 @@
 - Nizo: `POST /admin/disputes/{id}/resolve` `customer` (refund so'rovi ochiladi) yoki `merchant` (payout ozod).
 - Qo'shimcha fraud qoidalari (faqat signal, payout'ni o'zi to'xtatmaydi): `off_hours` - Toshkent vaqti bilan 07:00 dan oldin yoki 23:00 dan keyin; `distance` - xodim qurilmasi filialdan 500 m dan uzoq (ixtiyoriy `lat`/`lng` redeem so'rovida). Geo `redemptions.geo_lat/geo_lng` ga yoziladi.
 - Support roli endi `staffActor` orqali kiradi (faqat tasdiqlash endpointlari uchun).
+
+## DEALO-ALIGN step 2: API removals (2026-11-02)
+- Removed from the contract and the API: cart (`/cart`, `CartInput`), saved deals (`/me/saved-deals`), promo codes (`/promo-codes`), collections (`/collections`), exchange rate (`PublicConfig.exchange_rate`), gifts (`is_gift`, `gift_*`, `is_giftable`), goods (`deal kind`, `fulfillment_status`), shipping (`shipping_address`), email/password endpoints (`/auth/register`, `/auth/login`, `/auth/google`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password`, `/me/password`).
+- Kept: `/auth/phone/*`, `/auth/refresh`, `/auth/logout`, `/me`, `/homepage` (sections of type `deals` and `categories` only), `/me/recently-viewed`.
+- Migration `00009_dealo_removals.sql` drops the cart, saved, promo, collection, banner, exchange-rate and auth-token tables and the removed columns. Its down step is a no-op because data removal is not reversible.
+- Left in the database on purpose: `users.password_hash` and `users.google_sub`, the `currency_code` value `USD`, and the `payouts` table. They are unused by the API and can be dropped in a later migration once admin sign-in is settled.
+- The Google OAuth client, its config (`GOOGLE_*`) and its tests are removed. `identity.Mailer` is still wired but no flow sends mail now.
+- Web: gift checkbox, `is_gift` in the order body, goods kind, and the promo and collection mocks are removed. The `/coupons` page remains and lists deals in the `coupons` category.

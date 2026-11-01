@@ -24,8 +24,8 @@ SELECT id FROM users WHERE id = sqlc.arg(user_id) AND deleted_at IS NULL FOR UPD
 -- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
-       d.status AS deal_status, d.kind AS deal_kind, d.starts_at, d.ends_at, d.max_per_user,
-       d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
+       d.status AS deal_status, d.starts_at, d.ends_at, d.max_per_user,
+       d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        m.status AS merchant_status
 FROM deal_options o
 JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
@@ -40,37 +40,6 @@ WHERE o.user_id = sqlc.arg(user_id) AND oi.deal_id = sqlc.arg(deal_id)
   AND (o.status = 'paid' OR (o.status = 'pending_payment' AND EXISTS (
         SELECT 1 FROM stock_reservations r
         WHERE r.order_id = o.id AND r.released_at IS NULL AND r.expires_at > now())));
-
--- name: UpsertCart :one
-INSERT INTO carts (user_id) VALUES (sqlc.arg(user_id))
-ON CONFLICT (user_id) DO UPDATE SET updated_at = now()
-RETURNING id;
-
--- name: DeleteCartItems :exec
-DELETE FROM cart_items WHERE cart_id = sqlc.arg(cart_id);
-
--- name: InsertCartItem :exec
-INSERT INTO cart_items (cart_id, deal_option_id, quantity, is_gift)
-VALUES (sqlc.arg(cart_id), sqlc.arg(option_id), sqlc.arg(quantity), sqlc.arg(is_gift));
-
--- name: ListCartItemRows :many
-SELECT deal_option_id, quantity, is_gift FROM cart_items
-WHERE cart_id = sqlc.arg(cart_id) ORDER BY created_at, id;
-
--- name: ListCartLinesForUser :many
-SELECT ci.deal_option_id, ci.quantity, ci.is_gift
-FROM cart_items ci JOIN carts c ON c.id = ci.cart_id
-WHERE c.user_id = sqlc.arg(user_id) ORDER BY ci.created_at, ci.id;
-
--- name: InsertSavedDeal :exec
-INSERT INTO saved_deals (user_id, deal_id) VALUES (sqlc.arg(user_id), sqlc.arg(deal_id))
-ON CONFLICT (user_id, deal_id) DO NOTHING;
-
--- name: DeleteSavedDeal :execrows
-DELETE FROM saved_deals WHERE user_id = sqlc.arg(user_id) AND deal_id = sqlc.arg(deal_id);
-
--- name: ListSavedDealIDs :many
-SELECT deal_id FROM saved_deals WHERE user_id = sqlc.arg(user_id) ORDER BY created_at DESC, id DESC LIMIT 100;
 
 -- name: UpsertRecentlyViewed :exec
 INSERT INTO recently_viewed (user_id, deal_id, viewed_at) VALUES (sqlc.arg(user_id), sqlc.arg(deal_id), now())
@@ -92,19 +61,16 @@ ORDER BY viewed_at DESC, id DESC LIMIT 30;
 SELECT nextval('order_number_seq')::bigint AS value;
 
 -- name: InsertOrder :one
-INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash, shipping_address)
+INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash)
 VALUES (sqlc.arg(number), sqlc.arg(user_id), 'pending_payment', sqlc.arg(subtotal), sqlc.arg(total), 'UZS',
-        sqlc.arg(idempotency_key), sqlc.arg(request_hash), sqlc.narg(shipping_address)::jsonb)
+        sqlc.arg(idempotency_key), sqlc.arg(request_hash))
 RETURNING id, created_at;
 
 -- name: InsertOrderItem :one
 INSERT INTO order_items (order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-                         original_price_snapshot, quantity, is_gift, gift_recipient_name,
-                         gift_recipient_email, gift_message, fulfillment_status)
+                         original_price_snapshot, quantity)
 VALUES (sqlc.arg(order_id), sqlc.arg(deal_id), sqlc.arg(option_id), sqlc.arg(title_snapshot),
-        sqlc.arg(unit_price), sqlc.arg(original_price), sqlc.arg(quantity), sqlc.arg(is_gift),
-        sqlc.narg(gift_recipient_name), sqlc.narg(gift_recipient_email), sqlc.narg(gift_message),
-        sqlc.arg(fulfillment_status)::fulfillment_status)
+        sqlc.arg(unit_price), sqlc.arg(original_price), sqlc.arg(quantity))
 RETURNING id;
 
 -- name: InsertStockReservation :exec
@@ -115,14 +81,14 @@ VALUES (sqlc.arg(option_id), sqlc.arg(order_id), sqlc.arg(quantity), sqlc.arg(ex
 SELECT id FROM orders WHERE idempotency_key = sqlc.arg(idempotency_key);
 
 -- name: GetOrderByID :one
-SELECT o.id, o.number, o.user_id, o.status::text AS status, o.subtotal, o.total, o.shipping_address, o.paid_at,
+SELECT o.id, o.number, o.user_id, o.status::text AS status, o.subtotal, o.total, o.paid_at,
        o.created_at, o.request_hash,
        (SELECT MAX(r.expires_at) FROM stock_reservations r
         WHERE r.order_id = o.id AND r.released_at IS NULL)::timestamptz AS reservation_expires_at
 FROM orders o WHERE o.id = sqlc.arg(order_id);
 
 -- name: LockOrderByID :one
-SELECT id, number, user_id, status::text AS status, subtotal, total, shipping_address, paid_at, created_at
+SELECT id, number, user_id, status::text AS status, subtotal, total, paid_at, created_at
 FROM orders WHERE id = sqlc.arg(order_id) FOR UPDATE;
 
 -- name: ListOrderIDsForUser :many
@@ -134,8 +100,7 @@ SELECT COUNT(*)::bigint AS total FROM orders WHERE user_id = sqlc.arg(user_id);
 
 -- name: ListOrderItemsForOrders :many
 SELECT id, order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-       original_price_snapshot, quantity, is_gift, gift_recipient_name, gift_recipient_email,
-       gift_message, fulfillment_status::text AS fulfillment_status
+       original_price_snapshot, quantity
 FROM order_items WHERE order_id = ANY(sqlc.arg(order_ids)::uuid[]) ORDER BY created_at, id;
 
 -- name: SetOrderStatus :exec

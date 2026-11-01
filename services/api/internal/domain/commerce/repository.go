@@ -32,12 +32,6 @@ type Store interface {
 	ConvertStock(ctx context.Context, optionID uuid.UUID, quantity int) error
 	AddDealSoldCount(ctx context.Context, dealID uuid.UUID, quantity int) error
 
-	// Carts.
-	CartLines(ctx context.Context, userID uuid.UUID) ([]CartLine, error)
-	UpsertCart(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
-	DeleteCartLines(ctx context.Context, cartID uuid.UUID) error
-	InsertCartLine(ctx context.Context, cartID uuid.UUID, line CartLine) error
-
 	// Orders.
 	NextOrderNumber(ctx context.Context) (int64, error)
 	OrderIDByIdempotencyKey(ctx context.Context, key string) (uuid.UUID, error)
@@ -68,9 +62,6 @@ type Store interface {
 	ExpireDueVouchers(ctx context.Context, now time.Time, batch int) (int, error)
 
 	// Engagement.
-	SaveDeal(ctx context.Context, userID, dealID uuid.UUID) error
-	UnsaveDeal(ctx context.Context, userID, dealID uuid.UUID) error
-	SavedDealIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error)
 	RecordView(ctx context.Context, userID, dealID uuid.UUID) error
 	RecentDealIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error)
 }

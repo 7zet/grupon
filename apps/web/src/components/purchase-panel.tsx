@@ -23,7 +23,6 @@ export function PurchasePanel({
   const add = useCart((state) => state.add);
   const [selected, setSelected] = useState(deal.options[0]!.id);
   const [quantity, setQuantity] = useState(1);
-  const [gift, setGift] = useState(false);
   const option = deal.options.find((item) => item.id === selected)!;
   const remaining = option.stock_total - option.stock_sold - option.stock_reserved;
   const unavailable = deal.status !== 'active' || remaining < 1;
@@ -31,10 +30,8 @@ export function PurchasePanel({
   const cartLine = () => ({
     optionId: option.id,
     quantity,
-    isGift: gift,
     title: localized(option.title, locale),
     dealSlug: deal.slug,
-    kind: deal.kind,
     unitPrice: option.deal_price.amount,
     originalPrice: option.original_price.amount,
   });
@@ -123,16 +120,6 @@ export function PurchasePanel({
           </button>
         </div>
       </div>
-      {deal.is_giftable && (
-        <label className="mt-3 flex items-center gap-2 text-small">
-          <input
-            type="checkbox"
-            checked={gift}
-            onChange={(event) => setGift(event.target.checked)}
-          />
-          {t('gift')}
-        </label>
-      )}
     </aside>
   );
 }

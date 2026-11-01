@@ -63,7 +63,6 @@ func newTestRouter(t *testing.T, token string, invalidations *int) http.Handler 
 	deal := catalog.DealSummary{
 		ID:       uuid.New(),
 		Slug:     "spa-day",
-		Kind:     "voucher",
 		Status:   "active",
 		Title:    catalog.Text{Uz: "Spa kuni", Ru: "СПА", En: "Spa day"},
 		Merchant: catalog.Merchant{ID: uuid.New(), Slug: "lotus", DisplayName: "Lotus"},
@@ -164,13 +163,6 @@ func TestCatalogEndpointsMapDomainResultsAndProblems(t *testing.T) {
 		recorder := send(t, router, http.MethodGet, "/api/v1/me", nil)
 		if recorder.Code != http.StatusNotImplemented {
 			t.Fatalf("status = %d, want 501", recorder.Code)
-		}
-	})
-
-	t.Run("promo click for an unknown code is a 404 with the promo code code", func(t *testing.T) {
-		recorder := send(t, router, http.MethodPost, "/api/v1/promo-codes/"+uuid.New().String()+"/click", nil)
-		if recorder.Code != http.StatusNotFound || problemCode(t, recorder) != "promo_code_not_found" {
-			t.Fatalf("status=%d body=%s", recorder.Code, recorder.Body.String())
 		}
 	})
 

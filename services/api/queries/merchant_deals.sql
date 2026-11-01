@@ -1,23 +1,23 @@
 -- name: InsertDeal :one
-INSERT INTO deals (slug, merchant_id, category_id, subcategory_id, kind, title, short_description, description,
-  highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required, is_giftable,
+INSERT INTO deals (slug, merchant_id, category_id, subcategory_id, title, short_description, description,
+  highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required,
   status, starts_at, ends_at, voucher_valid_days, voucher_valid_until, max_per_user, review_fingerprint)
 VALUES (sqlc.arg(slug), sqlc.arg(merchant_id), sqlc.arg(category_id), sqlc.arg(subcategory_id),
-  sqlc.arg(kind)::deal_kind, sqlc.arg(title), sqlc.arg(short_description), sqlc.arg(description),
+  sqlc.arg(title), sqlc.arg(short_description), sqlc.arg(description),
   sqlc.arg(highlights), sqlc.arg(whats_included), sqlc.arg(terms), sqlc.arg(faq),
   sqlc.arg(redemption_method)::redemption_method, sqlc.arg(redemption_instructions),
-  sqlc.arg(booking_required), sqlc.arg(is_giftable), sqlc.arg(status)::deal_status,
+  sqlc.arg(booking_required), sqlc.arg(status)::deal_status,
   sqlc.arg(starts_at), sqlc.arg(ends_at), sqlc.narg(voucher_valid_days), sqlc.narg(voucher_valid_until),
   sqlc.arg(max_per_user), sqlc.arg(review_fingerprint))
 RETURNING id;
 
 -- name: UpdateOwnedDeal :execrows
 UPDATE deals SET slug = sqlc.arg(slug), category_id = sqlc.arg(category_id), subcategory_id = sqlc.arg(subcategory_id),
-  kind = sqlc.arg(kind)::deal_kind, title = sqlc.arg(title), short_description = sqlc.arg(short_description),
+  title = sqlc.arg(title), short_description = sqlc.arg(short_description),
   description = sqlc.arg(description), highlights = sqlc.arg(highlights), whats_included = sqlc.arg(whats_included),
   terms = sqlc.arg(terms), faq = sqlc.arg(faq), redemption_method = sqlc.arg(redemption_method)::redemption_method,
   redemption_instructions = sqlc.arg(redemption_instructions), booking_required = sqlc.arg(booking_required),
-  is_giftable = sqlc.arg(is_giftable), status = sqlc.arg(status)::deal_status, rejection_reason = NULL,
+  status = sqlc.arg(status)::deal_status, rejection_reason = NULL,
   starts_at = sqlc.arg(starts_at), ends_at = sqlc.arg(ends_at), voucher_valid_days = sqlc.narg(voucher_valid_days),
   voucher_valid_until = sqlc.narg(voucher_valid_until), max_per_user = sqlc.arg(max_per_user),
   review_fingerprint = sqlc.arg(review_fingerprint), updated_at = now()
@@ -37,10 +37,10 @@ FROM deals
 WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id) AND deleted_at IS NULL;
 
 -- name: GetOwnedDealDetailRow :one
-SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
        d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
        d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
-       d.booking_required, d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
+       d.booking_required, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
        d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
 FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id

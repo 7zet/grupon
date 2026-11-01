@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/google/uuid"
 
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/http/gen"
@@ -42,12 +41,6 @@ func (a *CatalogAPI) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
 		Currencies: []gen.Currency{gen.Currency("UZS")},
 		Cities:     mapCities(config.Cities),
 		Categories: mapCategories(config.Categories),
-		ExchangeRate: gen.ExchangeRate{
-			Base:        gen.ExchangeRateBase("UZS"),
-			Quote:       gen.ExchangeRateQuote("USD"),
-			Rate:        config.ExchangeRate.Rate,
-			EffectiveAt: config.ExchangeRate.EffectiveAt,
-		},
 	})
 }
 
@@ -213,80 +206,6 @@ func (a *CatalogAPI) GetSearchSuggestions(w http.ResponseWriter, r *http.Request
 		})
 	}
 	writeJSON(w, http.StatusOK, gen.SuggestionList{Items: items})
-}
-
-func (a *CatalogAPI) ListPromoCodes(w http.ResponseWriter, r *http.Request, params gen.ListPromoCodesParams) {
-	if _, err := resolveLocale(params.Locale); err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	page, err := catalog.NewPage(params.Page, nil)
-	if err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	result, err := a.catalog.PromoCodes(r.Context(), catalog.PromoCodeFilter{Category: stringValue(params.Category)}, page)
-	if err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	items := make([]gen.PromoCode, 0, len(result.Items))
-	for _, code := range result.Items {
-		items = append(items, mapPromoCode(code))
-	}
-	writeJSON(w, http.StatusOK, gen.PromoCodePage{Items: items, Page: result.Page, PageSize: result.PageSize, Total: result.Total})
-}
-
-func (a *CatalogAPI) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id gen.Id) {
-	if err := a.catalog.TrackPromoCodeClick(r.Context(), uuid.UUID(id)); err != nil {
-		a.fail(w, r, err, "promo_code_not_found")
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (a *CatalogAPI) ListCollections(w http.ResponseWriter, r *http.Request, params gen.ListCollectionsParams) {
-	if _, err := resolveLocale(params.Locale); err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	collections, err := a.catalog.Collections(r.Context())
-	if err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	items := make([]gen.Collection, 0, len(collections))
-	for _, collection := range collections {
-		items = append(items, mapCollection(collection))
-	}
-	writeJSON(w, http.StatusOK, gen.CollectionList{Items: items})
-}
-
-func (a *CatalogAPI) GetCollection(w http.ResponseWriter, r *http.Request, slug gen.Slug, params gen.GetCollectionParams) {
-	if _, err := resolveLocale(params.Locale); err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	page, err := catalog.NewPage(params.Page, nil)
-	if err != nil {
-		a.fail(w, r, err, "")
-		return
-	}
-	detail, err := a.catalog.Collection(r.Context(), slug, page)
-	if err != nil {
-		a.fail(w, r, err, "collection_not_found")
-		return
-	}
-	writeJSON(w, http.StatusOK, gen.CollectionDetail{
-		Id:          gen.Uuid(detail.ID),
-		Slug:        detail.Slug,
-		Title:       mapText(detail.Title),
-		Description: mapText(detail.Description),
-		CoverUrl:    detail.CoverURL,
-		StartsAt:    detail.StartsAt,
-		EndsAt:      detail.EndsAt,
-		Deals:       mapDealPage(detail.Deals),
-	})
 }
 
 // fail translates a domain error into an RFC 9457 problem. notFoundCode names the missing resource
@@ -493,7 +412,6 @@ func mapDealSummary(deal catalog.DealSummary) gen.DealSummary {
 		Slug:        deal.Slug,
 		Merchant:    mapMerchant(deal.Merchant),
 		Category:    mapCategory(deal.Category),
-		Kind:        gen.DealSummaryKind(deal.Kind),
 		Title:       mapText(deal.Title),
 		Status:      gen.DealStatus(deal.Status),
 		Options:     mapOptions(deal.Options),
@@ -540,7 +458,6 @@ func mapDeal(deal catalog.Deal) gen.Deal {
 		Merchant:               mapMerchant(deal.Merchant),
 		Category:               mapCategory(deal.Category),
 		Subcategory:            gen.Subcategory{Id: gen.Uuid(deal.Subcategory.ID), Slug: deal.Subcategory.Slug, Name: mapText(deal.Subcategory.Name)},
-		Kind:                   gen.DealKind(deal.Kind),
 		Title:                  mapText(deal.Title),
 		ShortDescription:       mapText(deal.ShortDescription),
 		Description:            mapText(deal.Description),
@@ -551,7 +468,6 @@ func mapDeal(deal catalog.Deal) gen.Deal {
 		RedemptionMethod:       gen.DealRedemptionMethod(deal.RedemptionMethod),
 		RedemptionInstructions: instructions,
 		BookingRequired:        deal.BookingRequired,
-		IsGiftable:             deal.IsGiftable,
 		VoucherValidDays:       deal.VoucherValidDays,
 		VoucherValidUntil:      deal.VoucherValidUntil,
 		MaxPerUser:             deal.MaxPerUser,
@@ -618,33 +534,6 @@ func mapMerchantProfile(profile catalog.MerchantProfile) gen.MerchantProfile {
 	}
 }
 
-func mapPromoCode(code catalog.PromoCode) gen.PromoCode {
-	return gen.PromoCode{
-		Id:            gen.Uuid(code.ID),
-		BrandName:     code.BrandName,
-		BrandLogoUrl:  code.BrandLogoURL,
-		Title:         mapText(code.Title),
-		Code:          code.Code,
-		DiscountLabel: mapText(code.DiscountLabel),
-		Url:           code.URL,
-		StartsAt:      code.StartsAt,
-		EndsAt:        code.EndsAt,
-		IsVerified:    code.IsVerified,
-	}
-}
-
-func mapCollection(collection catalog.Collection) gen.Collection {
-	return gen.Collection{
-		Id:          gen.Uuid(collection.ID),
-		Slug:        collection.Slug,
-		Title:       mapText(collection.Title),
-		Description: mapText(collection.Description),
-		CoverUrl:    collection.CoverURL,
-		StartsAt:    collection.StartsAt,
-		EndsAt:      collection.EndsAt,
-	}
-}
-
 func mapHomepageSection(section catalog.HomepageSection) gen.HomepageSection {
 	result := gen.HomepageSection{
 		Id:        gen.Uuid(section.ID),
@@ -660,10 +549,6 @@ func mapHomepageSection(section catalog.HomepageSection) gen.HomepageSection {
 	if section.Categories != nil {
 		categories := mapCategories(section.Categories)
 		result.Categories = &categories
-	}
-	if section.Collection != nil {
-		collection := mapCollection(*section.Collection)
-		result.Collection = &collection
 	}
 	return result
 }

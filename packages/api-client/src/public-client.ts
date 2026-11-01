@@ -7,9 +7,6 @@ export type DealSummary = components['schemas']['DealSummary'];
 export type DealPage = components['schemas']['DealPage'];
 export type MerchantProfile = components['schemas']['MerchantProfile'];
 export type ReviewList = components['schemas']['ReviewList'];
-export type PromoCodePage = components['schemas']['PromoCodePage'];
-export type CollectionList = components['schemas']['CollectionList'];
-export type CollectionDetail = components['schemas']['CollectionDetail'];
 export type SuggestionList = components['schemas']['SuggestionList'];
 
 declare const process: { env: { NEXT_PUBLIC_API_BASE_URL?: string } };
@@ -59,14 +56,6 @@ export const publicApi = {
     ),
   merchant: (slug: string) =>
     request<MerchantProfile>(`/businesses/${encodeURIComponent(slug)}`, cached(60)),
-  promoCodes: (page = 1, category?: string) => {
-    const query = new URLSearchParams({ page: String(page) });
-    if (category) query.set('category', category);
-    return request<PromoCodePage>(withQuery('/promo-codes', query), cached(300));
-  },
-  collections: () => request<CollectionList>('/collections', cached(300)),
-  collection: (slug: string) =>
-    request<CollectionDetail>(`/collections/${encodeURIComponent(slug)}`, cached(300)),
   suggestions: (query: string) =>
     request<SuggestionList>(
       withQuery('/search/suggestions', new URLSearchParams({ q: query })),

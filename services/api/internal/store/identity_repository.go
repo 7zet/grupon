@@ -77,27 +77,6 @@ func (r *IdentityRepository) GetUserByID(ctx context.Context, id uuid.UUID) (ide
 	return toUserResult(row, err)
 }
 
-func (r *IdentityRepository) GetUserByEmail(ctx context.Context, email string) (identity.User, error) {
-	row, err := r.queries.GetUserByEmail(ctx, email)
-	return toUserResult(row, err)
-}
-
-func (r *IdentityRepository) GetUserByGoogleSub(ctx context.Context, sub string) (identity.User, error) {
-	row, err := r.queries.GetUserByGoogleSub(ctx, pgtype.Text{String: sub, Valid: true})
-	return toUserResult(row, err)
-}
-
-func (r *IdentityRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, hash string) error {
-	return r.queries.UpdateUserPasswordHash(ctx, sqlc.UpdateUserPasswordHashParams{
-		ID:           toPgUUID(id),
-		PasswordHash: pgtype.Text{String: hash, Valid: true},
-	})
-}
-
-func (r *IdentityRepository) MarkEmailVerified(ctx context.Context, id uuid.UUID) error {
-	return r.queries.MarkUserEmailVerified(ctx, toPgUUID(id))
-}
-
 func (r *IdentityRepository) UpdateProfile(ctx context.Context, id uuid.UUID, update identity.ProfileUpdate) (identity.User, error) {
 	current, err := r.queries.GetUserByID(ctx, toPgUUID(id))
 	if err != nil {
@@ -124,13 +103,6 @@ func (r *IdentityRepository) UpdateProfile(ctx context.Context, id uuid.UUID, up
 	}
 	row, err := r.queries.UpdateUserProfile(ctx, merged)
 	return toUserResult(row, err)
-}
-
-func (r *IdentityRepository) LinkGoogleSub(ctx context.Context, id uuid.UUID, sub string) error {
-	return r.queries.LinkUserGoogleSub(ctx, sqlc.LinkUserGoogleSubParams{
-		ID:        toPgUUID(id),
-		GoogleSub: pgtype.Text{String: sub, Valid: true},
-	})
 }
 
 func (r *IdentityRepository) TouchLastLogin(ctx context.Context, id uuid.UUID) error {
@@ -220,33 +192,6 @@ func (r *IdentityRepository) RevokeUserSessions(ctx context.Context, id uuid.UUI
 	return r.queries.RevokeUserRefreshTokensExceptFamily(ctx, sqlc.RevokeUserRefreshTokensExceptFamilyParams{
 		UserID:       toPgUUID(id),
 		KeepFamilyID: toPgUUID(*keep),
-	})
-}
-
-func (r *IdentityRepository) CreateAuthToken(ctx context.Context, userID uuid.UUID, kind, hash string, expiresAt time.Time) error {
-	return r.queries.CreateAuthToken(ctx, sqlc.CreateAuthTokenParams{
-		UserID:    toPgUUID(userID),
-		Kind:      kind,
-		TokenHash: hash,
-		ExpiresAt: pgtype.Timestamptz{Time: expiresAt, Valid: true},
-	})
-}
-
-func (r *IdentityRepository) ConsumeAuthToken(ctx context.Context, kind, hash string) (uuid.UUID, error) {
-	id, err := r.queries.ConsumeAuthToken(ctx, sqlc.ConsumeAuthTokenParams{Kind: kind, TokenHash: hash})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return uuid.Nil, identity.ErrInvalidToken
-	}
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("consume auth token: %w", err)
-	}
-	return toUUID(id), nil
-}
-
-func (r *IdentityRepository) InvalidateAuthTokens(ctx context.Context, userID uuid.UUID, kind string) error {
-	return r.queries.InvalidateUserAuthTokens(ctx, sqlc.InvalidateUserAuthTokensParams{
-		UserID: toPgUUID(userID),
-		Kind:   kind,
 	})
 }
 

@@ -27,7 +27,7 @@ func TestOverSellingIsImpossible(t *testing.T) {
 		SELECT o.id FROM deal_options o
 		JOIN deals d ON d.id = o.deal_id
 		JOIN merchants m ON m.id = d.merchant_id
-		WHERE d.status = 'active' AND d.kind = 'voucher' AND d.ends_at > now()
+		WHERE d.status = 'active' AND d.ends_at > now()
 		  AND o.is_active AND m.status = 'active'
 		LIMIT 1`).Scan(&optionID); err != nil {
 		t.Fatal(err)

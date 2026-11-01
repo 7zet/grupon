@@ -17,13 +17,6 @@ SELECT id, category_id, slug, name
 FROM subcategories
 ORDER BY sort_order, slug;
 
--- name: GetLatestExchangeRate :one
-SELECT rate::text AS rate, effective_at
-FROM exchange_rates
-WHERE base = 'UZS' AND quote = 'USD'
-ORDER BY effective_at DESC
-LIMIT 1;
-
 -- name: GetActiveMerchantBySlug :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
        instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
@@ -50,10 +43,10 @@ WHERE dl.deal_id = ANY(sqlc.arg(deal_ids)::uuid[])
 ORDER BY dl.deal_id, ml.created_at, ml.id;
 
 -- name: GetDealDetailRowBySlug :one
-SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
        d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
        d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
-       d.booking_required, d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
+       d.booking_required, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
        d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
 FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
@@ -62,7 +55,7 @@ WHERE d.slug = $1
   AND d.status IN ('scheduled', 'active', 'sold_out', 'expired');
 
 -- name: ListDealSummaryRows :many
-SELECT d.id, d.slug, d.kind, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
+SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
        d.rating_count, d.starts_at, d.ends_at,
        m.id AS merchant_id, m.slug AS merchant_slug, m.legal_name AS merchant_legal_name,
        m.display_name AS merchant_display_name, m.description AS merchant_description,
@@ -268,65 +261,6 @@ WHERE is_active = true
   )
 ORDER BY sort_order, slug
 LIMIT sqlc.arg(page_limit);
-
--- name: ListActivePromoCodes :many
-SELECT pc.id, pc.brand_name, pc.brand_logo_url, pc.title, pc.code, pc.discount_label, pc.url,
-       pc.starts_at, pc.ends_at, pc.is_verified
-FROM promo_codes pc
-LEFT JOIN categories cat ON cat.id = pc.category_id
-WHERE pc.is_active = true
-  AND pc.starts_at <= now()
-  AND pc.ends_at > now()
-  AND (sqlc.narg('category')::text IS NULL OR cat.slug = sqlc.narg('category')::text)
-ORDER BY pc.is_verified DESC, pc.ends_at ASC, pc.id ASC
-LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
-
--- name: CountActivePromoCodes :one
-SELECT COUNT(*)
-FROM promo_codes pc
-LEFT JOIN categories cat ON cat.id = pc.category_id
-WHERE pc.is_active = true
-  AND pc.starts_at <= now()
-  AND pc.ends_at > now()
-  AND (sqlc.narg('category')::text IS NULL OR cat.slug = sqlc.narg('category')::text);
-
--- name: IncrementPromoCodeClicks :execrows
-UPDATE promo_codes
-SET click_count = click_count + 1
-WHERE id = $1 AND is_active = true AND ends_at > now();
-
--- name: ListActiveCollections :many
-SELECT id, slug, title, description, cover_url, starts_at, ends_at
-FROM collections
-WHERE is_active = true AND ends_at > now()
-ORDER BY starts_at, slug;
-
--- name: GetActiveCollectionBySlug :one
-SELECT id, slug, title, description, cover_url, starts_at, ends_at
-FROM collections
-WHERE slug = $1 AND is_active = true AND ends_at > now();
-
--- name: SearchCollectionDealIDs :many
-SELECT cd.deal_id
-FROM collection_deals cd
-JOIN deals d ON d.id = cd.deal_id
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
-WHERE cd.collection_id = sqlc.arg(collection_id)
-  AND d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
-  AND d.ends_at > now()
-ORDER BY cd.sort_order, cd.deal_id
-LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
-
--- name: CountCollectionDeals :one
-SELECT COUNT(*)
-FROM collection_deals cd
-JOIN deals d ON d.id = cd.deal_id
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
-WHERE cd.collection_id = $1
-  AND d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
-  AND d.ends_at > now();
 
 -- name: ListActiveHomepageSections :many
 SELECT id, key, title, type, deal_ids, rule, sort_order

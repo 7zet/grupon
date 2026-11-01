@@ -20,7 +20,7 @@ func main() {
 	if err := seed.Run(context.Background(), databaseURL); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("seed complete: 5 cities, 11 categories, 30 merchants, 100 deals, 25 promo codes, 3 collections, 400 reviews")
+	log.Println("seed complete: 5 cities, 11 categories, 30 merchants, 100 deals, 400 reviews")
 }
 
 func envOr(key, fallback string) string {

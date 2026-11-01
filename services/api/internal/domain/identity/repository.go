@@ -13,12 +13,7 @@ type Repository interface {
 	// It returns ErrEmailTaken when the email is already in use.
 	CreateUser(ctx context.Context, input NewUser) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
-	GetUserByEmail(ctx context.Context, email string) (User, error)
-	GetUserByGoogleSub(ctx context.Context, sub string) (User, error)
-	UpdatePasswordHash(ctx context.Context, id uuid.UUID, hash string) error
-	MarkEmailVerified(ctx context.Context, id uuid.UUID) error
 	UpdateProfile(ctx context.Context, id uuid.UUID, update ProfileUpdate) (User, error)
-	LinkGoogleSub(ctx context.Context, id uuid.UUID, sub string) error
 	TouchLastLogin(ctx context.Context, id uuid.UUID) error
 	SoftDeleteUser(ctx context.Context, id uuid.UUID) error
 	ListRoles(ctx context.Context, id uuid.UUID) ([]Role, error)
@@ -33,12 +28,6 @@ type Repository interface {
 	// RevokeUserSessions revokes every refresh token of the user, except the family keep when set.
 	RevokeUserSessions(ctx context.Context, id uuid.UUID, keep *uuid.UUID) error
 
-	CreateAuthToken(ctx context.Context, userID uuid.UUID, kind, hash string, expiresAt time.Time) error
-	// ConsumeAuthToken marks an unused, unexpired token as used and returns its user. It returns
-	// ErrInvalidToken when no such token exists.
-	ConsumeAuthToken(ctx context.Context, kind, hash string) (uuid.UUID, error)
-	InvalidateAuthTokens(ctx context.Context, userID uuid.UUID, kind string) error
-
 	GetUserByPhone(ctx context.Context, phone string) (User, error)
 	CreatePhoneUser(ctx context.Context, phone, email string) (User, error)
 	InsertPhoneOTP(ctx context.Context, phone, codeHash string, expiresAt time.Time) error
@@ -51,9 +40,4 @@ type Repository interface {
 // RateLimiter counts attempts per key. Implementations decide the window and the limit.
 type RateLimiter interface {
 	Allow(ctx context.Context, key string) (bool, error)
-}
-
-// GoogleExchanger exchanges an authorization code (PKCE) for a verified Google identity.
-type GoogleExchanger interface {
-	Exchange(ctx context.Context, code, codeVerifier, redirectURI string) (GoogleIdentity, error)
 }

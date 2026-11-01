@@ -195,47 +195,6 @@ type apiServer struct {
 	finance      *FinanceAPI
 }
 
-// Operations owned by CommerceAPI are delegated to it when it is mounted.
-func (s apiServer) GetCart(w http.ResponseWriter, r *http.Request) {
-	if s.commerce != nil {
-		s.commerce.GetCart(w, r)
-		return
-	}
-	s.ServerInterface.GetCart(w, r)
-}
-
-func (s apiServer) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-	if s.commerce != nil {
-		s.commerce.ReplaceCart(w, r)
-		return
-	}
-	s.ServerInterface.ReplaceCart(w, r)
-}
-
-func (s apiServer) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	if s.commerce != nil {
-		s.commerce.ListSavedDeals(w, r)
-		return
-	}
-	s.ServerInterface.ListSavedDeals(w, r)
-}
-
-func (s apiServer) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	if s.commerce != nil {
-		s.commerce.SaveDeal(w, r)
-		return
-	}
-	s.ServerInterface.SaveDeal(w, r)
-}
-
-func (s apiServer) UnsaveDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
-	if s.commerce != nil {
-		s.commerce.UnsaveDeal(w, r, id)
-		return
-	}
-	s.ServerInterface.UnsaveDeal(w, r, id)
-}
-
 func (s apiServer) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 	if s.commerce != nil {
 		s.commerce.ListRecentlyViewed(w, r)
@@ -316,30 +275,6 @@ func (s apiServer) GetMyVoucher(w http.ResponseWriter, r *http.Request, id gen.I
 	s.ServerInterface.GetMyVoucher(w, r, id)
 }
 
-func (s apiServer) Register(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.Register(w, r)
-		return
-	}
-	s.ServerInterface.Register(w, r)
-}
-
-func (s apiServer) Login(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.Login(w, r)
-		return
-	}
-	s.ServerInterface.Login(w, r)
-}
-
-func (s apiServer) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.ExchangeGoogleCode(w, r)
-		return
-	}
-	s.ServerInterface.ExchangeGoogleCode(w, r)
-}
-
 func (s apiServer) RefreshSession(w http.ResponseWriter, r *http.Request) {
 	if s.auth != nil {
 		s.auth.RefreshSession(w, r)
@@ -354,30 +289,6 @@ func (s apiServer) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ServerInterface.Logout(w, r)
-}
-
-func (s apiServer) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.VerifyEmail(w, r)
-		return
-	}
-	s.ServerInterface.VerifyEmail(w, r)
-}
-
-func (s apiServer) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.ForgotPassword(w, r)
-		return
-	}
-	s.ServerInterface.ForgotPassword(w, r)
-}
-
-func (s apiServer) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.ResetPassword(w, r)
-		return
-	}
-	s.ServerInterface.ResetPassword(w, r)
 }
 
 func (s apiServer) GetMe(w http.ResponseWriter, r *http.Request) {
@@ -402,14 +313,6 @@ func (s apiServer) DeleteMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ServerInterface.DeleteMe(w, r)
-}
-
-func (s apiServer) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	if s.auth != nil {
-		s.auth.ChangePassword(w, r)
-		return
-	}
-	s.ServerInterface.ChangePassword(w, r)
 }
 
 // RegisterMerchant is owned by MerchantAPI when it is mounted.

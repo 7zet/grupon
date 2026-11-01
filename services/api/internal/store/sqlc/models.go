@@ -103,48 +103,6 @@ func (ns NullCurrencyCode) Value() (driver.Value, error) {
 	return string(ns.CurrencyCode), nil
 }
 
-type DealKind string
-
-const (
-	DealKindVoucher DealKind = "voucher"
-	DealKindProduct DealKind = "product"
-)
-
-func (e *DealKind) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = DealKind(s)
-	case string:
-		*e = DealKind(s)
-	default:
-		return fmt.Errorf("unsupported scan type for DealKind: %T", src)
-	}
-	return nil
-}
-
-type NullDealKind struct {
-	DealKind DealKind `json:"deal_kind"`
-	Valid    bool     `json:"valid"` // Valid is true if DealKind is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullDealKind) Scan(value interface{}) error {
-	if value == nil {
-		ns.DealKind, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.DealKind.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullDealKind) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.DealKind), nil
-}
-
 type DealStatus string
 
 const (
@@ -191,51 +149,6 @@ func (ns NullDealStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.DealStatus), nil
-}
-
-type FulfillmentStatus string
-
-const (
-	FulfillmentStatusNotApplicable FulfillmentStatus = "not_applicable"
-	FulfillmentStatusProcessing    FulfillmentStatus = "processing"
-	FulfillmentStatusShipped       FulfillmentStatus = "shipped"
-	FulfillmentStatusDelivered     FulfillmentStatus = "delivered"
-	FulfillmentStatusReturned      FulfillmentStatus = "returned"
-)
-
-func (e *FulfillmentStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = FulfillmentStatus(s)
-	case string:
-		*e = FulfillmentStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for FulfillmentStatus: %T", src)
-	}
-	return nil
-}
-
-type NullFulfillmentStatus struct {
-	FulfillmentStatus FulfillmentStatus `json:"fulfillment_status"`
-	Valid             bool              `json:"valid"` // Valid is true if FulfillmentStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullFulfillmentStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.FulfillmentStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.FulfillmentStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullFulfillmentStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.FulfillmentStatus), nil
 }
 
 type HomepageSectionType string
@@ -775,44 +688,6 @@ type AuditLog struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
-type AuthToken struct {
-	ID        pgtype.UUID        `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	Kind      string             `json:"kind"`
-	TokenHash string             `json:"token_hash"`
-	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
-	UsedAt    pgtype.Timestamptz `json:"used_at"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
-type Banner struct {
-	ID        pgtype.UUID        `json:"id"`
-	ImageUrl  []byte             `json:"image_url"`
-	Link      string             `json:"link"`
-	Placement string             `json:"placement"`
-	StartsAt  pgtype.Timestamptz `json:"starts_at"`
-	EndsAt    pgtype.Timestamptz `json:"ends_at"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
-type Cart struct {
-	ID        pgtype.UUID        `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
-type CartItem struct {
-	ID           pgtype.UUID        `json:"id"`
-	CartID       pgtype.UUID        `json:"cart_id"`
-	DealOptionID pgtype.UUID        `json:"deal_option_id"`
-	Quantity     int32              `json:"quantity"`
-	IsGift       bool               `json:"is_gift"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-}
-
 type Category struct {
 	ID        pgtype.UUID        `json:"id"`
 	Slug      string             `json:"slug"`
@@ -836,35 +711,12 @@ type City struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-type Collection struct {
-	ID          pgtype.UUID        `json:"id"`
-	Slug        string             `json:"slug"`
-	Title       []byte             `json:"title"`
-	Description []byte             `json:"description"`
-	CoverUrl    string             `json:"cover_url"`
-	StartsAt    pgtype.Timestamptz `json:"starts_at"`
-	EndsAt      pgtype.Timestamptz `json:"ends_at"`
-	IsActive    bool               `json:"is_active"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-}
-
-type CollectionDeal struct {
-	ID           pgtype.UUID        `json:"id"`
-	CollectionID pgtype.UUID        `json:"collection_id"`
-	DealID       pgtype.UUID        `json:"deal_id"`
-	SortOrder    int32              `json:"sort_order"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-}
-
 type Deal struct {
 	ID                     pgtype.UUID        `json:"id"`
 	Slug                   string             `json:"slug"`
 	MerchantID             pgtype.UUID        `json:"merchant_id"`
 	CategoryID             pgtype.UUID        `json:"category_id"`
 	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
-	Kind                   DealKind           `json:"kind"`
 	Title                  []byte             `json:"title"`
 	ShortDescription       []byte             `json:"short_description"`
 	Description            []byte             `json:"description"`
@@ -875,7 +727,6 @@ type Deal struct {
 	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
 	RedemptionInstructions []byte             `json:"redemption_instructions"`
 	BookingRequired        bool               `json:"booking_required"`
-	IsGiftable             bool               `json:"is_giftable"`
 	Status                 DealStatus         `json:"status"`
 	RejectionReason        pgtype.Text        `json:"rejection_reason"`
 	StartsAt               pgtype.Timestamptz `json:"starts_at"`
@@ -943,17 +794,6 @@ type Dispute struct {
 	Status       string             `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	ResolvedAt   pgtype.Timestamptz `json:"resolved_at"`
-}
-
-type ExchangeRate struct {
-	ID          pgtype.UUID        `json:"id"`
-	Base        CurrencyCode       `json:"base"`
-	Quote       CurrencyCode       `json:"quote"`
-	Rate        pgtype.Numeric     `json:"rate"`
-	Source      string             `json:"source"`
-	EffectiveAt pgtype.Timestamptz `json:"effective_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type FraudSignal struct {
@@ -1061,19 +901,18 @@ type MerchantPayoutHold struct {
 }
 
 type Order struct {
-	ID              pgtype.UUID        `json:"id"`
-	Number          string             `json:"number"`
-	UserID          pgtype.UUID        `json:"user_id"`
-	Status          OrderStatus        `json:"status"`
-	Subtotal        int64              `json:"subtotal"`
-	Total           int64              `json:"total"`
-	Currency        CurrencyCode       `json:"currency"`
-	IdempotencyKey  string             `json:"idempotency_key"`
-	ShippingAddress []byte             `json:"shipping_address"`
-	PaidAt          pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
-	RequestHash     pgtype.Text        `json:"request_hash"`
+	ID             pgtype.UUID        `json:"id"`
+	Number         string             `json:"number"`
+	UserID         pgtype.UUID        `json:"user_id"`
+	Status         OrderStatus        `json:"status"`
+	Subtotal       int64              `json:"subtotal"`
+	Total          int64              `json:"total"`
+	Currency       CurrencyCode       `json:"currency"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	PaidAt         pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	RequestHash    pgtype.Text        `json:"request_hash"`
 }
 
 type OrderItem struct {
@@ -1085,11 +924,6 @@ type OrderItem struct {
 	UnitPriceSnapshot     int64              `json:"unit_price_snapshot"`
 	OriginalPriceSnapshot int64              `json:"original_price_snapshot"`
 	Quantity              int32              `json:"quantity"`
-	IsGift                bool               `json:"is_gift"`
-	GiftRecipientName     pgtype.Text        `json:"gift_recipient_name"`
-	GiftRecipientEmail    pgtype.Text        `json:"gift_recipient_email"`
-	GiftMessage           pgtype.Text        `json:"gift_message"`
-	FulfillmentStatus     FulfillmentStatus  `json:"fulfillment_status"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 }
@@ -1149,24 +983,6 @@ type PhoneOtp struct {
 	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
 	ConsumedAt pgtype.Timestamptz `json:"consumed_at"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-}
-
-type PromoCode struct {
-	ID            pgtype.UUID        `json:"id"`
-	BrandName     string             `json:"brand_name"`
-	BrandLogoUrl  pgtype.Text        `json:"brand_logo_url"`
-	Title         []byte             `json:"title"`
-	Code          pgtype.Text        `json:"code"`
-	DiscountLabel []byte             `json:"discount_label"`
-	Url           string             `json:"url"`
-	CategoryID    pgtype.UUID        `json:"category_id"`
-	StartsAt      pgtype.Timestamptz `json:"starts_at"`
-	EndsAt        pgtype.Timestamptz `json:"ends_at"`
-	IsActive      bool               `json:"is_active"`
-	ClickCount    int64              `json:"click_count"`
-	IsVerified    bool               `json:"is_verified"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
 type RecentlyViewed struct {
@@ -1270,14 +1086,6 @@ type RoleAssignment struct {
 	MerchantID pgtype.UUID        `json:"merchant_id"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
-}
-
-type SavedDeal struct {
-	ID        pgtype.UUID        `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	DealID    pgtype.UUID        `json:"deal_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type StockReservation struct {

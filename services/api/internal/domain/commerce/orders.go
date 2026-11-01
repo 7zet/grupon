@@ -27,9 +27,6 @@ func (s *Service) CreateOrder(ctx context.Context, userID uuid.UUID, input Order
 		if err := ValidateQuantity(field+".quantity", item.Quantity); err != nil {
 			return Order{}, false, err
 		}
-		if err := ValidateGiftFields(field, item); err != nil {
-			return Order{}, false, err
-		}
 	}
 	fingerprint, err := RequestFingerprint(input)
 	if err != nil {
@@ -88,27 +85,17 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 	quantityByOption := make(map[uuid.UUID]int, len(ids))
 	unitsByDeal := make(map[uuid.UUID]int)
 	maxByDeal := make(map[uuid.UUID]int)
-	hasProduct := false
 	for _, item := range input.Items {
 		record, ok := byID[item.OptionID]
 		if !ok || !record.SellableAt(now) {
 			return Order{}, ErrOptionUnavailable
 		}
-		if _, _, valid := record.VoucherWindow(now); record.DealKind == KindVoucher && !valid {
+		if _, _, valid := record.VoucherWindow(now); !valid {
 			return Order{}, ErrOptionUnavailable
-		}
-		if item.IsGift && !record.IsGiftable {
-			return Order{}, ErrGiftNotAllowed
-		}
-		if record.DealKind == KindProduct {
-			hasProduct = true
 		}
 		quantityByOption[item.OptionID] += item.Quantity
 		unitsByDeal[record.DealID] += item.Quantity
 		maxByDeal[record.DealID] = record.MaxPerUser
-	}
-	if hasProduct && len(input.ShippingAddress) == 0 {
-		return Order{}, ErrShippingAddressRequired
 	}
 	for dealID, units := range unitsByDeal {
 		purchased, err := tx.UserUnitsForDeal(ctx, userID, dealID)
@@ -152,18 +139,13 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 		}
 	}
 
-	var shipping map[string]any
-	if hasProduct {
-		shipping = input.ShippingAddress
-	}
 	order, err := tx.InsertOrder(ctx, Order{
-		Number:          FormatOrderNumber(now.Year(), sequence),
-		UserID:          userID,
-		Status:          OrderPendingPayment,
-		Subtotal:        subtotal,
-		Total:           total,
-		ShippingAddress: shipping,
-		RequestHash:     fingerprint,
+		Number:      FormatOrderNumber(now.Year(), sequence),
+		UserID:      userID,
+		Status:      OrderPendingPayment,
+		Subtotal:    subtotal,
+		Total:       total,
+		RequestHash: fingerprint,
 	}, scopedKey)
 	if err != nil {
 		return Order{}, fmt.Errorf("insert order: %w", err)
@@ -171,23 +153,14 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 
 	for _, item := range input.Items {
 		record := byID[item.OptionID]
-		fulfillment := FulfillmentNotApplicable
-		if record.DealKind == KindProduct {
-			fulfillment = FulfillmentProcessing
-		}
 		line := OrderItem{
-			OrderID:            order.ID,
-			DealID:             record.DealID,
-			OptionID:           record.ID,
-			Title:              record.Title,
-			UnitPrice:          record.DealPrice,
-			OriginalPrice:      record.OriginalPrice,
-			Quantity:           item.Quantity,
-			IsGift:             item.IsGift,
-			GiftRecipientName:  item.GiftRecipientName,
-			GiftRecipientEmail: item.GiftRecipientEmail,
-			GiftMessage:        item.GiftMessage,
-			FulfillmentStatus:  fulfillment,
+			OrderID:       order.ID,
+			DealID:        record.DealID,
+			OptionID:      record.ID,
+			Title:         record.Title,
+			UnitPrice:     record.DealPrice,
+			OriginalPrice: record.OriginalPrice,
+			Quantity:      item.Quantity,
 		}
 		line.ID, err = tx.InsertOrderItem(ctx, order.ID, line)
 		if err != nil {

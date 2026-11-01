@@ -37,20 +37,8 @@ func TestLoadAuthDefaultsInDevelopment(t *testing.T) {
 	if got.Auth.RefreshTokenTTL != 30*24*time.Hour {
 		t.Errorf("RefreshTokenTTL = %v, want 720h", got.Auth.RefreshTokenTTL)
 	}
-	if got.Auth.Google.Enabled() {
-		t.Error("Google must be disabled without credentials")
-	}
 	if got.SMTP.Host != "" || got.SMTP.Port != 1025 {
 		t.Errorf("SMTP = %+v, want empty host and port 1025", got.SMTP)
-	}
-}
-
-func TestLoadGoogleRequiresAllSettings(t *testing.T) {
-	t.Parallel()
-
-	_, err := load(mapEnvironment(map[string]string{"GOOGLE_CLIENT_ID": "id"}))
-	if err == nil || !strings.Contains(err.Error(), "must be set together") {
-		t.Fatalf("load() error = %v, want partial Google config error", err)
 	}
 }
 

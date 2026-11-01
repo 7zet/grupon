@@ -73,32 +73,6 @@ func (q *Queries) CountVouchersForUser(ctx context.Context, arg CountVouchersFor
 	return total, err
 }
 
-const deleteCartItems = `-- name: DeleteCartItems :exec
-DELETE FROM cart_items WHERE cart_id = $1
-`
-
-func (q *Queries) DeleteCartItems(ctx context.Context, cartID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteCartItems, cartID)
-	return err
-}
-
-const deleteSavedDeal = `-- name: DeleteSavedDeal :execrows
-DELETE FROM saved_deals WHERE user_id = $1 AND deal_id = $2
-`
-
-type DeleteSavedDealParams struct {
-	UserID pgtype.UUID `json:"user_id"`
-	DealID pgtype.UUID `json:"deal_id"`
-}
-
-func (q *Queries) DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteSavedDeal, arg.UserID, arg.DealID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const expireDueVouchers = `-- name: ExpireDueVouchers :many
 UPDATE vouchers SET status = 'expired', updated_at = now()
 WHERE id IN (SELECT v.id FROM vouchers v WHERE v.status = 'active' AND v.valid_until <= $1
@@ -179,8 +153,8 @@ func (q *Queries) FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (in
 const getDealOptionRows = `-- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
-       d.status AS deal_status, d.kind AS deal_kind, d.starts_at, d.ends_at, d.max_per_user,
-       d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
+       d.status AS deal_status, d.starts_at, d.ends_at, d.max_per_user,
+       d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        m.status AS merchant_status
 FROM deal_options o
 JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
@@ -200,11 +174,9 @@ type GetDealOptionRowsRow struct {
 	StockReserved      int32              `json:"stock_reserved"`
 	OptionIsActive     bool               `json:"option_is_active"`
 	DealStatus         DealStatus         `json:"deal_status"`
-	DealKind           DealKind           `json:"deal_kind"`
 	StartsAt           pgtype.Timestamptz `json:"starts_at"`
 	EndsAt             pgtype.Timestamptz `json:"ends_at"`
 	MaxPerUser         int32              `json:"max_per_user"`
-	IsGiftable         bool               `json:"is_giftable"`
 	VoucherValidDays   pgtype.Int4        `json:"voucher_valid_days"`
 	VoucherValidUntil  pgtype.Timestamptz `json:"voucher_valid_until"`
 	MerchantID         pgtype.UUID        `json:"merchant_id"`
@@ -232,11 +204,9 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 			&i.StockReserved,
 			&i.OptionIsActive,
 			&i.DealStatus,
-			&i.DealKind,
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.MaxPerUser,
-			&i.IsGiftable,
 			&i.VoucherValidDays,
 			&i.VoucherValidUntil,
 			&i.MerchantID,
@@ -253,7 +223,7 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT o.id, o.number, o.user_id, o.status::text AS status, o.subtotal, o.total, o.shipping_address, o.paid_at,
+SELECT o.id, o.number, o.user_id, o.status::text AS status, o.subtotal, o.total, o.paid_at,
        o.created_at, o.request_hash,
        (SELECT MAX(r.expires_at) FROM stock_reservations r
         WHERE r.order_id = o.id AND r.released_at IS NULL)::timestamptz AS reservation_expires_at
@@ -267,7 +237,6 @@ type GetOrderByIDRow struct {
 	Status               string             `json:"status"`
 	Subtotal             int64              `json:"subtotal"`
 	Total                int64              `json:"total"`
-	ShippingAddress      []byte             `json:"shipping_address"`
 	PaidAt               pgtype.Timestamptz `json:"paid_at"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	RequestHash          pgtype.Text        `json:"request_hash"`
@@ -284,7 +253,6 @@ func (q *Queries) GetOrderByID(ctx context.Context, orderID pgtype.UUID) (GetOrd
 		&i.Status,
 		&i.Subtotal,
 		&i.Total,
-		&i.ShippingAddress,
 		&i.PaidAt,
 		&i.CreatedAt,
 		&i.RequestHash,
@@ -399,43 +367,20 @@ func (q *Queries) GetVoucherForUser(ctx context.Context, arg GetVoucherForUserPa
 	return i, err
 }
 
-const insertCartItem = `-- name: InsertCartItem :exec
-INSERT INTO cart_items (cart_id, deal_option_id, quantity, is_gift)
-VALUES ($1, $2, $3, $4)
-`
-
-type InsertCartItemParams struct {
-	CartID   pgtype.UUID `json:"cart_id"`
-	OptionID pgtype.UUID `json:"option_id"`
-	Quantity int32       `json:"quantity"`
-	IsGift   bool        `json:"is_gift"`
-}
-
-func (q *Queries) InsertCartItem(ctx context.Context, arg InsertCartItemParams) error {
-	_, err := q.db.Exec(ctx, insertCartItem,
-		arg.CartID,
-		arg.OptionID,
-		arg.Quantity,
-		arg.IsGift,
-	)
-	return err
-}
-
 const insertOrder = `-- name: InsertOrder :one
-INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash, shipping_address)
+INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash)
 VALUES ($1, $2, 'pending_payment', $3, $4, 'UZS',
-        $5, $6, $7::jsonb)
+        $5, $6)
 RETURNING id, created_at
 `
 
 type InsertOrderParams struct {
-	Number          string      `json:"number"`
-	UserID          pgtype.UUID `json:"user_id"`
-	Subtotal        int64       `json:"subtotal"`
-	Total           int64       `json:"total"`
-	IdempotencyKey  string      `json:"idempotency_key"`
-	RequestHash     pgtype.Text `json:"request_hash"`
-	ShippingAddress []byte      `json:"shipping_address"`
+	Number         string      `json:"number"`
+	UserID         pgtype.UUID `json:"user_id"`
+	Subtotal       int64       `json:"subtotal"`
+	Total          int64       `json:"total"`
+	IdempotencyKey string      `json:"idempotency_key"`
+	RequestHash    pgtype.Text `json:"request_hash"`
 }
 
 type InsertOrderRow struct {
@@ -451,7 +396,6 @@ func (q *Queries) InsertOrder(ctx context.Context, arg InsertOrderParams) (Inser
 		arg.Total,
 		arg.IdempotencyKey,
 		arg.RequestHash,
-		arg.ShippingAddress,
 	)
 	var i InsertOrderRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
@@ -460,28 +404,20 @@ func (q *Queries) InsertOrder(ctx context.Context, arg InsertOrderParams) (Inser
 
 const insertOrderItem = `-- name: InsertOrderItem :one
 INSERT INTO order_items (order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-                         original_price_snapshot, quantity, is_gift, gift_recipient_name,
-                         gift_recipient_email, gift_message, fulfillment_status)
+                         original_price_snapshot, quantity)
 VALUES ($1, $2, $3, $4,
-        $5, $6, $7, $8,
-        $9, $10, $11,
-        $12::fulfillment_status)
+        $5, $6, $7)
 RETURNING id
 `
 
 type InsertOrderItemParams struct {
-	OrderID            pgtype.UUID       `json:"order_id"`
-	DealID             pgtype.UUID       `json:"deal_id"`
-	OptionID           pgtype.UUID       `json:"option_id"`
-	TitleSnapshot      []byte            `json:"title_snapshot"`
-	UnitPrice          int64             `json:"unit_price"`
-	OriginalPrice      int64             `json:"original_price"`
-	Quantity           int32             `json:"quantity"`
-	IsGift             bool              `json:"is_gift"`
-	GiftRecipientName  pgtype.Text       `json:"gift_recipient_name"`
-	GiftRecipientEmail pgtype.Text       `json:"gift_recipient_email"`
-	GiftMessage        pgtype.Text       `json:"gift_message"`
-	FulfillmentStatus  FulfillmentStatus `json:"fulfillment_status"`
+	OrderID       pgtype.UUID `json:"order_id"`
+	DealID        pgtype.UUID `json:"deal_id"`
+	OptionID      pgtype.UUID `json:"option_id"`
+	TitleSnapshot []byte      `json:"title_snapshot"`
+	UnitPrice     int64       `json:"unit_price"`
+	OriginalPrice int64       `json:"original_price"`
+	Quantity      int32       `json:"quantity"`
 }
 
 func (q *Queries) InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error) {
@@ -493,11 +429,6 @@ func (q *Queries) InsertOrderItem(ctx context.Context, arg InsertOrderItemParams
 		arg.UnitPrice,
 		arg.OriginalPrice,
 		arg.Quantity,
-		arg.IsGift,
-		arg.GiftRecipientName,
-		arg.GiftRecipientEmail,
-		arg.GiftMessage,
-		arg.FulfillmentStatus,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
@@ -530,21 +461,6 @@ func (q *Queries) InsertPayment(ctx context.Context, arg InsertPaymentParams) er
 		arg.Amount,
 		arg.RawPayload,
 	)
-	return err
-}
-
-const insertSavedDeal = `-- name: InsertSavedDeal :exec
-INSERT INTO saved_deals (user_id, deal_id) VALUES ($1, $2)
-ON CONFLICT (user_id, deal_id) DO NOTHING
-`
-
-type InsertSavedDealParams struct {
-	UserID pgtype.UUID `json:"user_id"`
-	DealID pgtype.UUID `json:"deal_id"`
-}
-
-func (q *Queries) InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error {
-	_, err := q.db.Exec(ctx, insertSavedDeal, arg.UserID, arg.DealID)
 	return err
 }
 
@@ -611,69 +527,6 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 	return err
 }
 
-const listCartItemRows = `-- name: ListCartItemRows :many
-SELECT deal_option_id, quantity, is_gift FROM cart_items
-WHERE cart_id = $1 ORDER BY created_at, id
-`
-
-type ListCartItemRowsRow struct {
-	DealOptionID pgtype.UUID `json:"deal_option_id"`
-	Quantity     int32       `json:"quantity"`
-	IsGift       bool        `json:"is_gift"`
-}
-
-func (q *Queries) ListCartItemRows(ctx context.Context, cartID pgtype.UUID) ([]ListCartItemRowsRow, error) {
-	rows, err := q.db.Query(ctx, listCartItemRows, cartID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListCartItemRowsRow{}
-	for rows.Next() {
-		var i ListCartItemRowsRow
-		if err := rows.Scan(&i.DealOptionID, &i.Quantity, &i.IsGift); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listCartLinesForUser = `-- name: ListCartLinesForUser :many
-SELECT ci.deal_option_id, ci.quantity, ci.is_gift
-FROM cart_items ci JOIN carts c ON c.id = ci.cart_id
-WHERE c.user_id = $1 ORDER BY ci.created_at, ci.id
-`
-
-type ListCartLinesForUserRow struct {
-	DealOptionID pgtype.UUID `json:"deal_option_id"`
-	Quantity     int32       `json:"quantity"`
-	IsGift       bool        `json:"is_gift"`
-}
-
-func (q *Queries) ListCartLinesForUser(ctx context.Context, userID pgtype.UUID) ([]ListCartLinesForUserRow, error) {
-	rows, err := q.db.Query(ctx, listCartLinesForUser, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListCartLinesForUserRow{}
-	for rows.Next() {
-		var i ListCartLinesForUserRow
-		if err := rows.Scan(&i.DealOptionID, &i.Quantity, &i.IsGift); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listOrderIDsForUser = `-- name: ListOrderIDsForUser :many
 SELECT id FROM orders WHERE user_id = $1
 ORDER BY created_at DESC, id DESC LIMIT $3 OFFSET $2
@@ -707,8 +560,7 @@ func (q *Queries) ListOrderIDsForUser(ctx context.Context, arg ListOrderIDsForUs
 
 const listOrderItemsForOrders = `-- name: ListOrderItemsForOrders :many
 SELECT id, order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-       original_price_snapshot, quantity, is_gift, gift_recipient_name, gift_recipient_email,
-       gift_message, fulfillment_status::text AS fulfillment_status
+       original_price_snapshot, quantity
 FROM order_items WHERE order_id = ANY($1::uuid[]) ORDER BY created_at, id
 `
 
@@ -721,11 +573,6 @@ type ListOrderItemsForOrdersRow struct {
 	UnitPriceSnapshot     int64       `json:"unit_price_snapshot"`
 	OriginalPriceSnapshot int64       `json:"original_price_snapshot"`
 	Quantity              int32       `json:"quantity"`
-	IsGift                bool        `json:"is_gift"`
-	GiftRecipientName     pgtype.Text `json:"gift_recipient_name"`
-	GiftRecipientEmail    pgtype.Text `json:"gift_recipient_email"`
-	GiftMessage           pgtype.Text `json:"gift_message"`
-	FulfillmentStatus     string      `json:"fulfillment_status"`
 }
 
 func (q *Queries) ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype.UUID) ([]ListOrderItemsForOrdersRow, error) {
@@ -746,11 +593,6 @@ func (q *Queries) ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype
 			&i.UnitPriceSnapshot,
 			&i.OriginalPriceSnapshot,
 			&i.Quantity,
-			&i.IsGift,
-			&i.GiftRecipientName,
-			&i.GiftRecipientEmail,
-			&i.GiftMessage,
-			&i.FulfillmentStatus,
 		); err != nil {
 			return nil, err
 		}
@@ -770,30 +612,6 @@ ORDER BY viewed_at DESC, id DESC LIMIT 30
 
 func (q *Queries) ListRecentlyViewedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
 	rows, err := q.db.Query(ctx, listRecentlyViewedDealIDs, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []pgtype.UUID{}
-	for rows.Next() {
-		var deal_id pgtype.UUID
-		if err := rows.Scan(&deal_id); err != nil {
-			return nil, err
-		}
-		items = append(items, deal_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listSavedDealIDs = `-- name: ListSavedDealIDs :many
-SELECT deal_id FROM saved_deals WHERE user_id = $1 ORDER BY created_at DESC, id DESC LIMIT 100
-`
-
-func (q *Queries) ListSavedDealIDs(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
-	rows, err := q.db.Query(ctx, listSavedDealIDs, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -916,20 +734,19 @@ func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUs
 }
 
 const lockOrderByID = `-- name: LockOrderByID :one
-SELECT id, number, user_id, status::text AS status, subtotal, total, shipping_address, paid_at, created_at
+SELECT id, number, user_id, status::text AS status, subtotal, total, paid_at, created_at
 FROM orders WHERE id = $1 FOR UPDATE
 `
 
 type LockOrderByIDRow struct {
-	ID              pgtype.UUID        `json:"id"`
-	Number          string             `json:"number"`
-	UserID          pgtype.UUID        `json:"user_id"`
-	Status          string             `json:"status"`
-	Subtotal        int64              `json:"subtotal"`
-	Total           int64              `json:"total"`
-	ShippingAddress []byte             `json:"shipping_address"`
-	PaidAt          pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	Number    string             `json:"number"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	Status    string             `json:"status"`
+	Subtotal  int64              `json:"subtotal"`
+	Total     int64              `json:"total"`
+	PaidAt    pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockOrderByIDRow, error) {
@@ -942,7 +759,6 @@ func (q *Queries) LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockO
 		&i.Status,
 		&i.Subtotal,
 		&i.Total,
-		&i.ShippingAddress,
 		&i.PaidAt,
 		&i.CreatedAt,
 	)
@@ -1120,19 +936,6 @@ WHERE stale.user_id = $1
 func (q *Queries) TrimRecentlyViewed(ctx context.Context, userID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, trimRecentlyViewed, userID)
 	return err
-}
-
-const upsertCart = `-- name: UpsertCart :one
-INSERT INTO carts (user_id) VALUES ($1)
-ON CONFLICT (user_id) DO UPDATE SET updated_at = now()
-RETURNING id
-`
-
-func (q *Queries) UpsertCart(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, upsertCart, userID)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
 }
 
 const upsertRecentlyViewed = `-- name: UpsertRecentlyViewed :exec

@@ -97,7 +97,6 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
     redemption_method: 'qr_or_code',
     redemption_instructions: text('Ko‘rsating'),
     booking_required: false,
-    is_giftable: false,
     starts_at: new Date(Date.now() - 3600_000).toISOString(),
     ends_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
     voucher_valid_days: 30,
@@ -119,7 +118,7 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
   expect((await approved.json()).status).toBe('active');
 
   // Buyer pays through the mock provider; the webhook runs asynchronously, so poll for the voucher.
-  const order = await call(buyer, 'POST', '/orders', { items: [{ deal_option_id: deal.options[0].id, quantity: 1, is_gift: false }] }, {
+  const order = await call(buyer, 'POST', '/orders', { items: [{ deal_option_id: deal.options[0].id, quantity: 1 }] }, {
     'Idempotency-Key': crypto.randomUUID(),
   });
   expect(order.status).toBe(201);

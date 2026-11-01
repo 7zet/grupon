@@ -6,8 +6,6 @@ type Category = components['schemas']['Category'];
 type Merchant = components['schemas']['Merchant'];
 type Deal = components['schemas']['Deal'];
 type Review = components['schemas']['Review'];
-type PromoCode = components['schemas']['PromoCode'];
-type Collection = components['schemas']['Collection'];
 type LocalizedText = components['schemas']['LocalizedText'];
 
 const uid = (kind: number, index: number) =>
@@ -138,7 +136,6 @@ export const deals: Deal[] = Array.from({ length: 100 }, (_, index) => {
     merchant: { ...merchant, locations: [location] },
     category,
     subcategory: category.subcategories[0]!,
-    kind: category.slug === 'goods' ? 'product' : 'voucher',
     title,
     short_description: {
       uz: 'Sifatli xizmat va qulay narx bir taklifda.',
@@ -157,7 +154,6 @@ export const deals: Deal[] = Array.from({ length: 100 }, (_, index) => {
         en: 'Verified local partner',
       },
       { uz: 'Oldindan kelishish oson', ru: 'Простое бронирование', en: 'Easy advance booking' },
-      { uz: 'Sovg‘a sifatida yuborish mumkin', ru: 'Можно подарить', en: 'Can be sent as a gift' },
     ],
     whats_included: [
       {
@@ -192,7 +188,6 @@ export const deals: Deal[] = Array.from({ length: 100 }, (_, index) => {
       en: 'Show the QR code to staff.',
     },
     booking_required: true,
-    is_giftable: true,
     voucher_valid_days: 60,
     voucher_valid_until: null,
     max_per_user: 5,
@@ -251,48 +246,4 @@ export const reviews: Review[] = Array.from({ length: 20 }, (_, index) => ({
     : {}),
 }));
 
-export const promoCodes: PromoCode[] = Array.from({ length: 8 }, (_, index) => ({
-  id: uid(600, index + 1),
-  brand_name: seed.merchantNames[index]!,
-  brand_logo_url: merchants[index]!.logo_url ?? null,
-  title: titleTemplates[index % titleTemplates.length]!,
-  code: index % 3 === 0 ? null : `LOCAL${15 + index}`,
-  discount_label: {
-    uz: `${15 + index}% chegirma`,
-    ru: `Скидка ${15 + index}%`,
-    en: `${15 + index}% off`,
-  },
-  url: 'https://example.com',
-  starts_at: future(-10),
-  ends_at: future(45 + index),
-  is_verified: true,
-}));
 
-export const collections: Collection[] = [
-  {
-    id: uid(700, 1),
-    slug: 'navruz',
-    title: { uz: 'Navro‘z takliflari', ru: 'Предложения к Наврузу', en: 'Navruz offers' },
-    description: {
-      uz: 'Bahorni foydali takliflar bilan kutib oling.',
-      ru: 'Встречайте весну с выгодными предложениями.',
-      en: 'Welcome spring with excellent local offers.',
-    },
-    cover_url: `${imageUrls[2]}?auto=format&fit=crop&w=1600&q=82`,
-    starts_at: future(-10),
-    ends_at: future(60),
-  },
-  {
-    id: uid(700, 2),
-    slug: 'weekend',
-    title: { uz: 'Dam olish kunlari', ru: 'Идеи на выходные', en: 'Weekend ideas' },
-    description: {
-      uz: 'Yaqinlaringiz bilan maroqli vaqt o‘tkazing.',
-      ru: 'Проведите яркие выходные с близкими.',
-      en: 'Make the most of your weekend together.',
-    },
-    cover_url: `${imageUrls[8]}?auto=format&fit=crop&w=1600&q=82`,
-    starts_at: future(-10),
-    ends_at: future(90),
-  },
-];

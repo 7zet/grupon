@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw';
-import { categories, cities, collections, deals, merchants, promoCodes, reviews } from './data';
+import { categories, cities, deals, merchants, reviews } from './data';
 
 const base = '*/api/v1';
 const page = <T>(items: T[], pageNumber = 1, pageSize = 20) => ({
@@ -29,7 +29,7 @@ export const handlers = [
     HttpResponse.json({
       sections: [
         {
-          id: collections[0]!.id,
+          id: '019a0000-0000-7000-8000-000000000101',
           key: 'featured',
           title: { uz: 'Tanlangan takliflar', ru: 'Избранные предложения', en: 'Featured deals' },
           type: 'deals',
@@ -37,7 +37,7 @@ export const handlers = [
           deals: deals.slice(0, 8),
         },
         {
-          id: collections[1]!.id,
+          id: '019a0000-0000-7000-8000-000000000102',
           key: 'popular',
           title: { uz: 'Yaqin atrofda mashhur', ru: 'Популярно рядом', en: 'Popular near you' },
           type: 'deals',
@@ -117,18 +117,5 @@ export const handlers = [
         .slice(0, 6)
         .map((deal) => ({ type: 'deal', label: deal.title.uz, href: `/deal/${deal.slug}` })),
     });
-  }),
-  http.get(`${base}/promo-codes`, ({ request }) =>
-    HttpResponse.json(
-      page(promoCodes, Number(new URL(request.url).searchParams.get('page') ?? 1), 12),
-    ),
-  ),
-  http.post(`${base}/promo-codes/:id/click`, () => new HttpResponse(null, { status: 204 })),
-  http.get(`${base}/collections`, () => HttpResponse.json({ items: collections })),
-  http.get(`${base}/collections/:slug`, ({ params }) => {
-    const collection = collections.find((item) => item.slug === params.slug);
-    return collection
-      ? HttpResponse.json({ ...collection, deals: page(deals.slice(0, 24)) })
-      : new HttpResponse(null, { status: 404 });
   }),
 ];

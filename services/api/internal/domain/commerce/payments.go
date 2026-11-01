@@ -212,9 +212,6 @@ func (s *Service) settlePaid(ctx context.Context, tx Store, payment Payment, ord
 		if !ok {
 			return nil, ErrOptionUnavailable
 		}
-		if record.DealKind != KindVoucher {
-			continue
-		}
 		validFrom, validUntil, valid := record.VoucherWindow(now)
 		if !valid {
 			return nil, ErrOptionUnavailable

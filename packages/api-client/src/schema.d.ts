@@ -174,74 +174,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/promo-codes': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List active promo codes */
-    get: operations['listPromoCodes'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/promo-codes/{id}/click': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Track promo-code outbound click */
-    post: operations['trackPromoCodeClick'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/collections': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List active seasonal collections */
-    get: operations['listCollections'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/collections/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get collection and deals */
-    get: operations['getCollection'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/auth/phone/code': {
     parameters: {
       query?: never;
@@ -270,57 +202,6 @@ export interface paths {
     put?: never;
     /** Sign in with the code; creates the account on first use */
     post: operations['verifyPhoneCode'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/register': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Register with email and password */
-    post: operations['register'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/login': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Sign in with email and password */
-    post: operations['login'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/google': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Exchange Google authorization code with PKCE */
-    post: operations['exchangeGoogleCode'];
     delete?: never;
     options?: never;
     head?: never;
@@ -361,57 +242,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/auth/verify-email': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Verify email token */
-    post: operations['verifyEmail'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/forgot-password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Request password-reset email. Malformed email returns 400 invalid_request; any well-formed email returns 202 so account existence is not revealed */
-    post: operations['forgotPassword'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/reset-password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Reset password with token */
-    post: operations['resetPassword'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/me': {
     parameters: {
       query?: never;
@@ -429,23 +259,6 @@ export interface paths {
     head?: never;
     /** Update profile preferences */
     patch: operations['updateMe'];
-    trace?: never;
-  };
-  '/api/v1/me/password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /** Change current password */
-    put: operations['changePassword'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
     trace?: never;
   };
   '/api/v1/me/orders': {
@@ -511,41 +324,6 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me/saved-deals': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List saved deals */
-    get: operations['listSavedDeals'];
-    put?: never;
-    /** Save a deal or merge a guest save */
-    post: operations['saveDeal'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me/saved-deals/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Remove saved deal */
-    delete: operations['unsaveDeal'];
     options?: never;
     head?: never;
     patch?: never;
@@ -632,24 +410,6 @@ export interface paths {
     put?: never;
     /** Report abusive review */
     post: operations['reportReview'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/cart': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get server-side cart */
-    get: operations['getCart'];
-    /** Replace or merge guest cart */
-    put: operations['replaceCart'];
-    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1494,21 +1254,11 @@ export interface components {
     CategoryList: {
       items: components['schemas']['Category'][];
     };
-    ExchangeRate: {
-      /** @constant */
-      base: 'UZS';
-      /** @constant */
-      quote: 'USD';
-      rate: string;
-      /** Format: date-time */
-      effective_at: string;
-    };
     PublicConfig: {
       locales: components['schemas']['Locale'][];
       currencies: components['schemas']['Currency'][];
       cities: components['schemas']['City'][];
       categories: components['schemas']['Category'][];
-      exchange_rate: components['schemas']['ExchangeRate'];
     };
     /** @enum {string} */
     DealStatus:
@@ -1584,8 +1334,6 @@ export interface components {
       slug: string;
       merchant: components['schemas']['Merchant'];
       category: components['schemas']['Category'];
-      /** @enum {string} */
-      kind: 'voucher' | 'product';
       title: components['schemas']['LocalizedText'];
       status: components['schemas']['DealStatus'];
       options: components['schemas']['DealOption'][];
@@ -1614,7 +1362,6 @@ export interface components {
       redemption_method: 'qr' | 'code' | 'qr_or_code';
       redemption_instructions?: components['schemas']['LocalizedText'];
       booking_required: boolean;
-      is_giftable: boolean;
       voucher_valid_days?: number | null;
       /** Format: date-time */
       voucher_valid_until?: string | null;
@@ -1662,52 +1409,14 @@ export interface components {
     SuggestionList: {
       items: components['schemas']['Suggestion'][];
     };
-    PromoCode: {
-      id: components['schemas']['Uuid'];
-      brand_name: string;
-      /** Format: uri */
-      brand_logo_url?: string | null;
-      title: components['schemas']['LocalizedText'];
-      code?: string | null;
-      discount_label: components['schemas']['LocalizedText'];
-      /** Format: uri */
-      url: string;
-      /** Format: date-time */
-      starts_at: string;
-      /** Format: date-time */
-      ends_at: string;
-      is_verified: boolean;
-    };
-    PromoCodePage: components['schemas']['PageMeta'] & {
-      items: components['schemas']['PromoCode'][];
-    };
-    Collection: {
-      id: components['schemas']['Uuid'];
-      slug: string;
-      title: components['schemas']['LocalizedText'];
-      description: components['schemas']['LocalizedText'];
-      /** Format: uri */
-      cover_url: string;
-      /** Format: date-time */
-      starts_at: string;
-      /** Format: date-time */
-      ends_at: string;
-    };
-    CollectionList: {
-      items: components['schemas']['Collection'][];
-    };
-    CollectionDetail: components['schemas']['Collection'] & {
-      deals: components['schemas']['DealPage'];
-    };
     HomepageSection: {
       id: components['schemas']['Uuid'];
       key: string;
       title: components['schemas']['LocalizedText'];
       /** @enum {string} */
-      type: 'deals' | 'collection' | 'categories' | 'banner';
+      type: 'deals' | 'categories';
       sort_order: number;
       deals?: components['schemas']['DealSummary'][];
-      collection?: components['schemas']['Collection'];
       categories?: components['schemas']['Category'][];
     };
     Homepage: {
@@ -1741,36 +1450,6 @@ export interface components {
       /** @description Development only. Absent in every other environment. */
       dev_code?: string;
     };
-    RegisterRequest: {
-      /** Format: email */
-      email: string;
-      password: string;
-      name: string;
-      locale: components['schemas']['Locale'];
-      currency: components['schemas']['Currency'];
-    };
-    LoginRequest: {
-      /** Format: email */
-      email: string;
-      password: string;
-    };
-    GoogleCodeRequest: {
-      code: string;
-      code_verifier: string;
-      /** Format: uri */
-      redirect_uri: string;
-    };
-    TokenRequest: {
-      token: string;
-    };
-    EmailRequest: {
-      /** Format: email */
-      email: string;
-    };
-    ResetPasswordRequest: {
-      token: string;
-      password: string;
-    };
     /** @description Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients. */
     AuthSession: {
       user: components['schemas']['User'];
@@ -1785,43 +1464,12 @@ export interface components {
       locale?: components['schemas']['Locale'];
       currency?: components['schemas']['Currency'];
     };
-    ChangePasswordRequest: {
-      current_password: string;
-      new_password: string;
-    };
-    DealIdRequest: {
-      deal_id: components['schemas']['Uuid'];
-    };
-    CartItemInput: {
+    CreateOrderItem: {
       deal_option_id: components['schemas']['Uuid'];
       quantity: number;
-      is_gift: boolean;
-    };
-    CartInput: {
-      items: components['schemas']['CartItemInput'][];
-      /** @default false */
-      merge: boolean;
-    };
-    CartItem: components['schemas']['CartItemInput'] & {
-      option: components['schemas']['DealOption'];
-      deal: components['schemas']['DealSummary'];
-      line_total: components['schemas']['Money'];
-    };
-    Cart: {
-      items: components['schemas']['CartItem'][];
-      subtotal: components['schemas']['Money'];
-    };
-    CreateOrderItem: components['schemas']['CartItemInput'] & {
-      gift_recipient_name?: string;
-      /** Format: email */
-      gift_recipient_email?: string;
-      gift_message?: string;
     };
     CreateOrderRequest: {
       items: components['schemas']['CreateOrderItem'][];
-      shipping_address?: {
-        [key: string]: unknown;
-      };
     };
     OrderItem: {
       id: components['schemas']['Uuid'];
@@ -1831,13 +1479,6 @@ export interface components {
       unit_price: components['schemas']['Money'];
       original_price: components['schemas']['Money'];
       quantity: number;
-      is_gift?: boolean;
-      gift_recipient_name?: string | null;
-      /** Format: email */
-      gift_recipient_email?: string | null;
-      gift_message?: string | null;
-      /** @enum {string} */
-      fulfillment_status: 'not_applicable' | 'processing' | 'shipped' | 'delivered' | 'returned';
     };
     Order: {
       id: components['schemas']['Uuid'];
@@ -1845,9 +1486,6 @@ export interface components {
       status: components['schemas']['OrderStatus'];
       subtotal: components['schemas']['Money'];
       total: components['schemas']['Money'];
-      shipping_address?: {
-        [key: string]: unknown;
-      } | null;
       items: components['schemas']['OrderItem'][];
       /** Format: date-time */
       reservation_expires_at?: string | null;
@@ -2026,8 +1664,6 @@ export interface components {
       slug: string;
       category_id: components['schemas']['Uuid'];
       subcategory_id: components['schemas']['Uuid'];
-      /** @enum {string} */
-      kind: 'voucher' | 'product';
       title: components['schemas']['LocalizedText'];
       short_description: components['schemas']['LocalizedText'];
       description: components['schemas']['LocalizedText'];
@@ -2039,7 +1675,6 @@ export interface components {
       redemption_method: 'qr' | 'code' | 'qr_or_code';
       redemption_instructions: components['schemas']['LocalizedText'];
       booking_required: boolean;
-      is_giftable: boolean;
       /** Format: date-time */
       starts_at: string;
       /** Format: date-time */
@@ -2170,6 +1805,9 @@ export interface components {
     };
     StaffList: {
       items: components['schemas']['StaffMember'][];
+    };
+    DealIdRequest: {
+      deal_id: components['schemas']['Uuid'];
     };
   };
   responses: {
@@ -2452,100 +2090,6 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
-  listPromoCodes: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-        category?: string;
-        page?: components['parameters']['Page'];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Promo codes */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PromoCodePage'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  trackPromoCodeClick: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: components['parameters']['Id'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Click tracked */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  listCollections: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Collections */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CollectionList'];
-        };
-      };
-    };
-  };
-  getCollection: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-        page?: components['parameters']['Page'];
-      };
-      header?: never;
-      path: {
-        slug: components['parameters']['Slug'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Collection detail */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CollectionDetail'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
   requestPhoneCode: {
     parameters: {
       query?: never;
@@ -2596,81 +2140,6 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
-  register: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RegisterRequest'];
-      };
-    };
-    responses: {
-      /** @description Registered session */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthSession'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  login: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LoginRequest'];
-      };
-    };
-    responses: {
-      /** @description Authenticated session */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthSession'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  exchangeGoogleCode: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GoogleCodeRequest'];
-      };
-    };
-    responses: {
-      /** @description Authenticated session */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthSession'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
   refreshSession: {
     parameters: {
       query?: never;
@@ -2702,75 +2171,6 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description Signed out */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  verifyEmail: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TokenRequest'];
-      };
-    };
-    responses: {
-      /** @description Email verified */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  forgotPassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailRequest'];
-      };
-    };
-    responses: {
-      /** @description Request accepted */
-      202: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  resetPassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ResetPasswordRequest'];
-      };
-    };
-    responses: {
-      /** @description Password reset */
       204: {
         headers: {
           [name: string]: unknown;
@@ -2841,29 +2241,6 @@ export interface operations {
         content: {
           'application/json': components['schemas']['User'];
         };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  changePassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChangePasswordRequest'];
-      };
-    };
-    responses: {
-      /** @description Password changed */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       default: components['responses']['Problem'];
     };
@@ -2958,70 +2335,6 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Voucher'];
         };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  listSavedDeals: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Saved deals */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DealList'];
-        };
-      };
-    };
-  };
-  saveDeal: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DealIdRequest'];
-      };
-    };
-    responses: {
-      /** @description Saved */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  unsaveDeal: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: components['parameters']['Id'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Removed */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       default: components['responses']['Problem'];
     };
@@ -3183,52 +2496,6 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  getCart: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Cart */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Cart'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  replaceCart: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CartInput'];
-      };
-    };
-    responses: {
-      /** @description Cart */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Cart'];
-        };
       };
       default: components['responses']['Problem'];
     };

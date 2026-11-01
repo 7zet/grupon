@@ -1,9 +1,6 @@
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL;
 
--- name: GetUserByGoogleSub :one
-SELECT * FROM users WHERE google_sub = $1 AND deleted_at IS NULL;
-
 -- name: ListUserRoles :many
 SELECT * FROM role_assignments WHERE user_id = $1 ORDER BY role;
 
@@ -21,9 +18,6 @@ INSERT INTO users (email, password_hash, google_sub, name, locale, currency, ema
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *;
 
--- name: UpdateUserPasswordHash :exec
-UPDATE users SET password_hash = $2 WHERE id = $1;
-
 -- name: MarkUserEmailVerified :exec
 UPDATE users SET email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $1;
 
@@ -31,9 +25,6 @@ UPDATE users SET email_verified_at = COALESCE(email_verified_at, now()) WHERE id
 UPDATE users SET name = $2, phone = $3, locale = $4, currency = $5
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
-
--- name: LinkUserGoogleSub :exec
-UPDATE users SET google_sub = $2 WHERE id = $1 AND google_sub IS NULL;
 
 -- name: TouchUserLastLogin :exec
 UPDATE users SET last_login_at = now() WHERE id = $1;
@@ -71,13 +62,3 @@ WHERE user_id = $1 AND revoked_at IS NULL AND family_id <> sqlc.arg('keep_family
 -- name: RevokeAllUserRefreshTokens :exec
 UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL;
 
--- name: CreateAuthToken :exec
-INSERT INTO auth_tokens (user_id, kind, token_hash, expires_at) VALUES ($1, $2, $3, $4);
-
--- name: ConsumeAuthToken :one
-UPDATE auth_tokens SET used_at = now()
-WHERE token_hash = $1 AND kind = $2 AND used_at IS NULL AND expires_at > now()
-RETURNING user_id;
-
--- name: InvalidateUserAuthTokens :exec
-UPDATE auth_tokens SET used_at = now() WHERE user_id = $1 AND kind = $2 AND used_at IS NULL;

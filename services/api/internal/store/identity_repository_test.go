@@ -2,32 +2,32 @@ package store_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
+	"database/sql"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
 	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/domain/identity/identitytest"
 	"github.com/grupon/grupon/services/api/internal/store"
 )
 
-var identityTokenPattern = regexp.MustCompile(`token=([A-Za-z0-9_-]+)`)
+// phoneSender accepts every sign-in code; tests read the code from the response (development echo).
+type phoneSender struct{}
+
+func (phoneSender) SendCode(context.Context, string, string) error { return nil }
 
 // newIdentityFixture migrates TEST_DATABASE_URL and returns a service backed by PostgreSQL. Every
-// test uses fresh email addresses instead of truncating shared tables, so seeded data survives.
-func newIdentityFixture(t *testing.T) (*identity.Service, *identitytest.Mailer, string) {
+// test uses a fresh phone number instead of truncating shared tables, so seeded data survives.
+func newIdentityFixture(t *testing.T) (*identity.Service, string) {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
@@ -58,120 +58,66 @@ func newIdentityFixture(t *testing.T) (*identity.Service, *identitytest.Mailer, 
 	if err != nil {
 		t.Fatal(err)
 	}
-	mailer := &identitytest.Mailer{}
 	service := identity.NewService(identity.Dependencies{
 		Repository: store.NewIdentityRepository(pool),
 		Tokens:     tokens,
-		Mailer:     mailer,
+		CodeSender: phoneSender{},
 		Now:        time.Now,
 	}, identity.Config{
-		AccessTokenTTL:   15 * time.Minute,
-		RefreshTokenTTL:  30 * 24 * time.Hour,
-		VerifyEmailTTL:   24 * time.Hour,
-		ResetPasswordTTL: time.Hour,
-		WebBaseURL:       "https://grupon.test",
-		BrandName:        "Grupon",
+		AccessTokenTTL:  15 * time.Minute,
+		RefreshTokenTTL: 30 * 24 * time.Hour,
+		OTPEcho:         true,
+		BrandName:       "Grupon",
 	})
-	email := fmt.Sprintf("it-%s@example.test", uuid.NewString())
-	return service, mailer, email
+	return service, fmt.Sprintf("+99890%07d", time.Now().UnixNano()%10_000_000)
 }
 
-func lastToken(t *testing.T, mailer *identitytest.Mailer) string {
+// signIn requests a code for the phone and redeems it.
+func signIn(t *testing.T, service *identity.Service, phone string) identity.Session {
 	t.Helper()
-	messages := mailer.Messages()
-	match := identityTokenPattern.FindStringSubmatch(messages[len(messages)-1].Body)
-	if match == nil {
-		t.Fatal("email has no token")
+	ctx := context.Background()
+	code, err := service.RequestCode(ctx, integrationMeta, phone)
+	if err != nil {
+		t.Fatalf("RequestCode() error = %v", err)
 	}
-	return match[1]
+	session, err := service.VerifyCode(ctx, integrationMeta, phone, code.DevCode)
+	if err != nil {
+		t.Fatalf("VerifyCode() error = %v", err)
+	}
+	return session
 }
 
 var integrationMeta = identity.RequestMeta{IP: "198.51.100.7", UserAgent: "integration"}
 
 func TestIdentityLifecycleAgainstPostgres(t *testing.T) {
-	service, mailer, email := newIdentityFixture(t)
+	service, phone := newIdentityFixture(t)
 	ctx := context.Background()
-	const password = "integration-password-1"
 
-	session, err := service.Register(ctx, integrationMeta, identity.RegisterInput{
-		Email: email, Password: password, Name: "Integration", Locale: "en", Currency: "UZS",
-	})
-	if err != nil {
-		t.Fatalf("Register() error = %v", err)
-	}
+	session := signIn(t, service, phone)
 	if !session.Account.HasRole(identity.RoleUser) {
 		t.Fatalf("roles = %v, want user from the database", session.Account.Roles)
 	}
 
-	if _, err := service.Register(ctx, integrationMeta, identity.RegisterInput{
-		Email: email, Password: password, Name: "Again", Locale: "en", Currency: "UZS",
-	}); !errors.Is(err, identity.ErrEmailTaken) {
-		t.Fatalf("duplicate register error = %v, want ErrEmailTaken", err)
-	}
-
-	if err := service.VerifyEmail(ctx, lastToken(t, mailer)); err != nil {
-		t.Fatalf("VerifyEmail() error = %v", err)
-	}
-
-	login, err := service.Login(ctx, integrationMeta, email, password)
-	if err != nil {
-		t.Fatalf("Login() error = %v", err)
-	}
-	rotated, err := service.Refresh(ctx, integrationMeta, login.RefreshToken)
+	rotated, err := service.Refresh(ctx, integrationMeta, session.RefreshToken)
 	if err != nil {
 		t.Fatalf("Refresh() error = %v", err)
 	}
-	if _, err := service.Refresh(ctx, integrationMeta, login.RefreshToken); !errors.Is(err, identity.ErrRefreshTokenReused) {
+	if _, err := service.Refresh(ctx, integrationMeta, session.RefreshToken); !errors.Is(err, identity.ErrRefreshTokenReused) {
 		t.Fatalf("reuse error = %v, want ErrRefreshTokenReused", err)
 	}
 	if _, err := service.Refresh(ctx, integrationMeta, rotated.RefreshToken); !errors.Is(err, identity.ErrRefreshTokenReused) {
 		t.Fatalf("family should be revoked, got %v", err)
 	}
 
-	account, err := service.Authenticate(ctx, login.AccessToken)
-	if err != nil {
+	if _, err := service.Authenticate(ctx, rotated.AccessToken); err != nil {
 		t.Fatalf("Authenticate() error = %v", err)
-	}
-	if account.EmailVerifiedAt == nil {
-		t.Error("email_verified_at not set after verification")
-	}
-
-	if err := service.ForgotPassword(ctx, integrationMeta, email); err != nil {
-		t.Fatalf("ForgotPassword() error = %v", err)
-	}
-	resetToken := lastToken(t, mailer)
-	const newPassword = "integration-password-2"
-	if err := service.ResetPassword(ctx, integrationMeta, resetToken, newPassword); err != nil {
-		t.Fatalf("ResetPassword() error = %v", err)
-	}
-	if err := service.ResetPassword(ctx, integrationMeta, resetToken, newPassword); !errors.Is(err, identity.ErrInvalidToken) {
-		t.Fatalf("reset token reuse error = %v, want ErrInvalidToken", err)
-	}
-	if _, err := service.Login(ctx, integrationMeta, email, password); !errors.Is(err, identity.ErrInvalidCredentials) {
-		t.Fatalf("old password error = %v", err)
-	}
-	if _, err := service.Login(ctx, integrationMeta, email, newPassword); err != nil {
-		t.Fatalf("new password login error = %v", err)
-	}
-
-	if err := service.DeleteAccount(ctx, account.ID); err != nil {
-		t.Fatalf("DeleteAccount() error = %v", err)
-	}
-	if _, err := service.Authenticate(ctx, login.AccessToken); !errors.Is(err, identity.ErrUnauthenticated) {
-		t.Fatalf("deleted account error = %v, want ErrUnauthenticated", err)
 	}
 }
 
 func TestConcurrentRefreshAllowsExactlyOneRotation(t *testing.T) {
-	service, _, email := newIdentityFixture(t)
+	service, phone := newIdentityFixture(t)
 	ctx := context.Background()
-
-	session, err := service.Register(ctx, integrationMeta, identity.RegisterInput{
-		Email: email, Password: "integration-password-1", Name: "Race", Locale: "uz", Currency: "UZS",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	session := signIn(t, service, phone)
 
 	const racers = 8
 	var wg sync.WaitGroup
@@ -195,31 +141,5 @@ func TestConcurrentRefreshAllowsExactlyOneRotation(t *testing.T) {
 	}
 	if successes != 1 {
 		t.Fatalf("successful rotations = %d, want exactly 1", successes)
-	}
-}
-
-func TestGoogleSubjectRoundTripsThroughRepository(t *testing.T) {
-	_, _, _ = newIdentityFixture(t)
-	url := os.Getenv("TEST_DATABASE_URL")
-	pool, err := pgxpool.New(context.Background(), url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer pool.Close()
-
-	repo := store.NewIdentityRepository(pool)
-	sub := "google-" + uuid.NewString()
-	first, err := repo.CreateUser(context.Background(), identity.NewUser{
-		Email: fmt.Sprintf("g-%s@example.test", uuid.NewString()), GoogleSub: &sub, Name: "G", Locale: "en", Currency: "UZS", EmailVerified: true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if first.GoogleSub == nil || *first.GoogleSub != sub {
-		t.Fatal("google_sub not stored")
-	}
-	found, err := repo.GetUserByGoogleSub(context.Background(), sub)
-	if err != nil || found.ID != first.ID {
-		t.Fatalf("GetUserByGoogleSub() = %v, %v", found.ID, err)
 	}
 }

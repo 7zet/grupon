@@ -74,7 +74,6 @@ type DealInput struct {
 	Slug                   string
 	CategoryID             uuid.UUID
 	SubcategoryID          uuid.UUID
-	Kind                   string
 	Title                  catalog.Text
 	ShortDescription       catalog.Text
 	Description            catalog.Text
@@ -85,7 +84,6 @@ type DealInput struct {
 	RedemptionMethod       string
 	RedemptionInstructions catalog.Text
 	BookingRequired        bool
-	IsGiftable             bool
 	StartsAt               time.Time
 	EndsAt                 time.Time
 	VoucherValidDays       *int
@@ -100,9 +98,6 @@ type DealInput struct {
 func (in DealInput) Validate() error {
 	if !slugPattern.MatchString(in.Slug) {
 		return &InvalidInputError{Field: "slug", Code: "invalid_slug"}
-	}
-	if in.Kind != "voucher" && in.Kind != "product" {
-		return &InvalidInputError{Field: "kind", Code: "invalid_kind"}
 	}
 	switch in.RedemptionMethod {
 	case "qr", "code", "qr_or_code":
