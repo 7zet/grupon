@@ -2,7 +2,7 @@ import type { Locale } from './locales';
 
 export type LocalizedText = Record<Locale, string>;
 
-export const currencies = ['UZS', 'USD'] as const;
+export const currencies = ['UZS'] as const;
 export type Currency = (typeof currencies)[number];
 export const currencyCookieName = 'currency';
 export const cityCookieName = 'city';

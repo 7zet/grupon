@@ -39,7 +39,7 @@ func (a *CatalogAPI) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, gen.PublicConfig{
 		Locales:    []gen.Locale{gen.Locale("uz"), gen.Locale("ru"), gen.Locale("en")},
-		Currencies: []gen.Currency{gen.Currency("UZS"), gen.Currency("USD")},
+		Currencies: []gen.Currency{gen.Currency("UZS")},
 		Cities:     mapCities(config.Cities),
 		Categories: mapCategories(config.Categories),
 		ExchangeRate: gen.ExchangeRate{

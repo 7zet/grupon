@@ -1492,7 +1492,7 @@ components:
   schemas:
     Uuid: { type: string, format: uuid }
     Locale: { type: string, enum: [uz, ru, en] }
-    Currency: { type: string, enum: [UZS, USD] }
+    Currency: { type: string, enum: [UZS] }
     Role:
       {
         type: string,

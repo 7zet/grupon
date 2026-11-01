@@ -14,7 +14,7 @@ export const handlers = [
   http.get(`${base}/config`, () =>
     HttpResponse.json({
       locales: ['uz', 'ru', 'en'],
-      currencies: ['UZS', 'USD'],
+      currencies: ['UZS'],
       cities,
       categories,
       exchange_rate: {

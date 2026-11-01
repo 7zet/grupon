@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import type { PropsWithChildren } from 'react';
 import { Link } from '@/i18n/navigation';
 import { BusinessNavLink } from './business-nav-link';
-import { CurrencySelect, LanguageSelect } from './preferences';
+import { LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
 
 type Props = PropsWithChildren<{ config: PublicConfig; locale: Locale; currency: Currency }>;
@@ -55,7 +55,6 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
                 </option>
               ))}
             </select>
-            <CurrencySelect value={currency} />
             <LanguageSelect value={locale} />
             <Link
               className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"

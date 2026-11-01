@@ -30,7 +30,7 @@ const (
 
 var (
 	validLocales    = map[string]bool{"uz": true, "ru": true, "en": true}
-	validCurrencies = map[string]bool{"UZS": true, "USD": true}
+	validCurrencies = map[string]bool{"UZS": true}
 )
 
 // User is an account row. Credentials stay inside the domain and are never serialized.

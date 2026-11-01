@@ -1239,7 +1239,7 @@ export interface components {
     /** @enum {string} */
     Locale: 'uz' | 'ru' | 'en';
     /** @enum {string} */
-    Currency: 'UZS' | 'USD';
+    Currency: 'UZS';
     /** @enum {string} */
     Role:
       | 'user'

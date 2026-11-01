@@ -157,7 +157,6 @@ export function PurchasePanel({
           {t('addSuccess')}
         </p>
       )}
-      {currency === 'USD' && <p className="mt-3 text-label text-ink-muted">{t('paymentNote')}</p>}
     </aside>
   );
 }

@@ -189,3 +189,4 @@
 - E1: production images are written but unbuilt (no Docker on this machine). Verify with docker build for services/api (targets api, worker, migrate) and apps/web before release.
 - BFF returned 204 with a body, which crashed approve/hide/dismiss and delete actions. Fixed: 204 is now returned with no body.
 - e2e purchase.spec flaked again (stays on /checkout after the pay click). Suspect repeated runs exhausting seed stock. Not fixed.
+- DEALO-ALIGN step 1 (2026-11-01): USD removed everywhere (contract currency enum is UZS only; Go constants, identity validation, web selector, money formatter). Exchange-rate endpoint and its data are still present and will be removed with the catalog cleanup. Money unit decision: tiyin (bigint) per Dealo ADR-0003; the conversion from so'm is a separate, larger step not yet done.

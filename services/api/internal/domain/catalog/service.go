@@ -220,7 +220,7 @@ func (s *Service) PublicConfig(ctx context.Context) (PublicConfig, error) {
 		}
 		return PublicConfig{
 			Locales:      []string{"uz", "ru", "en"},
-			Currencies:   []string{"UZS", "USD"},
+			Currencies:   []string{"UZS"},
 			Cities:       cities,
 			Categories:   categories,
 			ExchangeRate: rate,
