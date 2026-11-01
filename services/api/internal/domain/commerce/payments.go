@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/grupon/grupon/services/api/internal/domain/ledger"
 	"log/slog"
 	"net/http"
 	"time"
@@ -223,6 +224,10 @@ func (s *Service) settlePaid(ctx context.Context, tx Store, payment Payment, ord
 				return nil, err
 			}
 			issued++
+		}
+		paid := ledger.PaymentReceived(item.ID.String(), record.MerchantID.String(), item.UnitPrice*int64(item.Quantity))
+		if _, err := tx.PostLedger(ctx, paid); err != nil {
+			return nil, fmt.Errorf("post payment to ledger: %w", err)
 		}
 	}
 

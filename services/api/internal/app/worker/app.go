@@ -4,6 +4,7 @@ package workerapp
 import (
 	"context"
 	"fmt"
+	"github.com/grupon/grupon/services/api/internal/domain/finance"
 	"log/slog"
 	"time"
 
@@ -42,10 +43,11 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	}
 
 	deals := store.NewDealJobs(pool)
+	financeJobs := finance.NewService(store.NewFinanceRepository(pool), time.Now)
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()
 	for {
-		runSweeps(ctx, commerce, deals, logger)
+		runSweeps(ctx, commerce, deals, financeJobs, logger)
 		select {
 		case <-ctx.Done():
 			logger.Info("worker stopped")
@@ -61,6 +63,9 @@ func runSweeps(ctx context.Context, sweeps interface {
 	ExpireVouchers(context.Context, int) (int, error)
 }, deals interface {
 	RunDealSweeps(context.Context) (store.DealSweepResult, error)
+}, financeJobs interface {
+	RunBreakage(context.Context, int) (int, error)
+	Reconcile(context.Context) (bool, error)
 }, logger *slog.Logger) {
 	if ctx.Err() != nil {
 		return
@@ -79,5 +84,15 @@ func runSweeps(ctx context.Context, sweeps interface {
 	}
 	if _, err := deals.RunDealSweeps(ctx); err != nil {
 		logger.ErrorContext(ctx, "deal sweeps failed", slog.String("error", err.Error()))
+	}
+	if moved, err := financeJobs.RunBreakage(ctx, sweepBatch); err != nil {
+		logger.ErrorContext(ctx, "breakage failed", slog.String("error", err.Error()))
+	} else if moved > 0 {
+		logger.InfoContext(ctx, "breakage recognised", slog.Int("vouchers", moved))
+	}
+	if ok, err := financeJobs.Reconcile(ctx); err != nil {
+		logger.ErrorContext(ctx, "reconciliation failed", slog.String("error", err.Error()))
+	} else if !ok {
+		logger.ErrorContext(ctx, "reconciliation mismatch recorded for finance review")
 	}
 }

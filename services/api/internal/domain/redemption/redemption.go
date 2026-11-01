@@ -34,6 +34,25 @@ var (
 	ErrCancelled       = errors.New("redemption: voucher cancelled")
 )
 
+// ReversalWindow is how long the cashier may undo a redemption; after it, only support can.
+const ReversalWindow = 10 * time.Minute
+
+// ErrReversalWindowClosed reports a reversal attempted after the cashier window.
+var ErrReversalWindowClosed = errors.New("redemption: reversal window has closed")
+
+// ErrNoRedemption reports a voucher with nothing to reverse.
+var ErrNoRedemption = errors.New("redemption: no redemption to reverse")
+
+// Redemption is one use of a voucher, as needed to reverse it.
+type Redemption struct {
+	ID         uuid.UUID
+	VoucherID  uuid.UUID
+	StaffID    uuid.UUID
+	Amount     int64
+	Commission int64
+	CreatedAt  time.Time
+}
+
 var codePattern = regexp.MustCompile(`^[A-Z0-9]{4}-[A-Z0-9]{4}$`)
 
 // Verifier resolves a signed QR token to a voucher id.
@@ -56,6 +75,10 @@ type Repository interface {
 	// Redeem marks the voucher redeemed only while it is still active and inside its validity window.
 	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry) (bool, error)
 	View(ctx context.Context, voucher commerce.Voucher) (commerce.VoucherView, error)
+	// ReversalCandidate returns the latest unreversed redemption of the voucher, or ErrNotFound.
+	ReversalCandidate(ctx context.Context, merchantID, voucherID uuid.UUID) (Redemption, error)
+	// ReverseUse marks the redemption reversed and rolls the voucher count back, with a reversing entry.
+	ReverseUse(ctx context.Context, merchantID uuid.UUID, found Redemption, reason string, audit AuditEntry) error
 }
 
 // Service implements lookup and redemption rules.
@@ -178,4 +201,30 @@ func unusable(voucher commerce.Voucher, at time.Time) error {
 	default:
 		return ErrNotFound
 	}
+}
+
+// Reverse undoes the latest redemption of a voucher. The cashier who made it may do so within
+// ReversalWindow; merchant owners and managers may do so at any time.
+func (s *Service) Reverse(ctx context.Context, merchantID uuid.UUID, actor merchant.Actor, voucherID uuid.UUID, reason string) error {
+	if actor.Role != merchant.RoleOwner && actor.Role != merchant.RoleManager && actor.Role != merchant.RoleCashier {
+		return merchant.ErrForbidden
+	}
+	found, err := s.repo.ReversalCandidate(ctx, merchantID, voucherID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return ErrNoRedemption
+		}
+		return err
+	}
+	now := s.now()
+	cashierOwnsIt := found.StaffID == actor.UserID
+	if actor.Role == merchant.RoleCashier && (!cashierOwnsIt || now.Sub(found.CreatedAt) > ReversalWindow) {
+		return ErrReversalWindowClosed
+	}
+	return s.repo.ReverseUse(ctx, merchantID, found, reason, AuditEntry{
+		ActorID: actor.UserID,
+		Role:    actor.Role,
+		Action:  "voucher_redemption_reversed",
+		After:   map[string]any{"reason": reason},
+	})
 }

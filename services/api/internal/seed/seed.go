@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/grupon/grupon/services/api/internal/store"
+	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,7 +139,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if len(data.Cities) != 5 || len(data.Categories) != 11 || len(images) == 0 {
 		return errors.New("seed source counts are invalid")
 	}
-	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, collections, promo_codes, exchange_rates, homepage_sections, banners CASCADE`)
+	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, collections, promo_codes, exchange_rates, homepage_sections, banners, journal_lines, journal_entries, ledger_accounts, redemptions, payout_runs, refunds, disputes, merchant_payout_holds, fraud_signals, outbox, reconciliation_findings CASCADE`)
 	if err != nil {
 		return err
 	}
@@ -294,6 +297,21 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		code := fmt.Sprintf("%04X-%04X", i+1, 65535-i)
 		if err := tx.QueryRow(ctx, `INSERT INTO vouchers(order_item_id,user_id,deal_id,deal_option_id,merchant_id,code,qr_token,status,valid_from,valid_until,redeemed_at,redeemed_by_user_id,redeemed_location_id) VALUES($1,$2,$3,$4,$5,$6,$7,'redeemed',now()-interval '10 days',now()+interval '20 days',now()-interval '1 day',$8,$9) RETURNING id`, itemID, userID, deal.ID, deal.OptionID, deal.MerchantID, code, "seed-signed-token-"+code, userIDs[2], deal.LocationID).Scan(&voucherID); err != nil {
+			return err
+		}
+		// Every seeded sale is also in the ledger: payment received, then the one redemption.
+		if _, err := tx.Exec(ctx, `UPDATE vouchers SET redemptions_used = 1 WHERE id = $1`, voucherID); err != nil {
+			return err
+		}
+		var redemptionID string
+		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, userIDs[1], deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
+			return err
+		}
+		queries := sqlc.New(tx)
+		if _, err := store.PostEntry(ctx, queries, ledger.PaymentReceived(itemID, deal.MerchantID, deal.Price)); err != nil {
+			return err
+		}
+		if _, err := store.PostEntry(ctx, queries, ledger.Redeemed(redemptionID, deal.MerchantID, deal.Price, ledger.Commission(deal.Price, 1500))); err != nil {
 			return err
 		}
 		locale := []string{"uz", "ru", "en"}[i%3]

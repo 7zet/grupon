@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -68,43 +67,9 @@ func (r *RedemptionRepository) LocationOwned(ctx context.Context, merchantID, lo
 	return count == 1, nil
 }
 
-// Redeem updates the voucher only if it is still active and in its window, then writes the audit row.
+// Redeem records one use of the voucher; see UseVoucher for the transactional rules.
 func (r *RedemptionRepository) Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry) (bool, error) {
-	tx, err := r.pool.Begin(ctx)
-	if err != nil {
-		return false, fmt.Errorf("begin redemption: %w", err)
-	}
-	defer tx.Rollback(ctx) //nolint:errcheck
-
-	queries := sqlc.New(tx)
-	rows, err := queries.RedeemVoucherIfActive(ctx, sqlc.RedeemVoucherIfActiveParams{
-		RedeemedAt:       pgTime(at),
-		RedeemedByUserID: toPgUUID(audit.ActorID),
-		LocationID:       toPgUUID(locationID),
-		ID:               toPgUUID(voucherID),
-		MerchantID:       toPgUUID(merchantID),
-	})
-	if err != nil {
-		return false, fmt.Errorf("redeem voucher: %w", err)
-	}
-	if rows == 0 {
-		return false, nil
-	}
-	after, err := json.Marshal(audit.After)
-	if err != nil {
-		return false, fmt.Errorf("encode audit: %w", err)
-	}
-	if err := queries.InsertAuditLog(ctx, sqlc.InsertAuditLogParams{
-		ActorUserID: toPgUUID(audit.ActorID),
-		ActorRole:   sqlc.AppRole(audit.Role),
-		Action:      audit.Action,
-		EntityType:  "voucher",
-		EntityID:    toPgUUID(audit.VoucherID),
-		AfterData:   after,
-	}); err != nil {
-		return false, fmt.Errorf("write audit log: %w", err)
-	}
-	return true, tx.Commit(ctx)
+	return r.UseVoucher(ctx, merchantID, voucherID, locationID, at, audit)
 }
 
 // View attaches the option and deal to a voucher for display.

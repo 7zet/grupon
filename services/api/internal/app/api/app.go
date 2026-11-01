@@ -17,6 +17,7 @@ import (
 	"github.com/grupon/grupon/services/api/internal/app/commerceapp"
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
+	"github.com/grupon/grupon/services/api/internal/domain/finance"
 	"github.com/grupon/grupon/services/api/internal/domain/identity"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 	"github.com/grupon/grupon/services/api/internal/domain/moderation"
@@ -123,7 +124,11 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 			workspaceService, authAPI, logger),
 		Reviews:      httpapi.NewReviewAPI(reviews.NewService(store.NewReviewRepository(pool)), authAPI, logger),
 		AdminReports: httpapi.NewAdminReportsAPI(moderation.NewReportService(store.NewAdminReportRepository(pool, store.NewReviewRepository(pool))), authAPI, logger),
-		MediaFiles:   http.StripPrefix("/media/", http.FileServer(http.Dir(mediaStore.Root()))),
+		Finance: httpapi.NewFinanceAPI(
+			finance.NewService(store.NewFinanceRepository(pool), time.Now),
+			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now),
+			workspaceService, authAPI, logger),
+		MediaFiles: http.StripPrefix("/media/", http.FileServer(http.Dir(mediaStore.Root()))),
 	})
 	server := newServer(cfg.HTTP, router, logger)
 

@@ -13,10 +13,12 @@ import (
 )
 
 type fakeRepo struct {
-	voucher   commerce.Voucher
-	locations map[uuid.UUID]bool
-	redeemed  bool
-	audits    int
+	redemption Redemption
+	reversed   bool
+	voucher    commerce.Voucher
+	locations  map[uuid.UUID]bool
+	redeemed   bool
+	audits     int
 }
 
 func (f *fakeRepo) Find(context.Context, uuid.UUID) (commerce.Voucher, error) { return f.voucher, nil }
@@ -106,5 +108,37 @@ func TestRedeemRejectsExpiredAndForeignLocation(t *testing.T) {
 	var invalid *merchant.InvalidInputError
 	if !errors.As(err, &invalid) || invalid.Code != "location_not_found" {
 		t.Fatalf("foreign location: got %v", err)
+	}
+}
+
+func (f *fakeRepo) ReversalCandidate(context.Context, uuid.UUID, uuid.UUID) (Redemption, error) {
+	if f.redemption.ID == uuid.Nil {
+		return Redemption{}, ErrNotFound
+	}
+	return f.redemption, nil
+}
+
+func (f *fakeRepo) ReverseUse(context.Context, uuid.UUID, Redemption, string, AuditEntry) error {
+	f.reversed = true
+	return nil
+}
+
+func TestCashierCanReverseOnlyWithinTheWindow(t *testing.T) {
+	repo, service, merchantID, _, _ := newFixture(StatusRedeemed, now.AddDate(0, 1, 0))
+	cashier := merchant.Actor{UserID: uuid.New(), Role: merchant.RoleCashier}
+	repo.redemption = Redemption{ID: uuid.New(), VoucherID: repo.voucher.ID, StaffID: cashier.UserID, CreatedAt: now.Add(-5 * time.Minute)}
+	if err := service.Reverse(context.Background(), merchantID, cashier, repo.voucher.ID, "wrong scan"); err != nil || !repo.reversed {
+		t.Fatalf("inside window: err=%v reversed=%v", err, repo.reversed)
+	}
+
+	repo.reversed = false
+	repo.redemption.CreatedAt = now.Add(-11 * time.Minute)
+	if err := service.Reverse(context.Background(), merchantID, cashier, repo.voucher.ID, "late"); !errors.Is(err, ErrReversalWindowClosed) {
+		t.Fatalf("after window: got %v", err)
+	}
+
+	owner := merchant.Actor{UserID: uuid.New(), Role: merchant.RoleOwner}
+	if err := service.Reverse(context.Background(), merchantID, owner, repo.voucher.ID, "owner fix"); err != nil || !repo.reversed {
+		t.Fatalf("owner any time: err=%v reversed=%v", err, repo.reversed)
 	}
 }

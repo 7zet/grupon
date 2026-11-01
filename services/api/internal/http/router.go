@@ -48,6 +48,8 @@ type RouterOptions struct {
 	Reviews *ReviewAPI
 	// AdminReports serves review reports, hiding and the audit trail when set.
 	AdminReports *AdminReportsAPI
+	// Finance serves reversals, refunds, disputes and payouts when set.
+	Finance *FinanceAPI
 	// MediaFiles serves stored media files for the local storage adapter when set.
 	MediaFiles http.Handler
 }
@@ -80,12 +82,12 @@ func NewRouter(options RouterOptions) chi.Router {
 	router.Get("/healthz", statusHandler(http.StatusOK, "ok"))
 	router.Get("/readyz", readinessHandler(readinessCheck))
 
-	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil {
+	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil || options.Finance != nil {
 		var base gen.ServerInterface = gen.Unimplemented{}
 		if options.Catalog != nil {
 			base = options.Catalog
 		}
-		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports}, gen.ChiServerOptions{
+		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports, finance: options.Finance}, gen.ChiServerOptions{
 			BaseRouter:       router,
 			ErrorHandlerFunc: bindingErrorHandler,
 		})
@@ -190,6 +192,7 @@ type apiServer struct {
 	redeem       *MerchantRedemptionAPI
 	reviewAPI    *ReviewAPI
 	adminReports *AdminReportsAPI
+	finance      *FinanceAPI
 }
 
 // Operations owned by CommerceAPI are delegated to it when it is mounted.

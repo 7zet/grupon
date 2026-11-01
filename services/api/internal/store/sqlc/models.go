@@ -934,6 +934,16 @@ type DealOption struct {
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Dispute struct {
+	ID           pgtype.UUID        `json:"id"`
+	RedemptionID pgtype.UUID        `json:"redemption_id"`
+	OpenedBy     pgtype.UUID        `json:"opened_by"`
+	Reason       string             `json:"reason"`
+	Status       string             `json:"status"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ResolvedAt   pgtype.Timestamptz `json:"resolved_at"`
+}
+
 type ExchangeRate struct {
 	ID          pgtype.UUID        `json:"id"`
 	Base        CurrencyCode       `json:"base"`
@@ -943,6 +953,16 @@ type ExchangeRate struct {
 	EffectiveAt pgtype.Timestamptz `json:"effective_at"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type FraudSignal struct {
+	ID            pgtype.UUID        `json:"id"`
+	MerchantID    pgtype.UUID        `json:"merchant_id"`
+	SubjectUserID pgtype.UUID        `json:"subject_user_id"`
+	Rule          string             `json:"rule"`
+	Detail        []byte             `json:"detail"`
+	Status        string             `json:"status"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type HomepageSection struct {
@@ -958,6 +978,29 @@ type HomepageSection struct {
 	EndsAt    pgtype.Timestamptz  `json:"ends_at"`
 	CreatedAt pgtype.Timestamptz  `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz  `json:"updated_at"`
+}
+
+type JournalEntry struct {
+	ID             pgtype.UUID        `json:"id"`
+	Kind           string             `json:"kind"`
+	Reference      string             `json:"reference"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type JournalLine struct {
+	ID        pgtype.UUID `json:"id"`
+	EntryID   pgtype.UUID `json:"entry_id"`
+	AccountID pgtype.UUID `json:"account_id"`
+	Direction string      `json:"direction"`
+	Amount    int64       `json:"amount"`
+}
+
+type LedgerAccount struct {
+	ID        pgtype.UUID        `json:"id"`
+	Code      string             `json:"code"`
+	Kind      string             `json:"kind"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Merchant struct {
@@ -1009,6 +1052,13 @@ type MerchantMediaAsset struct {
 	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type MerchantPayoutHold struct {
+	MerchantID pgtype.UUID        `json:"merchant_id"`
+	Reason     string             `json:"reason"`
+	HoldUntil  pgtype.Timestamptz `json:"hold_until"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type Order struct {
 	ID              pgtype.UUID        `json:"id"`
 	Number          string             `json:"number"`
@@ -1043,6 +1093,14 @@ type OrderItem struct {
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Outbox struct {
+	ID          pgtype.UUID        `json:"id"`
+	Topic       string             `json:"topic"`
+	Payload     []byte             `json:"payload"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	PublishedAt pgtype.Timestamptz `json:"published_at"`
+}
+
 type Payment struct {
 	ID                pgtype.UUID        `json:"id"`
 	OrderID           pgtype.UUID        `json:"order_id"`
@@ -1068,6 +1126,18 @@ type Payout struct {
 	PaidAt      pgtype.Timestamptz `json:"paid_at"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type PayoutRun struct {
+	ID         pgtype.UUID        `json:"id"`
+	MerchantID pgtype.UUID        `json:"merchant_id"`
+	Amount     int64              `json:"amount"`
+	Status     string             `json:"status"`
+	PreparedBy pgtype.UUID        `json:"prepared_by"`
+	ApprovedBy pgtype.UUID        `json:"approved_by"`
+	BankDocRef pgtype.Text        `json:"bank_doc_ref"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
 type PhoneOtp struct {
@@ -1107,6 +1177,30 @@ type RecentlyViewed struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type ReconciliationFinding struct {
+	ID        pgtype.UUID        `json:"id"`
+	CheckName string             `json:"check_name"`
+	Expected  int64              `json:"expected"`
+	Actual    int64              `json:"actual"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type Redemption struct {
+	ID                 pgtype.UUID        `json:"id"`
+	VoucherID          pgtype.UUID        `json:"voucher_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	MerchantLocationID pgtype.UUID        `json:"merchant_location_id"`
+	StaffUserID        pgtype.UUID        `json:"staff_user_id"`
+	Sequence           int32              `json:"sequence"`
+	Amount             int64              `json:"amount"`
+	Commission         int64              `json:"commission"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	ReversedAt         pgtype.Timestamptz `json:"reversed_at"`
+	ReversedByUserID   pgtype.UUID        `json:"reversed_by_user_id"`
+	ReversalReason     pgtype.Text        `json:"reversal_reason"`
+	PayoutRunID        pgtype.UUID        `json:"payout_run_id"`
+}
+
 type RefreshToken struct {
 	ID        pgtype.UUID        `json:"id"`
 	UserID    pgtype.UUID        `json:"user_id"`
@@ -1118,6 +1212,18 @@ type RefreshToken struct {
 	Ip        *netip.Addr        `json:"ip"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Refund struct {
+	ID          pgtype.UUID        `json:"id"`
+	VoucherID   pgtype.UUID        `json:"voucher_id"`
+	Amount      int64              `json:"amount"`
+	Reason      string             `json:"reason"`
+	Status      string             `json:"status"`
+	RequestedBy pgtype.UUID        `json:"requested_by"`
+	ApprovedBy  pgtype.UUID        `json:"approved_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Review struct {
@@ -1227,4 +1333,7 @@ type Voucher struct {
 	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
+	RedemptionsUsed    int32              `json:"redemptions_used"`
+	ZaxiraCodeHmac     pgtype.Text        `json:"zaxira_code_hmac"`
 }

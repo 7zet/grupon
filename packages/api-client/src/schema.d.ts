@@ -1247,6 +1247,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/merchant/vouchers/{id}/reverse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Undo the latest redemption (cashier: within 10 minutes) */
+    post: operations['reverseMerchantVoucher'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/vouchers/{id}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ask for a refund of an unused voucher */
+    post: operations['requestVoucherRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/vouchers/{id}/dispute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dispute a redemption (this was not me) */
+    post: operations['openVoucherDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/payouts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Prepare a payout run for a merchant (finance operator) */
+    post: operations['preparePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/payouts/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve and send a payout run (four-eyes) */
+    post: operations['approvePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/paid': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark an approved refund as sent to the bank */
+    post: operations['markRefundPaid'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/status': {
     parameters: {
       query?: never;
@@ -1849,6 +1951,12 @@ export interface components {
       page_size: number;
       /** Format: int64 */
       total: number;
+    };
+    ReverseRequest: {
+      reason: string;
+    };
+    ApprovePayoutRequest: {
+      bank_doc_ref?: string;
     };
     RejectDealInput: {
       reason: string;
@@ -4107,6 +4215,148 @@ export interface operations {
         content: {
           'application/json': components['schemas']['AuditLogPage'];
         };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  reverseMerchantVoucher: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Reversed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  requestVoucherRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Refund recorded */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  openVoucherDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Dispute opened */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  preparePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Payout run prepared */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approvePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ApprovePayoutRequest'];
+      };
+    };
+    responses: {
+      /** @description Approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  markRefundPaid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recorded */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       default: components['responses']['Problem'];
     };

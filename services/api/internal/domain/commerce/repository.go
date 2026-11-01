@@ -2,6 +2,7 @@ package commerce
 
 import (
 	"context"
+	"github.com/grupon/grupon/services/api/internal/domain/ledger"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,6 +62,7 @@ type Store interface {
 	// Vouchers.
 	VoucherCodeTaken(ctx context.Context, code string) (bool, error)
 	InsertVoucher(ctx context.Context, voucher Voucher) error
+	PostLedger(ctx context.Context, entry ledger.Entry) (bool, error)
 	ListVouchers(ctx context.Context, userID uuid.UUID, status string, limit, offset int) ([]Voucher, int64, error)
 	VoucherForUser(ctx context.Context, userID, voucherID uuid.UUID) (Voucher, error)
 	ExpireDueVouchers(ctx context.Context, now time.Time, batch int) (int, error)

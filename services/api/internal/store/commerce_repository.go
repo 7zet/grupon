@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/grupon/grupon/services/api/internal/domain/ledger"
 	"time"
 
 	"github.com/google/uuid"
@@ -634,4 +635,9 @@ func marshalOptionalObject(value map[string]any) ([]byte, error) {
 		return nil, fmt.Errorf("encode shipping address: %w", err)
 	}
 	return raw, nil
+}
+
+// PostLedger writes a balanced journal entry inside the current transaction.
+func (s *commerceStore) PostLedger(ctx context.Context, entry ledger.Entry) (bool, error) {
+	return PostEntry(ctx, s.q, entry)
 }

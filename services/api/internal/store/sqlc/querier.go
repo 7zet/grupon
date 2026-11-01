@@ -17,7 +17,13 @@ type Querier interface {
 	ActivateScheduledDeals(ctx context.Context) (int64, error)
 	ActiveCategoryExists(ctx context.Context, id pgtype.UUID) (bool, error)
 	ActiveCityExists(ctx context.Context, id pgtype.UUID) (bool, error)
+	// Unused value still owed to buyers: price minus what the redeemed shares already consumed.
+	ActiveVoucherValue(ctx context.Context) (int64, error)
+	ActiveVouchersForValue(ctx context.Context) ([]ActiveVouchersForValueRow, error)
 	AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error
+	ApplyVoucherUse(ctx context.Context, arg ApplyVoucherUseParams) (int64, error)
+	ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunParams) (int64, error)
+	AttachRedemptionToRun(ctx context.Context, arg AttachRedemptionToRunParams) (int64, error)
 	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
 	ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error)
 	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
@@ -44,6 +50,7 @@ type Querier interface {
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRoleAssignment(ctx context.Context, arg CreateRoleAssignmentParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CustomerPrepaidTotal(ctx context.Context) (int64, error)
 	DashboardActiveDeals(ctx context.Context, merchantID pgtype.UUID) (int64, error)
 	DashboardLatestOrderIDs(ctx context.Context, arg DashboardLatestOrderIDsParams) ([]pgtype.UUID, error)
 	DashboardPendingDealIDs(ctx context.Context, arg DashboardPendingDealIDsParams) ([]pgtype.UUID, error)
@@ -58,9 +65,13 @@ type Querier interface {
 	DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerchantLocationRowParams) (int64, error)
 	DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error)
 	DismissOpenReviewReport(ctx context.Context, id pgtype.UUID) (int64, error)
+	EnsureLedgerAccount(ctx context.Context, arg EnsureLedgerAccountParams) (pgtype.UUID, error)
 	ExpireDueVouchers(ctx context.Context, arg ExpireDueVouchersParams) ([]pgtype.UUID, error)
 	ExpireEndedDeals(ctx context.Context) (int64, error)
+	ExpireVoucherRow(ctx context.Context, id pgtype.UUID) (int64, error)
 	ExpiredUnpaidOrderIDs(ctx context.Context, arg ExpiredUnpaidOrderIDsParams) ([]pgtype.UUID, error)
+	// Vouchers whose window closed more than 90 days ago and still hold unused value (PRD §8.5).
+	ExpiredVouchersForBreakage(ctx context.Context, arg ExpiredVouchersForBreakageParams) ([]ExpiredVouchersForBreakageRow, error)
 	FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (int64, error)
 	GetActiveCollectionBySlug(ctx context.Context, slug string) (GetActiveCollectionBySlugRow, error)
 	GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error)
@@ -95,10 +106,19 @@ type Querier interface {
 	InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.UUID, error)
 	InsertDealLocation(ctx context.Context, arg InsertDealLocationParams) error
 	InsertDealMedia(ctx context.Context, arg InsertDealMediaParams) error
+	InsertDispute(ctx context.Context, arg InsertDisputeParams) (pgtype.UUID, error)
+	InsertFraudSignal(ctx context.Context, arg InsertFraudSignalParams) error
+	InsertJournalEntry(ctx context.Context, arg InsertJournalEntryParams) (pgtype.UUID, error)
+	InsertJournalLine(ctx context.Context, arg InsertJournalLineParams) error
 	InsertOrder(ctx context.Context, arg InsertOrderParams) (InsertOrderRow, error)
 	InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error)
+	InsertOutbox(ctx context.Context, arg InsertOutboxParams) error
 	InsertPayment(ctx context.Context, arg InsertPaymentParams) error
+	InsertPayoutRun(ctx context.Context, arg InsertPayoutRunParams) (pgtype.UUID, error)
 	InsertPhoneOTP(ctx context.Context, arg InsertPhoneOTPParams) error
+	InsertReconciliationFinding(ctx context.Context, arg InsertReconciliationFindingParams) error
+	InsertRedemption(ctx context.Context, arg InsertRedemptionParams) (pgtype.UUID, error)
+	InsertRefund(ctx context.Context, arg InsertRefundParams) (pgtype.UUID, error)
 	InsertReview(ctx context.Context, arg InsertReviewParams) (InsertReviewRow, error)
 	InsertReviewReport(ctx context.Context, arg InsertReviewReportParams) (int64, error)
 	InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error
@@ -106,7 +126,11 @@ type Querier interface {
 	InsertVoucher(ctx context.Context, arg InsertVoucherParams) error
 	InvalidateUserAuthTokens(ctx context.Context, arg InvalidateUserAuthTokensParams) error
 	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
+	LatestOpenRedemption(ctx context.Context, arg LatestOpenRedemptionParams) (LatestOpenRedemptionRow, error)
 	LatestPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
+	LatestRedemptionForVoucher(ctx context.Context, voucherID pgtype.UUID) (LatestRedemptionForVoucherRow, error)
+	LedgerBalance(ctx context.Context, code string) (int64, error)
+	LedgerEntryExists(ctx context.Context, idempotencyKey string) (bool, error)
 	LinkUserGoogleSub(ctx context.Context, arg LinkUserGoogleSubParams) error
 	ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error)
 	// Public catalog read model. Every query here is read-only and filters to what the public may see.
@@ -140,32 +164,47 @@ type Querier interface {
 	ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error)
 	LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockOrderByIDRow, error)
 	LockPaymentByProviderID(ctx context.Context, arg LockPaymentByProviderIDParams) (LockPaymentByProviderIDRow, error)
+	LockPayoutRun(ctx context.Context, id pgtype.UUID) (LockPayoutRunRow, error)
 	LockUserForUpdate(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
+	LockVoucherForRedemption(ctx context.Context, arg LockVoucherForRedemptionParams) (LockVoucherForRedemptionRow, error)
 	MarkMediaAssetReady(ctx context.Context, arg MarkMediaAssetReadyParams) (int64, error)
+	MarkRedemptionReversed(ctx context.Context, arg MarkRedemptionReversedParams) (int64, error)
+	MarkRefundSucceeded(ctx context.Context, arg MarkRefundSucceededParams) (int64, error)
 	MarkReservationsReleased(ctx context.Context, orderID pgtype.UUID) ([]MarkReservationsReleasedRow, error)
 	MarkSoldOutDeals(ctx context.Context) (int64, error)
 	MarkUserEmailVerified(ctx context.Context, id pgtype.UUID) error
+	MarkVoucherRefunded(ctx context.Context, id pgtype.UUID) (int64, error)
 	MerchantLocationBelongsTo(ctx context.Context, arg MerchantLocationBelongsToParams) (bool, error)
+	MerchantOnHold(ctx context.Context, merchantID pgtype.UUID) (bool, error)
 	// Merchant workspace: the signed-in merchant's business, branches and dashboard aggregates.
 	// Every query is scoped by merchant_id; callers never pass an unscoped id.
 	MerchantRoleForUser(ctx context.Context, userID pgtype.UUID) (MerchantRoleForUserRow, error)
 	NextOrderNumberSequence(ctx context.Context) (int64, error)
+	// Redemptions ready for payout: not reversed, not already paid, older than the dispute window, with no
+	// open dispute (BR-15), for one merchant.
+	PayableRedemptions(ctx context.Context, arg PayableRedemptionsParams) ([]PayableRedemptionsRow, error)
+	PayoutRunDetail(ctx context.Context, id pgtype.UUID) (PayoutRunDetailRow, error)
+	PlaceMerchantHold(ctx context.Context, arg PlaceMerchantHoldParams) error
 	ReactivateRestockedDeals(ctx context.Context) (int64, error)
+	RecentStaffRedemptions(ctx context.Context, arg RecentStaffRedemptionsParams) (int64, error)
 	RecomputeDealRatings(ctx context.Context) (int64, error)
 	RecomputeDealSoldCounts(ctx context.Context) (int64, error)
 	RecomputeMerchantRatings(ctx context.Context) (int64, error)
 	RedeemVoucherIfActive(ctx context.Context, arg RedeemVoucherIfActiveParams) (int64, error)
+	RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetailRow, error)
 	ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) error
 	ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (pgtype.UUID, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	RevokeRefreshFamily(ctx context.Context, familyID pgtype.UUID) error
 	RevokeRefreshTokenByHash(ctx context.Context, tokenHash string) error
 	RevokeUserRefreshTokensExceptFamily(ctx context.Context, arg RevokeUserRefreshTokensExceptFamilyParams) error
+	RollBackVoucherUse(ctx context.Context, id pgtype.UUID) (int64, error)
 	SearchCollectionDealIDs(ctx context.Context, arg SearchCollectionDealIDsParams) ([]pgtype.UUID, error)
 	SearchPublishedDealIDs(ctx context.Context, arg SearchPublishedDealIDsParams) ([]pgtype.UUID, error)
 	SetOrderStatus(ctx context.Context, arg SetOrderStatusParams) error
 	SetOwnedDealStatus(ctx context.Context, arg SetOwnedDealStatusParams) (int64, error)
 	SetPaymentStatus(ctx context.Context, arg SetPaymentStatusParams) error
+	SetRefundStatus(ctx context.Context, arg SetRefundStatusParams) (int64, error)
 	SoftDeleteOwnReview(ctx context.Context, arg SoftDeleteOwnReviewParams) (int64, error)
 	SoftDeleteOwnedDraftDeal(ctx context.Context, arg SoftDeleteOwnedDraftDealParams) (int64, error)
 	SoftDeleteUnusedMediaAsset(ctx context.Context, arg SoftDeleteUnusedMediaAssetParams) (int64, error)
@@ -190,6 +229,7 @@ type Querier interface {
 	UpsertRecentlyViewed(ctx context.Context, arg UpsertRecentlyViewedParams) error
 	UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error)
 	VoucherCodeExists(ctx context.Context, code string) (bool, error)
+	VoucherForRefund(ctx context.Context, id pgtype.UUID) (VoucherForRefundRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

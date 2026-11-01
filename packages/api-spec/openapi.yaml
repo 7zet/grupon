@@ -1478,6 +1478,98 @@ paths:
             },
           default: { $ref: '#/components/responses/Problem' },
         }
+  /api/v1/merchant/vouchers/{id}/reverse:
+    post:
+      tags: [Merchant]
+      operationId: reverseMerchantVoucher
+      summary: "Undo the latest redemption (cashier: within 10 minutes)"
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReverseRequest' } } },
+        }
+      responses:
+        {
+          '204': { description: Reversed },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/me/vouchers/{id}/refund:
+    post:
+      tags: [Account]
+      operationId: requestVoucherRefund
+      summary: Ask for a refund of an unused voucher
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReverseRequest' } } },
+        }
+      responses:
+        {
+          '202': { description: Refund recorded },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/me/vouchers/{id}/dispute:
+    post:
+      tags: [Account]
+      operationId: openVoucherDispute
+      summary: "Dispute a redemption (this was not me)"
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReverseRequest' } } },
+        }
+      responses:
+        {
+          '202': { description: Dispute opened },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/merchants/{id}/payouts:
+    post:
+      tags: [Admin]
+      operationId: preparePayout
+      summary: "Prepare a payout run for a merchant (finance operator)"
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        {
+          '201': { description: Payout run prepared },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/payouts/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approvePayout
+      summary: "Approve and send a payout run (four-eyes)"
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/ApprovePayoutRequest' } } },
+        }
+      responses:
+        {
+          '204': { description: Approved },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/refunds/{id}/paid:
+    post:
+      tags: [Admin]
+      operationId: markRefundPaid
+      summary: Mark an approved refund as sent to the bank
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        {
+          '204': { description: Recorded },
+          default: { $ref: '#/components/responses/Problem' },
+        }
   /api/v1/admin/status:
     get:
       tags: [Admin]
@@ -2346,6 +2438,15 @@ components:
         page: { type: integer, minimum: 1 }
         page_size: { type: integer, minimum: 1 }
         total: { type: integer, format: int64 }
+    ReverseRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    ApprovePayoutRequest:
+      type: object
+      properties:
+        bank_doc_ref: { type: string, maxLength: 100 }
     RejectDealInput:
       type: object
       required: [reason]
