@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 
 import type { MediaAsset } from '@/components/merchant-media-library';
+import { tiyinFromSom } from '@grupon/ui';
 
 type Localized = { uz: string; ru: string; en: string };
 type Location = { id: string; label: string };
@@ -131,8 +132,8 @@ function toBody(draft: Draft, media: MediaAsset[]) {
     location_ids: draft.locationIds,
     options: draft.options.map((o, index) => ({
       title: localized(o.title),
-      original_price: o.originalPrice,
-      deal_price: o.dealPrice,
+      original_price: tiyinFromSom(o.originalPrice),
+      deal_price: tiyinFromSom(o.dealPrice),
       stock_total: o.stock,
       sort_order: index,
       is_active: true,

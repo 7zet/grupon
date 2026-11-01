@@ -190,3 +190,5 @@
 - BFF returned 204 with a body, which crashed approve/hide/dismiss and delete actions. Fixed: 204 is now returned with no body.
 - e2e purchase.spec flaked again (stays on /checkout after the pay click). Suspect repeated runs exhausting seed stock. Not fixed.
 - DEALO-ALIGN step 1 (2026-11-01): USD removed everywhere (contract currency enum is UZS only; Go constants, identity validation, web selector, money formatter). Exchange-rate endpoint and its data are still present and will be removed with the catalog cleanup. Money unit decision: tiyin (bigint) per Dealo ADR-0003; the conversion from so'm is a separate, larger step not yet done.
+- DEALO-ALIGN step 2 (money): amounts are stored and sent as tiyin (1 so'm = 100). Seed prices are scaled, the web formatter divides by 100 for display, and the merchant deal form converts typed so'm to tiyin. Hand-written e2e fixtures still use raw numbers, which the API accepts as tiyin.
+- Test database: the old scratch PostgreSQL on 5433 had stopped; a new PostgreSQL 16 was initialised at a temp path on 5433 with user app. The 5432 instance has a different app password and is not used by the tests.

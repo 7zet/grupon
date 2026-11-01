@@ -241,7 +241,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			}
 		}
 		for j := 0; j < 1+i%3; j++ {
-			original := int64(100000 + (i%12)*25000 + j*10000)
+			original := int64(100000 + (i%12)*25000 + j*10000) * tiyinPerSom
 			price := original * int64(55+i%30) / 100
 			var optionID string
 			if err := tx.QueryRow(ctx, `INSERT INTO deal_options(deal_id,title,original_price,deal_price,stock_total,stock_sold,sort_order) VALUES($1,$2,$3,$4,500,$5,$6) RETURNING id`, deals[i].ID, title, original, price, i*3, j).Scan(&optionID); err != nil {
@@ -335,3 +335,6 @@ func envOr(key, fallback string) string {
 	}
 	return fallback
 }
+
+// tiyinPerSom converts so'm amounts in seed data to minor units. Money is stored in tiyin (ADR-0003).
+const tiyinPerSom = 100
