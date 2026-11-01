@@ -91,11 +91,11 @@ func TestCatalogReadModelFromSeed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(config.Cities) != 3 {
-			t.Errorf("cities = %d, want 3", len(config.Cities))
+		if len(config.Cities) != 1 {
+			t.Errorf("cities = %d, want 1 (only Toshkent is open)", len(config.Cities))
 		}
-		if len(config.Categories) != 10 {
-			t.Errorf("categories = %d, want 10", len(config.Categories))
+		if len(config.Categories) != 4 {
+			t.Errorf("categories = %d, want 4 (pilot)", len(config.Categories))
 		}
 		for _, category := range config.Categories {
 			if len(category.Subcategories) == 0 {
@@ -160,7 +160,7 @@ func TestCatalogReadModelFromSeed(t *testing.T) {
 		}
 	})
 
-	t.Run("city filter narrows results to deals with a branch in that city", func(t *testing.T) {
+	t.Run("city filter returns deals with a branch in that city (pilot: all deals are in Toshkent)", func(t *testing.T) {
 		all, err := fixture.service.ListDeals(ctx, catalog.DealFilter{}, catalog.SortRecommended, mustPage(t, 1, 1))
 		if err != nil {
 			t.Fatal(err)
@@ -169,18 +169,18 @@ func TestCatalogReadModelFromSeed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if city.Total == 0 || city.Total >= all.Total {
-			t.Errorf("tashkent total = %d, all = %d", city.Total, all.Total)
+		if city.Total == 0 || city.Total != all.Total {
+			t.Errorf("tashkent total = %d, all = %d (pilot seed has only Toshkent branches)", city.Total, all.Total)
 		}
 	})
 
 	t.Run("search finds seeded titles by word", func(t *testing.T) {
-		page, err := fixture.service.ListDeals(ctx, catalog.DealFilter{Query: "Sayohat"}, catalog.SortRecommended, mustPage(t, 1, 24))
+		page, err := fixture.service.ListDeals(ctx, catalog.DealFilter{Query: "taklif"}, catalog.SortRecommended, mustPage(t, 1, 24))
 		if err != nil {
 			t.Fatal(err)
 		}
 		if page.Total == 0 {
-			t.Error("search for a seeded travel title returned nothing")
+			t.Error("search for a seeded title returned nothing")
 		}
 	})
 

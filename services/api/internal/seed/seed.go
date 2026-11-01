@@ -23,16 +23,18 @@ type localized map[string]string
 
 type seedData struct {
 	Cities []struct {
-		Slug string    `json:"slug"`
-		Name localized `json:"name"`
-		Lat  float64   `json:"lat"`
-		Lng  float64   `json:"lng"`
+		Slug   string    `json:"slug"`
+		Name   localized `json:"name"`
+		Lat    float64   `json:"lat"`
+		Lng    float64   `json:"lng"`
+		Active *bool     `json:"active"`
 	} `json:"cities"`
 	Categories []struct {
 		Slug          string    `json:"slug"`
 		Name          localized `json:"name"`
 		Icon          string    `json:"icon"`
 		Subcategories []string  `json:"subcategories"`
+		Active        *bool     `json:"active"`
 	} `json:"categories"`
 	MerchantNames []string          `json:"merchantNames"`
 	ReviewTexts   map[string]string `json:"reviewTexts"`
@@ -131,7 +133,7 @@ func loadSeed(root string) (seedData, []imageSeed, error) {
 }
 
 func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed) error {
-	if len(data.Cities) != 3 || len(data.Categories) != 10 || len(images) == 0 {
+	if len(data.Cities) != 5 || len(data.Categories) != 11 || len(images) == 0 {
 		return errors.New("seed source counts are invalid")
 	}
 	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, collections, promo_codes, exchange_rates, homepage_sections, banners CASCADE`)
@@ -141,7 +143,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	cityIDs := make([]string, len(data.Cities))
 	for i, city := range data.Cities {
 		name, _ := json.Marshal(city.Name)
-		if err := tx.QueryRow(ctx, `INSERT INTO cities(slug,name,lat,lng,sort_order) VALUES($1,$2,$3,$4,$5) RETURNING id`, city.Slug, name, city.Lat, city.Lng, i).Scan(&cityIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO cities(slug,name,lat,lng,sort_order,is_active) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`, city.Slug, name, city.Lat, city.Lng, i, active(city.Active)).Scan(&cityIDs[i]); err != nil {
 			return err
 		}
 	}
@@ -149,7 +151,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	subcategoryIDs := make([][]string, len(data.Categories))
 	for i, category := range data.Categories {
 		name, _ := json.Marshal(category.Name)
-		if err := tx.QueryRow(ctx, `INSERT INTO categories(slug,name,icon,sort_order) VALUES($1,$2,$3,$4) RETURNING id`, category.Slug, name, category.Icon, i).Scan(&categoryIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO categories(slug,name,icon,sort_order,is_active) VALUES($1,$2,$3,$4,$5) RETURNING id`, category.Slug, name, category.Icon, i, active(category.Active)).Scan(&categoryIDs[i]); err != nil {
 			return err
 		}
 		for j, slug := range category.Subcategories {
@@ -193,7 +195,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		for j := 0; j < 1+i%3; j++ {
 			var id string
-			city := i % len(cityIDs)
+			city := 0 // Toshkent: the only open city in the pilot (cities are listed in seed/data.json)
 			if err := tx.QueryRow(ctx, `INSERT INTO merchant_locations(merchant_id,city_id,address,lat,lng,opening_hours,phone) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`, merchantIDs[i], cityIDs[city], fmt.Sprintf("Seed ko'chasi %d, %d", i+1, j+1), data.Cities[city].Lat+float64(j)/1000, data.Cities[city].Lng+float64(j)/1000, hours, fmt.Sprintf("+99890100%04d", i)).Scan(&id); err != nil {
 				return err
 			}
@@ -241,7 +243,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			}
 		}
 		for j := 0; j < 1+i%3; j++ {
-			original := int64(100000 + (i%12)*25000 + j*10000) * tiyinPerSom
+			original := int64(100000+(i%12)*25000+j*10000) * tiyinPerSom
 			price := original * int64(55+i%30) / 100
 			var optionID string
 			if err := tx.QueryRow(ctx, `INSERT INTO deal_options(deal_id,title,original_price,deal_price,stock_total,stock_sold,sort_order) VALUES($1,$2,$3,$4,500,$5,$6) RETURNING id`, deals[i].ID, title, original, price, i*3, j).Scan(&optionID); err != nil {
@@ -338,3 +340,8 @@ func envOr(key, fallback string) string {
 
 // tiyinPerSom converts so'm amounts in seed data to minor units. Money is stored in tiyin (ADR-0003).
 const tiyinPerSom = 100
+
+// active reads an optional seed flag; a missing flag means the item is open.
+func active(flag *bool) bool {
+	return flag == nil || *flag
+}

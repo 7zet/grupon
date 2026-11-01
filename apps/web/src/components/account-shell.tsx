@@ -17,7 +17,7 @@ async function isMerchant(): Promise<boolean> {
   }
 }
 
-const SECTIONS = ['coupons', 'orders', 'saved', 'reviews', 'profile'] as const;
+const SECTIONS = ['coupons', 'orders', 'reviews', 'profile'] as const;
 
 export async function AccountShell({
   section,

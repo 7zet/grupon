@@ -2,83 +2,240 @@
   "cities": [
     {
       "slug": "tashkent",
-      "name": { "uz": "Toshkent", "ru": "Ташкент", "en": "Tashkent" },
+      "name": {
+        "uz": "Toshkent",
+        "ru": "Ташкент",
+        "en": "Tashkent"
+      },
       "lat": 41.2995,
-      "lng": 69.2401
+      "lng": 69.2401,
+      "active": true
+    },
+    {
+      "slug": "namangan",
+      "name": {
+        "uz": "Namangan",
+        "ru": "Наманган",
+        "en": "Namangan"
+      },
+      "lat": 40.9983,
+      "lng": 71.6726,
+      "active": false
     },
     {
       "slug": "samarkand",
-      "name": { "uz": "Samarqand", "ru": "Самарканд", "en": "Samarkand" },
+      "name": {
+        "uz": "Samarqand",
+        "ru": "Самарканд",
+        "en": "Samarkand"
+      },
       "lat": 39.6542,
-      "lng": 66.9597
+      "lng": 66.9597,
+      "active": false
     },
     {
-      "slug": "bukhara",
-      "name": { "uz": "Buxoro", "ru": "Бухара", "en": "Bukhara" },
-      "lat": 39.7681,
-      "lng": 64.4556
+      "slug": "andijan",
+      "name": {
+        "uz": "Andijon",
+        "ru": "Андижан",
+        "en": "Andijan"
+      },
+      "lat": 40.7821,
+      "lng": 72.3442,
+      "active": false
+    },
+    {
+      "slug": "fergana",
+      "name": {
+        "uz": "Farg‘ona",
+        "ru": "Фергана",
+        "en": "Fergana"
+      },
+      "lat": 40.3864,
+      "lng": 71.7864,
+      "active": false
     }
   ],
   "categories": [
     {
       "slug": "coupons",
-      "name": { "uz": "Kuponlar", "ru": "Купоны", "en": "Coupons" },
+      "name": {
+        "uz": "Kuponlar",
+        "ru": "Купоны",
+        "en": "Coupons"
+      },
       "icon": "ticket",
-      "subcategories": ["daily-deals", "services", "entertainment", "online"]
+      "subcategories": [
+        "daily-deals",
+        "services",
+        "entertainment",
+        "online"
+      ],
+      "active": false
     },
     {
       "slug": "beauty-and-spas",
-      "name": { "uz": "Go'zallik va spa", "ru": "Красота и спа", "en": "Beauty & Spas" },
+      "name": {
+        "uz": "Go'zallik va spa",
+        "ru": "Красота и спа",
+        "en": "Beauty & Spas"
+      },
       "icon": "sparkles",
-      "subcategories": ["massage", "hair", "nails", "facial", "spa-day"]
+      "subcategories": [
+        "massage",
+        "hair",
+        "nails",
+        "facial",
+        "spa-day"
+      ],
+      "active": true
     },
     {
       "slug": "things-to-do",
-      "name": { "uz": "Ko'ngilochar", "ru": "Развлечения", "en": "Things To Do" },
+      "name": {
+        "uz": "Ko'ngilochar",
+        "ru": "Развлечения",
+        "en": "Things To Do"
+      },
       "icon": "party-popper",
-      "subcategories": ["activities", "cinema", "kids", "sports", "culture"]
+      "subcategories": [
+        "activities",
+        "cinema",
+        "kids",
+        "sports",
+        "culture"
+      ],
+      "active": true
     },
     {
       "slug": "gifts",
-      "name": { "uz": "Sovg'alar", "ru": "Подарки", "en": "Gifts" },
+      "name": {
+        "uz": "Sovg'alar",
+        "ru": "Подарки",
+        "en": "Gifts"
+      },
       "icon": "gift",
-      "subcategories": ["experiences", "for-her", "for-him", "family"]
+      "subcategories": [
+        "experiences",
+        "for-her",
+        "for-him",
+        "family"
+      ],
+      "active": false
     },
     {
       "slug": "auto-and-home",
-      "name": { "uz": "Avto va uy", "ru": "Авто и дом", "en": "Auto & Home" },
+      "name": {
+        "uz": "Avto va uy",
+        "ru": "Авто и дом",
+        "en": "Auto & Home"
+      },
       "icon": "car",
-      "subcategories": ["car-wash", "car-service", "cleaning", "repair", "interior"]
+      "subcategories": [
+        "car-wash",
+        "car-service",
+        "cleaning",
+        "repair",
+        "interior"
+      ],
+      "active": false
     },
     {
       "slug": "food-and-drink",
-      "name": { "uz": "Taom va ichimlik", "ru": "Еда и напитки", "en": "Food & Drink" },
+      "name": {
+        "uz": "Taom va ichimlik",
+        "ru": "Еда и напитки",
+        "en": "Food & Drink"
+      },
       "icon": "utensils",
-      "subcategories": ["restaurants", "cafes", "delivery", "desserts", "national-cuisine"]
+      "subcategories": [
+        "restaurants",
+        "cafes",
+        "delivery",
+        "desserts",
+        "national-cuisine"
+      ],
+      "active": true
     },
     {
       "slug": "local",
-      "name": { "uz": "Mahalliy", "ru": "Местное", "en": "Local" },
+      "name": {
+        "uz": "Mahalliy",
+        "ru": "Местное",
+        "en": "Local"
+      },
       "icon": "map-pin",
-      "subcategories": ["education", "photo", "health", "services"]
+      "subcategories": [
+        "education",
+        "photo",
+        "health",
+        "services"
+      ],
+      "active": false
     },
     {
       "slug": "travel",
-      "name": { "uz": "Sayohat", "ru": "Путешествия", "en": "Travel" },
+      "name": {
+        "uz": "Sayohat",
+        "ru": "Путешествия",
+        "en": "Travel"
+      },
       "icon": "plane",
-      "subcategories": ["hotels", "tours", "day-trips", "resorts"]
+      "subcategories": [
+        "hotels",
+        "tours",
+        "day-trips",
+        "resorts"
+      ],
+      "active": false
     },
     {
       "slug": "goods",
-      "name": { "uz": "Tovarlar", "ru": "Товары", "en": "Goods" },
+      "name": {
+        "uz": "Tovarlar",
+        "ru": "Товары",
+        "en": "Goods"
+      },
       "icon": "package",
-      "subcategories": ["electronics", "home-goods", "fashion", "health-goods", "kids-goods"]
+      "subcategories": [
+        "electronics",
+        "home-goods",
+        "fashion",
+        "health-goods",
+        "kids-goods"
+      ],
+      "active": false
     },
     {
       "slug": "seasonal-deals",
-      "name": { "uz": "Mavsumiy takliflar", "ru": "Сезонные предложения", "en": "Seasonal Deals" },
+      "name": {
+        "uz": "Mavsumiy takliflar",
+        "ru": "Сезонные предложения",
+        "en": "Seasonal Deals"
+      },
       "icon": "calendar",
-      "subcategories": ["navruz", "new-year", "spring", "summer"]
+      "subcategories": [
+        "navruz",
+        "new-year",
+        "spring",
+        "summer"
+      ],
+      "active": false
+    },
+    {
+      "slug": "health-and-fitness",
+      "name": {
+        "uz": "Sog‘liq va fitnes",
+        "ru": "Здоровье и фитнес",
+        "en": "Health & Fitness"
+      },
+      "icon": "dumbbell",
+      "subcategories": [
+        "gym",
+        "yoga",
+        "pool"
+      ],
+      "active": true
     }
   ],
   "merchantNames": [

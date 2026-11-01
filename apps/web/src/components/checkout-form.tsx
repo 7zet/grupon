@@ -10,18 +10,9 @@ import { z } from 'zod';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useCart, type CartItem } from '@/stores/cart';
 
-type Values = { line1: string; city: string; phone: string; terms: boolean };
+type Values = { terms: boolean };
 
-const shippingSchema = z.object({
-  line1: z.string().trim().min(1),
-  city: z.string().trim().min(1),
-  phone: z.string().trim().min(7),
-  terms: z.boolean().refine((accepted) => accepted),
-});
-const termsOnlySchema = z.object({
-  line1: z.string(),
-  city: z.string(),
-  phone: z.string(),
+const termsSchema = z.object({
   terms: z.boolean().refine((accepted) => accepted),
 });
 
@@ -52,12 +43,15 @@ export function CheckoutForm() {
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   // False during server render and first hydration pass; true once the persisted cart is readable.
-  const ready = useSyncExternalStore(subscribeNothing, () => true, () => false);
+  const ready = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
 
-  const needsShipping = items.some((item) => item.kind === 'product');
   const form = useForm<Values>({
-    resolver: zodResolver(needsShipping ? shippingSchema : termsOnlySchema),
-    defaultValues: { line1: '', city: '', phone: '', terms: false },
+    resolver: zodResolver(termsSchema),
+    defaultValues: { terms: false },
   });
 
   if (!ready) return <p className="text-ink-muted">…</p>;
@@ -72,11 +66,15 @@ export function CheckoutForm() {
     );
   }
 
-  const money = (amount: number) => formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
+  const money = (amount: number) =>
+    formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
   const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const savings = items.reduce((sum, item) => sum + (item.originalPrice - item.unitPrice) * item.quantity, 0);
+  const savings = items.reduce(
+    (sum, item) => sum + (item.originalPrice - item.unitPrice) * item.quantity,
+    0,
+  );
 
-  async function submit(values: Values) {
+  async function submit() {
     setError(null);
     const orderBody = {
       items: items.map(({ optionId, quantity, isGift }: CartItem) => ({
@@ -84,9 +82,6 @@ export function CheckoutForm() {
         quantity,
         is_gift: isGift,
       })),
-      ...(needsShipping
-        ? { shipping_address: { line1: values.line1, city: values.city, phone: values.phone } }
-        : {}),
     };
 
     const orderResponse = await fetch('/api/bff/orders', {
@@ -115,8 +110,6 @@ export function CheckoutForm() {
     router.push(`/checkout/mock/${payment.payment_id}?order=${order.id}`);
   }
 
-  const inputClass = 'rounded-control-ui border border-border bg-surface px-4 py-3 text-ink';
-
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
       <section aria-labelledby="summary-heading" className="grid gap-4">
@@ -144,24 +137,6 @@ export function CheckoutForm() {
       </section>
 
       <form className="grid content-start gap-5" noValidate onSubmit={form.handleSubmit(submit)}>
-        {needsShipping && (
-          <fieldset className="grid gap-3">
-            <legend className="font-semibold">{t('shippingTitle')}</legend>
-            <label className="grid gap-1" htmlFor="line1">
-              {t('line1')}
-              <input id="line1" className={inputClass} {...form.register('line1')} />
-            </label>
-            <label className="grid gap-1" htmlFor="city">
-              {t('city')}
-              <input id="city" className={inputClass} {...form.register('city')} />
-            </label>
-            <label className="grid gap-1" htmlFor="phone">
-              {t('phone')}
-              <input id="phone" type="tel" className={inputClass} {...form.register('phone')} />
-            </label>
-          </fieldset>
-        )}
-
         <div className="text-lead font-bold tabular-nums">
           {t('total')}: {money(total)}
         </div>
@@ -173,7 +148,10 @@ export function CheckoutForm() {
         </label>
 
         {error && (
-          <p role="alert" className="flex items-start gap-2 rounded-control-ui bg-error-tint p-3 text-error">
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-control-ui bg-error-tint p-3 text-error"
+          >
             <span aria-hidden="true">!</span>
             <span>{error}</span>
           </p>

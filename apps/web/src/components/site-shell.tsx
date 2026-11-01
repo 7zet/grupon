@@ -1,6 +1,6 @@
 import type { PublicConfig } from '@grupon/api-client';
 import { brandConfig, localized, type Currency, type Locale } from '@grupon/config';
-import { Heart, Home, Menu, Search, ShoppingCart, Ticket, UserRound } from 'lucide-react';
+import { Home, Menu, Search, Ticket, UserRound } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { PropsWithChildren } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -10,7 +10,7 @@ import { SearchBox } from './search-box';
 
 type Props = PropsWithChildren<{ config: PublicConfig; locale: Locale; currency: Currency }>;
 
-export async function SiteShell({ children, config, locale, currency }: Props) {
+export async function SiteShell({ children, config, locale }: Props) {
   const t = await getTranslations('Navigation');
   const footer = await getTranslations('Footer');
   return (
@@ -56,20 +56,6 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
               ))}
             </select>
             <LanguageSelect value={locale} />
-            <Link
-              className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
-              href="/account/saved"
-              aria-label={t('saved')}
-            >
-              <Heart />
-            </Link>
-            <Link
-              className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
-              href="/cart"
-              aria-label={t('cart')}
-            >
-              <ShoppingCart />
-            </Link>
             <BusinessNavLink />
             <Link
               className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
@@ -150,9 +136,6 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
         </MobileLink>
         <MobileLink href="/search" label={t('search')}>
           <Search />
-        </MobileLink>
-        <MobileLink href="/account/saved" label={t('saved')}>
-          <Heart />
         </MobileLink>
         <MobileLink href="/account/coupons" label={t('coupons')}>
           <Ticket />
