@@ -123,3 +123,12 @@ func LocaleValid(locale string) bool { return validLocales[locale] }
 
 // CurrencyValid reports whether a currency is supported.
 func CurrencyValid(currency string) bool { return validCurrencies[currency] }
+
+// PhoneOTP is the newest sign-in code issued for a phone. Only its hash is stored.
+type PhoneOTP struct {
+	ID        uuid.UUID
+	CodeHash  string
+	Attempts  int
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}

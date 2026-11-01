@@ -20,6 +20,7 @@ type Querier interface {
 	AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error
 	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
 	ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error)
+	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
 	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
 	CountActivePromoCodes(ctx context.Context, category pgtype.Text) (int64, error)
 	CountAuditLogs(ctx context.Context) (int64, error)
@@ -39,6 +40,7 @@ type Querier interface {
 	CreateMerchant(ctx context.Context, arg CreateMerchantParams) (CreateMerchantRow, error)
 	CreateMerchantLocation(ctx context.Context, arg CreateMerchantLocationParams) (pgtype.UUID, error)
 	CreateMerchantLocationWithHours(ctx context.Context, arg CreateMerchantLocationWithHoursParams) (pgtype.UUID, error)
+	CreatePhoneUser(ctx context.Context, arg CreatePhoneUserParams) (User, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRoleAssignment(ctx context.Context, arg CreateRoleAssignmentParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -79,12 +81,14 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByGoogleSub(ctx context.Context, googleSub pgtype.Text) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
+	GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, error)
 	GetUserContact(ctx context.Context, userID pgtype.UUID) (GetUserContactRow, error)
 	GetVoucherByCode(ctx context.Context, code string) (GetVoucherByCodeRow, error)
 	GetVoucherByID(ctx context.Context, id pgtype.UUID) (GetVoucherByIDRow, error)
 	GetVoucherForReview(ctx context.Context, id pgtype.UUID) (GetVoucherForReviewRow, error)
 	GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error)
 	HideReviewRow(ctx context.Context, id pgtype.UUID) (int64, error)
+	IncrementPhoneOTPAttempts(ctx context.Context, id pgtype.UUID) error
 	IncrementPromoCodeClicks(ctx context.Context, id pgtype.UUID) (int64, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertCartItem(ctx context.Context, arg InsertCartItemParams) error
@@ -94,12 +98,15 @@ type Querier interface {
 	InsertOrder(ctx context.Context, arg InsertOrderParams) (InsertOrderRow, error)
 	InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error)
 	InsertPayment(ctx context.Context, arg InsertPaymentParams) error
+	InsertPhoneOTP(ctx context.Context, arg InsertPhoneOTPParams) error
 	InsertReview(ctx context.Context, arg InsertReviewParams) (InsertReviewRow, error)
 	InsertReviewReport(ctx context.Context, arg InsertReviewReportParams) (int64, error)
 	InsertSavedDeal(ctx context.Context, arg InsertSavedDealParams) error
 	InsertStockReservation(ctx context.Context, arg InsertStockReservationParams) error
 	InsertVoucher(ctx context.Context, arg InsertVoucherParams) error
 	InvalidateUserAuthTokens(ctx context.Context, arg InvalidateUserAuthTokensParams) error
+	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
+	LatestPhoneOTP(ctx context.Context, phone string) (PhoneOtp, error)
 	LinkUserGoogleSub(ctx context.Context, arg LinkUserGoogleSubParams) error
 	ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error)
 	// Public catalog read model. Every query here is read-only and filters to what the public may see.

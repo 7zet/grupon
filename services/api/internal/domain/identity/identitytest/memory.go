@@ -29,6 +29,7 @@ type Repository struct {
 	roles      map[uuid.UUID][]identity.Role
 	refresh    map[string]identity.RefreshToken
 	authTokens map[string]*authToken
+	phoneCodes []*phoneCode
 }
 
 var _ identity.Repository = (*Repository)(nil)

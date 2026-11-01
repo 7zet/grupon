@@ -8,12 +8,29 @@ const PNG = Buffer.from(
 );
 const text = (value) => ({ uz: value, ru: value, en: value });
 
+const SEEDED_PHONES = {
+  'user@local.test': '+998900000001',
+  'owner@local.test': '+998900000002',
+  'cashier@local.test': '+998900000003',
+  'admin@local.test': '+998900000004',
+};
+
+/** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
 async function login(email) {
-  const response = await fetch(`${API}/auth/login`, {
+  const phone = SEEDED_PHONES[email];
+  const sent = await fetch(`${API}/auth/phone/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: PASSWORD }),
+    body: JSON.stringify({ phone }),
   });
+  expect(sent.status).toBe(202);
+  const { dev_code: code } = await sent.json();
+  const response = await fetch(`${API}/auth/phone/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code }),
+  });
+  expect(response.status).toBe(200);
   return (await response.json()).access_token;
 }
 
@@ -67,27 +84,33 @@ async function submitDeal(owner, title) {
 
 async function signIn(page, email) {
   await page.goto('/uz/login');
-  await page.getByLabel(/Elektron pochta/).fill(email);
-  await page.getByLabel(/Parol/).fill(PASSWORD);
+  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES[email].slice(4));
+  await page.getByRole('button', { name: /Kod yuborish/ }).click();
+  const hint = page.getByText(/Test rejimi kodi: \d{6}/);
+  await expect(hint).toBeVisible();
+  await page.getByLabel(/Tasdiqlash kodi/).fill((await hint.textContent()).match(/\d{6}/)[0]);
   await page.getByRole('button', { name: /^Kirish$/ }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
 
 test('admin approves and rejects deals in the moderation queue', async ({ page }) => {
   const owner = await login('owner@local.test');
-  const first = await submitDeal(owner, 'Moderatsiya approve');
-  const second = await submitDeal(owner, 'Moderatsiya reject');
+  const stamp = Date.now();
+  const approveTitle = `Moderatsiya approve ${stamp}`;
+  const rejectTitle = `Moderatsiya reject ${stamp}`;
+  const first = await submitDeal(owner, approveTitle);
+  const second = await submitDeal(owner, rejectTitle);
 
   await signIn(page, 'admin@local.test');
   await page.goto('/uz/admin/moderation');
-  await expect(page.getByText('Moderatsiya approve')).toBeVisible();
-  await page.getByText('Moderatsiya approve').locator('xpath=ancestor::li').getByRole('button', { name: /^Tasdiqlash$/ }).click();
-  await expect(page.getByText('Moderatsiya approve')).toHaveCount(0);
+  await expect(page.getByText(approveTitle)).toBeVisible();
+  await page.getByText(approveTitle).locator('xpath=ancestor::li').getByRole('button', { name: /^Tasdiqlash$/ }).click();
+  await expect(page.getByText(approveTitle)).toHaveCount(0);
 
-  await page.getByText('Moderatsiya reject').locator('xpath=ancestor::li').getByRole('button', { name: /^Rad etish$/ }).click();
+  await page.getByText(rejectTitle).locator('xpath=ancestor::li').getByRole('button', { name: /^Rad etish$/ }).click();
   await page.getByLabel(/Rad etish sababi/).fill('Rasmlar tavsifga mos emas');
   await page.getByRole('button', { name: /Rad etishni yuborish/ }).click();
-  await expect(page.getByText('Moderatsiya reject')).toHaveCount(0);
+  await expect(page.getByText(rejectTitle)).toHaveCount(0);
   expect(first.id).toBeTruthy();
   expect(second.id).toBeTruthy();
 });

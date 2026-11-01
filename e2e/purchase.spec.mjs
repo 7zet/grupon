@@ -14,16 +14,15 @@ async function sellableVoucherDeal() {
   throw new Error('no sellable voucher deal in seed data');
 }
 
-test('browse → login mid-flow → buy → voucher visible', async ({ page, request }) => {
-  const deal = await sellableVoucherDeal();
-  const email = `e2e${Date.now()}@example.com`;
-  const password = 'Passw0rd!long';
+/** A fresh Uzbekistan number for each run, so every buyer is a new account. */
+function freshDigits() {
+  const tail = String(Math.floor(Math.random() * 1e7)).padStart(7, '0');
+  return `91${tail}`;
+}
 
-  // A user who exists before the buyer arrives; they sign in only at checkout.
-  const registered = await request.post(`${API}/auth/register`, {
-    data: { email, password, name: 'E2E Buyer', locale: 'uz', currency: 'UZS' },
-  });
-  expect(registered.status()).toBe(201);
+test('browse → login mid-flow → buy → voucher visible', async ({ page }) => {
+  const deal = await sellableVoucherDeal();
+  const digits = freshDigits();
 
   // Browse the deal page without an account and start buying.
   await page.goto(`/uz/deal/${deal.slug}`);
@@ -31,8 +30,14 @@ test('browse → login mid-flow → buy → voucher visible', async ({ page, req
 
   // Checkout requires a session, so the visitor lands on login with the return path.
   await expect(page).toHaveURL(/\/uz\/login\?next=%2Fcheckout|\/uz\/login\?next=\/checkout/);
-  await page.getByLabel(/Elektron pochta/).fill(email);
-  await page.getByLabel(/Parol/).fill(password);
+  await page.getByLabel(/Telefon raqami/).fill(digits);
+  await page.getByRole('button', { name: /Kod yuborish/ }).click();
+
+  // Development shows the code on the page; a real phone would receive it by SMS.
+  const hint = page.getByText(/Test rejimi kodi: \d{6}/);
+  await expect(hint).toBeVisible();
+  const code = (await hint.textContent()).match(/\d{6}/)[0];
+  await page.getByLabel(/Tasdiqlash kodi/).fill(code);
   await page.getByRole('button', { name: /^Kirish$/ }).click();
 
   // Back on checkout with the cart preserved.

@@ -193,7 +193,20 @@
     "errorGeneric": "Sign-in is unavailable right now. Please try again.",
     "errorEmailInvalid": "Enter a valid email address.",
     "errorPasswordShort": "Password must be at least 10 characters.",
-    "errorNameRequired": "Enter your name."
+    "errorNameRequired": "Enter your name.",
+    "phoneLabel": "Phone number",
+    "sendCode": "Send code",
+    "codeSent": "We sent a code to {phone}",
+    "codeLabel": "Verification code",
+    "verifyCode": "Sign in",
+    "changePhone": "Use another number",
+    "devCodeHint": "Test mode code: {code}",
+    "errorPhoneInvalid": "Invalid phone number (nine digits after +998)",
+    "errorCodeInvalid": "Enter the 6-digit code",
+    "errorOtpCooldown": "A code was sent recently. Try again in a minute",
+    "errorOtpInvalid": "The code is wrong or has expired",
+    "errorOtpAttempts": "Too many wrong attempts. Request a new code",
+    "errorOtpUnavailable": "Codes cannot be sent right now. Try again later"
   },
   "Account": {
     "title": "My account",

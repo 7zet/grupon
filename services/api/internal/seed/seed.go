@@ -176,7 +176,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if i < len(emails) {
 			email, name = emails[i], []string{"Test User", "Merchant Owner", "Merchant Cashier", "Superadmin"}[i]
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO users(email,password_hash,name,locale,currency,email_verified_at) VALUES($1,$2,$3,$4,'UZS',now()) RETURNING id`, email, password, name, []string{"uz", "ru", "en"}[i%3]).Scan(&userIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO users(email,password_hash,name,locale,currency,email_verified_at,phone) VALUES($1,$2,$3,$4,'UZS',now(),$5) RETURNING id`, email, password, name, []string{"uz", "ru", "en"}[i%3], seedPhone(i)).Scan(&userIDs[i]); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'user')`, userIDs[i]); err != nil {
@@ -344,4 +344,14 @@ const tiyinPerSom = 100
 // active reads an optional seed flag; a missing flag means the item is open.
 func active(flag *bool) bool {
 	return flag == nil || *flag
+}
+
+// seedPhone is the development sign-in phone of the seeded user at index i. The first four are the
+// named test accounts; the rest get numbers from a reserved development range.
+func seedPhone(i int) string {
+	named := []string{"+998900000001", "+998900000002", "+998900000003", "+998900000004"}
+	if i < len(named) {
+		return named[i]
+	}
+	return fmt.Sprintf("+99891%07d", i)
 }

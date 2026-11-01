@@ -193,7 +193,20 @@
     "errorGeneric": "Hozir kirishning imkoni bo‘lmadi. Qayta urinib ko‘ring.",
     "errorEmailInvalid": "Pochta manzilini to‘g‘ri kiriting.",
     "errorPasswordShort": "Parol kamida 10 ta belgidan iborat bo‘lsin.",
-    "errorNameRequired": "Ismingizni kiriting."
+    "errorNameRequired": "Ismingizni kiriting.",
+    "phoneLabel": "Telefon raqami",
+    "sendCode": "Kod yuborish",
+    "codeSent": "{phone} raqamiga kod yuborildi",
+    "codeLabel": "Tasdiqlash kodi",
+    "verifyCode": "Kirish",
+    "changePhone": "Boshqa raqam",
+    "devCodeHint": "Test rejimi kodi: {code}",
+    "errorPhoneInvalid": "Telefon raqami noto‘g‘ri (+998 dan keyin 9 ta raqam)",
+    "errorCodeInvalid": "6 ta raqamli kodni kiriting",
+    "errorOtpCooldown": "Kod yaqinda yuborilgan. Bir daqiqadan keyin qayta urinib ko‘ring",
+    "errorOtpInvalid": "Kod noto‘g‘ri yoki muddati tugagan",
+    "errorOtpAttempts": "Juda ko‘p noto‘g‘ri urinish. Yangi kod oling",
+    "errorOtpUnavailable": "Hozir kod yuborib bo‘lmaydi. Keyinroq urinib ko‘ring"
   },
   "Account": {
     "title": "Hisobim",

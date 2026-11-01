@@ -242,6 +242,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/auth/phone/code': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send a one-time sign-in code to a phone number */
+    post: operations['requestPhoneCode'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/phone/verify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sign in with the code; creates the account on first use */
+    post: operations['verifyPhoneCode'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/register': {
     parameters: {
       query?: never;
@@ -1542,6 +1576,18 @@ export interface components {
       status: 'active' | 'blocked';
       roles: components['schemas']['Role'][];
     };
+    PhoneCodeRequest: {
+      phone: string;
+    };
+    PhoneCodeVerify: {
+      phone: string;
+      code: string;
+    };
+    PhoneCodeSent: {
+      cooldown_seconds: number;
+      /** @description Development only. Absent in every other environment. */
+      dev_code?: string;
+    };
     RegisterRequest: {
       /** Format: email */
       email: string;
@@ -2323,6 +2369,56 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CollectionDetail'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  requestPhoneCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PhoneCodeRequest'];
+      };
+    };
+    responses: {
+      /** @description Code sent */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PhoneCodeSent'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  verifyPhoneCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PhoneCodeVerify'];
+      };
+    };
+    responses: {
+      /** @description Session */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthSession'];
         };
       };
       default: components['responses']['Problem'];

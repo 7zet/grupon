@@ -38,6 +38,14 @@ type Repository interface {
 	// ErrInvalidToken when no such token exists.
 	ConsumeAuthToken(ctx context.Context, kind, hash string) (uuid.UUID, error)
 	InvalidateAuthTokens(ctx context.Context, userID uuid.UUID, kind string) error
+
+	GetUserByPhone(ctx context.Context, phone string) (User, error)
+	CreatePhoneUser(ctx context.Context, phone, email string) (User, error)
+	InsertPhoneOTP(ctx context.Context, phone, codeHash string, expiresAt time.Time) error
+	LatestPhoneOTP(ctx context.Context, phone string) (PhoneOTP, error)
+	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOTP, error)
+	IncrementPhoneOTPAttempts(ctx context.Context, id uuid.UUID) error
+	ConsumePhoneOTP(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 // RateLimiter counts attempts per key. Implementations decide the window and the limit.

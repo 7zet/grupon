@@ -193,7 +193,20 @@
     "errorGeneric": "Сейчас не удалось войти. Попробуйте снова.",
     "errorEmailInvalid": "Введите корректную почту.",
     "errorPasswordShort": "Пароль должен содержать не менее 10 символов.",
-    "errorNameRequired": "Введите имя."
+    "errorNameRequired": "Введите имя.",
+    "phoneLabel": "Номер телефона",
+    "sendCode": "Получить код",
+    "codeSent": "Код отправлен на {phone}",
+    "codeLabel": "Код подтверждения",
+    "verifyCode": "Войти",
+    "changePhone": "Другой номер",
+    "devCodeHint": "Код тестового режима: {code}",
+    "errorPhoneInvalid": "Неверный номер (9 цифр после +998)",
+    "errorCodeInvalid": "Введите 6-значный код",
+    "errorOtpCooldown": "Код отправлен недавно. Повторите через минуту",
+    "errorOtpInvalid": "Код неверный или истёк",
+    "errorOtpAttempts": "Слишком много неверных попыток. Получите новый код",
+    "errorOtpUnavailable": "Сейчас невозможно отправить код. Попробуйте позже"
   },
   "Account": {
     "title": "Мой аккаунт",

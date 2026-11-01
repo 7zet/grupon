@@ -1070,6 +1070,16 @@ type Payout struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type PhoneOtp struct {
+	ID         pgtype.UUID        `json:"id"`
+	Phone      string             `json:"phone"`
+	CodeHash   string             `json:"code_hash"`
+	Attempts   int32              `json:"attempts"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	ConsumedAt pgtype.Timestamptz `json:"consumed_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type PromoCode struct {
 	ID            pgtype.UUID        `json:"id"`
 	BrandName     string             `json:"brand_name"`

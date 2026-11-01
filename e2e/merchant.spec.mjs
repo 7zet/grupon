@@ -9,11 +9,27 @@ const PNG = Buffer.from(
   'base64',
 );
 
+const SEEDED_PHONES = {
+  'user@local.test': '+998900000001',
+  'owner@local.test': '+998900000002',
+  'cashier@local.test': '+998900000003',
+  'admin@local.test': '+998900000004',
+};
+
+/** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
 async function login(email) {
-  const response = await fetch(`${API}/auth/login`, {
+  const phone = SEEDED_PHONES[email];
+  const sent = await fetch(`${API}/auth/phone/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: PASSWORD }),
+    body: JSON.stringify({ phone }),
+  });
+  expect(sent.status).toBe(202);
+  const { dev_code: code } = await sent.json();
+  const response = await fetch(`${API}/auth/phone/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code }),
   });
   expect(response.status).toBe(200);
   return (await response.json()).access_token;
@@ -123,8 +139,11 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await page.goto(`${WEB}/uz/login`);
-  await page.getByLabel(/Elektron pochta/).fill('owner@local.test');
-  await page.getByLabel(/Parol/).fill(PASSWORD);
+  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES['owner@local.test'].slice(4));
+  await page.getByRole('button', { name: /Kod yuborish/ }).click();
+  const hint = page.getByText(/Test rejimi kodi: \d{6}/);
+  await expect(hint).toBeVisible();
+  await page.getByLabel(/Tasdiqlash kodi/).fill((await hint.textContent()).match(/\d{6}/)[0]);
   await page.getByRole('button', { name: /^Kirish$/ }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
   await page.goto(`${WEB}/uz/merchant/redeem`);

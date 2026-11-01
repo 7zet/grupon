@@ -30,6 +30,7 @@ import (
 	"github.com/grupon/grupon/services/api/internal/platform/mail"
 	"github.com/grupon/grupon/services/api/internal/platform/ratelimit"
 	"github.com/grupon/grupon/services/api/internal/platform/revalidate"
+	"github.com/grupon/grupon/services/api/internal/platform/sms"
 	"github.com/grupon/grupon/services/api/internal/platform/storage"
 	"github.com/grupon/grupon/services/api/internal/store"
 )
@@ -140,6 +141,11 @@ const (
 
 // newIdentityService wires the identity rules to PostgreSQL, the mailer and the Google client.
 func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.RateLimiter, logger *slog.Logger) (*identity.Service, error) {
+	// Codes are logged only in development. Other environments have no sender until an SMS provider exists.
+	var codeSender identity.CodeSender
+	if cfg.Environment == "development" {
+		codeSender = sms.NewLogSender(logger)
+	}
 	tokens, err := identity.NewTokenIssuer(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL, time.Now)
 	if err != nil {
 		return nil, fmt.Errorf("configure access tokens: %w", err)
@@ -169,7 +175,10 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		Google:     exchanger,
 		Logger:     logger,
 		Now:        time.Now,
+		CodeSender: codeSender,
 	}, identity.Config{
+		OTPEcho:          cfg.Environment == "development",
+		OTPCooldown:      otpCooldown(cfg.Environment),
 		AccessTokenTTL:   cfg.Auth.AccessTokenTTL,
 		RefreshTokenTTL:  cfg.Auth.RefreshTokenTTL,
 		VerifyEmailTTL:   verifyEmailTTL,
@@ -260,4 +269,13 @@ func verifyQRToken(service *commerce.Service) redemption.Verifier {
 		}
 		return claims.VoucherID, nil
 	}
+}
+
+// otpCooldown keeps the one-minute wait in every environment except development, where automated
+// tests sign in repeatedly.
+func otpCooldown(environment string) time.Duration {
+	if environment == "development" {
+		return 0
+	}
+	return time.Minute
 }

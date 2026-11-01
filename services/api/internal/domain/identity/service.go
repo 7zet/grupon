@@ -23,6 +23,11 @@ type Config struct {
 	ResetPasswordTTL time.Duration
 	// WebBaseURL is the public web origin used to build links in emails, without a trailing slash.
 	WebBaseURL string
+	// OTPEcho returns the sign-in code in the response. Only development may enable it.
+	OTPEcho bool
+	// OTPCooldown is the minimum wait between two codes for one phone. Development sets it to zero so
+	// automated sign-ins can repeat; other environments keep the full minute.
+	OTPCooldown time.Duration
 	// BrandName is substituted into email subjects.
 	BrandName string
 }
@@ -34,20 +39,22 @@ type Dependencies struct {
 	Mailer     platformmail.Sender
 	Limiter    RateLimiter
 	Google     GoogleExchanger
+	CodeSender CodeSender
 	Logger     *slog.Logger
 	Now        func() time.Time
 }
 
 // Service implements account and session rules. It has no HTTP or SQL knowledge.
 type Service struct {
-	repo    Repository
-	tokens  *TokenIssuer
-	mailer  platformmail.Sender
-	limiter RateLimiter
-	google  GoogleExchanger
-	logger  *slog.Logger
-	now     func() time.Time
-	cfg     Config
+	repo       Repository
+	tokens     *TokenIssuer
+	mailer     platformmail.Sender
+	limiter    RateLimiter
+	google     GoogleExchanger
+	codeSender CodeSender
+	logger     *slog.Logger
+	now        func() time.Time
+	cfg        Config
 }
 
 // NewService wires the identity rules to their ports.
@@ -61,14 +68,15 @@ func NewService(deps Dependencies, cfg Config) *Service {
 		now = time.Now
 	}
 	return &Service{
-		repo:    deps.Repository,
-		tokens:  deps.Tokens,
-		mailer:  deps.Mailer,
-		limiter: deps.Limiter,
-		google:  deps.Google,
-		logger:  logger,
-		now:     now,
-		cfg:     cfg,
+		repo:       deps.Repository,
+		tokens:     deps.Tokens,
+		mailer:     deps.Mailer,
+		limiter:    deps.Limiter,
+		google:     deps.Google,
+		codeSender: deps.CodeSender,
+		logger:     logger,
+		now:        now,
+		cfg:        cfg,
 	}
 }
 
