@@ -71,9 +71,11 @@ type AuditEntry struct {
 type Repository interface {
 	Find(ctx context.Context, voucherID uuid.UUID) (commerce.Voucher, error)
 	FindByCode(ctx context.Context, code string) (commerce.Voucher, error)
+	// FindByBackupCode looks a voucher up by the stored HMAC of its backup code.
+	FindByBackupCode(ctx context.Context, codeHMAC string) (commerce.Voucher, error)
 	LocationOwned(ctx context.Context, merchantID, locationID uuid.UUID) (bool, error)
 	// Redeem marks the voucher redeemed only while it is still active and inside its validity window.
-	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry) (bool, error)
+	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry, geo *Geo) (bool, error)
 	View(ctx context.Context, voucher commerce.Voucher) (commerce.VoucherView, error)
 	// ReversalCandidate returns the latest unreversed redemption of the voucher, or ErrNotFound.
 	ReversalCandidate(ctx context.Context, merchantID, voucherID uuid.UUID) (Redemption, error)
@@ -83,9 +85,16 @@ type Repository interface {
 
 // Service implements lookup and redemption rules.
 type Service struct {
-	repo   Repository
-	verify Verifier
-	now    func() time.Time
+	repo       Repository
+	verify     Verifier
+	now        func() time.Time
+	backupHash func(code string) string
+}
+
+// WithBackupCodes lets staff redeem with a voucher backup code as well as the human code.
+func (s *Service) WithBackupCodes(hash func(code string) string) *Service {
+	s.backupHash = hash
+	return s
 }
 
 // NewService binds the redemption rules to a repository and a QR verifier.
@@ -109,7 +118,13 @@ func (s *Service) Lookup(ctx context.Context, merchantID uuid.UUID, token, code 
 }
 
 // Redeem marks an active voucher as used at one of the merchant's branches.
-func (s *Service) Redeem(ctx context.Context, merchantID uuid.UUID, actor merchant.Actor, voucherID, locationID uuid.UUID) (commerce.VoucherView, error) {
+// Geo is the staff device position at redemption. It is optional and only feeds fraud rules.
+type Geo struct {
+	Lat float64
+	Lng float64
+}
+
+func (s *Service) Redeem(ctx context.Context, merchantID uuid.UUID, actor merchant.Actor, voucherID, locationID uuid.UUID, geo *Geo) (commerce.VoucherView, error) {
 	voucher, err := s.repo.Find(ctx, voucherID)
 	if err != nil {
 		return commerce.VoucherView{}, err
@@ -132,7 +147,7 @@ func (s *Service) Redeem(ctx context.Context, merchantID uuid.UUID, actor mercha
 		Action:    "voucher_redeemed",
 		After:     map[string]any{"location_id": locationID.String()},
 	}
-	redeemed, err := s.repo.Redeem(ctx, merchantID, voucherID, locationID, at, audit)
+	redeemed, err := s.repo.Redeem(ctx, merchantID, voucherID, locationID, at, audit, geo)
 	if err != nil {
 		return commerce.VoucherView{}, err
 	}
@@ -164,7 +179,14 @@ func (s *Service) resolve(ctx context.Context, token, code string) (commerce.Vou
 		if !codePattern.MatchString(normalized) {
 			return commerce.Voucher{}, &merchant.InvalidInputError{Field: "code", Code: "invalid_code"}
 		}
-		return s.repo.FindByCode(ctx, normalized)
+		voucher, err := s.repo.FindByCode(ctx, normalized)
+		if err == nil || s.backupHash == nil {
+			return voucher, err
+		}
+		if backup, backupErr := s.repo.FindByBackupCode(ctx, s.backupHash(normalized)); backupErr == nil {
+			return backup, nil
+		}
+		return voucher, err
 	default:
 		return commerce.Voucher{}, &merchant.InvalidInputError{Field: "code", Code: "required"}
 	}

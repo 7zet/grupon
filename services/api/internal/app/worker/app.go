@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/grupon/grupon/services/api/internal/domain/finance"
+	"github.com/grupon/grupon/services/api/internal/domain/outbox"
 	"log/slog"
 	"time"
 
@@ -44,16 +45,30 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 
 	deals := store.NewDealJobs(pool)
 	financeJobs := finance.NewService(store.NewFinanceRepository(pool), time.Now)
+	outboxRelay := outbox.NewRelay(store.NewOutboxRepository(pool), logPublisher(logger))
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()
 	for {
 		runSweeps(ctx, commerce, deals, financeJobs, logger)
+		if published, err := outboxRelay.Run(ctx, sweepBatch); err != nil {
+			logger.ErrorContext(ctx, "outbox relay failed", slog.String("error", err.Error()))
+		} else if published > 0 {
+			logger.InfoContext(ctx, "outbox events published", slog.Int("events", published))
+		}
 		select {
 		case <-ctx.Done():
 			logger.Info("worker stopped")
 			return nil
 		case <-ticker.C:
 		}
+	}
+}
+
+// logPublisher is the transport until a broker exists: events are written to the log so they can be traced.
+func logPublisher(logger *slog.Logger) outbox.Publisher {
+	return func(ctx context.Context, topic string, payload []byte) error {
+		logger.InfoContext(ctx, "outbox event", slog.String("topic", topic), slog.String("payload", string(payload)))
+		return nil
 	}
 }
 

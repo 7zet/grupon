@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
@@ -55,6 +56,18 @@ func (r *RedemptionRepository) FindByCode(ctx context.Context, code string) (com
 		row.MerchantID, row.Code, row.QrToken, string(row.Status), row.ValidFrom, row.ValidUntil, row.RedeemedAt), nil
 }
 
+// FindByBackupCode loads a voucher by the stored HMAC of its backup code.
+func (r *RedemptionRepository) FindByBackupCode(ctx context.Context, codeHMAC string) (commerce.Voucher, error) {
+	id, err := sqlc.New(r.pool).VoucherIDByBackupCodeHMAC(ctx, pgtype.Text{String: codeHMAC, Valid: true})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return commerce.Voucher{}, redemption.ErrNotFound
+	}
+	if err != nil {
+		return commerce.Voucher{}, fmt.Errorf("get voucher by backup code: %w", err)
+	}
+	return r.Find(ctx, toUUID(id))
+}
+
 // LocationOwned reports whether a branch belongs to the merchant.
 func (r *RedemptionRepository) LocationOwned(ctx context.Context, merchantID, locationID uuid.UUID) (bool, error) {
 	count, err := sqlc.New(r.pool).CountOwnedLocations(ctx, sqlc.CountOwnedLocationsParams{
@@ -68,8 +81,8 @@ func (r *RedemptionRepository) LocationOwned(ctx context.Context, merchantID, lo
 }
 
 // Redeem records one use of the voucher; see UseVoucher for the transactional rules.
-func (r *RedemptionRepository) Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry) (bool, error) {
-	return r.UseVoucher(ctx, merchantID, voucherID, locationID, at, audit)
+func (r *RedemptionRepository) Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry, geo *redemption.Geo) (bool, error) {
+	return r.UseVoucher(ctx, merchantID, voucherID, locationID, at, audit, geo)
 }
 
 // View attaches the option and deal to a voucher for display.

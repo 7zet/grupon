@@ -1349,6 +1349,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/payouts/{id}/reconcile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record that the bank confirmed a sent payout run */
+    post: operations['reconcilePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support approves a refund request (over 14 days or from a dispute) */
+    post: operations['approveRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/resolve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve a dispute in favour of the customer (refund) or the merchant (payout) */
+    post: operations['resolveDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/status': {
     parameters: {
       query?: never;
@@ -1834,7 +1885,11 @@ export interface components {
       merchant: components['schemas']['Merchant'];
       buyer_first_name?: string;
       code: string;
+      /** @description Rotates every 30 seconds; the voucher page must refetch. */
       qr_token: string;
+      /** Format: date-time */
+      qr_token_expires_at?: string;
+      backup_code?: string;
       /** @enum {string} */
       status: 'active' | 'redeemed' | 'expired' | 'refunded' | 'cancelled';
       /** Format: date-time */
@@ -1905,6 +1960,8 @@ export interface components {
       stock_total: number;
       sort_order: number;
       is_active: boolean;
+      /** @default 1 */
+      redemptions_allowed: number;
     };
     DealMediaInput: {
       id?: components['schemas']['Uuid'];
@@ -1957,6 +2014,10 @@ export interface components {
     };
     ApprovePayoutRequest: {
       bank_doc_ref?: string;
+    };
+    ResolveDisputeRequest: {
+      /** @enum {string} */
+      resolution: 'customer' | 'merchant';
     };
     RejectDealInput: {
       reason: string;
@@ -2017,6 +2078,9 @@ export interface components {
     } & (unknown | unknown);
     RedeemRequest: {
       location_id: components['schemas']['Uuid'];
+      /** @description Staff device position, optional; used by the distance fraud rule. */
+      lat?: number;
+      lng?: number;
     };
     MerchantCustomer: {
       user_id: components['schemas']['Uuid'];
@@ -4352,6 +4416,73 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description Recorded */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  reconcilePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reconciled */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  resolveDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ResolveDisputeRequest'];
+      };
+    };
+    responses: {
+      /** @description Resolved */
       204: {
         headers: {
           [name: string]: unknown;

@@ -18,9 +18,9 @@ UPDATE vouchers SET
 WHERE id = sqlc.arg(id) AND status = 'active';
 
 -- name: InsertRedemption :one
-INSERT INTO redemptions (voucher_id, merchant_id, merchant_location_id, staff_user_id, sequence, amount, commission)
+INSERT INTO redemptions (voucher_id, merchant_id, merchant_location_id, staff_user_id, sequence, amount, commission, geo_lat, geo_lng)
 VALUES (sqlc.arg(voucher_id), sqlc.arg(merchant_id), sqlc.arg(location_id), sqlc.arg(staff_user_id),
-        sqlc.arg(sequence), sqlc.arg(amount), sqlc.arg(commission))
+        sqlc.arg(sequence), sqlc.arg(amount), sqlc.arg(commission), sqlc.narg(geo_lat)::float8, sqlc.narg(geo_lng)::float8)
 RETURNING id;
 
 -- name: LatestOpenRedemption :one
@@ -42,3 +42,9 @@ UPDATE vouchers SET
   redeemed_at = NULL,
   updated_at = now()
 WHERE id = sqlc.arg(id) AND redemptions_used > 0;
+
+-- name: VoucherIDByBackupCodeHMAC :one
+SELECT id FROM vouchers WHERE zaxira_code_hmac = sqlc.arg(zaxira_code_hmac);
+
+-- name: MerchantLocationCoords :one
+SELECT lat::float8 AS lat, lng::float8 AS lng FROM merchant_locations WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id);

@@ -7,30 +7,36 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-// qrPrefix versions the token layout itself. qrPayloadVersion is the voucher version that is
-// signed; there is no version column yet, so every voucher is version 1. Bumping it later
-// invalidates older codes without a database migration.
+// qrPrefix versions the token layout itself. The payload is "gv2:<voucher id>:<window>", where window
+// is the number of QRRotation intervals since the Unix epoch. Tokens rotate every QRRotation, so a
+// screenshot of a QR goes stale; the previous window is still accepted to absorb clock skew.
 const (
-	qrPrefix         = "gv1"
-	qrPayloadVersion = 1
+	qrPrefix         = "gv2"
+	qrRotation       = 30 * time.Second
 	minQRSecretBytes = 32
+	backupCodeLen    = 8
 )
+
+// QRRotation is how often a voucher QR token changes. The voucher page refreshes at this rate.
+const QRRotation = qrRotation
 
 // QRClaims is the verified content of a voucher QR token.
 type QRClaims struct {
 	VoucherID uuid.UUID
-	Version   int
+	Window    int64
 }
 
 // QRSigner issues and verifies voucher QR tokens. The token is base64url(payload) "." base64url(HMAC),
-// with payload "gv1:<voucher id>:<version>". The raw voucher id is never shown to the scanner
-// without a valid signature.
+// with payload "gv2:<voucher id>:<window>". The raw voucher id is never shown to the scanner without
+// a valid signature. The signer also derives the backup code of a voucher, so no plain code is stored.
 type QRSigner struct {
 	key []byte
+	now func() time.Time
 }
 
 // NewQRSigner returns a signer for secret. The secret must hold at least 32 bytes.
@@ -38,17 +44,29 @@ func NewQRSigner(secret string) (*QRSigner, error) {
 	if len(secret) < minQRSecretBytes {
 		return nil, fmt.Errorf("commerce: VOUCHER_QR_SECRET must be at least %d bytes", minQRSecretBytes)
 	}
-	return &QRSigner{key: []byte(secret)}, nil
+	return &QRSigner{key: []byte(secret), now: time.Now}, nil
 }
 
-// Sign returns the token for a voucher.
+func window(at time.Time) int64 {
+	return at.Unix() / int64(qrRotation/time.Second)
+}
+
+// Sign returns the token for a voucher in the current rotation window.
 func (s *QRSigner) Sign(voucherID uuid.UUID) string {
-	payload := []byte(fmt.Sprintf("%s:%s:%d", qrPrefix, voucherID.String(), qrPayloadVersion))
+	return s.signAt(voucherID, window(s.now()))
+}
+
+// NextRotation returns the moment the current QR token stops being the newest one.
+func (s *QRSigner) NextRotation() time.Time {
+	return time.Unix((window(s.now())+1)*int64(qrRotation/time.Second), 0)
+}
+
+func (s *QRSigner) signAt(voucherID uuid.UUID, w int64) string {
+	payload := []byte(fmt.Sprintf("%s:%s:%d", qrPrefix, voucherID.String(), w))
 	return base64.RawURLEncoding.EncodeToString(payload) + "." + base64.RawURLEncoding.EncodeToString(s.mac(payload))
 }
 
-// Verify checks the signature and returns the claims. Any malformed or tampered token yields
-// ErrInvalidQRToken.
+// Verify checks the signature and the window. Tokens from the current or the previous window pass.
 func (s *QRSigner) Verify(token string) (QRClaims, error) {
 	encodedPayload, encodedMAC, found := strings.Cut(token, ".")
 	if !found {
@@ -70,11 +88,34 @@ func (s *QRSigner) Verify(token string) (QRClaims, error) {
 	if err != nil {
 		return QRClaims{}, ErrInvalidQRToken
 	}
-	version, err := strconv.Atoi(parts[2])
-	if err != nil || version != qrPayloadVersion {
+	w, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
 		return QRClaims{}, ErrInvalidQRToken
 	}
-	return QRClaims{VoucherID: id, Version: version}, nil
+	if current := window(s.now()); w != current && w != current-1 {
+		return QRClaims{}, ErrQRExpired
+	}
+	return QRClaims{VoucherID: id, Window: w}, nil
+}
+
+// BackupCode returns the 8-character backup code of a voucher in the XXXX-XXXX form. It is derived
+// from the voucher id and the server secret, so it is stable and never stored in plain text.
+func (s *QRSigner) BackupCode(voucherID uuid.UUID) string {
+	raw := s.mac([]byte("zaxira:" + voucherID.String()))
+	out := make([]byte, 0, backupCodeLen)
+	for _, b := range raw {
+		if len(out) == backupCodeLen {
+			break
+		}
+		out = append(out, VoucherCodeAlphabet[int(b)%len(VoucherCodeAlphabet)])
+	}
+	return string(out[:4]) + "-" + string(out[4:])
+}
+
+// BackupCodeHMAC is what the database stores for a backup code. The code is normalised first.
+func (s *QRSigner) BackupCodeHMAC(code string) string {
+	normalized := strings.ToUpper(strings.TrimSpace(code))
+	return base64.RawURLEncoding.EncodeToString(s.mac([]byte("zaxira-code:" + normalized)))
 }
 
 func (s *QRSigner) mac(payload []byte) []byte {

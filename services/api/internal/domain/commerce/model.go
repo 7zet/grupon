@@ -61,25 +61,26 @@ const (
 
 // OptionRecord is the purchase-relevant state of one deal option, read in one query.
 type OptionRecord struct {
-	ID                uuid.UUID
-	DealID            uuid.UUID
-	Title             catalog.Text
-	OriginalPrice     int64
-	DealPrice         int64
-	StockTotal        int
-	StockSold         int
-	StockReserved     int
-	IsActive          bool
-	DealStatus        string
-	DealKind          string
-	StartsAt          time.Time
-	EndsAt            time.Time
-	MaxPerUser        int
-	IsGiftable        bool
-	VoucherValidDays  *int
-	VoucherValidUntil *time.Time
-	MerchantID        uuid.UUID
-	MerchantActive    bool
+	ID                 uuid.UUID
+	DealID             uuid.UUID
+	Title              catalog.Text
+	OriginalPrice      int64
+	DealPrice          int64
+	StockTotal         int
+	StockSold          int
+	StockReserved      int
+	RedemptionsAllowed int
+	IsActive           bool
+	DealStatus         string
+	DealKind           string
+	StartsAt           time.Time
+	EndsAt             time.Time
+	MaxPerUser         int
+	IsGiftable         bool
+	VoucherValidDays   *int
+	VoucherValidUntil  *time.Time
+	MerchantID         uuid.UUID
+	MerchantActive     bool
 }
 
 // Available is the number of units that can still be reserved.
@@ -209,6 +210,10 @@ type Voucher struct {
 	ValidFrom   time.Time
 	ValidUntil  time.Time
 	RedeemedAt  *time.Time
+	// RedemptionsAllowed is the use count copied from the option at purchase time.
+	RedemptionsAllowed int
+	// ZaxiraCodeHMAC is the stored hash of the backup code; the plain code is derived, not stored.
+	ZaxiraCodeHMAC string
 }
 
 // PaymentSession is what the buyer receives when starting a payment.

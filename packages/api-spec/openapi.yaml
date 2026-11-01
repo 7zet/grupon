@@ -1570,6 +1570,47 @@ paths:
           '204': { description: Recorded },
           default: { $ref: '#/components/responses/Problem' },
         }
+  /api/v1/admin/payouts/{id}/reconcile:
+    post:
+      tags: [Admin]
+      operationId: reconcilePayout
+      summary: Record that the bank confirmed a sent payout run
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        {
+          '204': { description: Reconciled },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/refunds/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveRefund
+      summary: Support approves a refund request (over 14 days or from a dispute)
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        {
+          '204': { description: Approved },
+          default: { $ref: '#/components/responses/Problem' },
+        }
+  /api/v1/admin/disputes/{id}/resolve:
+    post:
+      tags: [Admin]
+      operationId: resolveDispute
+      summary: Resolve a dispute in favour of the customer (refund) or the merchant (payout)
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        {
+          required: true,
+          content: { application/json: { schema: { $ref: '#/components/schemas/ResolveDisputeRequest' } } },
+        }
+      responses:
+        {
+          '204': { description: Resolved },
+          default: { $ref: '#/components/responses/Problem' },
+        }
   /api/v1/admin/status:
     get:
       tags: [Admin]
@@ -2294,7 +2335,9 @@ components:
         merchant: { $ref: '#/components/schemas/Merchant' }
         buyer_first_name: { type: string }
         code: { type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$' }
-        qr_token: { type: string }
+        qr_token: { type: string, description: "Rotates every 30 seconds; the voucher page must refetch." }
+        qr_token_expires_at: { type: string, format: date-time }
+        backup_code: { type: string, pattern: "^[A-Z0-9]{4}-[A-Z0-9]{4}$" }
         status: { type: string, enum: [active, redeemed, expired, refunded, cancelled] }
         valid_from: { type: string, format: date-time }
         valid_until: { type: string, format: date-time }
@@ -2387,6 +2430,7 @@ components:
           stock_total: { type: integer, minimum: 0 },
           sort_order: { type: integer, minimum: 0 },
           is_active: { type: boolean },
+          redemptions_allowed: { type: integer, minimum: 1, maximum: 50, default: 1 },
         }
     DealMediaInput:
       type: object
@@ -2447,6 +2491,11 @@ components:
       type: object
       properties:
         bank_doc_ref: { type: string, maxLength: 100 }
+    ResolveDisputeRequest:
+      type: object
+      required: [resolution]
+      properties:
+        resolution: { type: string, enum: [customer, merchant] }
     RejectDealInput:
       type: object
       required: [reason]
@@ -2557,7 +2606,12 @@ components:
       {
         type: object,
         required: [location_id],
-        properties: { location_id: { $ref: '#/components/schemas/Uuid' } },
+        properties:
+          {
+            location_id: { $ref: '#/components/schemas/Uuid' },
+            lat: { type: number, minimum: -90, maximum: 90, description: "Staff device position, optional; used by the distance fraud rule." },
+            lng: { type: number, minimum: -180, maximum: 180 },
+          }
       }
     MerchantCustomer:
       {

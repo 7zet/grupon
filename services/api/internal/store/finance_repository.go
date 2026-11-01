@@ -324,3 +324,93 @@ func (r *FinanceRepository) RecordFinding(ctx context.Context, check string, exp
 		Actual:    actual,
 	})
 }
+
+// MarkPayoutReconciled moves a sent payout run to reconciled after the bank statement matched it.
+func (r *FinanceRepository) MarkPayoutReconciled(ctx context.Context, runID uuid.UUID) (bool, error) {
+	rows, err := sqlc.New(r.pool).MarkPayoutRunReconciled(ctx, toPgUUID(runID))
+	if err != nil {
+		return false, fmt.Errorf("reconcile payout: %w", err)
+	}
+	return rows == 1, nil
+}
+
+// ApproveRefund approves a requested refund and posts the ledger entry in one transaction.
+func (r *FinanceRepository) ApproveRefund(ctx context.Context, refundID, approverID uuid.UUID) (finance.RefundRef, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return finance.RefundRef{}, fmt.Errorf("begin refund approval: %w", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	queries := sqlc.New(tx)
+	row, err := queries.ApproveRequestedRefund(ctx, sqlc.ApproveRequestedRefundParams{
+		ID:         toPgUUID(refundID),
+		ApproverID: toPgUUID(approverID),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return finance.RefundRef{}, finance.ErrNotPending
+	}
+	if err != nil {
+		return finance.RefundRef{}, fmt.Errorf("approve refund: %w", err)
+	}
+	ref := finance.RefundRef{ID: toUUID(row.ID), MerchantID: toUUID(row.MerchantID), Amount: row.Amount}
+	// An unused voucher is taken out of the buyer's prepaid value and closed. A redeemed one (dispute)
+	// is paid back by the merchant, whose payable already holds the redeemed amount.
+	rows, err := queries.MarkVoucherRefunded(ctx, row.VoucherID)
+	if err != nil {
+		return finance.RefundRef{}, fmt.Errorf("refund voucher: %w", err)
+	}
+	entry := ledger.RefundFromMerchant(ref.ID.String(), ref.MerchantID.String(), ref.Amount)
+	if rows == 1 {
+		entry = ledger.RefundApproved(ref.ID.String(), ref.MerchantID.String(), ref.Amount)
+	}
+	if _, err := PostEntry(ctx, queries, entry); err != nil {
+		return finance.RefundRef{}, fmt.Errorf("post refund approval: %w", err)
+	}
+	return ref, tx.Commit(ctx)
+}
+
+// ResolveDispute closes an open dispute. A customer resolution also files a refund request for the
+// redemption amount; the resolver cannot approve it, so a second person must.
+func (r *FinanceRepository) ResolveDispute(ctx context.Context, disputeID, resolverID uuid.UUID, resolution string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin dispute resolution: %w", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	queries := sqlc.New(tx)
+	dispute, err := queries.DisputeForResolution(ctx, toPgUUID(disputeID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return finance.ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("load dispute: %w", err)
+	}
+	if dispute.Status != "open" {
+		return finance.ErrDisputeClosed
+	}
+	status := "resolved_merchant"
+	if resolution == "customer" {
+		status = "resolved_customer"
+	}
+	rows, err := queries.ResolveDispute(ctx, sqlc.ResolveDisputeParams{ID: toPgUUID(disputeID), Status: status})
+	if err != nil {
+		return fmt.Errorf("close dispute: %w", err)
+	}
+	if rows != 1 {
+		return finance.ErrDisputeClosed
+	}
+	if resolution == "customer" {
+		if _, err := queries.InsertRefund(ctx, sqlc.InsertRefundParams{
+			VoucherID:   dispute.VoucherID,
+			Amount:      dispute.Amount,
+			Reason:      "dispute resolved for customer",
+			Status:      "requested",
+			RequestedBy: toPgUUID(resolverID),
+		}); err != nil {
+			return fmt.Errorf("file dispute refund: %w", err)
+		}
+	}
+	return tx.Commit(ctx)
+}

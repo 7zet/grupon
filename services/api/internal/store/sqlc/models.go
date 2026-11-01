@@ -919,19 +919,20 @@ type DealMedium struct {
 }
 
 type DealOption struct {
-	ID            pgtype.UUID        `json:"id"`
-	DealID        pgtype.UUID        `json:"deal_id"`
-	Title         []byte             `json:"title"`
-	OriginalPrice int64              `json:"original_price"`
-	DealPrice     int64              `json:"deal_price"`
-	Currency      CurrencyCode       `json:"currency"`
-	StockTotal    int32              `json:"stock_total"`
-	StockSold     int32              `json:"stock_sold"`
-	StockReserved int32              `json:"stock_reserved"`
-	SortOrder     int32              `json:"sort_order"`
-	IsActive      bool               `json:"is_active"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	Title              []byte             `json:"title"`
+	OriginalPrice      int64              `json:"original_price"`
+	DealPrice          int64              `json:"deal_price"`
+	Currency           CurrencyCode       `json:"currency"`
+	StockTotal         int32              `json:"stock_total"`
+	StockSold          int32              `json:"stock_sold"`
+	StockReserved      int32              `json:"stock_reserved"`
+	SortOrder          int32              `json:"sort_order"`
+	IsActive           bool               `json:"is_active"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
 }
 
 type Dispute struct {
@@ -1199,6 +1200,8 @@ type Redemption struct {
 	ReversedByUserID   pgtype.UUID        `json:"reversed_by_user_id"`
 	ReversalReason     pgtype.Text        `json:"reversal_reason"`
 	PayoutRunID        pgtype.UUID        `json:"payout_run_id"`
+	GeoLat             pgtype.Numeric     `json:"geo_lat"`
+	GeoLng             pgtype.Numeric     `json:"geo_lng"`
 }
 
 type RefreshToken struct {

@@ -42,6 +42,8 @@ func (a *FinanceAPI) staffActor(w http.ResponseWriter, r *http.Request) (finance
 		role = string(identity.RoleSuperadmin)
 	case account.HasRole(identity.RoleFinance):
 		role = string(identity.RoleFinance)
+	case account.HasRole(identity.RoleSupport):
+		role = string(identity.RoleSupport)
 	}
 	return finance.Actor{UserID: account.ID, Role: role}, account, true
 }
@@ -144,6 +146,46 @@ func (a *FinanceAPI) MarkRefundPaid(w http.ResponseWriter, r *http.Request, id g
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (a *FinanceAPI) ReconcilePayout(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.MarkPayoutReconciled(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *FinanceAPI) ApproveRefund(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.ApproveRefund(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *FinanceAPI) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	var body gen.ResolveDisputeRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	if err := a.finance.ResolveDispute(r.Context(), actor, uuid.UUID(id), string(body.Resolution)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (a *FinanceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, redemption.ErrReversalWindowClosed):
@@ -168,6 +210,12 @@ func (a *FinanceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusConflict, "merchant_on_hold", nil, nil)
 	case errors.Is(err, finance.ErrNotPending):
 		writeProblem(w, r, http.StatusConflict, "not_pending", nil, nil)
+	case errors.Is(err, finance.ErrNotSent):
+		writeProblem(w, r, http.StatusConflict, "not_sent", nil, nil)
+	case errors.Is(err, finance.ErrDisputeClosed):
+		writeProblem(w, r, http.StatusConflict, "dispute_closed", nil, nil)
+	case errors.Is(err, finance.ErrInvalidResolution):
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_resolution", nil, nil)
 	case errors.Is(err, finance.ErrSelfApproval):
 		writeProblem(w, r, http.StatusForbidden, "self_approval", nil, nil)
 	default:
@@ -227,4 +275,28 @@ func (s apiServer) MarkRefundPaid(w http.ResponseWriter, r *http.Request, id gen
 		return
 	}
 	s.ServerInterface.MarkRefundPaid(w, r, id)
+}
+
+func (s apiServer) ReconcilePayout(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.ReconcilePayout(w, r, id)
+		return
+	}
+	s.ServerInterface.ReconcilePayout(w, r, id)
+}
+
+func (s apiServer) ApproveRefund(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.ApproveRefund(w, r, id)
+		return
+	}
+	s.ServerInterface.ApproveRefund(w, r, id)
+}
+
+func (s apiServer) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.ResolveDispute(w, r, id)
+		return
+	}
+	s.ServerInterface.ResolveDispute(w, r, id)
 }

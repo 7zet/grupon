@@ -23,7 +23,9 @@ type Querier interface {
 	AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error
 	ApplyVoucherUse(ctx context.Context, arg ApplyVoucherUseParams) (int64, error)
 	ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunParams) (int64, error)
+	ApproveRequestedRefund(ctx context.Context, arg ApproveRequestedRefundParams) (ApproveRequestedRefundRow, error)
 	AttachRedemptionToRun(ctx context.Context, arg AttachRedemptionToRunParams) (int64, error)
+	ClaimOutboxBatch(ctx context.Context, batchSize int32) ([]ClaimOutboxBatchRow, error)
 	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
 	ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenParams) (pgtype.UUID, error)
 	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
@@ -65,6 +67,7 @@ type Querier interface {
 	DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerchantLocationRowParams) (int64, error)
 	DeleteSavedDeal(ctx context.Context, arg DeleteSavedDealParams) (int64, error)
 	DismissOpenReviewReport(ctx context.Context, id pgtype.UUID) (int64, error)
+	DisputeForResolution(ctx context.Context, id pgtype.UUID) (DisputeForResolutionRow, error)
 	EnsureLedgerAccount(ctx context.Context, arg EnsureLedgerAccountParams) (pgtype.UUID, error)
 	ExpireDueVouchers(ctx context.Context, arg ExpireDueVouchersParams) ([]pgtype.UUID, error)
 	ExpireEndedDeals(ctx context.Context) (int64, error)
@@ -168,6 +171,8 @@ type Querier interface {
 	LockUserForUpdate(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error)
 	LockVoucherForRedemption(ctx context.Context, arg LockVoucherForRedemptionParams) (LockVoucherForRedemptionRow, error)
 	MarkMediaAssetReady(ctx context.Context, arg MarkMediaAssetReadyParams) (int64, error)
+	MarkOutboxPublished(ctx context.Context, id pgtype.UUID) error
+	MarkPayoutRunReconciled(ctx context.Context, id pgtype.UUID) (int64, error)
 	MarkRedemptionReversed(ctx context.Context, arg MarkRedemptionReversedParams) (int64, error)
 	MarkRefundSucceeded(ctx context.Context, arg MarkRefundSucceededParams) (int64, error)
 	MarkReservationsReleased(ctx context.Context, orderID pgtype.UUID) ([]MarkReservationsReleasedRow, error)
@@ -175,6 +180,7 @@ type Querier interface {
 	MarkUserEmailVerified(ctx context.Context, id pgtype.UUID) error
 	MarkVoucherRefunded(ctx context.Context, id pgtype.UUID) (int64, error)
 	MerchantLocationBelongsTo(ctx context.Context, arg MerchantLocationBelongsToParams) (bool, error)
+	MerchantLocationCoords(ctx context.Context, arg MerchantLocationCoordsParams) (MerchantLocationCoordsRow, error)
 	MerchantOnHold(ctx context.Context, merchantID pgtype.UUID) (bool, error)
 	// Merchant workspace: the signed-in merchant's business, branches and dashboard aggregates.
 	// Every query is scoped by merchant_id; callers never pass an unscoped id.
@@ -194,6 +200,7 @@ type Querier interface {
 	RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetailRow, error)
 	ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) error
 	ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (pgtype.UUID, error)
+	ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (int64, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	RevokeRefreshFamily(ctx context.Context, familyID pgtype.UUID) error
 	RevokeRefreshTokenByHash(ctx context.Context, tokenHash string) error
@@ -230,6 +237,7 @@ type Querier interface {
 	UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error)
 	VoucherCodeExists(ctx context.Context, code string) (bool, error)
 	VoucherForRefund(ctx context.Context, id pgtype.UUID) (VoucherForRefundRow, error)
+	VoucherIDByBackupCodeHMAC(ctx context.Context, zaxiraCodeHmac pgtype.Text) (pgtype.UUID, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -59,7 +59,11 @@ func (a *MerchantRedemptionAPI) RedeemMerchantVoucher(w http.ResponseWriter, r *
 	if _, ok := decodeBody(w, r, &body); !ok {
 		return
 	}
-	view, err := a.redemption.Redeem(r.Context(), merchantID, actor, uuid.UUID(id), uuid.UUID(body.LocationId))
+	var geo *redemption.Geo
+	if body.Lat != nil && body.Lng != nil {
+		geo = &redemption.Geo{Lat: float64(*body.Lat), Lng: float64(*body.Lng)}
+	}
+	view, err := a.redemption.Redeem(r.Context(), merchantID, actor, uuid.UUID(id), uuid.UUID(body.LocationId), geo)
 	if err != nil {
 		a.fail(w, r, err)
 		return

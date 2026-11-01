@@ -22,7 +22,7 @@ const fraudBurstLimit = 5
 // UseVoucher records one use of a voucher inside a single transaction: the row is locked, the count
 // and status change, the redemption row and its ledger entry are written, and the audit row follows.
 // It returns false when the voucher cannot be used at this moment (BR-03, BR-08).
-func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry) (bool, error) {
+func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry, geo *redemption.Geo) (bool, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return false, fmt.Errorf("begin redemption: %w", err)
@@ -74,9 +74,14 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 		Sequence:    int32(sequence),
 		Amount:      amount,
 		Commission:  commission,
+		GeoLat:      geoCoordinate(geo, func(g *redemption.Geo) float64 { return g.Lat }),
+		GeoLng:      geoCoordinate(geo, func(g *redemption.Geo) float64 { return g.Lng }),
 	})
 	if err != nil {
 		return false, fmt.Errorf("insert redemption: %w", err)
+	}
+	if err := fraudGeoAndTimeRules(ctx, queries, merchantID, locationID, audit.ActorID, geo, at); err != nil {
+		return false, err
 	}
 	// Fraud rule (PRD §12.1): more than five redemptions by one staff member in a minute is a burst. The
 	// merchant's payouts are held until a fraud analyst reviews it.

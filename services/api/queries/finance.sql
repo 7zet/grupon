@@ -118,3 +118,27 @@ SELECT r.id, r.voucher_id, r.amount, r.status, r.requested_by FROM refunds r WHE
 -- name: MarkRefundSucceeded :execrows
 UPDATE refunds SET status = 'succeeded', approved_by = COALESCE(approved_by, sqlc.arg(approver_id)), updated_at = now()
 WHERE id = sqlc.arg(id) AND status = 'approved';
+
+-- name: ClaimOutboxBatch :many
+SELECT id, topic, payload FROM outbox WHERE published_at IS NULL ORDER BY created_at, id LIMIT sqlc.arg(batch_size) FOR UPDATE SKIP LOCKED;
+
+-- name: MarkOutboxPublished :exec
+UPDATE outbox SET published_at = now() WHERE id = sqlc.arg(id);
+
+-- name: MarkPayoutRunReconciled :execrows
+UPDATE payout_runs SET status = 'reconciled', updated_at = now() WHERE id = sqlc.arg(id) AND status = 'sent';
+
+-- name: ApproveRequestedRefund :one
+UPDATE refunds r SET status = 'approved', approved_by = sqlc.arg(approver_id), updated_at = now()
+FROM vouchers v
+WHERE r.id = sqlc.arg(id) AND r.status = 'requested' AND r.requested_by <> sqlc.arg(approver_id) AND v.id = r.voucher_id
+RETURNING r.id, r.amount, r.voucher_id, v.merchant_id;
+
+-- name: DisputeForResolution :one
+SELECT d.id, d.redemption_id, d.status, r.voucher_id, r.merchant_id, r.amount, r.commission, r.payout_run_id
+FROM disputes d JOIN redemptions r ON r.id = d.redemption_id
+WHERE d.id = sqlc.arg(id) FOR UPDATE OF d;
+
+-- name: ResolveDispute :execrows
+UPDATE disputes SET status = sqlc.arg(status), resolved_at = now() WHERE id = sqlc.arg(id) AND status = 'open';
+

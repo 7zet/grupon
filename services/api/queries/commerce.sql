@@ -23,7 +23,7 @@ SELECT id FROM users WHERE id = sqlc.arg(user_id) AND deleted_at IS NULL FOR UPD
 
 -- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
-       o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
+       o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
        d.status AS deal_status, d.kind AS deal_kind, d.starts_at, d.ends_at, d.max_per_user,
        d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        m.status AS merchant_status
@@ -179,9 +179,10 @@ WHERE id = sqlc.arg(id);
 
 -- name: InsertVoucher :exec
 INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
-                      status, valid_from, valid_until)
+                      status, valid_from, valid_until, redemptions_allowed, zaxira_code_hmac)
 VALUES (sqlc.arg(id), sqlc.arg(order_item_id), sqlc.arg(user_id), sqlc.arg(deal_id), sqlc.arg(option_id),
-        sqlc.arg(merchant_id), sqlc.arg(code), sqlc.arg(qr_token), 'active', sqlc.arg(valid_from), sqlc.arg(valid_until));
+        sqlc.arg(merchant_id), sqlc.arg(code), sqlc.arg(qr_token), 'active', sqlc.arg(valid_from), sqlc.arg(valid_until),
+        sqlc.arg(redemptions_allowed), sqlc.arg(zaxira_code_hmac));
 
 -- name: VoucherCodeExists :one
 SELECT EXISTS (SELECT 1 FROM vouchers WHERE code = sqlc.arg(code)) AS taken;

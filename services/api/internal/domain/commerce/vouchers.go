@@ -3,6 +3,7 @@ package commerce
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -22,6 +23,10 @@ type VoucherView struct {
 	Voucher Voucher
 	Option  OptionRecord
 	Deal    catalog.DealSummary
+	// BackupCode is derived from the voucher and shown next to the QR for offline staff entry.
+	BackupCode string
+	// QRExpiresAt is when the current QR token rotates.
+	QRExpiresAt time.Time
 }
 
 // ListVouchers returns one page of the user's vouchers with their deals.
@@ -99,7 +104,15 @@ func (s *Service) voucherViews(ctx context.Context, vouchers []Voucher) ([]Vouch
 		if !ok {
 			return nil, fmt.Errorf("voucher %s references a missing deal", voucher.ID)
 		}
-		views = append(views, VoucherView{Voucher: voucher, Option: option, Deal: deal})
+		// The stored token is only a seed; the live token rotates with the window.
+		voucher.QRToken = s.signer.Sign(voucher.ID)
+		views = append(views, VoucherView{
+			Voucher:     voucher,
+			Option:      option,
+			Deal:        deal,
+			BackupCode:  s.signer.BackupCode(voucher.ID),
+			QRExpiresAt: s.signer.NextRotation(),
+		})
 	}
 	return views, nil
 }

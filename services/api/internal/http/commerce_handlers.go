@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
@@ -453,19 +454,35 @@ func mapOrder(order commerce.Order) gen.Order {
 func mapVoucher(view commerce.VoucherView) gen.Voucher {
 	merchant := mapMerchant(merchantOf(view.Deal))
 	return gen.Voucher{
-		Id:         gen.Uuid(view.Voucher.ID),
-		Code:       view.Voucher.Code,
-		QrToken:    view.Voucher.QRToken,
-		Status:     gen.VoucherStatus(view.Voucher.Status),
-		ValidFrom:  view.Voucher.ValidFrom,
-		ValidUntil: view.Voucher.ValidUntil,
-		RedeemedAt: view.Voucher.RedeemedAt,
-		Deal:       mapDealSummary(view.Deal),
-		Merchant:   merchant,
-		Option:     mapOptionRecord(view.Option),
+		Id:               gen.Uuid(view.Voucher.ID),
+		Code:             view.Voucher.Code,
+		QrToken:          view.Voucher.QRToken,
+		QrTokenExpiresAt: timeOrNil(view.QRExpiresAt),
+		BackupCode:       stringOrNil(view.BackupCode),
+		Status:           gen.VoucherStatus(view.Voucher.Status),
+		ValidFrom:        view.Voucher.ValidFrom,
+		ValidUntil:       view.Voucher.ValidUntil,
+		RedeemedAt:       view.Voucher.RedeemedAt,
+		Deal:             mapDealSummary(view.Deal),
+		Merchant:         merchant,
+		Option:           mapOptionRecord(view.Option),
 	}
 }
 
 func merchantOf(deal catalog.DealSummary) catalog.Merchant {
 	return deal.Merchant
+}
+
+func timeOrNil(value time.Time) *time.Time {
+	if value.IsZero() {
+		return nil
+	}
+	return &value
+}
+
+func stringOrNil(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/grupon/grupon/services/api/internal/domain/finance"
 	"github.com/grupon/grupon/services/api/internal/domain/ledger"
 	"github.com/grupon/grupon/services/api/internal/domain/moderation"
+	"github.com/grupon/grupon/services/api/internal/domain/outbox"
 	"github.com/grupon/grupon/services/api/internal/domain/redemption"
 	"github.com/grupon/grupon/services/api/internal/store"
 	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
@@ -168,7 +169,7 @@ func TestRedemptionBurstHoldsMerchantPayouts(t *testing.T) {
 		voucherID, _, _, _ := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
 		if _, err := repo.Redeem(ctx, merchantID, voucherID, locationID, time.Now(), redemption.AuditEntry{
 			ActorID: cashierID, Role: "merchant_cashier", VoucherID: voucherID, Action: "voucher_redeemed",
-		}); err != nil {
+		}, nil); err != nil {
 			t.Fatalf("redeem %d: %v", i, err)
 		}
 	}
@@ -198,4 +199,62 @@ func paymentEntry(itemID, merchantID string, price int64) ledger.Entry {
 func testCode() string {
 	raw := strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))
 	return raw[0:4] + "-" + raw[4:8]
+}
+
+func TestSupportApprovesRefundOlderThanFourteenDays(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	voucherID, buyerID, _, _ := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	if _, err := fixture.pool.Exec(ctx, `UPDATE orders SET paid_at = now() - interval '20 days'
+		WHERE id = (SELECT oi.order_id FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id WHERE v.id = $1)`, voucherID); err != nil {
+		t.Fatal(err)
+	}
+	service := finance.NewService(store.NewFinanceRepository(fixture.pool), time.Now)
+	refundID, err := service.RequestRefund(ctx, buyerID, voucherID, "late request")
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	var status string
+	if err := fixture.pool.QueryRow(ctx, `SELECT status FROM refunds WHERE id=$1`, refundID).Scan(&status); err != nil || status != "requested" {
+		t.Fatalf("refund status = %q, err = %v; want requested", status, err)
+	}
+	supportID := seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`)
+	support := finance.Actor{UserID: supportID, Role: "support"}
+	if err := service.ApproveRefund(ctx, support, refundID); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+	if err := service.ApproveRefund(ctx, support, refundID); !errors.Is(err, finance.ErrNotPending) {
+		t.Fatalf("second approval: got %v", err)
+	}
+	if err := fixture.pool.QueryRow(ctx, `SELECT status FROM vouchers WHERE id=$1`, voucherID).Scan(&status); err != nil || status != "refunded" {
+		t.Fatalf("voucher status = %q, err = %v", status, err)
+	}
+	if ok, err := service.Reconcile(ctx); err != nil || !ok {
+		t.Fatalf("reconcile after approval: ok=%v err=%v", ok, err)
+	}
+	if diff := unbalancedLines(t, fixture); diff != 0 {
+		t.Fatalf("ledger unbalanced after refund approval: %d", diff)
+	}
+}
+
+func TestOutboxPublishesEachEventOnce(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	var published []string
+	relay := outbox.NewRelay(store.NewOutboxRepository(fixture.pool), func(_ context.Context, topic string, _ []byte) error {
+		published = append(published, topic)
+		return nil
+	})
+	first, err := relay.Run(ctx, 1000)
+	if err != nil || first < 1 {
+		t.Fatalf("first run: published=%d err=%v", first, err)
+	}
+	if len(published) != first {
+		t.Fatalf("publisher saw %d events, relay reported %d", len(published), first)
+	}
+	second, err := relay.Run(ctx, 1000)
+	if err != nil || second != 0 {
+		t.Fatalf("second run: published=%d err=%v; want 0", second, err)
+	}
 }

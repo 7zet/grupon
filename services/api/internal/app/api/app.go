@@ -120,13 +120,13 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 			workspaceService, authAPI, logger),
 		Moderation: httpapi.NewModerationAPI(moderation.NewService(store.NewModerationRepository(pool, store.NewCatalogRepository(pool), store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool))), time.Now), authAPI, logger),
 		MerchantRedemption: httpapi.NewMerchantRedemptionAPI(
-			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now),
+			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now).WithBackupCodes(commerceService.Signer().BackupCodeHMAC),
 			workspaceService, authAPI, logger),
 		Reviews:      httpapi.NewReviewAPI(reviews.NewService(store.NewReviewRepository(pool)), authAPI, logger),
 		AdminReports: httpapi.NewAdminReportsAPI(moderation.NewReportService(store.NewAdminReportRepository(pool, store.NewReviewRepository(pool))), authAPI, logger),
 		Finance: httpapi.NewFinanceAPI(
 			finance.NewService(store.NewFinanceRepository(pool), time.Now),
-			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now),
+			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now).WithBackupCodes(commerceService.Signer().BackupCodeHMAC),
 			workspaceService, authAPI, logger),
 		MediaFiles: http.StripPrefix("/media/", http.FileServer(http.Dir(mediaStore.Root()))),
 	})

@@ -205,3 +205,14 @@
 - Worker: breakage and reconciliation run in every sweep.
 - Seed: seeded sales are posted to the ledger, and the seed clears ledger tables.
 - NOT YET DONE in step 6: QR rotation every 30 seconds and the zaxira code (column added, unused); multi-use set per deal option (every voucher is single-use today); outbox publisher (rows are written, nothing sends them); reconciled status after the bank confirms a payout; support approval endpoint for refunds older than 14 days; dispute resolution endpoint; off-hours and distance fraud rules; the legacy payouts table is unused.
+
+## Moliya yadrosi: ergashuv qismi (DEALO-FIN-2)
+- QR tokeni har 30 soniyada almashadi (`gv2:<id>:<oyna>`, HMAC). Oldingi oyna ham qabul qilinadi (soat farqi uchun); eski token `ErrQRExpired`. Voucher sahifasi har 30 soniyada qayta so'raydi (`qr_token_expires_at`). Web tomoni hali ulanmagan.
+- Zaxira kod: 8 belgi, `XXXX-XXXX`, voucher id va server kalitidan hosil bo'ladi; bazada faqat HMAC saqlanadi (`zaxira_code_hmac`). Merchant `code` yoki zaxira kod bilan topadi (`WithBackupCodes`).
+- Har bir deal variantida `redemptions_allowed` (1..50, default 1). Voucher sotib olinganda nusxa olinadi.
+- Outbox: worker har 30 soniyada 100 tadan qator oladi (`FOR UPDATE SKIP LOCKED`), yuboradi, belgilaydi; xato bo'lsa butun partiya qaytadi (at-least-once). Hozircha transport - log; broker keyin.
+- Payout `sent` -> `reconciled`: `POST /admin/payouts/{id}/reconcile` (finance/superadmin).
+- 14 kundan keyingi refund: `requested`; support (yoki finance) `POST /admin/refunds/{id}/approve` bilan tasdiqlaydi; so'rovchi tasdiqlay olmaydi. Vaucher faol bo'lsa prepaid dan chiqadi; ishlatilgan bo'lsa (nizo) merchant qaytaradi (`refund_from_merchant`).
+- Nizo: `POST /admin/disputes/{id}/resolve` `customer` (refund so'rovi ochiladi) yoki `merchant` (payout ozod).
+- Qo'shimcha fraud qoidalari (faqat signal, payout'ni o'zi to'xtatmaydi): `off_hours` - Toshkent vaqti bilan 07:00 dan oldin yoki 23:00 dan keyin; `distance` - xodim qurilmasi filialdan 500 m dan uzoq (ixtiyoriy `lat`/`lng` redeem so'rovida). Geo `redemptions.geo_lat/geo_lng` ga yoziladi.
+- Support roli endi `staffActor` orqali kiradi (faqat tasdiqlash endpointlari uchun).

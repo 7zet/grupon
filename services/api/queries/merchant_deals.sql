@@ -47,11 +47,12 @@ JOIN subcategories sc ON sc.id = d.subcategory_id
 WHERE d.id = sqlc.arg(id) AND d.merchant_id = sqlc.arg(merchant_id) AND d.deleted_at IS NULL;
 
 -- name: UpsertDealOption :exec
-INSERT INTO deal_options (id, deal_id, title, original_price, deal_price, stock_total, sort_order, is_active)
+INSERT INTO deal_options (id, deal_id, title, original_price, deal_price, stock_total, sort_order, is_active, redemptions_allowed)
 VALUES (sqlc.arg(id), sqlc.arg(deal_id), sqlc.arg(title), sqlc.arg(original_price), sqlc.arg(deal_price),
-        sqlc.arg(stock_total), sqlc.arg(sort_order), sqlc.arg(is_active))
+        sqlc.arg(stock_total), sqlc.arg(sort_order), sqlc.arg(is_active), sqlc.arg(redemptions_allowed))
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, original_price = EXCLUDED.original_price,
   deal_price = EXCLUDED.deal_price, stock_total = EXCLUDED.stock_total, sort_order = EXCLUDED.sort_order,
+  redemptions_allowed = EXCLUDED.redemptions_allowed,
   is_active = EXCLUDED.is_active, updated_at = now()
 WHERE deal_options.deal_id = EXCLUDED.deal_id;
 

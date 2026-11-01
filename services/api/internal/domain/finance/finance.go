@@ -21,16 +21,19 @@ const (
 
 // Errors for the finance rules. The HTTP layer maps them to problem codes.
 var (
-	ErrForbidden      = errors.New("finance: role may not do this")
-	ErrNothingToPay   = errors.New("finance: no redemptions are ready for payout")
-	ErrMerchantOnHold = errors.New("finance: merchant is on payout hold")
-	ErrNotPending     = errors.New("finance: payout is not waiting for approval")
-	ErrSelfApproval   = errors.New("finance: the person who prepared a payout cannot approve it")
-	ErrNotFound       = errors.New("finance: record not found")
-	ErrNotOwner       = errors.New("finance: voucher belongs to another buyer")
-	ErrNotRefundable  = errors.New("finance: voucher cannot be refunded")
-	ErrDisputeExists  = errors.New("finance: a dispute is already open for this redemption")
-	ErrNoRedemption   = errors.New("finance: voucher has no redemption to dispute")
+	ErrForbidden         = errors.New("finance: role may not do this")
+	ErrNothingToPay      = errors.New("finance: no redemptions are ready for payout")
+	ErrMerchantOnHold    = errors.New("finance: merchant is on payout hold")
+	ErrNotPending        = errors.New("finance: payout is not waiting for approval")
+	ErrSelfApproval      = errors.New("finance: the person who prepared a payout cannot approve it")
+	ErrNotFound          = errors.New("finance: record not found")
+	ErrNotOwner          = errors.New("finance: voucher belongs to another buyer")
+	ErrNotRefundable     = errors.New("finance: voucher cannot be refunded")
+	ErrDisputeExists     = errors.New("finance: a dispute is already open for this redemption")
+	ErrNoRedemption      = errors.New("finance: voucher has no redemption to dispute")
+	ErrNotSent           = errors.New("finance: payout has not been sent to the bank")
+	ErrDisputeClosed     = errors.New("finance: dispute is already resolved")
+	ErrInvalidResolution = errors.New("finance: resolution must be customer or merchant")
 )
 
 // Actor is the staff or buyer making the request.
@@ -80,6 +83,13 @@ type VoucherValue struct {
 	Remaining  int64
 }
 
+// RefundRef is an approved refund ready for the bank.
+type RefundRef struct {
+	ID         uuid.UUID
+	MerchantID uuid.UUID
+	Amount     int64
+}
+
 // Repository performs the writes. Each method is one transaction that also writes its ledger entry
 // and outbox event, so a money movement is either fully recorded or not at all.
 type Repository interface {
@@ -97,6 +107,12 @@ type Repository interface {
 	ActiveVouchers(ctx context.Context) ([]VoucherValue, error)
 	CustomerPrepaidBalance(ctx context.Context) (int64, error)
 	RecordFinding(ctx context.Context, check string, expected, actual int64) error
+	// MarkPayoutReconciled moves a sent run to reconciled. It reports false when the run is not sent.
+	MarkPayoutReconciled(ctx context.Context, runID uuid.UUID) (bool, error)
+	// ApproveRefund approves a requested refund and posts it. The approver cannot be the requester.
+	ApproveRefund(ctx context.Context, refundID, approverID uuid.UUID) (RefundRef, error)
+	// ResolveDispute closes an open dispute; customer resolutions also open a refund request.
+	ResolveDispute(ctx context.Context, disputeID, resolverID uuid.UUID, resolution string) error
 }
 
 // Service applies the finance rules.
@@ -271,6 +287,46 @@ func Remaining(unitPrice int64, allowed, used int) int64 {
 		remaining -= shares[i]
 	}
 	return remaining
+}
+
+// MarkPayoutReconciled records that the bank confirmed a sent payout run.
+func (s *Service) MarkPayoutReconciled(ctx context.Context, actor Actor, runID uuid.UUID) error {
+	if !financeOperator(actor.Role) {
+		return ErrForbidden
+	}
+	ok, err := s.repo.MarkPayoutReconciled(ctx, runID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotSent
+	}
+	return nil
+}
+
+// ApproveRefund is the support step for refunds past the 14-day window and for dispute refunds.
+func (s *Service) ApproveRefund(ctx context.Context, actor Actor, refundID uuid.UUID) error {
+	if !supportOrFinance(actor.Role) {
+		return ErrForbidden
+	}
+	_, err := s.repo.ApproveRefund(ctx, refundID, actor.UserID)
+	return err
+}
+
+// ResolveDispute decides a dispute. "customer" refunds the buyer (a refund request for support to
+// approve); "merchant" releases the held payout.
+func (s *Service) ResolveDispute(ctx context.Context, actor Actor, disputeID uuid.UUID, resolution string) error {
+	if !supportOrFinance(actor.Role) {
+		return ErrForbidden
+	}
+	if resolution != "customer" && resolution != "merchant" {
+		return ErrInvalidResolution
+	}
+	return s.repo.ResolveDispute(ctx, disputeID, actor.UserID, resolution)
+}
+
+func supportOrFinance(role string) bool {
+	return role == "support" || role == "finance" || role == "superadmin"
 }
 
 func financeOperator(role string) bool {

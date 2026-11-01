@@ -37,20 +37,22 @@ func (q *Queries) ApplyVoucherUse(ctx context.Context, arg ApplyVoucherUseParams
 }
 
 const insertRedemption = `-- name: InsertRedemption :one
-INSERT INTO redemptions (voucher_id, merchant_id, merchant_location_id, staff_user_id, sequence, amount, commission)
+INSERT INTO redemptions (voucher_id, merchant_id, merchant_location_id, staff_user_id, sequence, amount, commission, geo_lat, geo_lng)
 VALUES ($1, $2, $3, $4,
-        $5, $6, $7)
+        $5, $6, $7, $8::float8, $9::float8)
 RETURNING id
 `
 
 type InsertRedemptionParams struct {
-	VoucherID   pgtype.UUID `json:"voucher_id"`
-	MerchantID  pgtype.UUID `json:"merchant_id"`
-	LocationID  pgtype.UUID `json:"location_id"`
-	StaffUserID pgtype.UUID `json:"staff_user_id"`
-	Sequence    int32       `json:"sequence"`
-	Amount      int64       `json:"amount"`
-	Commission  int64       `json:"commission"`
+	VoucherID   pgtype.UUID   `json:"voucher_id"`
+	MerchantID  pgtype.UUID   `json:"merchant_id"`
+	LocationID  pgtype.UUID   `json:"location_id"`
+	StaffUserID pgtype.UUID   `json:"staff_user_id"`
+	Sequence    int32         `json:"sequence"`
+	Amount      int64         `json:"amount"`
+	Commission  int64         `json:"commission"`
+	GeoLat      pgtype.Float8 `json:"geo_lat"`
+	GeoLng      pgtype.Float8 `json:"geo_lng"`
 }
 
 func (q *Queries) InsertRedemption(ctx context.Context, arg InsertRedemptionParams) (pgtype.UUID, error) {
@@ -62,6 +64,8 @@ func (q *Queries) InsertRedemption(ctx context.Context, arg InsertRedemptionPara
 		arg.Sequence,
 		arg.Amount,
 		arg.Commission,
+		arg.GeoLat,
+		arg.GeoLng,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
@@ -170,6 +174,27 @@ func (q *Queries) MarkRedemptionReversed(ctx context.Context, arg MarkRedemption
 	return result.RowsAffected(), nil
 }
 
+const merchantLocationCoords = `-- name: MerchantLocationCoords :one
+SELECT lat::float8 AS lat, lng::float8 AS lng FROM merchant_locations WHERE id = $1 AND merchant_id = $2
+`
+
+type MerchantLocationCoordsParams struct {
+	ID         pgtype.UUID `json:"id"`
+	MerchantID pgtype.UUID `json:"merchant_id"`
+}
+
+type MerchantLocationCoordsRow struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+func (q *Queries) MerchantLocationCoords(ctx context.Context, arg MerchantLocationCoordsParams) (MerchantLocationCoordsRow, error) {
+	row := q.db.QueryRow(ctx, merchantLocationCoords, arg.ID, arg.MerchantID)
+	var i MerchantLocationCoordsRow
+	err := row.Scan(&i.Lat, &i.Lng)
+	return i, err
+}
+
 const rollBackVoucherUse = `-- name: RollBackVoucherUse :execrows
 UPDATE vouchers SET
   redemptions_used = redemptions_used - 1,
@@ -185,4 +210,15 @@ func (q *Queries) RollBackVoucherUse(ctx context.Context, id pgtype.UUID) (int64
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const voucherIDByBackupCodeHMAC = `-- name: VoucherIDByBackupCodeHMAC :one
+SELECT id FROM vouchers WHERE zaxira_code_hmac = $1
+`
+
+func (q *Queries) VoucherIDByBackupCodeHMAC(ctx context.Context, zaxiraCodeHmac pgtype.Text) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, voucherIDByBackupCodeHMAC, zaxiraCodeHmac)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }

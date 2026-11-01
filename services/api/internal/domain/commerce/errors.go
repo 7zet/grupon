@@ -31,6 +31,7 @@ var (
 	ErrInvalidSignature        = payments.ErrInvalidSignature
 	ErrMalformedWebhook        = payments.ErrMalformedWebhook
 	ErrInvalidQRToken          = errors.New("commerce: invalid qr token")
+	ErrQRExpired               = errors.New("commerce: qr token rotated, fetch a new one")
 )
 
 // ValidationError reports one invalid input field with a stable code.

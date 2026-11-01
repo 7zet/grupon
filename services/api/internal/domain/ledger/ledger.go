@@ -178,6 +178,20 @@ func RefundApproved(refundID, merchantID string, amount int64) Entry {
 	}
 }
 
+// RefundFromMerchant moves money back from the merchant after a redeemed voucher was disputed in the
+// customer's favour. The redemption already moved the value to the merchant, so the merchant pays it back.
+func RefundFromMerchant(refundID, merchantID string, amount int64) Entry {
+	return Entry{
+		Kind:           "refund_from_merchant",
+		Reference:      refundID,
+		IdempotencyKey: "refund_from_merchant:" + refundID,
+		Lines: []Line{
+			{Account: MerchantPayable + merchantID, Direction: Debit, Amount: amount},
+			{Account: RefundsPayable, Direction: Credit, Amount: amount},
+		},
+	}
+}
+
 // RefundPaid records the refund leaving the bank.
 func RefundPaid(refundID string, amount int64) Entry {
 	return Entry{

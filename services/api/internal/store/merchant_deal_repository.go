@@ -310,14 +310,15 @@ func writeDealChildren(ctx context.Context, queries *sqlc.Queries, dealID uuid.U
 		}
 		keep = append(keep, id)
 		if err := queries.UpsertDealOption(ctx, sqlc.UpsertDealOptionParams{
-			ID:            toPgUUID(id),
-			DealID:        toPgUUID(dealID),
-			Title:         mustJSON(option.Title),
-			OriginalPrice: option.OriginalPrice,
-			DealPrice:     option.DealPrice,
-			StockTotal:    int32(option.StockTotal),
-			SortOrder:     int32(option.SortOrder),
-			IsActive:      option.IsActive,
+			ID:                 toPgUUID(id),
+			DealID:             toPgUUID(dealID),
+			Title:              mustJSON(option.Title),
+			OriginalPrice:      option.OriginalPrice,
+			DealPrice:          option.DealPrice,
+			StockTotal:         int32(option.StockTotal),
+			SortOrder:          int32(option.SortOrder),
+			IsActive:           option.IsActive,
+			RedemptionsAllowed: int32(max(1, option.RedemptionsAllowed)),
 		}); err != nil {
 			return fmt.Errorf("upsert deal option: %w", err)
 		}

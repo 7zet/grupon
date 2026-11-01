@@ -251,17 +251,19 @@ func (s *Service) issueVoucher(ctx context.Context, tx Store, userID uuid.UUID, 
 		return err
 	}
 	return tx.InsertVoucher(ctx, Voucher{
-		ID:          voucherID,
-		OrderItemID: item.ID,
-		UserID:      userID,
-		DealID:      item.DealID,
-		OptionID:    item.OptionID,
-		MerchantID:  record.MerchantID,
-		Code:        code,
-		QRToken:     s.signer.Sign(voucherID),
-		Status:      VoucherActive,
-		ValidFrom:   validFrom,
-		ValidUntil:  validUntil,
+		ID:                 voucherID,
+		OrderItemID:        item.ID,
+		UserID:             userID,
+		DealID:             item.DealID,
+		OptionID:           item.OptionID,
+		MerchantID:         record.MerchantID,
+		Code:               code,
+		QRToken:            s.signer.Sign(voucherID),
+		Status:             VoucherActive,
+		ValidFrom:          validFrom,
+		ValidUntil:         validUntil,
+		RedemptionsAllowed: max(1, record.RedemptionsAllowed),
+		ZaxiraCodeHMAC:     s.signer.BackupCodeHMAC(s.signer.BackupCode(voucherID)),
 	})
 }
 

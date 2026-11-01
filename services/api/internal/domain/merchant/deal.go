@@ -43,6 +43,9 @@ var (
 	reviewedStatuses = map[string]bool{DealScheduled: true, DealActive: true, DealPaused: true, DealSoldOut: true}
 )
 
+// MaxRedemptionsPerVoucher caps how many times one voucher may be used (multi-use options).
+const MaxRedemptionsPerVoucher = 50
+
 // DealOptionData is one purchasable variant with its own price and stock.
 type DealOptionData struct {
 	ID            *uuid.UUID
@@ -52,6 +55,8 @@ type DealOptionData struct {
 	StockTotal    int
 	SortOrder     int
 	IsActive      bool
+	// RedemptionsAllowed is how many times the voucher of this option can be used. 0 means 1.
+	RedemptionsAllowed int
 }
 
 // DealMediaData is one image that has been uploaded through the media library.
@@ -154,6 +159,9 @@ func (in DealInput) Validate() error {
 		}
 		if option.OriginalPrice < 1 || option.DealPrice < 1 || option.DealPrice > option.OriginalPrice {
 			return &InvalidInputError{Field: "options", Code: "price"}
+		}
+		if option.RedemptionsAllowed < 0 || option.RedemptionsAllowed > MaxRedemptionsPerVoucher {
+			return &InvalidInputError{Field: "options", Code: "range"}
 		}
 		if option.StockTotal < 0 {
 			return &InvalidInputError{Field: "options", Code: "range"}

@@ -206,6 +206,9 @@ func dealInput(body gen.DealInput) merchant.DealInput {
 			SortOrder:     option.SortOrder,
 			IsActive:      option.IsActive,
 		}
+		if option.RedemptionsAllowed != nil {
+			data.RedemptionsAllowed = *option.RedemptionsAllowed
+		}
 		if option.Id != nil {
 			id := uuid.UUID(*option.Id)
 			data.ID = &id

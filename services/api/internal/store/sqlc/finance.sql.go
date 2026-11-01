@@ -84,6 +84,37 @@ func (q *Queries) ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunPara
 	return result.RowsAffected(), nil
 }
 
+const approveRequestedRefund = `-- name: ApproveRequestedRefund :one
+UPDATE refunds r SET status = 'approved', approved_by = $1, updated_at = now()
+FROM vouchers v
+WHERE r.id = $2 AND r.status = 'requested' AND r.requested_by <> $1 AND v.id = r.voucher_id
+RETURNING r.id, r.amount, r.voucher_id, v.merchant_id
+`
+
+type ApproveRequestedRefundParams struct {
+	ApproverID pgtype.UUID `json:"approver_id"`
+	ID         pgtype.UUID `json:"id"`
+}
+
+type ApproveRequestedRefundRow struct {
+	ID         pgtype.UUID `json:"id"`
+	Amount     int64       `json:"amount"`
+	VoucherID  pgtype.UUID `json:"voucher_id"`
+	MerchantID pgtype.UUID `json:"merchant_id"`
+}
+
+func (q *Queries) ApproveRequestedRefund(ctx context.Context, arg ApproveRequestedRefundParams) (ApproveRequestedRefundRow, error) {
+	row := q.db.QueryRow(ctx, approveRequestedRefund, arg.ApproverID, arg.ID)
+	var i ApproveRequestedRefundRow
+	err := row.Scan(
+		&i.ID,
+		&i.Amount,
+		&i.VoucherID,
+		&i.MerchantID,
+	)
+	return i, err
+}
+
 const attachRedemptionToRun = `-- name: AttachRedemptionToRun :execrows
 UPDATE redemptions SET payout_run_id = $1
 WHERE id = $2 AND payout_run_id IS NULL
@@ -102,6 +133,36 @@ func (q *Queries) AttachRedemptionToRun(ctx context.Context, arg AttachRedemptio
 	return result.RowsAffected(), nil
 }
 
+const claimOutboxBatch = `-- name: ClaimOutboxBatch :many
+SELECT id, topic, payload FROM outbox WHERE published_at IS NULL ORDER BY created_at, id LIMIT $1 FOR UPDATE SKIP LOCKED
+`
+
+type ClaimOutboxBatchRow struct {
+	ID      pgtype.UUID `json:"id"`
+	Topic   string      `json:"topic"`
+	Payload []byte      `json:"payload"`
+}
+
+func (q *Queries) ClaimOutboxBatch(ctx context.Context, batchSize int32) ([]ClaimOutboxBatchRow, error) {
+	rows, err := q.db.Query(ctx, claimOutboxBatch, batchSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClaimOutboxBatchRow{}
+	for rows.Next() {
+		var i ClaimOutboxBatchRow
+		if err := rows.Scan(&i.ID, &i.Topic, &i.Payload); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const customerPrepaidTotal = `-- name: CustomerPrepaidTotal :one
 SELECT COALESCE(SUM(CASE WHEN jl.direction = 'credit' THEN jl.amount ELSE -jl.amount END), 0)::bigint AS balance
 FROM journal_lines jl JOIN ledger_accounts la ON la.id = jl.account_id
@@ -113,6 +174,39 @@ func (q *Queries) CustomerPrepaidTotal(ctx context.Context) (int64, error) {
 	var balance int64
 	err := row.Scan(&balance)
 	return balance, err
+}
+
+const disputeForResolution = `-- name: DisputeForResolution :one
+SELECT d.id, d.redemption_id, d.status, r.voucher_id, r.merchant_id, r.amount, r.commission, r.payout_run_id
+FROM disputes d JOIN redemptions r ON r.id = d.redemption_id
+WHERE d.id = $1 FOR UPDATE OF d
+`
+
+type DisputeForResolutionRow struct {
+	ID           pgtype.UUID `json:"id"`
+	RedemptionID pgtype.UUID `json:"redemption_id"`
+	Status       string      `json:"status"`
+	VoucherID    pgtype.UUID `json:"voucher_id"`
+	MerchantID   pgtype.UUID `json:"merchant_id"`
+	Amount       int64       `json:"amount"`
+	Commission   int64       `json:"commission"`
+	PayoutRunID  pgtype.UUID `json:"payout_run_id"`
+}
+
+func (q *Queries) DisputeForResolution(ctx context.Context, id pgtype.UUID) (DisputeForResolutionRow, error) {
+	row := q.db.QueryRow(ctx, disputeForResolution, id)
+	var i DisputeForResolutionRow
+	err := row.Scan(
+		&i.ID,
+		&i.RedemptionID,
+		&i.Status,
+		&i.VoucherID,
+		&i.MerchantID,
+		&i.Amount,
+		&i.Commission,
+		&i.PayoutRunID,
+	)
+	return i, err
 }
 
 const expireVoucherRow = `-- name: ExpireVoucherRow :execrows
@@ -348,6 +442,27 @@ func (q *Queries) LockPayoutRun(ctx context.Context, id pgtype.UUID) (LockPayout
 	return i, err
 }
 
+const markOutboxPublished = `-- name: MarkOutboxPublished :exec
+UPDATE outbox SET published_at = now() WHERE id = $1
+`
+
+func (q *Queries) MarkOutboxPublished(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, markOutboxPublished, id)
+	return err
+}
+
+const markPayoutRunReconciled = `-- name: MarkPayoutRunReconciled :execrows
+UPDATE payout_runs SET status = 'reconciled', updated_at = now() WHERE id = $1 AND status = 'sent'
+`
+
+func (q *Queries) MarkPayoutRunReconciled(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, markPayoutRunReconciled, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const markRefundSucceeded = `-- name: MarkRefundSucceeded :execrows
 UPDATE refunds SET status = 'succeeded', approved_by = COALESCE(approved_by, $1), updated_at = now()
 WHERE id = $2 AND status = 'approved'
@@ -517,6 +632,23 @@ func (q *Queries) RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetai
 		&i.RequestedBy,
 	)
 	return i, err
+}
+
+const resolveDispute = `-- name: ResolveDispute :execrows
+UPDATE disputes SET status = $1, resolved_at = now() WHERE id = $2 AND status = 'open'
+`
+
+type ResolveDisputeParams struct {
+	Status string      `json:"status"`
+	ID     pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, resolveDispute, arg.Status, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const setRefundStatus = `-- name: SetRefundStatus :execrows

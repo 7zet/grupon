@@ -178,7 +178,7 @@ func (q *Queries) FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (in
 
 const getDealOptionRows = `-- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
-       o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
+       o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
        d.status AS deal_status, d.kind AS deal_kind, d.starts_at, d.ends_at, d.max_per_user,
        d.is_giftable, d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        m.status AS merchant_status
@@ -189,25 +189,26 @@ WHERE o.id = ANY($1::uuid[])
 `
 
 type GetDealOptionRowsRow struct {
-	OptionID          pgtype.UUID        `json:"option_id"`
-	DealID            pgtype.UUID        `json:"deal_id"`
-	OptionTitle       []byte             `json:"option_title"`
-	OriginalPrice     int64              `json:"original_price"`
-	DealPrice         int64              `json:"deal_price"`
-	StockTotal        int32              `json:"stock_total"`
-	StockSold         int32              `json:"stock_sold"`
-	StockReserved     int32              `json:"stock_reserved"`
-	OptionIsActive    bool               `json:"option_is_active"`
-	DealStatus        DealStatus         `json:"deal_status"`
-	DealKind          DealKind           `json:"deal_kind"`
-	StartsAt          pgtype.Timestamptz `json:"starts_at"`
-	EndsAt            pgtype.Timestamptz `json:"ends_at"`
-	MaxPerUser        int32              `json:"max_per_user"`
-	IsGiftable        bool               `json:"is_giftable"`
-	VoucherValidDays  pgtype.Int4        `json:"voucher_valid_days"`
-	VoucherValidUntil pgtype.Timestamptz `json:"voucher_valid_until"`
-	MerchantID        pgtype.UUID        `json:"merchant_id"`
-	MerchantStatus    MerchantStatus     `json:"merchant_status"`
+	OptionID           pgtype.UUID        `json:"option_id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	OptionTitle        []byte             `json:"option_title"`
+	OriginalPrice      int64              `json:"original_price"`
+	DealPrice          int64              `json:"deal_price"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
+	StockTotal         int32              `json:"stock_total"`
+	StockSold          int32              `json:"stock_sold"`
+	StockReserved      int32              `json:"stock_reserved"`
+	OptionIsActive     bool               `json:"option_is_active"`
+	DealStatus         DealStatus         `json:"deal_status"`
+	DealKind           DealKind           `json:"deal_kind"`
+	StartsAt           pgtype.Timestamptz `json:"starts_at"`
+	EndsAt             pgtype.Timestamptz `json:"ends_at"`
+	MaxPerUser         int32              `json:"max_per_user"`
+	IsGiftable         bool               `json:"is_giftable"`
+	VoucherValidDays   pgtype.Int4        `json:"voucher_valid_days"`
+	VoucherValidUntil  pgtype.Timestamptz `json:"voucher_valid_until"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	MerchantStatus     MerchantStatus     `json:"merchant_status"`
 }
 
 func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error) {
@@ -225,6 +226,7 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 			&i.OptionTitle,
 			&i.OriginalPrice,
 			&i.DealPrice,
+			&i.RedemptionsAllowed,
 			&i.StockTotal,
 			&i.StockSold,
 			&i.StockReserved,
@@ -570,22 +572,25 @@ func (q *Queries) InsertStockReservation(ctx context.Context, arg InsertStockRes
 
 const insertVoucher = `-- name: InsertVoucher :exec
 INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
-                      status, valid_from, valid_until)
+                      status, valid_from, valid_until, redemptions_allowed, zaxira_code_hmac)
 VALUES ($1, $2, $3, $4, $5,
-        $6, $7, $8, 'active', $9, $10)
+        $6, $7, $8, 'active', $9, $10,
+        $11, $12)
 `
 
 type InsertVoucherParams struct {
-	ID          pgtype.UUID        `json:"id"`
-	OrderItemID pgtype.UUID        `json:"order_item_id"`
-	UserID      pgtype.UUID        `json:"user_id"`
-	DealID      pgtype.UUID        `json:"deal_id"`
-	OptionID    pgtype.UUID        `json:"option_id"`
-	MerchantID  pgtype.UUID        `json:"merchant_id"`
-	Code        string             `json:"code"`
-	QrToken     string             `json:"qr_token"`
-	ValidFrom   pgtype.Timestamptz `json:"valid_from"`
-	ValidUntil  pgtype.Timestamptz `json:"valid_until"`
+	ID                 pgtype.UUID        `json:"id"`
+	OrderItemID        pgtype.UUID        `json:"order_item_id"`
+	UserID             pgtype.UUID        `json:"user_id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	OptionID           pgtype.UUID        `json:"option_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	Code               string             `json:"code"`
+	QrToken            string             `json:"qr_token"`
+	ValidFrom          pgtype.Timestamptz `json:"valid_from"`
+	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
+	ZaxiraCodeHmac     pgtype.Text        `json:"zaxira_code_hmac"`
 }
 
 func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) error {
@@ -600,6 +605,8 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 		arg.QrToken,
 		arg.ValidFrom,
 		arg.ValidUntil,
+		arg.RedemptionsAllowed,
+		arg.ZaxiraCodeHmac,
 	)
 	return err
 }

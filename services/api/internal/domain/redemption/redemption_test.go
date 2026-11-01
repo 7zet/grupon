@@ -23,6 +23,10 @@ type fakeRepo struct {
 
 func (f *fakeRepo) Find(context.Context, uuid.UUID) (commerce.Voucher, error) { return f.voucher, nil }
 
+func (f *fakeRepo) FindByBackupCode(_ context.Context, _ string) (commerce.Voucher, error) {
+	return commerce.Voucher{}, ErrNotFound
+}
+
 func (f *fakeRepo) FindByCode(_ context.Context, code string) (commerce.Voucher, error) {
 	if code != f.voucher.Code {
 		return commerce.Voucher{}, ErrNotFound
@@ -34,7 +38,7 @@ func (f *fakeRepo) LocationOwned(_ context.Context, _, locationID uuid.UUID) (bo
 	return f.locations[locationID], nil
 }
 
-func (f *fakeRepo) Redeem(_ context.Context, _, _, _ uuid.UUID, at time.Time, audit AuditEntry) (bool, error) {
+func (f *fakeRepo) Redeem(_ context.Context, _, _, _ uuid.UUID, at time.Time, audit AuditEntry, _ *Geo) (bool, error) {
 	if f.voucher.Status != StatusActive || !at.Before(f.voucher.ValidUntil) {
 		return false, nil
 	}
@@ -85,26 +89,26 @@ func TestLookupByCodeAndToken(t *testing.T) {
 
 func TestRedeemOnceAndReportStates(t *testing.T) {
 	repo, service, merchantID, locationID, actor := newFixture(StatusActive, now.AddDate(0, 1, 0))
-	view, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID)
+	view, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if view.Voucher.Status != StatusRedeemed || repo.audits != 1 {
 		t.Fatalf("redeem: status=%s audits=%d", view.Voucher.Status, repo.audits)
 	}
-	if _, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID); !errors.Is(err, ErrAlreadyRedeemed) {
+	if _, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID, nil); !errors.Is(err, ErrAlreadyRedeemed) {
 		t.Fatalf("second redeem: got %v", err)
 	}
 }
 
 func TestRedeemRejectsExpiredAndForeignLocation(t *testing.T) {
 	repo, service, merchantID, locationID, actor := newFixture(StatusActive, now.Add(-time.Hour))
-	if _, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID); !errors.Is(err, ErrExpired) {
+	if _, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID, nil); !errors.Is(err, ErrExpired) {
 		t.Fatalf("expired voucher: got %v", err)
 	}
 
 	repo, service, merchantID, _, actor = newFixture(StatusActive, now.AddDate(0, 1, 0))
-	_, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, uuid.New())
+	_, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, uuid.New(), nil)
 	var invalid *merchant.InvalidInputError
 	if !errors.As(err, &invalid) || invalid.Code != "location_not_found" {
 		t.Fatalf("foreign location: got %v", err)

@@ -488,24 +488,26 @@ func (q *Queries) UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams
 }
 
 const upsertDealOption = `-- name: UpsertDealOption :exec
-INSERT INTO deal_options (id, deal_id, title, original_price, deal_price, stock_total, sort_order, is_active)
+INSERT INTO deal_options (id, deal_id, title, original_price, deal_price, stock_total, sort_order, is_active, redemptions_allowed)
 VALUES ($1, $2, $3, $4, $5,
-        $6, $7, $8)
+        $6, $7, $8, $9)
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, original_price = EXCLUDED.original_price,
   deal_price = EXCLUDED.deal_price, stock_total = EXCLUDED.stock_total, sort_order = EXCLUDED.sort_order,
+  redemptions_allowed = EXCLUDED.redemptions_allowed,
   is_active = EXCLUDED.is_active, updated_at = now()
 WHERE deal_options.deal_id = EXCLUDED.deal_id
 `
 
 type UpsertDealOptionParams struct {
-	ID            pgtype.UUID `json:"id"`
-	DealID        pgtype.UUID `json:"deal_id"`
-	Title         []byte      `json:"title"`
-	OriginalPrice int64       `json:"original_price"`
-	DealPrice     int64       `json:"deal_price"`
-	StockTotal    int32       `json:"stock_total"`
-	SortOrder     int32       `json:"sort_order"`
-	IsActive      bool        `json:"is_active"`
+	ID                 pgtype.UUID `json:"id"`
+	DealID             pgtype.UUID `json:"deal_id"`
+	Title              []byte      `json:"title"`
+	OriginalPrice      int64       `json:"original_price"`
+	DealPrice          int64       `json:"deal_price"`
+	StockTotal         int32       `json:"stock_total"`
+	SortOrder          int32       `json:"sort_order"`
+	IsActive           bool        `json:"is_active"`
+	RedemptionsAllowed int32       `json:"redemptions_allowed"`
 }
 
 func (q *Queries) UpsertDealOption(ctx context.Context, arg UpsertDealOptionParams) error {
@@ -518,6 +520,7 @@ func (q *Queries) UpsertDealOption(ctx context.Context, arg UpsertDealOptionPara
 		arg.StockTotal,
 		arg.SortOrder,
 		arg.IsActive,
+		arg.RedemptionsAllowed,
 	)
 	return err
 }
