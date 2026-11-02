@@ -3,11 +3,13 @@ import { formatMoney } from '@grupon/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 
 import { AccountShell } from '@/components/account-shell';
+import { BuyerNotifications } from '@/components/buyer-notifications';
 import { loadForVisitor, accountGet } from '@/lib/account-api';
 import { pickText } from '@/lib/localized';
 import { Link } from '@/i18n/navigation';
 
 type VoucherPage = components['schemas']['VoucherPage'];
+type NotificationList = components['schemas']['NotificationList'];
 
 const TABS = ['active', 'used', 'expired'] as const;
 type Tab = (typeof TABS)[number];
@@ -36,8 +38,11 @@ export default async function CouponsPage({
     accountGet<VoucherPage>(`/me/vouchers?status=${API_STATUS[tab]}`),
   );
 
+  const notifications = await accountGet<NotificationList>('/me/notifications');
+
   return (
     <AccountShell section="coupons">
+      <BuyerNotifications items={notifications.items} />
       <div role="tablist" className="flex gap-2">
         {TABS.map((item) => (
           <Link

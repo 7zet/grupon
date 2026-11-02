@@ -417,6 +417,138 @@ func (q *Queries) LatestRedemptionForVoucher(ctx context.Context, voucherID pgty
 	return i, err
 }
 
+const listOpenDisputes = `-- name: ListOpenDisputes :many
+SELECT d.id, v.code AS voucher_code, m.display_name AS merchant_name, rd.amount, d.status, d.reason, d.created_at
+FROM disputes d
+JOIN redemptions rd ON rd.id = d.redemption_id
+JOIN vouchers v ON v.id = rd.voucher_id
+JOIN merchants m ON m.id = rd.merchant_id
+WHERE d.status = 'open'
+ORDER BY d.created_at
+`
+
+type ListOpenDisputesRow struct {
+	ID           pgtype.UUID        `json:"id"`
+	VoucherCode  string             `json:"voucher_code"`
+	MerchantName string             `json:"merchant_name"`
+	Amount       int64              `json:"amount"`
+	Status       string             `json:"status"`
+	Reason       string             `json:"reason"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListOpenDisputes(ctx context.Context) ([]ListOpenDisputesRow, error) {
+	rows, err := q.db.Query(ctx, listOpenDisputes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOpenDisputesRow{}
+	for rows.Next() {
+		var i ListOpenDisputesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VoucherCode,
+			&i.MerchantName,
+			&i.Amount,
+			&i.Status,
+			&i.Reason,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOpenPayoutRuns = `-- name: ListOpenPayoutRuns :many
+SELECT pr.id, m.display_name AS merchant_name, pr.amount, pr.status, pr.created_at
+FROM payout_runs pr JOIN merchants m ON m.id = pr.merchant_id
+WHERE pr.status IN ('pending_approval', 'approved', 'sent')
+ORDER BY pr.created_at
+`
+
+type ListOpenPayoutRunsRow struct {
+	ID           pgtype.UUID        `json:"id"`
+	MerchantName string             `json:"merchant_name"`
+	Amount       int64              `json:"amount"`
+	Status       string             `json:"status"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListOpenPayoutRuns(ctx context.Context) ([]ListOpenPayoutRunsRow, error) {
+	rows, err := q.db.Query(ctx, listOpenPayoutRuns)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOpenPayoutRunsRow{}
+	for rows.Next() {
+		var i ListOpenPayoutRunsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.MerchantName,
+			&i.Amount,
+			&i.Status,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOpenRefunds = `-- name: ListOpenRefunds :many
+SELECT r.id, v.code AS voucher_code, r.amount, r.status, r.reason, r.created_at
+FROM refunds r JOIN vouchers v ON v.id = r.voucher_id
+WHERE r.status IN ('requested', 'approved', 'processing')
+ORDER BY r.created_at
+`
+
+type ListOpenRefundsRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	VoucherCode string             `json:"voucher_code"`
+	Amount      int64              `json:"amount"`
+	Status      string             `json:"status"`
+	Reason      string             `json:"reason"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListOpenRefunds(ctx context.Context) ([]ListOpenRefundsRow, error) {
+	rows, err := q.db.Query(ctx, listOpenRefunds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOpenRefundsRow{}
+	for rows.Next() {
+		var i ListOpenRefundsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VoucherCode,
+			&i.Amount,
+			&i.Status,
+			&i.Reason,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockPayoutRun = `-- name: LockPayoutRun :one
 SELECT id, merchant_id, amount, status, prepared_by FROM payout_runs WHERE id = $1 FOR UPDATE
 `
@@ -666,6 +798,21 @@ func (q *Queries) SetRefundStatus(ctx context.Context, arg SetRefundStatusParams
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const setVoucherDisputeFlag = `-- name: SetVoucherDisputeFlag :exec
+UPDATE vouchers SET dispute_open = $1::boolean, updated_at = now() WHERE id = $2
+`
+
+type SetVoucherDisputeFlagParams struct {
+	Open bool        `json:"open"`
+	ID   pgtype.UUID `json:"id"`
+}
+
+// PRD 08: an open dispute sets the voucher flag, which blocks redemption until the dispute closes.
+func (q *Queries) SetVoucherDisputeFlag(ctx context.Context, arg SetVoucherDisputeFlagParams) error {
+	_, err := q.db.Exec(ctx, setVoucherDisputeFlag, arg.Open, arg.ID)
+	return err
 }
 
 const voucherForRefund = `-- name: VoucherForRefund :one

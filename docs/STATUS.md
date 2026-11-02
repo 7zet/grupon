@@ -22,6 +22,15 @@ Earlier history is in git (`git log -- docs/`).
   Reviewers move `submitted` → `in_review` → `approved` or `rejected`, with an audit row per decision.
   Deal creation requires `approved`. Admin queue page `/admin/merchants`; merchant status page `/merchant/review`.
 
+## Done since the review
+
+- PRD state machines aligned (deal, order, payment, voucher, dispute, merchant). Categories set to the PRD list (4 open pilot categories). Public /coupons page removed. Remaining: dispute transitions beyond open and resolve, chargeback flow, fraud_hold rule, the late-payment refund record.
+
+- Redemption reversal rule and support reversal endpoint; 15-minute hold; 10-character backup codes; buyer notifications with "not me" dispute (tested end to end on localhost).
+- Merchant panel sections built and checked in the browser: staff (owner invites by phone, role change, removal), payouts with CSV statement, orders, customers, analytics (date range), reviews with one reply (editable 24 h), settings, deal calculator. Price proof is a third optional document kind.
+- Cleanup: `users.password_hash` and `google_sub` dropped (login is phone code only); `currency_code` is UZS only (migration 00018 refuses to run while any USD row exists).
+- Playwright suite: 16 of 16 pass when run one at a time (`workers: 1`). Cashier redemption is covered only inside the owner's redemption step, not as a separate cashier login.
+
 ## In progress
 
 - **Merchant panel** (`/merchant/*`): deal wizard exists but its six steps and the live preview are not
@@ -30,13 +39,17 @@ Earlier history is in git (`git log -- docs/`).
 ## Next (in order)
 
 1. Show the rejection reason to the merchant on the status page (API change needed).
-2. Merchant panel: Deal Studio (price proof, quotas, blackout, terms template, campaign calculator),
-   staff invites, reports.
+2. Merchant panel: Deal Studio (quotas, blackout, terms template), reports. Price proof upload and the
+   campaign calculator page are done; staff invites are done (browser test covers the page, not the invite flow).
 3. Redemption page for cashiers on a mobile viewport with clear states (used, expired, wrong merchant, refunded).
 4. Admin panel: moderation queue, merchants, orders, finance pages, audit log viewer.
 5. Run the Playwright suite again (not run since the finance and removal changes).
 6. Channels: Telegram Mini App and bot (Go), scanner PWA.
 7. Hardening: k6 flash-sale script, OWASP checklist, Dockerfiles, environment docs.
+
+## Full comparison with Dealo
+
+See `docs/ANALYSIS-DEALO-VS-GRUPON.md`: every Dealo module, rule, state, endpoint and test compared with the code.
 
 ## Known gaps against the PRD
 

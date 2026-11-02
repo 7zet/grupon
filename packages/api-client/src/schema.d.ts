@@ -862,7 +862,7 @@ export interface paths {
     /** List staff */
     get: operations['listMerchantStaff'];
     put?: never;
-    /** Invite manager or cashier by email */
+    /** Invite a manager or cashier by phone (owner only) */
     post: operations['inviteMerchantStaff'];
     delete?: never;
     options?: never;
@@ -1313,6 +1313,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/vouchers/{id}/reverse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5) */
+    post: operations['supportReverseVoucher'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List my notifications, newest first */
+    get: operations['listMyNotifications'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/finance/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open payouts, refunds and disputes for the finance desk */
+    get: operations['getFinanceQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1399,16 +1450,25 @@ export interface components {
     /** @enum {string} */
     DealStatus:
       | 'draft'
-      | 'pending_review'
-      | 'rejected'
+      | 'in_review'
+      | 'approved'
       | 'scheduled'
       | 'active'
       | 'paused'
-      | 'sold_out'
-      | 'expired';
+      | 'ended'
+      | 'archived'
+      | 'changes_requested';
     /** @enum {string} */
     OrderStatus:
-      'pending_payment' | 'paid' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
+      | 'created'
+      | 'awaiting_payment'
+      | 'paid'
+      | 'completed'
+      | 'expired'
+      | 'failed'
+      | 'cancelled'
+      | 'partially_refunded'
+      | 'refunded';
     DealOption: {
       id: components['schemas']['Uuid'];
       title: components['schemas']['LocalizedText'];
@@ -1647,7 +1707,14 @@ export interface components {
       /** @enum {string} */
       provider: 'mock' | 'payme' | 'click' | 'uzum';
       /** @enum {string} */
-      status: 'created' | 'pending' | 'succeeded' | 'failed' | 'refunded';
+      status:
+        | 'created'
+        | 'pending'
+        | 'succeeded'
+        | 'failed'
+        | 'chargeback_open'
+        | 'chargeback_won'
+        | 'chargeback_lost';
       /** Format: uri-reference */
       redirect_url: string;
     };
@@ -1949,8 +2016,8 @@ export interface components {
       role: 'merchant_owner' | 'merchant_manager' | 'merchant_cashier';
     };
     StaffInput: {
-      /** Format: email */
-      email: string;
+      /** @description Phone of a registered user; they must sign in once first */
+      phone: string;
       /** @enum {string} */
       role: 'merchant_manager' | 'merchant_cashier';
     };
@@ -1977,7 +2044,7 @@ export interface components {
       /** Format: date-time */
       submitted_at: string;
       /** @description Document kinds already uploaded */
-      documents?: ('certificate' | 'bank_letter')[];
+      documents?: ('certificate' | 'bank_letter' | 'price_proof')[];
     };
     MerchantReviewList: {
       items: components['schemas']['MerchantReview'][];
@@ -1987,7 +2054,7 @@ export interface components {
     };
     MerchantDocument: {
       /** @enum {string} */
-      kind: 'certificate' | 'bank_letter';
+      kind: 'certificate' | 'bank_letter' | 'price_proof';
       /** @enum {string} */
       content_type: 'application/pdf' | 'image/jpeg' | 'image/png';
       size_bytes: number;
@@ -1996,6 +2063,55 @@ export interface components {
     };
     MerchantDocumentList: {
       items: components['schemas']['MerchantDocument'][];
+    };
+    Notification: {
+      id: components['schemas']['Uuid'];
+      /** @enum {string} */
+      kind: 'voucher_redeemed';
+      voucher_id?: components['schemas']['Uuid'];
+      merchant_name: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      read_at?: string | null;
+    };
+    NotificationList: {
+      items: components['schemas']['Notification'][];
+    };
+    PayoutRunItem: {
+      id: components['schemas']['Uuid'];
+      merchant_name: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    RefundItem: {
+      id: components['schemas']['Uuid'];
+      voucher_code: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      reason: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    DisputeItem: {
+      id: components['schemas']['Uuid'];
+      voucher_code: string;
+      merchant_name: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      reason: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    FinanceQueue: {
+      payout_runs: components['schemas']['PayoutRunItem'][];
+      refunds: components['schemas']['RefundItem'][];
+      disputes: components['schemas']['DisputeItem'][];
     };
   };
   responses: {
@@ -4108,7 +4224,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        kind: 'certificate' | 'bank_letter';
+        kind: 'certificate' | 'bank_letter' | 'price_proof';
       };
       cookie?: never;
     };
@@ -4134,7 +4250,7 @@ export interface operations {
       header?: never;
       path: {
         id: components['parameters']['Id'];
-        kind: 'certificate' | 'bank_letter';
+        kind: 'certificate' | 'bank_letter' | 'price_proof';
       };
       cookie?: never;
     };
@@ -4149,6 +4265,73 @@ export interface operations {
           'application/pdf': string;
           'image/jpeg': string;
           'image/png': string;
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  supportReverseVoucher: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Reversed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMyNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  getFinanceQueue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceQueue'];
         };
       };
       default: components['responses']['Problem'];

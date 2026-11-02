@@ -14,10 +14,11 @@ import (
 
 // Deal statuses used by the review workflow. They mirror the deal_status enum.
 const (
-	statusPendingReview = "pending_review"
-	statusRejected      = "rejected"
-	statusScheduled     = "scheduled"
-	statusActive        = "active"
+	statusInReview         = "in_review"
+	statusApproved         = "approved"
+	statusChangesRequested = "changes_requested"
+	statusScheduled        = "scheduled"
+	statusActive           = "active"
 )
 
 // Errors returned by moderation. The HTTP layer maps them to problem codes.
@@ -114,7 +115,11 @@ func (s *Service) Approve(ctx context.Context, actor Actor, dealID uuid.UUID) (c
 	if record.StartsAt.After(s.now()) {
 		to = statusScheduled
 	}
-	if err := s.repo.Transition(ctx, dealID, to, "", s.audit(actor, dealID, "deal_approved", to)); err != nil {
+	// PRD 08: in_review -> approved -> scheduled or active. Both steps are written to the audit trail.
+	if err := s.repo.Transition(ctx, dealID, statusApproved, "", s.audit(actor, dealID, "deal_approved", statusApproved)); err != nil {
+		return catalog.Deal{}, err
+	}
+	if err := s.repo.Transition(ctx, dealID, to, "", s.audit(actor, dealID, "deal_published", to)); err != nil {
 		return catalog.Deal{}, err
 	}
 	return s.repo.Detail(ctx, dealID)
@@ -129,9 +134,9 @@ func (s *Service) Reject(ctx context.Context, actor Actor, dealID uuid.UUID, rea
 	if _, err := s.pending(ctx, actor, dealID); err != nil {
 		return catalog.Deal{}, err
 	}
-	audit := s.audit(actor, dealID, "deal_rejected", statusRejected)
+	audit := s.audit(actor, dealID, "deal_rejected", statusChangesRequested)
 	audit.After["reason"] = reason
-	if err := s.repo.Transition(ctx, dealID, statusRejected, reason, audit); err != nil {
+	if err := s.repo.Transition(ctx, dealID, statusChangesRequested, reason, audit); err != nil {
 		return catalog.Deal{}, err
 	}
 	return s.repo.Detail(ctx, dealID)
@@ -145,7 +150,7 @@ func (s *Service) pending(ctx context.Context, actor Actor, dealID uuid.UUID) (R
 	if err != nil {
 		return Record{}, err
 	}
-	if record.Status != statusPendingReview {
+	if record.Status != statusInReview {
 		return Record{}, ErrNotPending
 	}
 	return record, nil

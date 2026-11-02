@@ -12,7 +12,7 @@ import (
 )
 
 const countPendingDeals = `-- name: CountPendingDeals :one
-SELECT count(*) FROM deals WHERE status = 'pending_review' AND deleted_at IS NULL
+SELECT count(*) FROM deals WHERE status = 'in_review' AND deleted_at IS NULL
 `
 
 func (q *Queries) CountPendingDeals(ctx context.Context) (int64, error) {
@@ -48,7 +48,7 @@ func (q *Queries) GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDeal
 
 const listPendingDealIDs = `-- name: ListPendingDealIDs :many
 SELECT id FROM deals
-WHERE status = 'pending_review' AND deleted_at IS NULL
+WHERE status = 'in_review' AND deleted_at IS NULL
 ORDER BY updated_at ASC, id ASC
 LIMIT $2 OFFSET $1
 `
@@ -81,7 +81,7 @@ func (q *Queries) ListPendingDealIDs(ctx context.Context, arg ListPendingDealIDs
 const transitionPendingDeal = `-- name: TransitionPendingDeal :execrows
 UPDATE deals SET status = $1::deal_status,
   rejection_reason = $2, updated_at = now()
-WHERE id = $3 AND status = 'pending_review' AND deleted_at IS NULL
+WHERE id = $3 AND status IN ('in_review', 'approved') AND deleted_at IS NULL
 `
 
 type TransitionPendingDealParams struct {

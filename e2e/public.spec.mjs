@@ -6,7 +6,6 @@ for (const locale of ['uz', 'ru', 'en']) {
       '',
       '/tashkent',
       '/tashkent/beauty-and-spas',
-      '/coupons',
       '/business/seed-merchant-08',
       '/merchant',
       '/help',

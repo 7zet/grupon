@@ -43,7 +43,7 @@ export default async function MerchantReviewQueuePage({ params }: { params: Prom
                   {t(`status.${item.review_status}`)} · {new Date(item.submitted_at).toLocaleString(locale)}
                 </p>
                 <p className="flex flex-wrap gap-3">
-                  {(['certificate', 'bank_letter'] as const).map((kind) =>
+                  {(['certificate', 'bank_letter', 'price_proof'] as const).map((kind) =>
                     item.documents?.includes(kind) ? (
                       <a
                         key={kind}

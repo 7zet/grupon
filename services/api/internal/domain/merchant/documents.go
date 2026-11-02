@@ -16,6 +16,8 @@ import (
 const (
 	DocumentCertificate = "certificate"
 	DocumentBankLetter  = "bank_letter"
+	// DocumentPriceProof is optional: a price list or menu that supports the deal prices.
+	DocumentPriceProof = "price_proof"
 )
 
 // MaxDocumentBytes caps one upload. Scans of a certificate or a bank letter fit well below it.
@@ -77,7 +79,7 @@ func NewDocumentService(repo DocumentRepository, files DocumentStore) *DocumentS
 // Upload stores one document for the owner's business. Documents can change only before review
 // (draft) or after a rejection, so reviewers always read what was submitted.
 func (s *DocumentService) Upload(ctx context.Context, ownerID uuid.UUID, kind, contentType string, body io.Reader) (Document, error) {
-	if kind != DocumentCertificate && kind != DocumentBankLetter {
+	if kind != DocumentCertificate && kind != DocumentBankLetter && kind != DocumentPriceProof {
 		return Document{}, ErrDocumentKind
 	}
 	ext, ok := documentExtensions[contentType]

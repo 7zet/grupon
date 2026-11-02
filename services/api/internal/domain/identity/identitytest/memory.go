@@ -85,19 +85,14 @@ func (r *Repository) CreateUser(_ context.Context, input identity.NewUser) (iden
 		if !r.deleted[user.ID] && user.Email == input.Email {
 			return identity.User{}, identity.ErrEmailTaken
 		}
-		if input.GoogleSub != nil && user.GoogleSub != nil && *user.GoogleSub == *input.GoogleSub {
-			return identity.User{}, identity.ErrEmailTaken
-		}
 	}
 	user := identity.User{
-		ID:           uuid.Must(uuid.NewV7()),
-		Email:        input.Email,
-		PasswordHash: input.PasswordHash,
-		GoogleSub:    input.GoogleSub,
-		Name:         input.Name,
-		Locale:       input.Locale,
-		Currency:     input.Currency,
-		Status:       identity.StatusActive,
+		ID:       uuid.Must(uuid.NewV7()),
+		Email:    input.Email,
+		Name:     input.Name,
+		Locale:   input.Locale,
+		Currency: input.Currency,
+		Status:   identity.StatusActive,
 	}
 	if input.EmailVerified {
 		now := r.now()
@@ -127,26 +122,6 @@ func (r *Repository) GetUserByEmail(_ context.Context, email string) (identity.U
 		}
 	}
 	return identity.User{}, identity.ErrNotFound
-}
-
-func (r *Repository) GetUserByGoogleSub(_ context.Context, sub string) (identity.User, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for id, user := range r.users {
-		if !r.deleted[id] && user.GoogleSub != nil && *user.GoogleSub == sub {
-			return user, nil
-		}
-	}
-	return identity.User{}, identity.ErrNotFound
-}
-
-func (r *Repository) UpdatePasswordHash(_ context.Context, id uuid.UUID, hash string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	user := r.users[id]
-	user.PasswordHash = &hash
-	r.users[id] = user
-	return nil
 }
 
 func (r *Repository) MarkEmailVerified(_ context.Context, id uuid.UUID) error {
@@ -184,17 +159,6 @@ func (r *Repository) UpdateProfile(_ context.Context, id uuid.UUID, update ident
 	}
 	r.users[id] = user
 	return user, nil
-}
-
-func (r *Repository) LinkGoogleSub(_ context.Context, id uuid.UUID, sub string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	user := r.users[id]
-	if user.GoogleSub == nil {
-		user.GoogleSub = &sub
-		r.users[id] = user
-	}
-	return nil
 }
 
 func (r *Repository) TouchLastLogin(context.Context, uuid.UUID) error { return nil }

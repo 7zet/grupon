@@ -37,8 +37,6 @@ var (
 type User struct {
 	ID              uuid.UUID
 	Email           string
-	PasswordHash    *string
-	GoogleSub       *string
 	Name            string
 	Phone           *string
 	AvatarURL       *string
@@ -69,8 +67,6 @@ func (a Account) HasRole(roles ...Role) bool {
 // NewUser is the input for creating an account.
 type NewUser struct {
 	Email         string
-	PasswordHash  *string
-	GoogleSub     *string
 	Name          string
 	Locale        string
 	Currency      string

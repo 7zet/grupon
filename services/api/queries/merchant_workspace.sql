@@ -10,7 +10,7 @@ LIMIT 1;
 
 -- name: GetMerchantWorkspace :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
 WHERE id = $1 AND deleted_at IS NULL;
 
@@ -20,7 +20,7 @@ SET display_name = $2, description = $3, logo_url = $4, cover_url = $5, phone = 
     website = $7, instagram = $8, telegram = $9, updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-          instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps;
+          instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, rating_avg::float8 AS rating_avg, rating_count, commission_bps;
 
 -- name: CreateMerchantLocationWithHours :one
 INSERT INTO merchant_locations (merchant_id, city_id, address, lat, lng, opening_hours, phone)
@@ -37,7 +37,7 @@ DELETE FROM merchant_locations
 WHERE merchant_locations.id = $1 AND merchant_locations.merchant_id = $2
   AND NOT EXISTS (
     SELECT 1 FROM deal_locations dl JOIN deals d ON d.id = dl.deal_id
-    WHERE dl.merchant_location_id = merchant_locations.id AND d.status IN ('scheduled', 'active', 'sold_out')
+    WHERE dl.merchant_location_id = merchant_locations.id AND d.status IN ('scheduled', 'active')
   );
 
 -- name: MerchantLocationBelongsTo :one
@@ -84,6 +84,6 @@ LIMIT $2;
 
 -- name: DashboardPendingDealIDs :many
 SELECT id FROM deals
-WHERE merchant_id = $1 AND status = 'pending_review' AND deleted_at IS NULL
+WHERE merchant_id = $1 AND status = 'in_review' AND deleted_at IS NULL
 ORDER BY updated_at DESC
 LIMIT $2;

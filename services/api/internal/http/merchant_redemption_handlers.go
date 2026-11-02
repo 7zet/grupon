@@ -27,7 +27,7 @@ func NewMerchantRedemptionAPI(service *redemption.Service, workspace *merchant.W
 }
 
 func (a *MerchantRedemptionAPI) LookupMerchantVoucher(w http.ResponseWriter, r *http.Request) {
-	_, merchantID, ok := a.scope(w, r)
+	actor, merchantID, ok := a.scope(w, r)
 	if !ok {
 		return
 	}
@@ -42,7 +42,7 @@ func (a *MerchantRedemptionAPI) LookupMerchantVoucher(w http.ResponseWriter, r *
 	if body.Code != nil {
 		code = *body.Code
 	}
-	view, err := a.redemption.Lookup(r.Context(), merchantID, token, code)
+	view, err := a.redemption.Lookup(r.Context(), merchantID, actor.UserID, token, code)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -91,6 +91,10 @@ func (a *MerchantRedemptionAPI) fail(w http.ResponseWriter, r *http.Request, err
 	case errors.As(err, &invalid):
 		writeProblem(w, r, http.StatusUnprocessableEntity, invalid.Code, nil,
 			map[string][]string{invalid.Field: {invalid.Code}})
+	case errors.Is(err, redemption.ErrTooManyAttempts):
+		writeProblem(w, r, http.StatusTooManyRequests, "too_many_attempts", nil, nil)
+	case errors.Is(err, redemption.ErrScannerBlocked):
+		writeProblem(w, r, http.StatusTooManyRequests, "scanner_blocked", nil, nil)
 	case errors.Is(err, redemption.ErrInvalidToken):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_qr", nil, nil)
 	case errors.Is(err, redemption.ErrWrongMerchant), errors.Is(err, merchant.ErrNoMerchant), errors.Is(err, merchant.ErrForbidden):
@@ -103,8 +107,8 @@ func (a *MerchantRedemptionAPI) fail(w http.ResponseWriter, r *http.Request, err
 		writeProblem(w, r, http.StatusConflict, "voucher_expired", nil, nil)
 	case errors.Is(err, redemption.ErrRefunded):
 		writeProblem(w, r, http.StatusConflict, "voucher_refunded", nil, nil)
-	case errors.Is(err, redemption.ErrCancelled):
-		writeProblem(w, r, http.StatusConflict, "voucher_cancelled", nil, nil)
+	case errors.Is(err, redemption.ErrVoided):
+		writeProblem(w, r, http.StatusConflict, "voucher_voided", nil, nil)
 	default:
 		a.logger.ErrorContext(r.Context(), "redemption request failed",
 			slog.String("request_id", middleware.GetReqID(r.Context())),

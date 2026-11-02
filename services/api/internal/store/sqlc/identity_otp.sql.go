@@ -27,7 +27,7 @@ func (q *Queries) ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, e
 const createPhoneUser = `-- name: CreatePhoneUser :one
 INSERT INTO users (email, phone, name, locale, currency)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
+RETURNING id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
 `
 
 type CreatePhoneUserParams struct {
@@ -50,8 +50,6 @@ func (q *Queries) CreatePhoneUser(ctx context.Context, arg CreatePhoneUserParams
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,
@@ -68,7 +66,7 @@ func (q *Queries) CreatePhoneUser(ctx context.Context, arg CreatePhoneUserParams
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE phone = $1 AND deleted_at IS NULL
+SELECT id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE phone = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, error) {
@@ -77,8 +75,6 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, 
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,

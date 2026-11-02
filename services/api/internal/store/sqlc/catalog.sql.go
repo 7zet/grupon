@@ -14,7 +14,7 @@ import (
 const countPublishedDeals = `-- name: CountPublishedDeals :one
 SELECT COUNT(*)
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
 JOIN subcategories sub ON sub.id = d.subcategory_id
 CROSS JOIN LATERAL (
@@ -24,7 +24,7 @@ CROSS JOIN LATERAL (
   WHERE o.deal_id = d.id AND o.is_active = true
 ) pr
 WHERE d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND pr.min_price IS NOT NULL
   AND ($1::text IS NULL OR m.slug = $1::text)
@@ -98,27 +98,27 @@ func (q *Queries) CountPublishedReviewsForDeal(ctx context.Context, dealID pgtyp
 
 const getActiveMerchantBySlug = `-- name: GetActiveMerchantBySlug :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
-WHERE slug = $1 AND deleted_at IS NULL AND status = 'active'
+WHERE slug = $1 AND deleted_at IS NULL AND review_status = 'approved'
 `
 
 type GetActiveMerchantBySlugRow struct {
-	ID            pgtype.UUID    `json:"id"`
-	Slug          string         `json:"slug"`
-	LegalName     string         `json:"legal_name"`
-	DisplayName   string         `json:"display_name"`
-	Description   []byte         `json:"description"`
-	LogoUrl       pgtype.Text    `json:"logo_url"`
-	CoverUrl      pgtype.Text    `json:"cover_url"`
-	Phone         string         `json:"phone"`
-	Website       pgtype.Text    `json:"website"`
-	Instagram     pgtype.Text    `json:"instagram"`
-	Telegram      pgtype.Text    `json:"telegram"`
-	Status        MerchantStatus `json:"status"`
-	RatingAvg     float64        `json:"rating_avg"`
-	RatingCount   int32          `json:"rating_count"`
-	CommissionBps int32          `json:"commission_bps"`
+	ID            pgtype.UUID `json:"id"`
+	Slug          string      `json:"slug"`
+	LegalName     string      `json:"legal_name"`
+	DisplayName   string      `json:"display_name"`
+	Description   []byte      `json:"description"`
+	LogoUrl       pgtype.Text `json:"logo_url"`
+	CoverUrl      pgtype.Text `json:"cover_url"`
+	Phone         string      `json:"phone"`
+	Website       pgtype.Text `json:"website"`
+	Instagram     pgtype.Text `json:"instagram"`
+	Telegram      pgtype.Text `json:"telegram"`
+	Status        string      `json:"status"`
+	RatingAvg     float64     `json:"rating_avg"`
+	RatingCount   int32       `json:"rating_count"`
+	CommissionBps int32       `json:"commission_bps"`
 }
 
 func (q *Queries) GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error) {
@@ -154,7 +154,7 @@ FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
 WHERE d.slug = $1
   AND d.deleted_at IS NULL
-  AND d.status IN ('scheduled', 'active', 'sold_out', 'expired')
+  AND d.status IN ('scheduled', 'active', 'ended')
 `
 
 type GetDealDetailRowBySlugRow struct {
@@ -511,11 +511,11 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        m.display_name AS merchant_display_name, m.description AS merchant_description,
        m.logo_url AS merchant_logo_url, m.cover_url AS merchant_cover_url, m.phone AS merchant_phone,
        m.website AS merchant_website, m.instagram AS merchant_instagram, m.telegram AS merchant_telegram,
-       m.status AS merchant_status, m.rating_avg::float8 AS merchant_rating_avg,
+       m.rating_avg::float8 AS merchant_rating_avg,
        m.rating_count AS merchant_rating_count, m.commission_bps AS merchant_commission_bps,
        c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories c ON c.id = d.category_id
 WHERE d.id = ANY($1::uuid[])
   AND d.deleted_at IS NULL
@@ -542,7 +542,6 @@ type ListDealSummaryRowsRow struct {
 	MerchantWebsite       pgtype.Text        `json:"merchant_website"`
 	MerchantInstagram     pgtype.Text        `json:"merchant_instagram"`
 	MerchantTelegram      pgtype.Text        `json:"merchant_telegram"`
-	MerchantStatus        MerchantStatus     `json:"merchant_status"`
 	MerchantRatingAvg     float64            `json:"merchant_rating_avg"`
 	MerchantRatingCount   int32              `json:"merchant_rating_count"`
 	MerchantCommissionBps int32              `json:"merchant_commission_bps"`
@@ -582,7 +581,6 @@ func (q *Queries) ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID
 			&i.MerchantWebsite,
 			&i.MerchantInstagram,
 			&i.MerchantTelegram,
-			&i.MerchantStatus,
 			&i.MerchantRatingAvg,
 			&i.MerchantRatingCount,
 			&i.MerchantCommissionBps,
@@ -791,11 +789,11 @@ func (q *Queries) ListPublishedReviewsForMerchant(ctx context.Context, arg ListP
 const listRelatedDealIDs = `-- name: ListRelatedDealIDs :many
 SELECT d.id
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 WHERE d.subcategory_id = $1
   AND d.id <> $2
   AND d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND ($3::text = '' OR EXISTS (
     SELECT 1
@@ -883,7 +881,7 @@ WITH candidates AS (
   SELECT d.id, d.sold_count, d.starts_at, d.ends_at, d.featured_rank,
          pr.min_price, pr.max_discount
   FROM deals d
-  JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+  JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
   JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
   JOIN subcategories sub ON sub.id = d.subcategory_id
   CROSS JOIN LATERAL (
@@ -893,7 +891,7 @@ WITH candidates AS (
     WHERE o.deal_id = d.id AND o.is_active = true
   ) pr
   WHERE d.deleted_at IS NULL
-    AND d.status IN ('active', 'sold_out')
+    AND d.status = 'active'
     AND d.ends_at > now()
     AND pr.min_price IS NOT NULL
     AND ($4::text IS NULL OR m.slug = $4::text)
@@ -1034,9 +1032,9 @@ func (q *Queries) SuggestCategories(ctx context.Context, arg SuggestCategoriesPa
 const suggestDeals = `-- name: SuggestDeals :many
 SELECT d.slug, d.title
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 WHERE d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND (
     strpos(lower(immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))),
@@ -1081,7 +1079,7 @@ func (q *Queries) SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]S
 const suggestMerchants = `-- name: SuggestMerchants :many
 SELECT m.slug, m.display_name
 FROM merchants m
-WHERE m.status = 'active' AND m.deleted_at IS NULL
+WHERE m.review_status = 'approved' AND m.deleted_at IS NULL
   AND (
     strpos(lower(immutable_unaccent(m.display_name)), lower(immutable_unaccent($1::text))) > 0
     OR word_similarity(immutable_unaccent($1::text), immutable_unaccent(m.display_name)) >= 0.35

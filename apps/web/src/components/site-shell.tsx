@@ -105,9 +105,6 @@ export async function SiteShell({ children, config, locale }: Props) {
           </div>
           <div>
             <h2 className="font-semibold">{footer('discover')}</h2>
-            <Link className="mt-3 block text-small text-ink-muted" href="/coupons">
-              {t('coupons')}
-            </Link>
             <BusinessNavLink variant="text" />
             <Link className="mt-2 block text-small text-ink-muted" href="/merchant">
               {t('sell')}

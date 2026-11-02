@@ -28,7 +28,7 @@ func TestOverSellingIsImpossible(t *testing.T) {
 		JOIN deals d ON d.id = o.deal_id
 		JOIN merchants m ON m.id = d.merchant_id
 		WHERE d.status = 'active' AND d.ends_at > now()
-		  AND o.is_active AND m.status = 'active'
+		  AND o.is_active AND m.review_status = 'approved'
 		LIMIT 1`).Scan(&optionID); err != nil {
 		t.Fatal(err)
 	}
@@ -40,8 +40,8 @@ func TestOverSellingIsImpossible(t *testing.T) {
 
 	userIDs := make([]uuid.UUID, 0, 100)
 	rows, err := fixture.pool.Query(ctx, `
-		INSERT INTO users (email, name, password_hash)
-		SELECT 'buyer' || g || '@test.local', 'Buyer', 'x' FROM generate_series(1, 100) g
+		INSERT INTO users (email, name)
+		SELECT 'buyer' || g || '@test.local', 'Buyer' FROM generate_series(1, 100) g
 		RETURNING id`)
 	if err != nil {
 		t.Fatal(err)

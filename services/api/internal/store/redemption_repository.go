@@ -100,3 +100,27 @@ func (r *RedemptionRepository) View(ctx context.Context, voucher commerce.Vouche
 	}
 	return commerce.VoucherView{Voucher: voucher, Option: records[0], Deal: summaries[0]}, nil
 }
+
+// AttemptStats counts a staff member's scanner lookups for the limits.
+func (r *RedemptionRepository) AttemptStats(ctx context.Context, staffID uuid.UUID, minuteSince, blockSince time.Time) (redemption.AttemptCounts, error) {
+	row, err := sqlc.New(r.pool).RedemptionAttemptStats(ctx, sqlc.RedemptionAttemptStatsParams{
+		StaffUserID: toPgUUID(staffID),
+		MinuteSince: pgtype.Timestamptz{Time: minuteSince, Valid: true},
+		BlockSince:  pgtype.Timestamptz{Time: blockSince, Valid: true},
+	})
+	if err != nil {
+		return redemption.AttemptCounts{}, fmt.Errorf("attempt stats: %w", err)
+	}
+	return redemption.AttemptCounts{LastMinute: int(row.LastMinute), FailedRecent: int(row.FailedRecent)}, nil
+}
+
+// RecordAttempt stores one scanner lookup and whether it failed.
+func (r *RedemptionRepository) RecordAttempt(ctx context.Context, staffID uuid.UUID, failed bool) error {
+	if err := sqlc.New(r.pool).InsertRedemptionAttempt(ctx, sqlc.InsertRedemptionAttemptParams{
+		StaffUserID: toPgUUID(staffID),
+		Failed:      failed,
+	}); err != nil {
+		return fmt.Errorf("record attempt: %w", err)
+	}
+	return nil
+}

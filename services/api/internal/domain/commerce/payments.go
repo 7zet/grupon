@@ -34,7 +34,7 @@ func (s *Service) PayOrder(ctx context.Context, userID, orderID uuid.UUID, provi
 		if order.UserID != userID {
 			return ErrOrderNotFound
 		}
-		if order.Status != OrderPendingPayment {
+		if order.Status != OrderAwaitingPayment {
 			return ErrOrderNotPayable
 		}
 		now := s.now()
@@ -128,7 +128,7 @@ func (s *Service) HandleWebhook(ctx context.Context, providerName string, body [
 			}
 			return nil
 		case payments.OutcomeSucceeded:
-			if payment.Status == PaymentSucceeded || payment.Status == PaymentRefunded {
+			if payment.Status == PaymentSucceeded {
 				return nil
 			}
 			order, err := tx.LockOrder(ctx, payment.OrderID)
@@ -139,7 +139,7 @@ func (s *Service) HandleWebhook(ctx context.Context, providerName string, body [
 			if err != nil {
 				return err
 			}
-			if order.Status == OrderPendingPayment && len(reservations) > 0 {
+			if order.Status == OrderAwaitingPayment && len(reservations) > 0 {
 				settled, err := s.settlePaid(ctx, tx, payment, order.ID)
 				if err != nil {
 					return err
@@ -299,13 +299,6 @@ func (s *Service) refundLatePayment(ctx context.Context, provider payments.Provi
 		s.logger.ErrorContext(ctx, "late payment refund failed; manual refund required",
 			slog.String("payment_id", payment.ID.String()),
 			slog.String("order_id", payment.OrderID.String()),
-			slog.String("error", err.Error()),
-		)
-		return
-	}
-	if err := s.repo.SetPaymentStatus(ctx, payment.ID, PaymentRefunded); err != nil {
-		s.logger.ErrorContext(ctx, "late payment refunded but status update failed",
-			slog.String("payment_id", payment.ID.String()),
 			slog.String("error", err.Error()),
 		)
 		return

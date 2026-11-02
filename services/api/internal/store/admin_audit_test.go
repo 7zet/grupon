@@ -56,7 +56,7 @@ func pendingDeal(t *testing.T, fixture catalogFixture, ownerID, merchantID uuid.
 		},
 	}
 	dealID, err := store.NewMerchantDealRepository(fixture.pool, store.NewCatalogRepository(fixture.pool)).Insert(ctx, merchantID,
-		merchant.DealWrite{Input: in, Status: merchant.DealPendingReview, Fingerprint: merchant.ReviewFingerprint(in)},
+		merchant.DealWrite{Input: in, Status: merchant.DealInReview, Fingerprint: merchant.ReviewFingerprint(in)},
 		merchant.AuditEntry{ActorID: ownerID, Role: merchant.RoleOwner, Action: "deal_submitted", After: map[string]any{}})
 	if err != nil {
 		t.Fatalf("insert pending deal: %v", err)

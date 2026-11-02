@@ -121,6 +121,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		MerchantDeals: httpapi.NewMerchantDealAPI(
 			merchant.NewDealService(store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool)), time.Now),
 			workspaceService, authAPI, logger),
+		MerchantPanel:     httpapi.NewMerchantPanelAPI(merchant.NewPanelService(store.NewMerchantPanelRepository(pool), time.Now), merchant.NewWorkspaceService(store.NewMerchantWorkspaceRepository(pool), time.Now), authAPI, logger),
+		MerchantStaff:     httpapi.NewMerchantStaffAPI(merchant.NewStaffService(store.NewMerchantStaffRepository(pool)), merchant.NewWorkspaceService(store.NewMerchantWorkspaceRepository(pool), time.Now), authAPI, logger),
 		MerchantDocuments: httpapi.NewMerchantDocumentAPI(merchant.NewDocumentService(store.NewMerchantDocumentRepository(pool), documentStore), merchant.NewReviewService(store.NewMerchantReviewRepository(pool)), authAPI, logger),
 		MerchantReview:    httpapi.NewMerchantReviewAPI(merchant.NewReviewService(store.NewMerchantReviewRepository(pool)), authAPI, logger),
 		Moderation:        httpapi.NewModerationAPI(moderation.NewService(store.NewModerationRepository(pool, store.NewCatalogRepository(pool), store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool))), time.Now), authAPI, logger),
@@ -143,10 +145,9 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 
 const (
 	// authRateLimit is the number of attempts allowed per key in each authRateWindow.
-	authRateLimit    = 10
-	authRateWindow   = 15 * time.Minute
-	verifyEmailTTL   = 24 * time.Hour
-	resetPasswordTTL = time.Hour
+	authRateLimit  = 10
+	authRateWindow = 15 * time.Minute
+	verifyEmailTTL = 24 * time.Hour
 )
 
 // newIdentityService wires the identity rules to PostgreSQL, the mailer and the Google client.
@@ -177,14 +178,13 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		Now:        time.Now,
 		CodeSender: codeSender,
 	}, identity.Config{
-		OTPEcho:          cfg.Environment == "development",
-		OTPCooldown:      otpCooldown(cfg.Environment),
-		AccessTokenTTL:   cfg.Auth.AccessTokenTTL,
-		RefreshTokenTTL:  cfg.Auth.RefreshTokenTTL,
-		VerifyEmailTTL:   verifyEmailTTL,
-		ResetPasswordTTL: resetPasswordTTL,
-		WebBaseURL:       cfg.Auth.WebPublicURL,
-		BrandName:        cfg.Auth.BrandName,
+		OTPEcho:         cfg.Environment == "development",
+		OTPCooldown:     otpCooldown(cfg.Environment),
+		AccessTokenTTL:  cfg.Auth.AccessTokenTTL,
+		RefreshTokenTTL: cfg.Auth.RefreshTokenTTL,
+		VerifyEmailTTL:  verifyEmailTTL,
+		WebBaseURL:      cfg.Auth.WebPublicURL,
+		BrandName:       cfg.Auth.BrandName,
 	}), nil
 }
 

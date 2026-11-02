@@ -19,7 +19,7 @@ const (
 	qrPrefix         = "gv2"
 	qrRotation       = 30 * time.Second
 	minQRSecretBytes = 32
-	backupCodeLen    = 8
+	backupCodeLen    = 10
 )
 
 // QRRotation is how often a voucher QR token changes. The voucher page refreshes at this rate.
@@ -98,7 +98,7 @@ func (s *QRSigner) Verify(token string) (QRClaims, error) {
 	return QRClaims{VoucherID: id, Window: w}, nil
 }
 
-// BackupCode returns the 8-character backup code of a voucher in the XXXX-XXXX form. It is derived
+// BackupCode returns the 10-character backup code of a voucher in the XXXXX-XXXXX form. It is derived
 // from the voucher id and the server secret, so it is stable and never stored in plain text.
 func (s *QRSigner) BackupCode(voucherID uuid.UUID) string {
 	raw := s.mac([]byte("zaxira:" + voucherID.String()))
@@ -107,9 +107,9 @@ func (s *QRSigner) BackupCode(voucherID uuid.UUID) string {
 		if len(out) == backupCodeLen {
 			break
 		}
-		out = append(out, VoucherCodeAlphabet[int(b)%len(VoucherCodeAlphabet)])
+		out = append(out, backupCodeAlphabet[int(b)%len(backupCodeAlphabet)])
 	}
-	return string(out[:4]) + "-" + string(out[4:])
+	return string(out[:5]) + "-" + string(out[5:])
 }
 
 // BackupCodeHMAC is what the database stores for a backup code. The code is normalised first.

@@ -253,10 +253,17 @@ func boolValue(value *bool) bool {
 	return value != nil && *value
 }
 
+// writeJSON encodes the body before writing the status, so an encoding failure becomes a 500 instead of an empty 200.
 func writeJSON(w http.ResponseWriter, status int, body any) {
+	payload, err := json.Marshal(body)
 	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"code":"internal_error","status":500,"title":"Internal Server Error","type":"about:blank"}`))
+		return
+	}
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
+	_, _ = w.Write(append(payload, '\n'))
 }
 
 func writeProblem(w http.ResponseWriter, r *http.Request, status int, code string, detail *string, errs map[string][]string) {

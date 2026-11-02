@@ -8,6 +8,18 @@ import { accountGetOrNull, loadForVisitor } from '@/lib/account-api';
 
 type User = components['schemas']['User'];
 
+/** Panel sections added after the first release. Labels come from MerchantPanel so each reads in the locale. */
+const MERCHANT_LINKS = [
+  { href: '/merchant/staff', key: 'navStaff' },
+  { href: '/merchant/orders', key: 'navOrders' },
+  { href: '/merchant/payouts', key: 'navPayouts' },
+  { href: '/merchant/customers', key: 'navCustomers' },
+  { href: '/merchant/analytics', key: 'navAnalytics' },
+  { href: '/merchant/reviews', key: 'navReviews' },
+  { href: '/merchant/calculator', key: 'navCalculator' },
+  { href: '/merchant/settings', key: 'navSettings' },
+] as const;
+
 /** Role guard for the merchant panel. The API enforces the same rule on every merchant operation. */
 export default async function PanelLayout({
   children,
@@ -24,6 +36,7 @@ export default async function PanelLayout({
   if (!isMerchant) redirect(`/${locale}/merchant/register`);
 
   const t = await getTranslations('Panel');
+  const m = await getTranslations('MerchantPanel');
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <nav aria-label="Merchant" className="flex flex-wrap gap-2 border-b border-border pb-3">
@@ -63,6 +76,11 @@ export default async function PanelLayout({
         >
           {t('navRedeem')}
         </Link>
+        {MERCHANT_LINKS.map(({ href, key }) => (
+          <Link key={href} href={href} className="rounded-control-ui px-4 py-2 text-ink-muted hover:text-ink">
+            {m(key)}
+          </Link>
+        ))}
       </nav>
       <div className="mt-8">{children}</div>
     </div>

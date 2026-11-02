@@ -42,8 +42,8 @@ func TestBackupCodeIsStableAndNormalisedForLookup(t *testing.T) {
 	if code != signer.BackupCode(voucherID) {
 		t.Fatal("backup code changed between calls")
 	}
-	if len(code) != 9 || code[4] != '-' {
-		t.Fatalf("backup code %q is not XXXX-XXXX", code)
+	if len(code) != 11 || code[5] != '-' {
+		t.Fatalf("backup code %q is not XXXXX-XXXXX", code)
 	}
 	if signer.BackupCodeHMAC(code) != signer.BackupCodeHMAC(" "+strings.ToLower(code)+" ") {
 		t.Fatal("lookup hash must ignore case and surrounding spaces")

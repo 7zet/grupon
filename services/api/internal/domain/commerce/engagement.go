@@ -9,6 +9,11 @@ import (
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 )
 
+// Notifications returns the buyer's notifications, newest first.
+func (s *Service) Notifications(ctx context.Context, userID uuid.UUID) ([]Notification, error) {
+	return s.repo.Notifications(ctx, userID)
+}
+
 // RecordView notes that the user opened a deal. The store keeps only the most recent entries.
 func (s *Service) RecordView(ctx context.Context, userID, dealID uuid.UUID) error {
 	if err := s.requireDeal(ctx, dealID); err != nil {

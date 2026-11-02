@@ -1,6 +1,6 @@
 -- name: LockVoucherForRedemption :one
-SELECT v.id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
-       oi.unit_price_snapshot, m.commission_bps
+SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
+       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN merchants m ON m.id = v.merchant_id
@@ -10,7 +10,7 @@ FOR UPDATE OF v;
 -- name: ApplyVoucherUse :execrows
 UPDATE vouchers SET
   redemptions_used = redemptions_used + 1,
-  status = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN 'redeemed'::voucher_status ELSE status END,
+  status = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN 'redeemed'::voucher_status WHEN redemptions_allowed > 1 THEN 'partially_redeemed'::voucher_status ELSE status END,
   redeemed_at = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN now() ELSE redeemed_at END,
   redeemed_by_user_id = sqlc.arg(staff_user_id),
   redeemed_location_id = sqlc.arg(location_id),
@@ -48,3 +48,37 @@ SELECT id FROM vouchers WHERE zaxira_code_hmac = sqlc.arg(zaxira_code_hmac);
 
 -- name: MerchantLocationCoords :one
 SELECT lat::float8 AS lat, lng::float8 AS lng FROM merchant_locations WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id);
+
+-- name: LatestOpenRedemptionForVoucher :one
+SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
+FROM redemptions
+WHERE voucher_id = sqlc.arg(voucher_id) AND reversed_at IS NULL
+ORDER BY sequence DESC
+LIMIT 1
+FOR UPDATE;
+
+-- name: InsertBuyerNotification :exec
+INSERT INTO notifications (user_id, kind, voucher_id, merchant_name)
+VALUES (sqlc.arg(user_id), 'voucher_redeemed', sqlc.arg(voucher_id), sqlc.arg(merchant_name));
+
+-- name: NextRedemptionSequence :one
+SELECT (COALESCE(MAX(sequence), 0) + 1)::int AS next_sequence FROM redemptions WHERE voucher_id = sqlc.arg(voucher_id);
+
+-- name: RedemptionAttemptStats :one
+SELECT COUNT(*) FILTER (WHERE created_at > sqlc.arg(minute_since))::int AS last_minute,
+       COUNT(*) FILTER (WHERE failed)::int AS failed_recent
+FROM redemption_attempts
+WHERE staff_user_id = sqlc.arg(staff_user_id) AND created_at > sqlc.arg(block_since);
+
+-- name: InsertRedemptionAttempt :exec
+INSERT INTO redemption_attempts (staff_user_id, failed) VALUES (sqlc.arg(staff_user_id), sqlc.arg(failed));
+
+-- name: CompleteFullyUsedOrder :execrows
+-- PRD 08: a paid order becomes completed once none of its vouchers can still be redeemed.
+UPDATE orders o SET status = 'completed', updated_at = now()
+WHERE o.id = (SELECT oi.order_id FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id WHERE v.id = sqlc.arg(voucher_id))
+  AND o.status = 'paid'
+  AND NOT EXISTS (
+    SELECT 1 FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+    WHERE oi.order_id = o.id AND v.status IN ('issued', 'active', 'partially_redeemed')
+  );

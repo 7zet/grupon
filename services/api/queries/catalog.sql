@@ -19,9 +19,9 @@ ORDER BY sort_order, slug;
 
 -- name: GetActiveMerchantBySlug :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
-WHERE slug = $1 AND deleted_at IS NULL AND status = 'active';
+WHERE slug = $1 AND deleted_at IS NULL AND review_status = 'approved';
 
 -- name: ListMerchantLocationRows :many
 SELECT ml.id, ml.address, ml.lat::float8 AS lat, ml.lng::float8 AS lng, ml.opening_hours, ml.phone,
@@ -52,7 +52,7 @@ FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
 WHERE d.slug = $1
   AND d.deleted_at IS NULL
-  AND d.status IN ('scheduled', 'active', 'sold_out', 'expired');
+  AND d.status IN ('scheduled', 'active', 'ended');
 
 -- name: ListDealSummaryRows :many
 SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS rating_avg,
@@ -61,11 +61,11 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        m.display_name AS merchant_display_name, m.description AS merchant_description,
        m.logo_url AS merchant_logo_url, m.cover_url AS merchant_cover_url, m.phone AS merchant_phone,
        m.website AS merchant_website, m.instagram AS merchant_instagram, m.telegram AS merchant_telegram,
-       m.status AS merchant_status, m.rating_avg::float8 AS merchant_rating_avg,
+       m.rating_avg::float8 AS merchant_rating_avg,
        m.rating_count AS merchant_rating_count, m.commission_bps AS merchant_commission_bps,
        c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories c ON c.id = d.category_id
 WHERE d.id = ANY(sqlc.arg(deal_ids)::uuid[])
   AND d.deleted_at IS NULL;
@@ -87,7 +87,7 @@ WITH candidates AS (
   SELECT d.id, d.sold_count, d.starts_at, d.ends_at, d.featured_rank,
          pr.min_price, pr.max_discount
   FROM deals d
-  JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+  JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
   JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
   JOIN subcategories sub ON sub.id = d.subcategory_id
   CROSS JOIN LATERAL (
@@ -97,7 +97,7 @@ WITH candidates AS (
     WHERE o.deal_id = d.id AND o.is_active = true
   ) pr
   WHERE d.deleted_at IS NULL
-    AND d.status IN ('active', 'sold_out')
+    AND d.status = 'active'
     AND d.ends_at > now()
     AND pr.min_price IS NOT NULL
     AND (sqlc.narg('merchant')::text IS NULL OR m.slug = sqlc.narg('merchant')::text)
@@ -143,7 +143,7 @@ LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 -- name: CountPublishedDeals :one
 SELECT COUNT(*)
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
 JOIN subcategories sub ON sub.id = d.subcategory_id
 CROSS JOIN LATERAL (
@@ -153,7 +153,7 @@ CROSS JOIN LATERAL (
   WHERE o.deal_id = d.id AND o.is_active = true
 ) pr
 WHERE d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND pr.min_price IS NOT NULL
   AND (sqlc.narg('merchant')::text IS NULL OR m.slug = sqlc.narg('merchant')::text)
@@ -184,11 +184,11 @@ WHERE d.deleted_at IS NULL
 -- name: ListRelatedDealIDs :many
 SELECT d.id
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 WHERE d.subcategory_id = sqlc.arg(subcategory_id)
   AND d.id <> sqlc.arg(exclude_deal_id)
   AND d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND (sqlc.arg(city)::text = '' OR EXISTS (
     SELECT 1
@@ -225,9 +225,9 @@ LIMIT $2;
 -- name: SuggestDeals :many
 SELECT d.slug, d.title
 FROM deals d
-JOIN merchants m ON m.id = d.merchant_id AND m.status = 'active' AND m.deleted_at IS NULL
+JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 WHERE d.deleted_at IS NULL
-  AND d.status IN ('active', 'sold_out')
+  AND d.status = 'active'
   AND d.ends_at > now()
   AND (
     strpos(lower(immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))),
@@ -241,7 +241,7 @@ LIMIT sqlc.arg(page_limit);
 -- name: SuggestMerchants :many
 SELECT m.slug, m.display_name
 FROM merchants m
-WHERE m.status = 'active' AND m.deleted_at IS NULL
+WHERE m.review_status = 'approved' AND m.deleted_at IS NULL
   AND (
     strpos(lower(immutable_unaccent(m.display_name)), lower(immutable_unaccent(sqlc.arg(query)::text))) > 0
     OR word_similarity(immutable_unaccent(sqlc.arg(query)::text), immutable_unaccent(m.display_name)) >= 0.35

@@ -39,7 +39,7 @@ func (f *fakeRepo) Detail(context.Context, uuid.UUID) (catalog.Deal, error) {
 }
 
 func pendingDeal(startsAt time.Time) *fakeRepo {
-	return &fakeRepo{record: Record{ID: uuid.New(), MerchantID: uuid.New(), Status: statusPendingReview, StartsAt: startsAt}}
+	return &fakeRepo{record: Record{ID: uuid.New(), MerchantID: uuid.New(), Status: statusInReview, StartsAt: startsAt}}
 }
 
 func TestFinanceCannotModerate(t *testing.T) {
@@ -83,7 +83,7 @@ func TestRejectNeedsReasonAndOnlyPendingDeals(t *testing.T) {
 	if _, err := service.Reject(context.Background(), actor, repo.record.ID, "Photos are blurry"); err != nil {
 		t.Fatal(err)
 	}
-	if repo.to != statusRejected || repo.reason != "Photos are blurry" {
+	if repo.to != statusChangesRequested || repo.reason != "Photos are blurry" {
 		t.Fatalf("reject: to=%s reason=%q", repo.to, repo.reason)
 	}
 

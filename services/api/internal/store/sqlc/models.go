@@ -65,7 +65,6 @@ type CurrencyCode string
 
 const (
 	CurrencyCodeUZS CurrencyCode = "UZS"
-	CurrencyCodeUSD CurrencyCode = "USD"
 )
 
 func (e *CurrencyCode) Scan(src interface{}) error {
@@ -238,48 +237,6 @@ func (ns NullLocaleCode) Value() (driver.Value, error) {
 	return string(ns.LocaleCode), nil
 }
 
-type MerchantStatus string
-
-const (
-	MerchantStatusActive    MerchantStatus = "active"
-	MerchantStatusSuspended MerchantStatus = "suspended"
-)
-
-func (e *MerchantStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MerchantStatus(s)
-	case string:
-		*e = MerchantStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MerchantStatus: %T", src)
-	}
-	return nil
-}
-
-type NullMerchantStatus struct {
-	MerchantStatus MerchantStatus `json:"merchant_status"`
-	Valid          bool           `json:"valid"` // Valid is true if MerchantStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullMerchantStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.MerchantStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.MerchantStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullMerchantStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.MerchantStatus), nil
-}
-
 type OrderStatus string
 
 const (
@@ -413,49 +370,6 @@ func (ns NullPaymentStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PaymentStatus), nil
-}
-
-type PayoutStatus string
-
-const (
-	PayoutStatusPending    PayoutStatus = "pending"
-	PayoutStatusProcessing PayoutStatus = "processing"
-	PayoutStatusPaid       PayoutStatus = "paid"
-)
-
-func (e *PayoutStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = PayoutStatus(s)
-	case string:
-		*e = PayoutStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for PayoutStatus: %T", src)
-	}
-	return nil
-}
-
-type NullPayoutStatus struct {
-	PayoutStatus PayoutStatus `json:"payout_status"`
-	Valid        bool         `json:"valid"` // Valid is true if PayoutStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullPayoutStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.PayoutStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.PayoutStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullPayoutStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.PayoutStatus), nil
 }
 
 type RedemptionMethod string
@@ -856,7 +770,6 @@ type Merchant struct {
 	Website            pgtype.Text        `json:"website"`
 	Instagram          pgtype.Text        `json:"instagram"`
 	Telegram           pgtype.Text        `json:"telegram"`
-	Status             MerchantStatus     `json:"status"`
 	RatingAvg          pgtype.Numeric     `json:"rating_avg"`
 	RatingCount        int32              `json:"rating_count"`
 	CommissionBps      int32              `json:"commission_bps"`
@@ -876,6 +789,10 @@ type Merchant struct {
 	SubmittedAt        pgtype.Timestamptz `json:"submitted_at"`
 	RejectionReason    pgtype.Text        `json:"rejection_reason"`
 	ReviewedAt         pgtype.Timestamptz `json:"reviewed_at"`
+	OrderEmails        bool               `json:"order_emails"`
+	ReviewEmails       bool               `json:"review_emails"`
+	PayoutEmails       bool               `json:"payout_emails"`
+	DefaultLocationID  pgtype.UUID        `json:"default_location_id"`
 }
 
 type MerchantDocument struct {
@@ -922,6 +839,16 @@ type MerchantPayoutHold struct {
 	Reason     string             `json:"reason"`
 	HoldUntil  pgtype.Timestamptz `json:"hold_until"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type Notification struct {
+	ID           pgtype.UUID        `json:"id"`
+	UserID       pgtype.UUID        `json:"user_id"`
+	Kind         string             `json:"kind"`
+	VoucherID    pgtype.UUID        `json:"voucher_id"`
+	MerchantName string             `json:"merchant_name"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ReadAt       pgtype.Timestamptz `json:"read_at"`
 }
 
 type Order struct {
@@ -971,20 +898,6 @@ type Payment struct {
 	RawPayload        []byte             `json:"raw_payload"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
-}
-
-type Payout struct {
-	ID          pgtype.UUID        `json:"id"`
-	MerchantID  pgtype.UUID        `json:"merchant_id"`
-	PeriodStart pgtype.Date        `json:"period_start"`
-	PeriodEnd   pgtype.Date        `json:"period_end"`
-	Gross       int64              `json:"gross"`
-	Commission  int64              `json:"commission"`
-	Net         int64              `json:"net"`
-	Status      PayoutStatus       `json:"status"`
-	PaidAt      pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type PayoutRun struct {
@@ -1042,6 +955,13 @@ type Redemption struct {
 	PayoutRunID        pgtype.UUID        `json:"payout_run_id"`
 	GeoLat             pgtype.Numeric     `json:"geo_lat"`
 	GeoLng             pgtype.Numeric     `json:"geo_lng"`
+}
+
+type RedemptionAttempt struct {
+	ID          pgtype.UUID        `json:"id"`
+	StaffUserID pgtype.UUID        `json:"staff_user_id"`
+	Failed      bool               `json:"failed"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -1136,8 +1056,6 @@ type Subcategory struct {
 type User struct {
 	ID              pgtype.UUID        `json:"id"`
 	Email           string             `json:"email"`
-	PasswordHash    pgtype.Text        `json:"password_hash"`
-	GoogleSub       pgtype.Text        `json:"google_sub"`
 	Name            string             `json:"name"`
 	Phone           pgtype.Text        `json:"phone"`
 	AvatarUrl       pgtype.Text        `json:"avatar_url"`
@@ -1171,4 +1089,6 @@ type Voucher struct {
 	RedemptionsAllowed int32              `json:"redemptions_allowed"`
 	RedemptionsUsed    int32              `json:"redemptions_used"`
 	ZaxiraCodeHmac     pgtype.Text        `json:"zaxira_code_hmac"`
+	FraudHold          bool               `json:"fraud_hold"`
+	DisputeOpen        bool               `json:"dispute_open"`
 }

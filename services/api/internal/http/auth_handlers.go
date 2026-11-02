@@ -241,8 +241,6 @@ func (a *AuthAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusConflict, "email_already_registered", nil, nil)
 	case errors.Is(err, identity.ErrInvalidCredentials):
 		writeProblem(w, r, http.StatusUnauthorized, "invalid_credentials", nil, nil)
-	case errors.Is(err, identity.ErrCurrentPasswordWrong):
-		writeProblem(w, r, http.StatusUnprocessableEntity, "current_password_incorrect", nil, nil)
 	case errors.Is(err, identity.ErrAccountBlocked):
 		writeProblem(w, r, http.StatusForbidden, "account_blocked", nil, nil)
 	case errors.Is(err, identity.ErrInvalidToken):

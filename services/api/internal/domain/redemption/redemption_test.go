@@ -73,16 +73,16 @@ func newFixture(status string, validUntil time.Time) (*fakeRepo, *Service, uuid.
 
 func TestLookupByCodeAndToken(t *testing.T) {
 	repo, service, merchantID, _, _ := newFixture(StatusActive, now.AddDate(0, 1, 0))
-	if _, err := service.Lookup(context.Background(), merchantID, "", " 7kq4-m9tx "); err != nil {
+	if _, err := service.Lookup(context.Background(), merchantID, uuid.New(), "", " 7kq4-m9tx "); err != nil {
 		t.Fatalf("lookup by code: %v", err)
 	}
-	if _, err := service.Lookup(context.Background(), merchantID, "good", ""); err != nil {
+	if _, err := service.Lookup(context.Background(), merchantID, uuid.New(), "good", ""); err != nil {
 		t.Fatalf("lookup by token: %v", err)
 	}
-	if _, err := service.Lookup(context.Background(), merchantID, "forged", ""); !errors.Is(err, ErrInvalidToken) {
+	if _, err := service.Lookup(context.Background(), merchantID, uuid.New(), "forged", ""); !errors.Is(err, ErrInvalidToken) {
 		t.Fatalf("forged token: got %v", err)
 	}
-	if _, err := service.Lookup(context.Background(), uuid.New(), "", repo.voucher.Code); !errors.Is(err, ErrWrongMerchant) {
+	if _, err := service.Lookup(context.Background(), uuid.New(), uuid.New(), "", repo.voucher.Code); !errors.Is(err, ErrWrongMerchant) {
 		t.Fatalf("other merchant: got %v", err)
 	}
 }
@@ -115,6 +115,19 @@ func TestRedeemRejectsExpiredAndForeignLocation(t *testing.T) {
 	}
 }
 
+func (f *fakeRepo) AttemptStats(context.Context, uuid.UUID, time.Time, time.Time) (AttemptCounts, error) {
+	return AttemptCounts{}, nil
+}
+
+func (f *fakeRepo) RecordAttempt(context.Context, uuid.UUID, bool) error { return nil }
+
+func (f *fakeRepo) LatestOpenRedemptionForVoucher(context.Context, uuid.UUID) (Redemption, error) {
+	if f.redemption.ID == uuid.Nil {
+		return Redemption{}, ErrNotFound
+	}
+	return f.redemption, nil
+}
+
 func (f *fakeRepo) ReversalCandidate(context.Context, uuid.UUID, uuid.UUID) (Redemption, error) {
 	if f.redemption.ID == uuid.Nil {
 		return Redemption{}, ErrNotFound
@@ -141,8 +154,45 @@ func TestCashierCanReverseOnlyWithinTheWindow(t *testing.T) {
 		t.Fatalf("after window: got %v", err)
 	}
 
+	// The window binds the owner too: after 10 minutes only support can reverse.
 	owner := merchant.Actor{UserID: uuid.New(), Role: merchant.RoleOwner}
-	if err := service.Reverse(context.Background(), merchantID, owner, repo.voucher.ID, "owner fix"); err != nil || !repo.reversed {
-		t.Fatalf("owner any time: err=%v reversed=%v", err, repo.reversed)
+	repo.reversed = false
+	if err := service.Reverse(context.Background(), merchantID, owner, repo.voucher.ID, "owner fix"); !errors.Is(err, ErrReversalWindowClosed) || repo.reversed {
+		t.Fatalf("owner after window: err=%v reversed=%v", err, repo.reversed)
+	}
+	if err := service.SupportReverse(context.Background(), uuid.New(), "support", repo.voucher.ID, "wrong customer"); err != nil || !repo.reversed {
+		t.Fatalf("support after window: err=%v reversed=%v", err, repo.reversed)
+	}
+	if err := service.SupportReverse(context.Background(), uuid.New(), "admin", repo.voucher.ID, "not allowed"); !errors.Is(err, merchant.ErrForbidden) {
+		t.Fatalf("non-support reversal: got %v", err)
+	}
+}
+
+// limitedRepo reports attempt counts so the scanner limits can be tested without a database.
+type limitedRepo struct {
+	*fakeRepo
+	counts AttemptCounts
+}
+
+func (l limitedRepo) AttemptStats(context.Context, uuid.UUID, time.Time, time.Time) (AttemptCounts, error) {
+	return l.counts, nil
+}
+
+func TestScannerLimitsSlowBurstsAndBlocksFailedCodes(t *testing.T) {
+	repo, service, merchantID, _, _ := newFixture(StatusActive, now.AddDate(0, 1, 0))
+	staff := uuid.New()
+
+	burst := NewService(limitedRepo{fakeRepo: repo, counts: AttemptCounts{LastMinute: LookupsPerMinute}}, nil, func() time.Time { return now })
+	if _, err := burst.Lookup(context.Background(), merchantID, staff, "", repo.voucher.Code); !errors.Is(err, ErrTooManyAttempts) {
+		t.Fatalf("31st lookup in a minute: got %v, want ErrTooManyAttempts", err)
+	}
+
+	blocked := NewService(limitedRepo{fakeRepo: repo, counts: AttemptCounts{FailedRecent: FailedLookupLimit}}, nil, func() time.Time { return now })
+	if _, err := blocked.Lookup(context.Background(), merchantID, staff, "", repo.voucher.Code); !errors.Is(err, ErrScannerBlocked) {
+		t.Fatalf("after ten failed codes: got %v, want ErrScannerBlocked", err)
+	}
+
+	if _, err := service.Lookup(context.Background(), merchantID, staff, "", repo.voucher.Code); err != nil {
+		t.Fatalf("normal lookup: %v", err)
 	}
 }

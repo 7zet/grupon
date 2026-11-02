@@ -108,7 +108,7 @@ func (s *commerceStore) OptionRecords(ctx context.Context, optionIDs []uuid.UUID
 			VoucherValidDays:   int32PtrToInt(row.VoucherValidDays),
 			VoucherValidUntil:  timePtr(row.VoucherValidUntil),
 			MerchantID:         toUUID(row.MerchantID),
-			MerchantActive:     string(row.MerchantStatus) == "active",
+			MerchantActive:     row.MerchantActive,
 		})
 	}
 	return records, nil
@@ -178,7 +178,7 @@ func (s *commerceStore) InsertOrder(ctx context.Context, order commerce.Order, i
 	}
 	order.ID = toUUID(row.ID)
 	order.CreatedAt = row.CreatedAt.Time
-	order.Status = commerce.OrderPendingPayment
+	order.Status = commerce.OrderAwaitingPayment
 	return order, nil
 }
 
@@ -442,6 +442,29 @@ func (s *commerceStore) InsertVoucher(ctx context.Context, voucher commerce.Vouc
 		RedemptionsAllowed: int32(max(1, voucher.RedemptionsAllowed)),
 		ZaxiraCodeHmac:     pgtype.Text{String: voucher.ZaxiraCodeHMAC, Valid: voucher.ZaxiraCodeHMAC != ""},
 	})
+}
+
+func (s *commerceStore) Notifications(ctx context.Context, userID uuid.UUID) ([]commerce.Notification, error) {
+	rows, err := s.q.ListBuyerNotifications(ctx, toPgUUID(userID))
+	if err != nil {
+		return nil, fmt.Errorf("list notifications: %w", err)
+	}
+	out := make([]commerce.Notification, 0, len(rows))
+	for _, row := range rows {
+		item := commerce.Notification{
+			ID:           toUUID(row.ID),
+			Kind:         row.Kind,
+			MerchantName: row.MerchantName,
+			CreatedAt:    row.CreatedAt.Time,
+			ReadAt:       timePtr(row.ReadAt),
+		}
+		if row.VoucherID.Valid {
+			id := toUUID(row.VoucherID)
+			item.VoucherID = &id
+		}
+		out = append(out, item)
+	}
+	return out, nil
 }
 
 func (s *commerceStore) ListVouchers(ctx context.Context, userID uuid.UUID, status string, limit, offset int) ([]commerce.Voucher, int64, error) {

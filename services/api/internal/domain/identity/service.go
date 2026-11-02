@@ -16,10 +16,9 @@ import (
 
 // Lifetimes and branding used by the service.
 type Config struct {
-	AccessTokenTTL   time.Duration
-	RefreshTokenTTL  time.Duration
-	VerifyEmailTTL   time.Duration
-	ResetPasswordTTL time.Duration
+	AccessTokenTTL  time.Duration
+	RefreshTokenTTL time.Duration
+	VerifyEmailTTL  time.Duration
 	// WebBaseURL is the public web origin used to build links in emails, without a trailing slash.
 	WebBaseURL string
 	// OTPEcho returns the sign-in code in the response. Only development may enable it.
@@ -267,8 +266,7 @@ func (s *Service) account(ctx context.Context, user User) (Account, error) {
 }
 
 const (
-	kindVerifyEmail   = "verify_email"
-	kindResetPassword = "reset_password"
+	kindVerifyEmail = "verify_email"
 )
 
 // allow spends one attempt on every key. A limiter failure is logged and the request is allowed,

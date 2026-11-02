@@ -90,6 +90,23 @@ type RefundRef struct {
 	Amount     int64
 }
 
+// QueueItem is one open item on the finance desk.
+type QueueItem struct {
+	ID        uuid.UUID
+	Title     string
+	Amount    int64
+	Status    string
+	Reason    string
+	CreatedAt time.Time
+}
+
+// Queue is everything open on the finance desk.
+type Queue struct {
+	PayoutRuns []QueueItem
+	Refunds    []QueueItem
+	Disputes   []QueueItem
+}
+
 // Repository performs the writes. Each method is one transaction that also writes its ledger entry
 // and outbox event, so a money movement is either fully recorded or not at all.
 type Repository interface {
@@ -113,6 +130,8 @@ type Repository interface {
 	ApproveRefund(ctx context.Context, refundID, approverID uuid.UUID) (RefundRef, error)
 	// ResolveDispute closes an open dispute; customer resolutions also open a refund request.
 	ResolveDispute(ctx context.Context, disputeID, resolverID uuid.UUID, resolution string) error
+	// Open lists the open payouts, refunds and disputes for the finance desk.
+	Open(ctx context.Context) (Queue, error)
 }
 
 // Service applies the finance rules.
@@ -323,6 +342,21 @@ func (s *Service) ResolveDispute(ctx context.Context, actor Actor, disputeID uui
 		return ErrInvalidResolution
 	}
 	return s.repo.ResolveDispute(ctx, disputeID, actor.UserID, resolution)
+}
+
+// Queue lists what the finance desk must act on. Support sees refunds and disputes, finance sees all.
+func (s *Service) Queue(ctx context.Context, actor Actor) (Queue, error) {
+	if !supportOrFinance(actor.Role) {
+		return Queue{}, ErrForbidden
+	}
+	queue, err := s.repo.Open(ctx)
+	if err != nil {
+		return Queue{}, err
+	}
+	if actor.Role == "support" {
+		queue.PayoutRuns = nil
+	}
+	return queue, nil
 }
 
 func supportOrFinance(role string) bool {

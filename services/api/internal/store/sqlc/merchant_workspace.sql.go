@@ -92,7 +92,7 @@ func (q *Queries) DashboardLatestOrderIDs(ctx context.Context, arg DashboardLate
 
 const dashboardPendingDealIDs = `-- name: DashboardPendingDealIDs :many
 SELECT id FROM deals
-WHERE merchant_id = $1 AND status = 'pending_review' AND deleted_at IS NULL
+WHERE merchant_id = $1 AND status = 'in_review' AND deleted_at IS NULL
 ORDER BY updated_at DESC
 LIMIT $2
 `
@@ -226,7 +226,7 @@ DELETE FROM merchant_locations
 WHERE merchant_locations.id = $1 AND merchant_locations.merchant_id = $2
   AND NOT EXISTS (
     SELECT 1 FROM deal_locations dl JOIN deals d ON d.id = dl.deal_id
-    WHERE dl.merchant_location_id = merchant_locations.id AND d.status IN ('scheduled', 'active', 'sold_out')
+    WHERE dl.merchant_location_id = merchant_locations.id AND d.status IN ('scheduled', 'active')
   )
 `
 
@@ -245,28 +245,28 @@ func (q *Queries) DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerch
 
 const getMerchantWorkspace = `-- name: GetMerchantWorkspace :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
 WHERE id = $1 AND deleted_at IS NULL
 `
 
 type GetMerchantWorkspaceRow struct {
-	ID            pgtype.UUID    `json:"id"`
-	Slug          string         `json:"slug"`
-	LegalName     string         `json:"legal_name"`
-	DisplayName   string         `json:"display_name"`
-	Description   []byte         `json:"description"`
-	LogoUrl       pgtype.Text    `json:"logo_url"`
-	CoverUrl      pgtype.Text    `json:"cover_url"`
-	Phone         string         `json:"phone"`
-	Website       pgtype.Text    `json:"website"`
-	Instagram     pgtype.Text    `json:"instagram"`
-	Telegram      pgtype.Text    `json:"telegram"`
-	Status        MerchantStatus `json:"status"`
-	ReviewStatus  string         `json:"review_status"`
-	RatingAvg     float64        `json:"rating_avg"`
-	RatingCount   int32          `json:"rating_count"`
-	CommissionBps int32          `json:"commission_bps"`
+	ID            pgtype.UUID `json:"id"`
+	Slug          string      `json:"slug"`
+	LegalName     string      `json:"legal_name"`
+	DisplayName   string      `json:"display_name"`
+	Description   []byte      `json:"description"`
+	LogoUrl       pgtype.Text `json:"logo_url"`
+	CoverUrl      pgtype.Text `json:"cover_url"`
+	Phone         string      `json:"phone"`
+	Website       pgtype.Text `json:"website"`
+	Instagram     pgtype.Text `json:"instagram"`
+	Telegram      pgtype.Text `json:"telegram"`
+	Status        string      `json:"status"`
+	ReviewStatus  string      `json:"review_status"`
+	RatingAvg     float64     `json:"rating_avg"`
+	RatingCount   int32       `json:"rating_count"`
+	CommissionBps int32       `json:"commission_bps"`
 }
 
 func (q *Queries) GetMerchantWorkspace(ctx context.Context, id pgtype.UUID) (GetMerchantWorkspaceRow, error) {
@@ -372,7 +372,7 @@ SET display_name = $2, description = $3, logo_url = $4, cover_url = $5, phone = 
     website = $7, instagram = $8, telegram = $9, updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-          instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+          instagram, telegram, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 `
 
 type UpdateMerchantWorkspaceParams struct {
@@ -388,21 +388,21 @@ type UpdateMerchantWorkspaceParams struct {
 }
 
 type UpdateMerchantWorkspaceRow struct {
-	ID            pgtype.UUID    `json:"id"`
-	Slug          string         `json:"slug"`
-	LegalName     string         `json:"legal_name"`
-	DisplayName   string         `json:"display_name"`
-	Description   []byte         `json:"description"`
-	LogoUrl       pgtype.Text    `json:"logo_url"`
-	CoverUrl      pgtype.Text    `json:"cover_url"`
-	Phone         string         `json:"phone"`
-	Website       pgtype.Text    `json:"website"`
-	Instagram     pgtype.Text    `json:"instagram"`
-	Telegram      pgtype.Text    `json:"telegram"`
-	Status        MerchantStatus `json:"status"`
-	RatingAvg     float64        `json:"rating_avg"`
-	RatingCount   int32          `json:"rating_count"`
-	CommissionBps int32          `json:"commission_bps"`
+	ID            pgtype.UUID `json:"id"`
+	Slug          string      `json:"slug"`
+	LegalName     string      `json:"legal_name"`
+	DisplayName   string      `json:"display_name"`
+	Description   []byte      `json:"description"`
+	LogoUrl       pgtype.Text `json:"logo_url"`
+	CoverUrl      pgtype.Text `json:"cover_url"`
+	Phone         string      `json:"phone"`
+	Website       pgtype.Text `json:"website"`
+	Instagram     pgtype.Text `json:"instagram"`
+	Telegram      pgtype.Text `json:"telegram"`
+	Status        string      `json:"status"`
+	RatingAvg     float64     `json:"rating_avg"`
+	RatingCount   int32       `json:"rating_count"`
+	CommissionBps int32       `json:"commission_bps"`
 }
 
 func (q *Queries) UpdateMerchantWorkspace(ctx context.Context, arg UpdateMerchantWorkspaceParams) (UpdateMerchantWorkspaceRow, error) {

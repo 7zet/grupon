@@ -142,7 +142,7 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 	order, err := tx.InsertOrder(ctx, Order{
 		Number:      FormatOrderNumber(now.Year(), sequence),
 		UserID:      userID,
-		Status:      OrderPendingPayment,
+		Status:      OrderAwaitingPayment,
 		Subtotal:    subtotal,
 		Total:       total,
 		RequestHash: fingerprint,

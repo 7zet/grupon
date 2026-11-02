@@ -8,27 +8,8 @@ WHERE status = 'scheduled' AND deleted_at IS NULL AND starts_at <= now() AND end
 
 -- name: ExpireEndedDeals :execrows
 UPDATE deals
-SET status = 'expired', updated_at = now()
-WHERE status IN ('scheduled', 'active', 'sold_out') AND deleted_at IS NULL AND ends_at <= now();
-
--- name: MarkSoldOutDeals :execrows
-UPDATE deals d
-SET status = 'sold_out', updated_at = now()
-WHERE d.status = 'active' AND d.deleted_at IS NULL
-  AND EXISTS (SELECT 1 FROM deal_options o WHERE o.deal_id = d.id)
-  AND NOT EXISTS (
-    SELECT 1 FROM deal_options o
-    WHERE o.deal_id = d.id AND o.is_active AND o.stock_total - o.stock_sold - o.stock_reserved > 0
-  );
-
--- name: ReactivateRestockedDeals :execrows
-UPDATE deals d
-SET status = 'active', updated_at = now()
-WHERE d.status = 'sold_out' AND d.deleted_at IS NULL AND d.ends_at > now()
-  AND EXISTS (
-    SELECT 1 FROM deal_options o
-    WHERE o.deal_id = d.id AND o.is_active AND o.stock_total - o.stock_sold - o.stock_reserved > 0
-  );
+SET status = 'ended', updated_at = now()
+WHERE status IN ('scheduled', 'active') AND deleted_at IS NULL AND ends_at <= now();
 
 -- name: RecomputeDealSoldCounts :execrows
 UPDATE deals d

@@ -20,6 +20,8 @@ type Repository interface {
 
 // Store is the set of persistence operations commerce needs.
 type Store interface {
+	// Notifications returns the buyer's newest notifications.
+	Notifications(ctx context.Context, userID uuid.UUID) ([]Notification, error)
 	// Users and stock.
 	LockUser(ctx context.Context, userID uuid.UUID) error
 	UserContact(ctx context.Context, userID uuid.UUID) (Contact, error)

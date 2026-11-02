@@ -18,7 +18,7 @@ const PROBLEM_KEYS = [
   'already_redeemed',
   'voucher_expired',
   'voucher_refunded',
-  'voucher_cancelled',
+  'voucher_voided',
   'wrong_merchant',
   'voucher_not_found',
   'invalid_qr',

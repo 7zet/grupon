@@ -142,3 +142,27 @@ WHERE d.id = sqlc.arg(id) FOR UPDATE OF d;
 -- name: ResolveDispute :execrows
 UPDATE disputes SET status = sqlc.arg(status), resolved_at = now() WHERE id = sqlc.arg(id) AND status = 'open';
 
+-- name: ListOpenPayoutRuns :many
+SELECT pr.id, m.display_name AS merchant_name, pr.amount, pr.status, pr.created_at
+FROM payout_runs pr JOIN merchants m ON m.id = pr.merchant_id
+WHERE pr.status IN ('pending_approval', 'approved', 'sent')
+ORDER BY pr.created_at;
+
+-- name: ListOpenRefunds :many
+SELECT r.id, v.code AS voucher_code, r.amount, r.status, r.reason, r.created_at
+FROM refunds r JOIN vouchers v ON v.id = r.voucher_id
+WHERE r.status IN ('requested', 'approved', 'processing')
+ORDER BY r.created_at;
+
+-- name: ListOpenDisputes :many
+SELECT d.id, v.code AS voucher_code, m.display_name AS merchant_name, rd.amount, d.status, d.reason, d.created_at
+FROM disputes d
+JOIN redemptions rd ON rd.id = d.redemption_id
+JOIN vouchers v ON v.id = rd.voucher_id
+JOIN merchants m ON m.id = rd.merchant_id
+WHERE d.status = 'open'
+ORDER BY d.created_at;
+
+-- name: SetVoucherDisputeFlag :exec
+-- PRD 08: an open dispute sets the voucher flag, which blocks redemption until the dispute closes.
+UPDATE vouchers SET dispute_open = sqlc.arg(open)::boolean, updated_at = now() WHERE id = sqlc.arg(id);

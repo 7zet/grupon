@@ -76,6 +76,9 @@ func RequestFingerprint(input OrderInput) (string, error) {
 // VoucherCodeAlphabet has no 0, 1, I, L or O, so codes read aloud or typed by hand are unambiguous.
 const VoucherCodeAlphabet = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 
+// backupCodeAlphabet is Crockford base32: no I, L, O or U. Backup codes are 10 characters (PRD FR-04.2).
+const backupCodeAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
 // NewVoucherCode returns a random code formatted XXXX-XXXX. Bytes outside the largest multiple of
 // the alphabet size are rejected so that every character is equally likely.
 func NewVoucherCode() (string, error) {

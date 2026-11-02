@@ -17,14 +17,15 @@ import (
 
 // Deal statuses that a merchant may see in the owned list. They mirror the deal_status enum.
 const (
-	DealDraft         = "draft"
-	DealPendingReview = "pending_review"
-	DealRejected      = "rejected"
-	DealScheduled     = "scheduled"
-	DealActive        = "active"
-	DealPaused        = "paused"
-	DealSoldOut       = "sold_out"
-	DealExpired       = "expired"
+	DealDraft            = "draft"
+	DealInReview         = "in_review"
+	DealApproved         = "approved"
+	DealChangesRequested = "changes_requested"
+	DealScheduled        = "scheduled"
+	DealActive           = "active"
+	DealPaused           = "paused"
+	DealEnded            = "ended"
+	DealArchived         = "archived"
 )
 
 // Errors returned by the deal workflow. The HTTP layer maps them to problem codes.
@@ -36,11 +37,11 @@ var (
 var (
 	slugPattern  = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 	dealStatuses = map[string]bool{
-		DealDraft: true, DealPendingReview: true, DealRejected: true, DealScheduled: true,
-		DealActive: true, DealPaused: true, DealSoldOut: true, DealExpired: true,
+		DealDraft: true, DealInReview: true, DealChangesRequested: true, DealApproved: true, DealScheduled: true,
+		DealActive: true, DealPaused: true, DealEnded: true, DealArchived: true,
 	}
 	// reviewedStatuses are live deals whose price, terms or options edits send them back to review.
-	reviewedStatuses = map[string]bool{DealScheduled: true, DealActive: true, DealPaused: true, DealSoldOut: true}
+	reviewedStatuses = map[string]bool{DealApproved: true, DealScheduled: true, DealActive: true, DealPaused: true, DealEnded: true}
 )
 
 // MaxRedemptionsPerVoucher caps how many times one voucher may be used (multi-use options).
@@ -291,10 +292,10 @@ func (s *DealService) Update(ctx context.Context, merchantID, dealID uuid.UUID, 
 	fingerprint := ReviewFingerprint(in)
 	status := current.Status
 	switch {
-	case current.Status == DealRejected:
+	case current.Status == DealChangesRequested:
 		status = DealDraft
 	case reviewedStatuses[current.Status] && fingerprint != current.Fingerprint:
-		status = DealPendingReview
+		status = DealInReview
 	}
 	write := DealWrite{Input: in, Status: status, Fingerprint: fingerprint}
 	if err := s.repo.Update(ctx, merchantID, dealID, write, actor.audit("deal_updated", dealID, status)); err != nil {
@@ -309,10 +310,10 @@ func (s *DealService) Submit(ctx context.Context, merchantID, dealID uuid.UUID, 
 	if err != nil {
 		return catalog.Deal{}, err
 	}
-	if current.Status != DealDraft && current.Status != DealRejected {
+	if current.Status != DealDraft && current.Status != DealChangesRequested {
 		return catalog.Deal{}, ErrDealStateInvalid
 	}
-	if err := s.repo.SetStatus(ctx, merchantID, dealID, DealPendingReview, actor.audit("deal_submitted", dealID, DealPendingReview)); err != nil {
+	if err := s.repo.SetStatus(ctx, merchantID, dealID, DealInReview, actor.audit("deal_submitted", dealID, DealInReview)); err != nil {
 		return catalog.Deal{}, err
 	}
 	return s.repo.Detail(ctx, merchantID, dealID)

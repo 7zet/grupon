@@ -38,6 +38,34 @@ func NewCommerceAPI(service *commerce.Service, auth *AuthAPI, logger *slog.Logge
 }
 
 // ListRecentlyViewed returns the recently viewed deals.
+func (a *CommerceAPI) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+	account, ok := a.auth.authenticate(w, r)
+	if !ok {
+		return
+	}
+	items, err := a.service.Notifications(r.Context(), account.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	out := make([]gen.Notification, 0, len(items))
+	for _, item := range items {
+		entry := gen.Notification{
+			Id:           gen.Uuid(item.ID),
+			Kind:         gen.NotificationKind(item.Kind),
+			MerchantName: item.MerchantName,
+			CreatedAt:    item.CreatedAt,
+			ReadAt:       item.ReadAt,
+		}
+		if item.VoucherID != nil {
+			voucherID := gen.Uuid(*item.VoucherID)
+			entry.VoucherId = &voucherID
+		}
+		out = append(out, entry)
+	}
+	writeJSON(w, http.StatusOK, gen.NotificationList{Items: out})
+}
+
 func (a *CommerceAPI) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 	account, ok := a.auth.authenticate(w, r)
 	if !ok {

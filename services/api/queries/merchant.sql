@@ -8,7 +8,7 @@ VALUES (sqlc.arg(slug), sqlc.arg(legal_name), sqlc.arg(display_name), sqlc.arg(d
         sqlc.arg(stir), sqlc.arg(org_form), sqlc.arg(tax_regime), sqlc.arg(bank_mfo), sqlc.arg(bank_account),
         sqlc.arg(responsible_name), sqlc.arg(contract_version), sqlc.arg(contract_accepted_at),
         sqlc.narg(contract_accepted_ip))
-RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
+RETURNING id, slug, legal_name, display_name, phone, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg,
           rating_count, commission_bps;
 
 -- name: OwnedMerchantReviewStatus :one
@@ -20,7 +20,7 @@ LIMIT 1;
 -- name: SubmitMerchantForReview :one
 UPDATE merchants SET review_status = 'submitted', submitted_at = sqlc.arg(at), updated_at = now()
 WHERE id = sqlc.arg(id) AND review_status = 'draft'
-RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
+RETURNING id, slug, legal_name, display_name, phone, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg,
           rating_count, commission_bps;
 
 -- name: CreateMerchantLocation :one
@@ -52,7 +52,7 @@ UPDATE merchants SET review_status = sqlc.arg(to_status), rejection_reason = sql
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL AND review_status = ANY(sqlc.arg(from_statuses)::text[]);
 
 -- name: CountMerchantDocumentKinds :one
-SELECT COUNT(*)::int AS kinds FROM merchant_documents WHERE merchant_id = sqlc.arg(merchant_id);
+SELECT COUNT(*)::int AS kinds FROM merchant_documents WHERE merchant_id = sqlc.arg(merchant_id) AND kind IN ('certificate', 'bank_letter');
 
 -- name: GetMerchantDocumentKey :one
 SELECT storage_key FROM merchant_documents WHERE merchant_id = sqlc.arg(merchant_id) AND kind = sqlc.arg(kind);
@@ -66,3 +66,6 @@ ON CONFLICT (merchant_id, kind) DO UPDATE SET storage_key = EXCLUDED.storage_key
 -- name: ListMerchantDocuments :many
 SELECT kind, storage_key, content_type, size_bytes, uploaded_at FROM merchant_documents
 WHERE merchant_id = sqlc.arg(merchant_id) ORDER BY kind;
+
+-- name: CategoryOpenState :one
+SELECT is_active FROM categories WHERE id = sqlc.arg(id);

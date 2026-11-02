@@ -94,7 +94,7 @@ export function PurchasePanel({
         onClick={buy}
         type="button"
       >
-        {unavailable ? (deal.status === 'expired' ? t('ended') : t('soldOut')) : t('buyNow')}
+        {unavailable ? (deal.status === 'ended' ? t('ended') : t('soldOut')) : t('buyNow')}
       </button>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-small font-semibold">{t('quantity')}</span>

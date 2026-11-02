@@ -145,8 +145,8 @@ func TestLiveDealPriceEditReturnsToReview(t *testing.T) {
 	if _, err := service.Update(context.Background(), uuid.New(), repo.record.ID, actor, price); err != nil {
 		t.Fatal(err)
 	}
-	if got := repo.writes[1].Status; got != DealPendingReview {
-		t.Fatalf("price edit status = %s, want pending_review", got)
+	if got := repo.writes[1].Status; got != DealInReview {
+		t.Fatalf("price edit status = %s, want in_review", got)
 	}
 }
 
@@ -166,7 +166,7 @@ func TestSubmitAndDeleteRespectWorkflowState(t *testing.T) {
 	if _, err := service.Submit(context.Background(), uuid.New(), repo.record.ID, actor); err != nil {
 		t.Fatal(err)
 	}
-	if repo.status != DealPendingReview {
+	if repo.status != DealInReview {
 		t.Fatalf("submitted status = %s", repo.status)
 	}
 }

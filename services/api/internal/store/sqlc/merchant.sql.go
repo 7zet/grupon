@@ -33,8 +33,19 @@ func (q *Queries) ActiveCityExists(ctx context.Context, id pgtype.UUID) (bool, e
 	return exists, err
 }
 
+const categoryOpenState = `-- name: CategoryOpenState :one
+SELECT is_active FROM categories WHERE id = $1
+`
+
+func (q *Queries) CategoryOpenState(ctx context.Context, id pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, categoryOpenState, id)
+	var is_active bool
+	err := row.Scan(&is_active)
+	return is_active, err
+}
+
 const countMerchantDocumentKinds = `-- name: CountMerchantDocumentKinds :one
-SELECT COUNT(*)::int AS kinds FROM merchant_documents WHERE merchant_id = $1
+SELECT COUNT(*)::int AS kinds FROM merchant_documents WHERE merchant_id = $1 AND kind IN ('certificate', 'bank_letter')
 `
 
 func (q *Queries) CountMerchantDocumentKinds(ctx context.Context, merchantID pgtype.UUID) (int32, error) {
@@ -53,7 +64,7 @@ VALUES ($1, $2, $3, $4, $5,
         $6, $7, $8, $9, $10,
         $11, $12, $13,
         $14)
-RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
+RETURNING id, slug, legal_name, display_name, phone, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg,
           rating_count, commission_bps
 `
 
@@ -75,16 +86,16 @@ type CreateMerchantParams struct {
 }
 
 type CreateMerchantRow struct {
-	ID            pgtype.UUID    `json:"id"`
-	Slug          string         `json:"slug"`
-	LegalName     string         `json:"legal_name"`
-	DisplayName   string         `json:"display_name"`
-	Phone         string         `json:"phone"`
-	Status        MerchantStatus `json:"status"`
-	ReviewStatus  string         `json:"review_status"`
-	RatingAvg     float64        `json:"rating_avg"`
-	RatingCount   int32          `json:"rating_count"`
-	CommissionBps int32          `json:"commission_bps"`
+	ID            pgtype.UUID `json:"id"`
+	Slug          string      `json:"slug"`
+	LegalName     string      `json:"legal_name"`
+	DisplayName   string      `json:"display_name"`
+	Phone         string      `json:"phone"`
+	Status        string      `json:"status"`
+	ReviewStatus  string      `json:"review_status"`
+	RatingAvg     float64     `json:"rating_avg"`
+	RatingCount   int32       `json:"rating_count"`
+	CommissionBps int32       `json:"commission_bps"`
 }
 
 // Merchant registration and lookups. Registration writes are composed in one transaction by the store.
@@ -296,7 +307,7 @@ func (q *Queries) OwnedMerchantReviewStatus(ctx context.Context, userID pgtype.U
 const submitMerchantForReview = `-- name: SubmitMerchantForReview :one
 UPDATE merchants SET review_status = 'submitted', submitted_at = $1, updated_at = now()
 WHERE id = $2 AND review_status = 'draft'
-RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
+RETURNING id, slug, legal_name, display_name, phone, (CASE WHEN review_status = 'approved' THEN 'active' ELSE 'suspended' END)::text AS status, review_status, rating_avg::float8 AS rating_avg,
           rating_count, commission_bps
 `
 
@@ -306,16 +317,16 @@ type SubmitMerchantForReviewParams struct {
 }
 
 type SubmitMerchantForReviewRow struct {
-	ID            pgtype.UUID    `json:"id"`
-	Slug          string         `json:"slug"`
-	LegalName     string         `json:"legal_name"`
-	DisplayName   string         `json:"display_name"`
-	Phone         string         `json:"phone"`
-	Status        MerchantStatus `json:"status"`
-	ReviewStatus  string         `json:"review_status"`
-	RatingAvg     float64        `json:"rating_avg"`
-	RatingCount   int32          `json:"rating_count"`
-	CommissionBps int32          `json:"commission_bps"`
+	ID            pgtype.UUID `json:"id"`
+	Slug          string      `json:"slug"`
+	LegalName     string      `json:"legal_name"`
+	DisplayName   string      `json:"display_name"`
+	Phone         string      `json:"phone"`
+	Status        string      `json:"status"`
+	ReviewStatus  string      `json:"review_status"`
+	RatingAvg     float64     `json:"rating_avg"`
+	RatingCount   int32       `json:"rating_count"`
+	CommissionBps int32       `json:"commission_bps"`
 }
 
 func (q *Queries) SubmitMerchantForReview(ctx context.Context, arg SubmitMerchantForReviewParams) (SubmitMerchantForReviewRow, error) {

@@ -1,0 +1,89 @@
+import type { components } from '@grupon/api-client';
+import { formatMoney } from '@grupon/ui';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+
+import { FinanceActions } from '@/components/finance-actions';
+import { accountGet, accountGetOrNull, loadForVisitor } from '@/lib/account-api';
+
+type User = components['schemas']['User'];
+type Queue = components['schemas']['FinanceQueue'];
+
+const FINANCE_ROLES = ['superadmin', 'finance', 'support'];
+
+/** Translation keys for each status, written out so the message types stay exact. */
+const STATUS_KEYS = {
+  pending_approval: 'status.pending_approval',
+  approved: 'status.approved',
+  sent: 'status.sent',
+  requested: 'status.requested',
+  processing: 'status.processing',
+} as const;
+
+/** Finance desk: payouts to approve or reconcile, refunds to approve or mark paid, disputes to decide. */
+export default async function FinancePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations('AdminFinance');
+  const user = await loadForVisitor(locale, `/${locale}/admin/finance`, () => accountGetOrNull<User>('/me'));
+  if (!user?.roles.some((role) => FINANCE_ROLES.includes(role))) notFound();
+  const queue = await accountGet<Queue>('/admin/finance/queue');
+  const money = (amount: number) => formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
+  const empty = queue.payout_runs.length + queue.refunds.length + queue.disputes.length === 0;
+
+  return (
+    <div className="grid gap-8">
+      <h1 className="text-title font-bold">{t('title')}</h1>
+      {empty && <p className="text-ink-muted">{t('empty')}</p>}
+
+      {queue.payout_runs.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="text-lead font-semibold">{t('payouts')}</h2>
+          <ul className="grid gap-3">
+            {queue.payout_runs.map((item) => (
+              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+                <p className="text-small">
+                  {item.merchant_name} · {money(item.amount)} · {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
+                </p>
+                <FinanceActions kind="payout" id={item.id} status={item.status} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {queue.refunds.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="text-lead font-semibold">{t('refunds')}</h2>
+          <ul className="grid gap-3">
+            {queue.refunds.map((item) => (
+              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+                <p className="text-small">
+                  {item.voucher_code} · {money(item.amount)} · {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
+                </p>
+                <p className="text-small text-ink-muted">{item.reason}</p>
+                <FinanceActions kind="refund" id={item.id} status={item.status} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {queue.disputes.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="text-lead font-semibold">{t('disputes')}</h2>
+          <ul className="grid gap-3">
+            {queue.disputes.map((item) => (
+              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+                <p className="text-small">
+                  {item.voucher_code} · {item.merchant_name} · {money(item.amount)}
+                </p>
+                <p className="text-small text-ink-muted">{item.reason}</p>
+                <FinanceActions kind="dispute" id={item.id} status={item.status} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -16,11 +16,11 @@ import (
 
 // Voucher states shown to staff. Stored statuses are active, redeemed, refunded and cancelled; expired is derived from time.
 const (
-	StatusActive    = "active"
-	StatusRedeemed  = "redeemed"
-	StatusExpired   = "expired"
-	StatusRefunded  = "refunded"
-	StatusCancelled = "cancelled"
+	StatusActive   = "active"
+	StatusRedeemed = "redeemed"
+	StatusExpired  = "expired"
+	StatusRefunded = "refunded"
+	StatusVoided   = "voided"
 )
 
 // Errors returned by lookup and redemption. The HTTP layer maps them to problem codes.
@@ -31,7 +31,7 @@ var (
 	ErrAlreadyRedeemed = errors.New("redemption: voucher already redeemed")
 	ErrExpired         = errors.New("redemption: voucher expired")
 	ErrRefunded        = errors.New("redemption: voucher refunded")
-	ErrCancelled       = errors.New("redemption: voucher cancelled")
+	ErrVoided          = errors.New("redemption: voucher voided")
 )
 
 // ReversalWindow is how long the cashier may undo a redemption; after it, only support can.
@@ -47,13 +47,36 @@ var ErrNoRedemption = errors.New("redemption: no redemption to reverse")
 type Redemption struct {
 	ID         uuid.UUID
 	VoucherID  uuid.UUID
+	MerchantID uuid.UUID
 	StaffID    uuid.UUID
 	Amount     int64
 	Commission int64
 	CreatedAt  time.Time
 }
 
-var codePattern = regexp.MustCompile(`^[A-Z0-9]{4}-[A-Z0-9]{4}$`)
+var codePattern = regexp.MustCompile(`^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$`)
+
+// SupportReverse undoes a redemption after the merchant window closed (PRD FR-05.5). Only support and
+// superadmin may do it, and the reason is kept in the audit trail.
+func (s *Service) SupportReverse(ctx context.Context, actorID uuid.UUID, role string, voucherID uuid.UUID, reason string) error {
+	if role != "support" && role != "superadmin" {
+		return merchant.ErrForbidden
+	}
+	reason = strings.TrimSpace(reason)
+	if n := len([]rune(reason)); n < 3 || n > 500 {
+		return &merchant.InvalidInputError{Field: "reason", Code: "length"}
+	}
+	found, err := s.repo.LatestOpenRedemptionForVoucher(ctx, voucherID)
+	if err != nil {
+		return err
+	}
+	return s.repo.ReverseUse(ctx, found.MerchantID, found, reason, AuditEntry{
+		ActorID: actorID,
+		Role:    role,
+		Action:  "voucher_redemption_reversed_by_support",
+		After:   map[string]any{"reason": reason},
+	})
+}
 
 // Verifier resolves a signed QR token to a voucher id.
 type Verifier func(token string) (uuid.UUID, error)
@@ -67,18 +90,29 @@ type AuditEntry struct {
 	After     map[string]any
 }
 
+// AttemptCounts is what the scanner limits need to know about a staff member.
+type AttemptCounts struct {
+	LastMinute   int
+	FailedRecent int
+}
+
 // Repository reads vouchers and performs the conditional redemption write.
 type Repository interface {
 	Find(ctx context.Context, voucherID uuid.UUID) (commerce.Voucher, error)
 	FindByCode(ctx context.Context, code string) (commerce.Voucher, error)
 	// FindByBackupCode looks a voucher up by the stored HMAC of its backup code.
 	FindByBackupCode(ctx context.Context, codeHMAC string) (commerce.Voucher, error)
+	// AttemptStats counts a staff member's lookups: in the last minute, and failed ones since blockSince.
+	AttemptStats(ctx context.Context, staffID uuid.UUID, minuteSince, blockSince time.Time) (AttemptCounts, error)
+	RecordAttempt(ctx context.Context, staffID uuid.UUID, failed bool) error
 	LocationOwned(ctx context.Context, merchantID, locationID uuid.UUID) (bool, error)
 	// Redeem marks the voucher redeemed only while it is still active and inside its validity window.
 	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry, geo *Geo) (bool, error)
 	View(ctx context.Context, voucher commerce.Voucher) (commerce.VoucherView, error)
 	// ReversalCandidate returns the latest unreversed redemption of the voucher, or ErrNotFound.
 	ReversalCandidate(ctx context.Context, merchantID, voucherID uuid.UUID) (Redemption, error)
+	// LatestOpenRedemptionForVoucher returns the newest unreversed redemption of a voucher, any merchant.
+	LatestOpenRedemptionForVoucher(ctx context.Context, voucherID uuid.UUID) (Redemption, error)
 	// ReverseUse marks the redemption reversed and rolls the voucher count back, with a reversing entry.
 	ReverseUse(ctx context.Context, merchantID uuid.UUID, found Redemption, reason string, audit AuditEntry) error
 }
@@ -105,12 +139,41 @@ func NewService(repo Repository, verify Verifier, now func() time.Time) *Service
 	return &Service{repo: repo, verify: verify, now: now}
 }
 
+// Scanner limits (PRD §12.1): thirty lookups a minute per staff member, and a device is blocked for
+// fifteen minutes after ten failed lookups.
+const (
+	LookupsPerMinute  = 30
+	FailedLookupLimit = 10
+	BlockWindow       = 15 * time.Minute
+)
+
+// ErrTooManyAttempts reports a staff member who is over a scanner limit.
+var ErrTooManyAttempts = errors.New("redemption: too many lookups, slow down")
+
+// ErrScannerBlocked reports a staff member blocked after repeated failed code entries.
+var ErrScannerBlocked = errors.New("redemption: scanner blocked after repeated failed lookups")
+
 // Lookup resolves a voucher from a QR token or a human code. The result carries the effective status.
-func (s *Service) Lookup(ctx context.Context, merchantID uuid.UUID, token, code string) (commerce.VoucherView, error) {
-	voucher, err := s.resolve(ctx, token, code)
+func (s *Service) Lookup(ctx context.Context, merchantID, staffID uuid.UUID, token, code string) (commerce.VoucherView, error) {
+	now := s.now()
+	stats, err := s.repo.AttemptStats(ctx, staffID, now.Add(-time.Minute), now.Add(-BlockWindow))
 	if err != nil {
 		return commerce.VoucherView{}, err
 	}
+	if stats.FailedRecent >= FailedLookupLimit {
+		return commerce.VoucherView{}, ErrScannerBlocked
+	}
+	if stats.LastMinute >= LookupsPerMinute {
+		return commerce.VoucherView{}, ErrTooManyAttempts
+	}
+	voucher, err := s.resolve(ctx, token, code)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) || errors.Is(err, ErrInvalidToken) || errors.As(err, new(*merchant.InvalidInputError)) {
+			_ = s.repo.RecordAttempt(ctx, staffID, true)
+		}
+		return commerce.VoucherView{}, err
+	}
+	_ = s.repo.RecordAttempt(ctx, staffID, false)
 	if voucher.MerchantID != merchantID {
 		return commerce.VoucherView{}, ErrWrongMerchant
 	}
@@ -218,8 +281,8 @@ func unusable(voucher commerce.Voucher, at time.Time) error {
 		return ErrExpired
 	case StatusRefunded:
 		return ErrRefunded
-	case StatusCancelled:
-		return ErrCancelled
+	case StatusVoided:
+		return ErrVoided
 	default:
 		return ErrNotFound
 	}
@@ -240,7 +303,11 @@ func (s *Service) Reverse(ctx context.Context, merchantID uuid.UUID, actor merch
 	}
 	now := s.now()
 	cashierOwnsIt := found.StaffID == actor.UserID
-	if actor.Role == merchant.RoleCashier && (!cashierOwnsIt || now.Sub(found.CreatedAt) > ReversalWindow) {
+	if actor.Role == merchant.RoleCashier && !cashierOwnsIt {
+		return merchant.ErrForbidden
+	}
+	// PRD FR-05.5: the window is 10 minutes for the cashier; after it only support can reverse.
+	if now.Sub(found.CreatedAt) > ReversalWindow {
 		return ErrReversalWindowClosed
 	}
 	return s.repo.ReverseUse(ctx, merchantID, found, reason, AuditEntry{

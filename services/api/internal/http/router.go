@@ -46,6 +46,10 @@ type RouterOptions struct {
 	MerchantReview *MerchantReviewAPI
 	// MerchantDocuments serves business document upload and review downloads when set.
 	MerchantDocuments *MerchantDocumentAPI
+	// MerchantStaff manages the business's managers and cashiers when set.
+	MerchantStaff *MerchantStaffAPI
+	// MerchantPanel serves payouts, customers, analytics, reviews, orders and settings when set.
+	MerchantPanel *MerchantPanelAPI
 	// MerchantRedemption serves voucher lookup and redemption at the counter when set.
 	MerchantRedemption *MerchantRedemptionAPI
 	// Reviews serves buyer reviews and review reports when set.
@@ -86,12 +90,12 @@ func NewRouter(options RouterOptions) chi.Router {
 	router.Get("/healthz", statusHandler(http.StatusOK, "ok"))
 	router.Get("/readyz", readinessHandler(readinessCheck))
 
-	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantReview != nil || options.MerchantDocuments != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil || options.Finance != nil {
+	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantReview != nil || options.MerchantDocuments != nil || options.MerchantStaff != nil || options.MerchantPanel != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil || options.Finance != nil {
 		var base gen.ServerInterface = gen.Unimplemented{}
 		if options.Catalog != nil {
 			base = options.Catalog
 		}
-		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, merchantReview: options.MerchantReview, merchantDocs: options.MerchantDocuments, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports, finance: options.Finance}, gen.ChiServerOptions{
+		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, merchantReview: options.MerchantReview, merchantDocs: options.MerchantDocuments, staff: options.MerchantStaff, panel: options.MerchantPanel, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports, finance: options.Finance}, gen.ChiServerOptions{
 			BaseRouter:       router,
 			ErrorHandlerFunc: bindingErrorHandler,
 		})
@@ -195,6 +199,8 @@ type apiServer struct {
 	moderation     *ModerationAPI
 	merchantReview *MerchantReviewAPI
 	merchantDocs   *MerchantDocumentAPI
+	staff          *MerchantStaffAPI
+	panel          *MerchantPanelAPI
 	redeem         *MerchantRedemptionAPI
 	reviewAPI      *ReviewAPI
 	adminReports   *AdminReportsAPI
@@ -529,4 +535,109 @@ func (s apiServer) DownloadMerchantDocument(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	s.ServerInterface.DownloadMerchantDocument(w, r, id, kind)
+}
+
+// ListMyNotifications is owned by CommerceAPI when it is mounted.
+func (s apiServer) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+	if s.commerce != nil {
+		s.commerce.ListMyNotifications(w, r)
+		return
+	}
+	s.ServerInterface.ListMyNotifications(w, r)
+}
+
+func (s apiServer) ListMerchantStaff(w http.ResponseWriter, r *http.Request) {
+	if s.staff != nil {
+		s.staff.ListMerchantStaff(w, r)
+		return
+	}
+	s.ServerInterface.ListMerchantStaff(w, r)
+}
+
+func (s apiServer) InviteMerchantStaff(w http.ResponseWriter, r *http.Request) {
+	if s.staff != nil {
+		s.staff.InviteMerchantStaff(w, r)
+		return
+	}
+	s.ServerInterface.InviteMerchantStaff(w, r)
+}
+
+func (s apiServer) UpdateMerchantStaff(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.staff != nil {
+		s.staff.UpdateMerchantStaff(w, r, id)
+		return
+	}
+	s.ServerInterface.UpdateMerchantStaff(w, r, id)
+}
+
+func (s apiServer) RemoveMerchantStaff(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.staff != nil {
+		s.staff.RemoveMerchantStaff(w, r, id)
+		return
+	}
+	s.ServerInterface.RemoveMerchantStaff(w, r, id)
+}
+
+func (s apiServer) ListMerchantPayouts(w http.ResponseWriter, r *http.Request, params gen.ListMerchantPayoutsParams) {
+	if s.panel != nil {
+		s.panel.ListMerchantPayouts(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantPayouts(w, r, params)
+}
+
+func (s apiServer) ListMerchantCustomers(w http.ResponseWriter, r *http.Request, params gen.ListMerchantCustomersParams) {
+	if s.panel != nil {
+		s.panel.ListMerchantCustomers(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantCustomers(w, r, params)
+}
+
+func (s apiServer) GetMerchantAnalytics(w http.ResponseWriter, r *http.Request, params gen.GetMerchantAnalyticsParams) {
+	if s.panel != nil {
+		s.panel.GetMerchantAnalytics(w, r, params)
+		return
+	}
+	s.ServerInterface.GetMerchantAnalytics(w, r, params)
+}
+
+func (s apiServer) ListMerchantReviews(w http.ResponseWriter, r *http.Request, params gen.ListMerchantReviewsParams) {
+	if s.panel != nil {
+		s.panel.ListMerchantReviews(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantReviews(w, r, params)
+}
+
+func (s apiServer) ReplyToMerchantReview(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.panel != nil {
+		s.panel.ReplyToMerchantReview(w, r, id)
+		return
+	}
+	s.ServerInterface.ReplyToMerchantReview(w, r, id)
+}
+
+func (s apiServer) ListMerchantOrders(w http.ResponseWriter, r *http.Request, params gen.ListMerchantOrdersParams) {
+	if s.panel != nil {
+		s.panel.ListMerchantOrders(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantOrders(w, r, params)
+}
+
+func (s apiServer) GetMerchantSettings(w http.ResponseWriter, r *http.Request) {
+	if s.panel != nil {
+		s.panel.GetMerchantSettings(w, r)
+		return
+	}
+	s.ServerInterface.GetMerchantSettings(w, r)
+}
+
+func (s apiServer) UpdateMerchantSettings(w http.ResponseWriter, r *http.Request) {
+	if s.panel != nil {
+		s.panel.UpdateMerchantSettings(w, r)
+		return
+	}
+	s.ServerInterface.UpdateMerchantSettings(w, r)
 }

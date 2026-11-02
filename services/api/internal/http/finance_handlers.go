@@ -300,3 +300,89 @@ func (s apiServer) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen
 	}
 	s.ServerInterface.ResolveDispute(w, r, id)
 }
+
+// SupportReverseVoucher undoes a redemption after the merchant window (PRD FR-05.5). Support and
+// superadmin only; the reason goes to the audit trail.
+func (a *FinanceAPI) SupportReverseVoucher(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	account, ok := a.auth.authenticate(w, r)
+	if !ok {
+		return
+	}
+	role := ""
+	switch {
+	case account.HasRole(identity.RoleSuperadmin):
+		role = string(identity.RoleSuperadmin)
+	case account.HasRole(identity.RoleSupport):
+		role = string(identity.RoleSupport)
+	}
+	if role == "" {
+		writeProblem(w, r, http.StatusForbidden, "forbidden", nil, nil)
+		return
+	}
+	var body gen.ReverseRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	if err := a.redemption.SupportReverse(r.Context(), account.ID, role, uuid.UUID(id), body.Reason); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s apiServer) SupportReverseVoucher(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.SupportReverseVoucher(w, r, id)
+		return
+	}
+	s.ServerInterface.SupportReverseVoucher(w, r, id)
+}
+
+// GetFinanceQueue lists the open payouts, refunds and disputes for the finance desk.
+func (a *FinanceAPI) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
+	account, ok := a.auth.authenticate(w, r)
+	if !ok {
+		return
+	}
+	role := ""
+	switch {
+	case account.HasRole(identity.RoleSuperadmin):
+		role = string(identity.RoleSuperadmin)
+	case account.HasRole(identity.RoleFinance):
+		role = string(identity.RoleFinance)
+	case account.HasRole(identity.RoleSupport):
+		role = string(identity.RoleSupport)
+	}
+	queue, err := a.finance.Queue(r.Context(), finance.Actor{UserID: account.ID, Role: role})
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, gen.FinanceQueue{
+		PayoutRuns: mapQueueItems(queue.PayoutRuns, func(item finance.QueueItem) gen.PayoutRunItem {
+			return gen.PayoutRunItem{Id: gen.Uuid(item.ID), MerchantName: item.Title, Amount: item.Amount, Status: item.Status, CreatedAt: item.CreatedAt}
+		}),
+		Refunds: mapQueueItems(queue.Refunds, func(item finance.QueueItem) gen.RefundItem {
+			return gen.RefundItem{Id: gen.Uuid(item.ID), VoucherCode: item.Title, Amount: item.Amount, Status: item.Status, Reason: item.Reason, CreatedAt: item.CreatedAt}
+		}),
+		Disputes: mapQueueItems(queue.Disputes, func(item finance.QueueItem) gen.DisputeItem {
+			return gen.DisputeItem{Id: gen.Uuid(item.ID), VoucherCode: item.Title, MerchantName: "", Amount: item.Amount, Status: item.Status, Reason: item.Reason, CreatedAt: item.CreatedAt}
+		}),
+	})
+}
+
+func mapQueueItems[T any](items []finance.QueueItem, mapper func(finance.QueueItem) T) []T {
+	out := make([]T, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapper(item))
+	}
+	return out
+}
+
+func (s apiServer) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
+	if s.finance != nil {
+		s.finance.GetFinanceQueue(w, r)
+		return
+	}
+	s.ServerInterface.GetFinanceQueue(w, r)
+}

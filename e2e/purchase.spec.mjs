@@ -7,7 +7,7 @@ async function sellableVoucherDeal() {
   const response = await fetch(`${API}/deals?page_size=100&sort=popular`);
   const page = await response.json();
   for (const deal of page.items) {
-    if (deal.kind !== 'voucher' || deal.status !== 'active') continue;
+    if (deal.status !== 'active') continue;
     const option = deal.options.find((item) => item.is_active && item.stock_total - item.stock_sold - item.stock_reserved > 0);
     if (option) return { slug: deal.slug, title: deal.title.uz };
   }
@@ -26,6 +26,7 @@ test('browse → login mid-flow → buy → voucher visible', async ({ page }) =
 
   // Browse the deal page without an account and start buying.
   await page.goto(`/uz/deal/${deal.slug}`);
+  await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: /Hozir xarid qilish/ }).click();
 
   // Checkout requires a session, so the visitor lands on login with the return path.

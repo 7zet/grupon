@@ -3,6 +3,9 @@ package store_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,7 +24,7 @@ func TestMerchantRegistrationCreatesBusinessLocationAndOwnerRole(t *testing.T) {
 
 	var ownerID uuid.UUID
 	if err := fixture.pool.QueryRow(ctx,
-		`INSERT INTO users (email, name, password_hash) VALUES ('owner@test.local', 'Owner', 'x') RETURNING id`,
+		`INSERT INTO users (email, name) VALUES ($1, 'Owner') RETURNING id`, uuid.NewString()+"@test.local",
 	).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
@@ -121,16 +124,27 @@ func onboardingInput(cityID, categoryID uuid.UUID) merchant.RegisterInput {
 	}
 }
 
-func newPhoneUser(t *testing.T, fixture catalogFixture, phone string) uuid.UUID {
+func newPhoneUser(t *testing.T, fixture catalogFixture, _ string) uuid.UUID {
 	t.Helper()
-	var id uuid.UUID
-	if err := fixture.pool.QueryRow(context.Background(),
-		`INSERT INTO users (email, name, phone) VALUES ($1, 'Owner', $2) RETURNING id`,
-		phone[1:]+"@test.local", phone,
-	).Scan(&id); err != nil {
-		t.Fatal(err)
+	// Accounts from earlier runs survive reseeds, so every test user gets a fresh phone and email.
+	suffix := uuid.New().String()
+	// Phones repeat across runs, so a clash with an earlier account draws another number.
+	for attempt := 0; attempt < 20; attempt++ {
+		phone := fmt.Sprintf("+99890%07d", rand.Intn(10000000))
+		var id uuid.UUID
+		err := fixture.pool.QueryRow(context.Background(),
+			`INSERT INTO users (email, name, phone) VALUES ($1, 'Owner', $2) RETURNING id`,
+			suffix+"@test.local", phone,
+		).Scan(&id)
+		if err == nil {
+			return id
+		}
+		if !strings.Contains(err.Error(), "users_phone_key") {
+			t.Fatal(err)
+		}
 	}
-	return id
+	t.Fatal("no free test phone after 20 attempts")
+	return uuid.Nil
 }
 
 // TestMerchantReviewMovesBusinessAndWritesAudit checks FR-01.3 against PostgreSQL: a submitted business

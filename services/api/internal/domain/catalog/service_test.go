@@ -136,7 +136,7 @@ func TestListDealsDropsUnpublishedAndKeepsRepositoryOrder(t *testing.T) {
 
 	now := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
 	live := DealSummary{ID: uuid.New(), Slug: "live", Status: "active", EndsAt: now.Add(time.Hour)}
-	soldOut := DealSummary{ID: uuid.New(), Slug: "sold", Status: "sold_out", EndsAt: now.Add(time.Hour)}
+	soldOut := DealSummary{ID: uuid.New(), Slug: "sold", Status: "active", EndsAt: now.Add(time.Hour)} // sold out is stock, not a state
 	expired := DealSummary{ID: uuid.New(), Slug: "old", Status: "active", EndsAt: now.Add(-time.Hour)}
 	draft := DealSummary{ID: uuid.New(), Slug: "draft", Status: "draft", EndsAt: now.Add(time.Hour)}
 	repo := &fakeRepository{summaries: []DealSummary{live, expired, draft, soldOut}}

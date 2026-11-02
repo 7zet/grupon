@@ -43,7 +43,7 @@ func (s *Service) cancelUnpaid(ctx context.Context, orderID uuid.UUID) (bool, er
 		if err != nil {
 			return err
 		}
-		if order.Status != OrderPendingPayment {
+		if order.Status != OrderAwaitingPayment {
 			return nil
 		}
 		released, err := tx.ReleaseReservations(ctx, orderID)
@@ -58,7 +58,7 @@ func (s *Service) cancelUnpaid(ctx context.Context, orderID uuid.UUID) (bool, er
 		if err := tx.FailOpenPayments(ctx, orderID); err != nil {
 			return err
 		}
-		if err := tx.SetOrderStatus(ctx, orderID, OrderCancelled, nil); err != nil {
+		if err := tx.SetOrderStatus(ctx, orderID, OrderExpired, nil); err != nil {
 			return err
 		}
 		done = true

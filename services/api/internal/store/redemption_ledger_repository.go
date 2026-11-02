@@ -47,12 +47,17 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 		return false, nil
 	}
 
-	sequence := int(voucher.RedemptionsUsed) + 1
+	// The share follows the live use count; the stored row number must never repeat, reversals included.
+	shareIndex := int(voucher.RedemptionsUsed) + 1
+	nextSequence, err := queries.NextRedemptionSequence(ctx, toPgUUID(voucherID))
+	if err != nil {
+		return false, fmt.Errorf("next sequence: %w", err)
+	}
 	shares, err := ledger.Split(voucher.UnitPriceSnapshot, int(voucher.RedemptionsAllowed))
 	if err != nil {
 		return false, fmt.Errorf("split voucher value: %w", err)
 	}
-	amount := shares[sequence-1]
+	amount := shares[shareIndex-1]
 	commission := ledger.Commission(amount, int(voucher.CommissionBps))
 
 	rows, err := queries.ApplyVoucherUse(ctx, sqlc.ApplyVoucherUseParams{
@@ -66,12 +71,15 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 	if rows != 1 {
 		return false, nil
 	}
+	if _, err := queries.CompleteFullyUsedOrder(ctx, toPgUUID(voucherID)); err != nil {
+		return false, fmt.Errorf("complete order: %w", err)
+	}
 	redemptionID, err := queries.InsertRedemption(ctx, sqlc.InsertRedemptionParams{
 		VoucherID:   toPgUUID(voucherID),
 		MerchantID:  toPgUUID(merchantID),
 		LocationID:  toPgUUID(locationID),
 		StaffUserID: toPgUUID(audit.ActorID),
-		Sequence:    int32(sequence),
+		Sequence:    int32(nextSequence),
 		Amount:      amount,
 		Commission:  commission,
 		GeoLat:      geoCoordinate(geo, func(g *redemption.Geo) float64 { return g.Lat }),
@@ -115,10 +123,38 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 	if err := writeVoucherAudit(ctx, queries, audit, voucherID, toUUID(redemptionID)); err != nil {
 		return false, err
 	}
+	// FR-05.4: the buyer is told at once, so a redemption they did not make can be reported.
+	if err := queries.InsertBuyerNotification(ctx, sqlc.InsertBuyerNotificationParams{
+		UserID:       voucher.UserID,
+		VoucherID:    toPgUUID(voucherID),
+		MerchantName: voucher.MerchantName,
+	}); err != nil {
+		return false, fmt.Errorf("notify buyer: %w", err)
+	}
 	return true, tx.Commit(ctx)
 }
 
 // ReversalCandidate returns the latest open redemption of a voucher for the merchant.
+// LatestOpenRedemptionForVoucher is the support path: it finds the newest open redemption of any merchant.
+func (r *RedemptionRepository) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID uuid.UUID) (redemption.Redemption, error) {
+	row, err := sqlc.New(r.pool).LatestOpenRedemptionForVoucher(ctx, toPgUUID(voucherID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return redemption.Redemption{}, redemption.ErrNotFound
+	}
+	if err != nil {
+		return redemption.Redemption{}, fmt.Errorf("latest open redemption: %w", err)
+	}
+	return redemption.Redemption{
+		ID:         toUUID(row.ID),
+		VoucherID:  toUUID(row.VoucherID),
+		MerchantID: toUUID(row.MerchantID),
+		StaffID:    toUUID(row.StaffUserID),
+		Amount:     row.Amount,
+		Commission: row.Commission,
+		CreatedAt:  row.CreatedAt.Time,
+	}, nil
+}
+
 func (r *RedemptionRepository) ReversalCandidate(ctx context.Context, merchantID, voucherID uuid.UUID) (redemption.Redemption, error) {
 	row, err := sqlc.New(r.pool).LatestOpenRedemption(ctx, sqlc.LatestOpenRedemptionParams{
 		VoucherID:  toPgUUID(voucherID),
@@ -133,6 +169,7 @@ func (r *RedemptionRepository) ReversalCandidate(ctx context.Context, merchantID
 	return redemption.Redemption{
 		ID:         toUUID(row.ID),
 		VoucherID:  toUUID(row.VoucherID),
+		MerchantID: toUUID(row.MerchantID),
 		StaffID:    toUUID(row.StaffUserID),
 		Amount:     row.Amount,
 		Commission: row.Commission,

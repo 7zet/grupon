@@ -492,7 +492,7 @@ paths:
     post:
       tags: [Merchant]
       operationId: inviteMerchantStaff
-      summary: Invite manager or cashier by email
+      summary: Invite a manager or cashier by phone (owner only)
       security: [{cookieAuth: []}, {bearerAuth: []}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StaffInput'}}}}
       responses: {'202': {description: Invitation sent}, default: {$ref: '#/components/responses/Problem'}}
@@ -706,7 +706,7 @@ paths:
       operationId: uploadMerchantDocument
       summary: Upload a business document (owner only). Replaces the previous file of the same kind
       security: [{cookieAuth: []}, {bearerAuth: []}]
-      parameters: [{name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter]}}]
+      parameters: [{name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter, price_proof]}}]
       requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
       responses: {'204': {description: Stored}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/admin/merchants/{id}/documents/{kind}:
@@ -715,8 +715,31 @@ paths:
       operationId: downloadMerchantDocument
       summary: Download a business document for review (reviewers only)
       security: [{cookieAuth: []}, {bearerAuth: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter]}}]
+      parameters: [{$ref: '#/components/parameters/Id'}, {name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter, price_proof]}}]
       responses: {'200': {description: File, content: {application/pdf: {schema: {type: string, format: binary}}, image/jpeg: {schema: {type: string, format: binary}}, image/png: {schema: {type: string, format: binary}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/vouchers/{id}/reverse:
+    post:
+      tags: [Admin]
+      operationId: supportReverseVoucher
+      summary: Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReverseRequest'}}}}
+      responses: {'204': {description: Reversed}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/me/notifications:
+    get:
+      tags: [Account]
+      operationId: listMyNotifications
+      summary: List my notifications, newest first
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Notifications, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/finance/queue:
+    get:
+      tags: [Admin]
+      operationId: getFinanceQueue
+      summary: Open payouts, refunds and disputes for the finance desk
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Queue, content: {application/json: {schema: {$ref: '#/components/schemas/FinanceQueue'}}}}, default: {$ref: '#/components/responses/Problem'}}
 components:
   securitySchemes:
     cookieAuth:
@@ -819,10 +842,10 @@ components:
       properties: {locales: {type: array, items: {$ref: '#/components/schemas/Locale'}}, currencies: {type: array, items: {$ref: '#/components/schemas/Currency'}}, cities: {type: array, items: {$ref: '#/components/schemas/City'}}, categories: {type: array, items: {$ref: '#/components/schemas/Category'}}}
     DealStatus:
       type: string
-      enum: [draft, pending_review, rejected, scheduled, active, paused, sold_out, expired]
+      enum: [draft, in_review, approved, scheduled, active, paused, ended, archived, changes_requested]
     OrderStatus:
       type: string
-      enum: [pending_payment, paid, failed, cancelled, refunded, partially_refunded]
+      enum: [created, awaiting_payment, paid, completed, expired, failed, cancelled, partially_refunded, refunded]
     DealOption:
       type: object
       required: [id, title, original_price, deal_price, stock_total, stock_sold, stock_reserved, is_active]
@@ -939,7 +962,7 @@ components:
     PaymentSession:
       type: object
       required: [payment_id, provider, status, redirect_url]
-      properties: {payment_id: {$ref: '#/components/schemas/Uuid'}, provider: {type: string, enum: [mock, payme, click, uzum]}, status: {type: string, enum: [created, pending, succeeded, failed, refunded]}, redirect_url: {type: string, format: uri-reference}}
+      properties: {payment_id: {$ref: '#/components/schemas/Uuid'}, provider: {type: string, enum: [mock, payme, click, uzum]}, status: {type: string, enum: [created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost]}, redirect_url: {type: string, format: uri-reference}}
     MockOutcomeRequest:
       type: object
       required: [outcome]
@@ -947,7 +970,7 @@ components:
     Voucher:
       type: object
       required: [id, deal, option, merchant, code, qr_token, status, valid_from, valid_until]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, deal: {$ref: '#/components/schemas/DealSummary'}, option: {$ref: '#/components/schemas/DealOption'}, merchant: {$ref: '#/components/schemas/Merchant'}, buyer_first_name: {type: string}, code: {type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$'}, qr_token: {type: string, description: Rotates every 30 seconds; the voucher page must refetch.}, qr_token_expires_at: {type: string, format: date-time}, backup_code: {type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$'}, status: {type: string, enum: [active, redeemed, expired, refunded, cancelled]}, valid_from: {type: string, format: date-time}, valid_until: {type: string, format: date-time}, redeemed_at: {type: [string, 'null'], format: date-time}, location: {$ref: '#/components/schemas/MerchantLocation'}}
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, deal: {$ref: '#/components/schemas/DealSummary'}, option: {$ref: '#/components/schemas/DealOption'}, merchant: {$ref: '#/components/schemas/Merchant'}, buyer_first_name: {type: string}, code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, qr_token: {type: string, description: Rotates every 30 seconds; the voucher page must refetch.}, qr_token_expires_at: {type: string, format: date-time}, backup_code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, status: {type: string, enum: [active, redeemed, expired, refunded, cancelled]}, valid_from: {type: string, format: date-time}, valid_until: {type: string, format: date-time}, redeemed_at: {type: [string, 'null'], format: date-time}, location: {$ref: '#/components/schemas/MerchantLocation'}}
     VoucherPage:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Voucher'}}}}]
     ReviewInput:
@@ -1034,7 +1057,7 @@ components:
     VoucherLookupRequest:
       type: object
       oneOf: [{required: [qr_token]}, {required: [code]}]
-      properties: {qr_token: {type: string}, code: {type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$'}}
+      properties: {qr_token: {type: string}, code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}}
     RedeemRequest:
       type: object
       required: [location_id]
@@ -1085,8 +1108,8 @@ components:
       properties: {id: {$ref: '#/components/schemas/Uuid'}, user: {$ref: '#/components/schemas/User'}, role: {type: string, enum: [merchant_owner, merchant_manager, merchant_cashier]}}
     StaffInput:
       type: object
-      required: [email, role]
-      properties: {email: {type: string, format: email}, role: {type: string, enum: [merchant_manager, merchant_cashier]}}
+      required: [phone, role]
+      properties: {phone: {type: string, pattern: '^\+998[0-9]{9}$', description: Phone of a registered user; they must sign in once first}, role: {type: string, enum: [merchant_manager, merchant_cashier]}}
     StaffList:
       type: object
       required: [items]
@@ -1098,7 +1121,7 @@ components:
     MerchantReview:
       type: object
       required: [id, legal_name, display_name, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, review_status, submitted_at]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter]}, description: Document kinds already uploaded}}
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter, price_proof]}, description: Document kinds already uploaded}}
     MerchantReviewList:
       type: object
       required: [items]
@@ -1110,8 +1133,32 @@ components:
     MerchantDocument:
       type: object
       required: [kind, content_type, size_bytes, uploaded_at]
-      properties: {kind: {type: string, enum: [certificate, bank_letter]}, content_type: {type: string, enum: [application/pdf, image/jpeg, image/png]}, size_bytes: {type: integer, minimum: 1}, uploaded_at: {type: string, format: date-time}}
+      properties: {kind: {type: string, enum: [certificate, bank_letter, price_proof]}, content_type: {type: string, enum: [application/pdf, image/jpeg, image/png]}, size_bytes: {type: integer, minimum: 1}, uploaded_at: {type: string, format: date-time}}
     MerchantDocumentList:
       type: object
       required: [items]
       properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantDocument'}}}
+    Notification:
+      type: object
+      required: [id, kind, merchant_name, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, kind: {type: string, enum: [voucher_redeemed]}, voucher_id: {$ref: '#/components/schemas/Uuid'}, merchant_name: {type: string}, created_at: {type: string, format: date-time}, read_at: {type: [string, 'null'], format: date-time}}
+    NotificationList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/Notification'}}}
+    PayoutRunItem:
+      type: object
+      required: [id, merchant_name, amount, status, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, merchant_name: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, created_at: {type: string, format: date-time}}
+    RefundItem:
+      type: object
+      required: [id, voucher_code, amount, status, reason, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_code: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, reason: {type: string}, created_at: {type: string, format: date-time}}
+    DisputeItem:
+      type: object
+      required: [id, voucher_code, merchant_name, amount, status, reason, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_code: {type: string}, merchant_name: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, reason: {type: string}, created_at: {type: string, format: date-time}}
+    FinanceQueue:
+      type: object
+      required: [payout_runs, refunds, disputes]
+      properties: {payout_runs: {type: array, items: {$ref: '#/components/schemas/PayoutRunItem'}}, refunds: {type: array, items: {$ref: '#/components/schemas/RefundItem'}}, disputes: {type: array, items: {$ref: '#/components/schemas/DisputeItem'}}}

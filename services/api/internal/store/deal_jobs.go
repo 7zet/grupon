@@ -35,8 +35,6 @@ func (j *DealJobs) RunDealSweeps(ctx context.Context) (DealSweepResult, error) {
 	}{
 		{"activate scheduled deals", j.queries.ActivateScheduledDeals, &result.Activated},
 		{"expire ended deals", j.queries.ExpireEndedDeals, &result.Expired},
-		{"mark sold-out deals", j.queries.MarkSoldOutDeals, &result.SoldOut},
-		{"reactivate restocked deals", j.queries.ReactivateRestockedDeals, &result.Reactivated},
 		{"recompute sold counts", j.queries.RecomputeDealSoldCounts, &result.SoldCounts},
 		{"recompute deal ratings", j.queries.RecomputeDealRatings, &result.DealRatings},
 		{"recompute merchant ratings", j.queries.RecomputeMerchantRatings, &result.MerchantRatings},

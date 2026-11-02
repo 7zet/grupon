@@ -17,12 +17,6 @@ export const handlers = [
       currencies: ['UZS'],
       cities,
       categories,
-      exchange_rate: {
-        base: 'UZS',
-        quote: 'USD',
-        rate: '12650',
-        effective_at: '2026-10-01T00:00:00Z',
-      },
     }),
   ),
   http.get(`${base}/homepage`, () =>

@@ -439,7 +439,7 @@ func (s *Service) publishedSummaries(ctx context.Context, ids []uuid.UUID) ([]De
 
 // IsPublishable reports whether a summary may appear in listings.
 func IsPublishable(deal DealSummary, now time.Time) bool {
-	return (deal.Status == "active" || deal.Status == "sold_out") && deal.EndsAt.After(now)
+	return deal.Status == "active" && deal.EndsAt.After(now)
 }
 
 // IsEndingSoon reports whether urgency copy is justified for a deal.

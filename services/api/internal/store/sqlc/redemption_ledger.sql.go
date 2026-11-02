@@ -14,7 +14,7 @@ import (
 const applyVoucherUse = `-- name: ApplyVoucherUse :execrows
 UPDATE vouchers SET
   redemptions_used = redemptions_used + 1,
-  status = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN 'redeemed'::voucher_status ELSE status END,
+  status = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN 'redeemed'::voucher_status WHEN redemptions_allowed > 1 THEN 'partially_redeemed'::voucher_status ELSE status END,
   redeemed_at = CASE WHEN redemptions_used + 1 >= redemptions_allowed THEN now() ELSE redeemed_at END,
   redeemed_by_user_id = $1,
   redeemed_location_id = $2,
@@ -34,6 +34,41 @@ func (q *Queries) ApplyVoucherUse(ctx context.Context, arg ApplyVoucherUseParams
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const completeFullyUsedOrder = `-- name: CompleteFullyUsedOrder :execrows
+UPDATE orders o SET status = 'completed', updated_at = now()
+WHERE o.id = (SELECT oi.order_id FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id WHERE v.id = $1)
+  AND o.status = 'paid'
+  AND NOT EXISTS (
+    SELECT 1 FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+    WHERE oi.order_id = o.id AND v.status IN ('issued', 'active', 'partially_redeemed')
+  )
+`
+
+// PRD 08: a paid order becomes completed once none of its vouchers can still be redeemed.
+func (q *Queries) CompleteFullyUsedOrder(ctx context.Context, voucherID pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, completeFullyUsedOrder, voucherID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertBuyerNotification = `-- name: InsertBuyerNotification :exec
+INSERT INTO notifications (user_id, kind, voucher_id, merchant_name)
+VALUES ($1, 'voucher_redeemed', $2, $3)
+`
+
+type InsertBuyerNotificationParams struct {
+	UserID       pgtype.UUID `json:"user_id"`
+	VoucherID    pgtype.UUID `json:"voucher_id"`
+	MerchantName string      `json:"merchant_name"`
+}
+
+func (q *Queries) InsertBuyerNotification(ctx context.Context, arg InsertBuyerNotificationParams) error {
+	_, err := q.db.Exec(ctx, insertBuyerNotification, arg.UserID, arg.VoucherID, arg.MerchantName)
+	return err
 }
 
 const insertRedemption = `-- name: InsertRedemption :one
@@ -70,6 +105,20 @@ func (q *Queries) InsertRedemption(ctx context.Context, arg InsertRedemptionPara
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const insertRedemptionAttempt = `-- name: InsertRedemptionAttempt :exec
+INSERT INTO redemption_attempts (staff_user_id, failed) VALUES ($1, $2)
+`
+
+type InsertRedemptionAttemptParams struct {
+	StaffUserID pgtype.UUID `json:"staff_user_id"`
+	Failed      bool        `json:"failed"`
+}
+
+func (q *Queries) InsertRedemptionAttempt(ctx context.Context, arg InsertRedemptionAttemptParams) error {
+	_, err := q.db.Exec(ctx, insertRedemptionAttempt, arg.StaffUserID, arg.Failed)
+	return err
 }
 
 const latestOpenRedemption = `-- name: LatestOpenRedemption :one
@@ -113,9 +162,45 @@ func (q *Queries) LatestOpenRedemption(ctx context.Context, arg LatestOpenRedemp
 	return i, err
 }
 
+const latestOpenRedemptionForVoucher = `-- name: LatestOpenRedemptionForVoucher :one
+SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
+FROM redemptions
+WHERE voucher_id = $1 AND reversed_at IS NULL
+ORDER BY sequence DESC
+LIMIT 1
+FOR UPDATE
+`
+
+type LatestOpenRedemptionForVoucherRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	VoucherID   pgtype.UUID        `json:"voucher_id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	StaffUserID pgtype.UUID        `json:"staff_user_id"`
+	Sequence    int32              `json:"sequence"`
+	Amount      int64              `json:"amount"`
+	Commission  int64              `json:"commission"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID pgtype.UUID) (LatestOpenRedemptionForVoucherRow, error) {
+	row := q.db.QueryRow(ctx, latestOpenRedemptionForVoucher, voucherID)
+	var i LatestOpenRedemptionForVoucherRow
+	err := row.Scan(
+		&i.ID,
+		&i.VoucherID,
+		&i.MerchantID,
+		&i.StaffUserID,
+		&i.Sequence,
+		&i.Amount,
+		&i.Commission,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const lockVoucherForRedemption = `-- name: LockVoucherForRedemption :one
-SELECT v.id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
-       oi.unit_price_snapshot, m.commission_bps
+SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
+       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN merchants m ON m.id = v.merchant_id
@@ -130,6 +215,7 @@ type LockVoucherForRedemptionParams struct {
 
 type LockVoucherForRedemptionRow struct {
 	ID                 pgtype.UUID        `json:"id"`
+	UserID             pgtype.UUID        `json:"user_id"`
 	Status             VoucherStatus      `json:"status"`
 	RedemptionsUsed    int32              `json:"redemptions_used"`
 	RedemptionsAllowed int32              `json:"redemptions_allowed"`
@@ -137,6 +223,7 @@ type LockVoucherForRedemptionRow struct {
 	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
 	UnitPriceSnapshot  int64              `json:"unit_price_snapshot"`
 	CommissionBps      int32              `json:"commission_bps"`
+	MerchantName       string             `json:"merchant_name"`
 }
 
 func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherForRedemptionParams) (LockVoucherForRedemptionRow, error) {
@@ -144,6 +231,7 @@ func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherF
 	var i LockVoucherForRedemptionRow
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Status,
 		&i.RedemptionsUsed,
 		&i.RedemptionsAllowed,
@@ -151,6 +239,7 @@ func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherF
 		&i.ValidUntil,
 		&i.UnitPriceSnapshot,
 		&i.CommissionBps,
+		&i.MerchantName,
 	)
 	return i, err
 }
@@ -192,6 +281,42 @@ func (q *Queries) MerchantLocationCoords(ctx context.Context, arg MerchantLocati
 	row := q.db.QueryRow(ctx, merchantLocationCoords, arg.ID, arg.MerchantID)
 	var i MerchantLocationCoordsRow
 	err := row.Scan(&i.Lat, &i.Lng)
+	return i, err
+}
+
+const nextRedemptionSequence = `-- name: NextRedemptionSequence :one
+SELECT (COALESCE(MAX(sequence), 0) + 1)::int AS next_sequence FROM redemptions WHERE voucher_id = $1
+`
+
+func (q *Queries) NextRedemptionSequence(ctx context.Context, voucherID pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, nextRedemptionSequence, voucherID)
+	var next_sequence int32
+	err := row.Scan(&next_sequence)
+	return next_sequence, err
+}
+
+const redemptionAttemptStats = `-- name: RedemptionAttemptStats :one
+SELECT COUNT(*) FILTER (WHERE created_at > $1)::int AS last_minute,
+       COUNT(*) FILTER (WHERE failed)::int AS failed_recent
+FROM redemption_attempts
+WHERE staff_user_id = $2 AND created_at > $3
+`
+
+type RedemptionAttemptStatsParams struct {
+	MinuteSince pgtype.Timestamptz `json:"minute_since"`
+	StaffUserID pgtype.UUID        `json:"staff_user_id"`
+	BlockSince  pgtype.Timestamptz `json:"block_since"`
+}
+
+type RedemptionAttemptStatsRow struct {
+	LastMinute   int32 `json:"last_minute"`
+	FailedRecent int32 `json:"failed_recent"`
+}
+
+func (q *Queries) RedemptionAttemptStats(ctx context.Context, arg RedemptionAttemptStatsParams) (RedemptionAttemptStatsRow, error) {
+	row := q.db.QueryRow(ctx, redemptionAttemptStats, arg.MinuteSince, arg.StaffUserID, arg.BlockSince)
+	var i RedemptionAttemptStatsRow
+	err := row.Scan(&i.LastMinute, &i.FailedRecent)
 	return i, err
 }
 

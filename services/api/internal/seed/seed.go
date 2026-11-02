@@ -2,9 +2,7 @@ package seed
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +17,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	"golang.org/x/crypto/argon2"
 )
 
 type localized map[string]string
@@ -141,7 +138,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	}
 	// Accounts people registered themselves are kept on every reseed: they are copied aside, the catalog and
 	// transactions are reset, and the accounts are written back. Demo accounts are replaced by the seed.
-	if _, err := tx.Exec(ctx, `CREATE TEMP TABLE keep_users ON COMMIT DROP AS SELECT * FROM users WHERE email NOT LIKE '%@local.test'`); err != nil {
+	if _, err := tx.Exec(ctx, `CREATE TEMP TABLE keep_users ON COMMIT DROP AS SELECT * FROM users WHERE email NOT LIKE '%@local.test' AND email NOT LIKE '%@test.local'`); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `CREATE TEMP TABLE keep_roles ON COMMIT DROP AS SELECT * FROM role_assignments WHERE merchant_id IS NULL AND user_id IN (SELECT id FROM keep_users)`); err != nil {
@@ -182,10 +179,6 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			subcategoryIDs[i] = append(subcategoryIDs[i], id)
 		}
 	}
-	password, err := passwordHash("Password123!")
-	if err != nil {
-		return err
-	}
 	userIDs := make([]string, 24)
 	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test"}
 	for i := range userIDs {
@@ -194,7 +187,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if i < len(emails) {
 			email, name = emails[i], []string{"Test User", "Merchant Owner", "Merchant Cashier", "Superadmin"}[i]
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO users(email,password_hash,name,locale,currency,email_verified_at,phone) VALUES($1,$2,$3,$4,'UZS',now(),$5) RETURNING id`, email, password, name, []string{"uz", "ru", "en"}[i%3], seedPhone(i)).Scan(&userIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO users(email,name,locale,currency,email_verified_at,phone) VALUES($1,$2,$3,'UZS',now(),$4) RETURNING id`, email, name, []string{"uz", "ru", "en"}[i%3], seedPhone(i)).Scan(&userIDs[i]); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'user')`, userIDs[i]); err != nil {
@@ -208,7 +201,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	for i := range merchantIDs {
 		name := fmt.Sprintf("%s %d", data.MerchantNames[i%len(data.MerchantNames)], i+1)
 		slug := fmt.Sprintf("seed-merchant-%02d", i+1)
-		if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps) VALUES($1,$2,$2,$3,$4,$5,1500) RETURNING id`, slug, name, description, fmt.Sprintf("+99890100%04d", i), "https://local.test/business/"+slug).Scan(&merchantIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps,review_status) VALUES($1,$2,$2,$3,$4,$5,1500,'approved') RETURNING id`, slug, name, description, fmt.Sprintf("+99890100%04d", i), "https://local.test/business/"+slug).Scan(&merchantIDs[i]); err != nil {
 			return err
 		}
 		for j := 0; j < 1+i%3; j++ {
@@ -227,7 +220,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		return err
 	}
 	deals := make([]dealSeed, 100)
-	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "sold_out", "expired", "draft"}
+	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "paused", "ended", "draft"}
 	for i := range deals {
 		merchant := i % len(merchantIDs)
 		category := i % len(categoryIDs)
@@ -243,7 +236,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			start = time.Now().UTC().Add(48 * time.Hour)
 			end = start.Add(10 * 24 * time.Hour)
 		}
-		if statuses[i%len(statuses)] == "expired" {
+		if statuses[i%len(statuses)] == "ended" {
 			start = time.Now().UTC().Add(-20 * 24 * time.Hour)
 			end = time.Now().UTC().Add(-24 * time.Hour)
 		}
@@ -313,25 +306,10 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			}
 		}
 	}
-	for i, merchantID := range merchantIDs {
-		gross := int64(1_000_000 + i*100_000)
-		if _, err := tx.Exec(ctx, `INSERT INTO payouts(merchant_id,period_start,period_end,gross,commission,net,status) VALUES($1,current_date-30,current_date,$2,$3,$4,'pending')`, merchantID, gross, gross*15/100, gross*85/100); err != nil {
-			return err
-		}
-	}
 	if _, err := tx.Exec(ctx, `INSERT INTO homepage_sections(key,title,type,deal_ids,sort_order) VALUES('featured',$1,'deals',$2,1),('popular',$1,'deals',$2,2),('limited',$1,'deals',$2,3)`, description, []string{deals[0].ID, deals[1].ID, deals[2].ID}); err != nil {
 		return err
 	}
 	return nil
-}
-
-func passwordHash(password string) (string, error) {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return "", err
-	}
-	hash := argon2.IDKey([]byte(password), salt, 3, 64*1024, 2, 32)
-	return fmt.Sprintf("$argon2id$v=19$m=65536,t=3,p=2$%s$%s", base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash)), nil
 }
 
 func envOr(key, fallback string) string {

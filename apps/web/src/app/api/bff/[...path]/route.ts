@@ -13,13 +13,31 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
   { method: 'POST', pattern: /^merchant\/submit$/ },
+  { method: 'GET', pattern: /^me\/notifications$/ },
+  { method: 'POST', pattern: new RegExp(`^me\\/vouchers\\/${UUID}\\/dispute$`) },
   { method: 'GET', pattern: /^merchant\/business$/ },
   { method: 'GET', pattern: /^merchant\/documents$/ },
-  { method: 'PUT', pattern: /^merchant\/documents\/(certificate|bank_letter)$/ },
+  { method: 'PUT', pattern: /^merchant\/documents\/(certificate|bank_letter|price_proof)$/ },
   { method: 'GET', pattern: /^admin\/merchants$/ },
+  { method: 'GET', pattern: /^admin\/finance\/queue$/ },
+  { method: 'POST', pattern: new RegExp(`^admin\\/payouts\\/${UUID}\\/(approve|reconcile)$`) },
+  { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/(approve|paid)$`) },
+  { method: 'POST', pattern: new RegExp(`^admin\\/disputes\\/${UUID}\\/resolve$`) },
   { method: 'POST', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject)$`) },
-  { method: 'GET', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter)$`) },
+  { method: 'GET', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`) },
   { method: 'PATCH', pattern: /^merchant\/business$/ },
+  { method: 'GET', pattern: /^merchant\/payouts$/ },
+  { method: 'GET', pattern: /^merchant\/customers$/ },
+  { method: 'GET', pattern: /^merchant\/analytics$/ },
+  { method: 'GET', pattern: /^merchant\/reviews$/ },
+  { method: 'PUT', pattern: new RegExp(`^merchant\\/reviews\\/${UUID}\\/reply$`) },
+  { method: 'GET', pattern: /^merchant\/orders$/ },
+  { method: 'GET', pattern: /^merchant\/settings$/ },
+  { method: 'PATCH', pattern: /^merchant\/settings$/ },
+  { method: 'GET', pattern: /^merchant\/staff$/ },
+  { method: 'POST', pattern: /^merchant\/staff$/ },
+  { method: 'PATCH', pattern: new RegExp(`^merchant\\/staff\\/${UUID}$`) },
+  { method: 'DELETE', pattern: new RegExp(`^merchant\\/staff\\/${UUID}$`) },
   { method: 'POST', pattern: /^merchant\/locations$/ },
   { method: 'PATCH', pattern: new RegExp(`^merchant\\/locations\\/${UUID}$`) },
   { method: 'DELETE', pattern: new RegExp(`^merchant\\/locations\\/${UUID}$`) },
@@ -45,11 +63,11 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
 
 /** Media bytes are binary: they must be forwarded as-is, never decoded as text. */
 const BINARY_UPLOAD = new RegExp(
-  `^(merchant\\/media\\/${UUID}\\/content|merchant\\/documents\\/(certificate|bank_letter))$`,
+  `^(merchant\\/media\\/${UUID}\\/content|merchant\\/documents\\/(certificate|bank_letter|price_proof))$`,
 );
 
 /** Business documents are downloaded as files, so the bytes must not be decoded as text. */
-const BINARY_DOWNLOAD = new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter)$`);
+const BINARY_DOWNLOAD = new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`);
 
 function apiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1';

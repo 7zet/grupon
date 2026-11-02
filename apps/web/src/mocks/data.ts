@@ -191,7 +191,7 @@ export const deals: Deal[] = Array.from({ length: 100 }, (_, index) => {
     voucher_valid_days: 60,
     voucher_valid_until: null,
     max_per_user: 5,
-    status: index === 98 ? 'sold_out' : index === 99 ? 'expired' : 'active',
+    status: index === 98 ? 'paused' : index === 99 ? 'ended' : 'active',
     options: [
       {
         id: uid(300, index * 2 + 1),

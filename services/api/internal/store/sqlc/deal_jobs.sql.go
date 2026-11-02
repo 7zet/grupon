@@ -28,49 +28,12 @@ func (q *Queries) ActivateScheduledDeals(ctx context.Context) (int64, error) {
 
 const expireEndedDeals = `-- name: ExpireEndedDeals :execrows
 UPDATE deals
-SET status = 'expired', updated_at = now()
-WHERE status IN ('scheduled', 'active', 'sold_out') AND deleted_at IS NULL AND ends_at <= now()
+SET status = 'ended', updated_at = now()
+WHERE status IN ('scheduled', 'active') AND deleted_at IS NULL AND ends_at <= now()
 `
 
 func (q *Queries) ExpireEndedDeals(ctx context.Context) (int64, error) {
 	result, err := q.db.Exec(ctx, expireEndedDeals)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const markSoldOutDeals = `-- name: MarkSoldOutDeals :execrows
-UPDATE deals d
-SET status = 'sold_out', updated_at = now()
-WHERE d.status = 'active' AND d.deleted_at IS NULL
-  AND EXISTS (SELECT 1 FROM deal_options o WHERE o.deal_id = d.id)
-  AND NOT EXISTS (
-    SELECT 1 FROM deal_options o
-    WHERE o.deal_id = d.id AND o.is_active AND o.stock_total - o.stock_sold - o.stock_reserved > 0
-  )
-`
-
-func (q *Queries) MarkSoldOutDeals(ctx context.Context) (int64, error) {
-	result, err := q.db.Exec(ctx, markSoldOutDeals)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const reactivateRestockedDeals = `-- name: ReactivateRestockedDeals :execrows
-UPDATE deals d
-SET status = 'active', updated_at = now()
-WHERE d.status = 'sold_out' AND d.deleted_at IS NULL AND d.ends_at > now()
-  AND EXISTS (
-    SELECT 1 FROM deal_options o
-    WHERE o.deal_id = d.id AND o.is_active AND o.stock_total - o.stock_sold - o.stock_reserved > 0
-  )
-`
-
-func (q *Queries) ReactivateRestockedDeals(ctx context.Context) (int64, error) {
-	result, err := q.db.Exec(ctx, reactivateRestockedDeals)
 	if err != nil {
 		return 0, err
 	}

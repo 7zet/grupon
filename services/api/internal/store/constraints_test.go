@@ -48,9 +48,9 @@ func TestDatabaseConstraints(t *testing.T) {
 	}
 
 	fixture := `
-INSERT INTO users(id,email,password_hash,name) VALUES
- ('019a0000-0000-7000-8000-000000000001','one@test.local','hash','One'),
- ('019a0000-0000-7000-8000-000000000002','two@test.local','hash','Two');
+INSERT INTO users(id,email,name) VALUES
+ ('019a0000-0000-7000-8000-000000000001','one@test.local','One'),
+ ('019a0000-0000-7000-8000-000000000002','two@test.local','Two');
 INSERT INTO merchants(id,slug,legal_name,display_name,phone) VALUES ('019a0000-0000-7000-8000-000000000010','merchant','Merchant','Merchant','+998900000000');
 INSERT INTO cities(id,slug,name,lat,lng) VALUES ('019a0000-0000-7000-8000-000000000020','city','{"uz":"Shahar","ru":"Город","en":"City"}',0,0);
 INSERT INTO categories(id,slug,name,icon) VALUES ('019a0000-0000-7000-8000-000000000030','category','{"uz":"Tur","ru":"Тип","en":"Type"}','tag');

@@ -46,8 +46,6 @@ func (r *IdentityRepository) CreateUser(ctx context.Context, input identity.NewU
 	}
 	row, err := queries.CreateUser(ctx, sqlc.CreateUserParams{
 		Email:           input.Email,
-		PasswordHash:    optionalText(input.PasswordHash),
-		GoogleSub:       optionalText(input.GoogleSub),
 		Name:            input.Name,
 		Locale:          sqlc.LocaleCode(input.Locale),
 		Currency:        sqlc.CurrencyCode(input.Currency),
@@ -225,14 +223,6 @@ func toUser(row sqlc.User) identity.User {
 		Locale:   string(row.Locale),
 		Currency: string(row.Currency),
 		Status:   string(row.Status),
-	}
-	if row.PasswordHash.Valid {
-		value := row.PasswordHash.String
-		user.PasswordHash = &value
-	}
-	if row.GoogleSub.Valid {
-		value := row.GoogleSub.String
-		user.GoogleSub = &value
 	}
 	if row.Phone.Valid {
 		value := row.Phone.String

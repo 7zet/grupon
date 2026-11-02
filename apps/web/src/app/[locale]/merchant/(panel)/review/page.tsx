@@ -17,6 +17,7 @@ export default async function MerchantReviewPage() {
   const uploaded = {
     certificate: documents.items.some((doc) => doc.kind === 'certificate'),
     bank_letter: documents.items.some((doc) => doc.kind === 'bank_letter'),
+    price_proof: documents.items.some((doc) => doc.kind === 'price_proof'),
   };
   const status = business.review_status ?? 'draft';
 

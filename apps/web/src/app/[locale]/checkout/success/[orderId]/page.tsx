@@ -22,7 +22,7 @@ export default async function SuccessPage({
   if (!order) notFound();
 
   // The webhook may still be on its way; keep refreshing until the order is marked paid.
-  if (order.status === 'pending_payment') {
+  if (order.status === 'awaiting_payment') {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
         <PaymentPoller />

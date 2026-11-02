@@ -4,12 +4,13 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 
-type DocumentKind = 'certificate' | 'bank_letter';
+type DocumentKind = 'certificate' | 'bank_letter' | 'price_proof';
 type Uploaded = Record<DocumentKind, boolean>;
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ACCEPTED = ['application/pdf', 'image/jpeg', 'image/png'];
-const KINDS: DocumentKind[] = ['certificate', 'bank_letter'];
+const REQUIRED: DocumentKind[] = ['certificate', 'bank_letter'];
+const OPTIONAL: DocumentKind[] = ['price_proof'];
 
 /** Uploads the two required documents and sends the business to review. Shown only while it is a draft. */
 export function MerchantReviewForm({ uploaded }: { uploaded: Uploaded }) {
@@ -48,12 +49,15 @@ export function MerchantReviewForm({ uploaded }: { uploaded: Uploaded }) {
     router.refresh();
   }
 
-  const complete = KINDS.every((kind) => done[kind]);
+  const complete = REQUIRED.every((kind) => done[kind]);
   return (
     <div className="grid max-w-xl gap-6">
-      {KINDS.map((kind) => (
+      {[...REQUIRED, ...OPTIONAL].map((kind) => (
         <label key={kind} className="grid gap-2">
-          <span className="font-semibold">{t(`kind.${kind}`)}</span>
+          <span className="font-semibold">
+            {t(`kind.${kind}`)}
+            {OPTIONAL.includes(kind) && <span className="font-normal text-ink-muted"> · {t('optional')}</span>}
+          </span>
           <span className="text-small text-ink-muted">{done[kind] ? t('uploaded') : t('notUploaded')}</span>
           <input
             type="file"

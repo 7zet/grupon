@@ -14,8 +14,8 @@ SELECT ra.* FROM role_assignments ra WHERE ra.merchant_id = $1 AND ra.role IN ('
 SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateUser :one
-INSERT INTO users (email, password_hash, google_sub, name, locale, currency, email_verified_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO users (email, name, locale, currency, email_verified_at)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: MarkUserEmailVerified :exec
@@ -30,12 +30,8 @@ RETURNING *;
 UPDATE users SET last_login_at = now() WHERE id = $1;
 
 -- name: SoftDeleteUser :exec
--- Deleted accounts keep a tombstone so the email and google_sub can be reused by a new account
--- while the users_check constraint (a credential must exist) still holds.
-UPDATE users SET deleted_at = now(),
-  email = 'deleted+' || id::text || '@deleted.invalid',
-  google_sub = CASE WHEN google_sub IS NULL THEN NULL ELSE 'deleted:' || id::text END,
-  password_hash = CASE WHEN google_sub IS NULL THEN 'deleted' ELSE NULL END
+-- Deleted accounts keep a tombstone email so the address can be reused by a new account.
+UPDATE users SET deleted_at = now(), email = 'deleted+' || id::text || '@deleted.invalid'
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateRoleAssignment :exec

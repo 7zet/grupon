@@ -11,7 +11,7 @@ import (
 // Business rules and limits.
 const (
 	Currency          = catalog.Currency
-	ReservationTTL    = 10 * time.Minute
+	ReservationTTL    = 15 * time.Minute // PRD FR-03.4
 	MaxLineQuantity   = 100
 	MaxOrderItems     = 100
 	MaxMoneyAmount    = int64(1_000_000_000_000_000) // 1e15 minor units; far above any real price
@@ -22,10 +22,13 @@ const (
 
 // Order statuses.
 const (
-	OrderPendingPayment = "pending_payment"
-	OrderPaid           = "paid"
-	OrderCancelled      = "cancelled"
-	OrderRefunded       = "refunded"
+	OrderCreated         = "created"
+	OrderAwaitingPayment = "awaiting_payment"
+	OrderPaid            = "paid"
+	OrderCompleted       = "completed"
+	OrderExpired         = "expired"
+	OrderCancelled       = "cancelled"
+	OrderRefunded        = "refunded"
 )
 
 // Payment statuses.
@@ -34,14 +37,16 @@ const (
 	PaymentPending   = "pending"
 	PaymentSucceeded = "succeeded"
 	PaymentFailed    = "failed"
-	PaymentRefunded  = "refunded"
 )
 
 // Voucher statuses.
 const (
-	VoucherActive   = "active"
-	VoucherRedeemed = "redeemed"
-	VoucherExpired  = "expired"
+	VoucherActive            = "active"
+	VoucherPartiallyRedeemed = "partially_redeemed"
+	VoucherRedeemed          = "redeemed"
+	VoucherExpired           = "expired"
+	VoucherRefunded          = "refunded"
+	VoucherVoided            = "voided"
 )
 
 // OptionRecord is the purchase-relevant state of one deal option, read in one query.
@@ -78,17 +83,36 @@ func (o OptionRecord) SellableAt(now time.Time) bool {
 }
 
 // VoucherWindow returns the validity of a voucher bought now.
+//
+// PRD FR-02.1 and GAP-17: a voucher expires at the earlier of the fixed end date and the purchase date
+// plus N days, and the day-based end is the last moment of that day in Asia/Tashkent (AT-12).
 func (o OptionRecord) VoucherWindow(now time.Time) (time.Time, time.Time, bool) {
-	validUntil := now
-	switch {
-	case o.VoucherValidDays != nil:
-		validUntil = now.Add(time.Duration(*o.VoucherValidDays) * 24 * time.Hour)
-	case o.VoucherValidUntil != nil:
-		validUntil = *o.VoucherValidUntil
-	default:
+	var candidates []time.Time
+	if o.VoucherValidDays != nil {
+		local := now.In(TashkentZone).AddDate(0, 0, *o.VoucherValidDays)
+		candidates = append(candidates, endOfDayTashkent(local))
+	}
+	if o.VoucherValidUntil != nil {
+		candidates = append(candidates, *o.VoucherValidUntil)
+	}
+	if len(candidates) == 0 {
 		return now, now, false
 	}
+	validUntil := candidates[0]
+	for _, c := range candidates[1:] {
+		if c.Before(validUntil) {
+			validUntil = c
+		}
+	}
 	return now, validUntil, validUntil.After(now)
+}
+
+// TashkentZone is Asia/Tashkent. The country has no daylight saving time, so a fixed offset is exact.
+var TashkentZone = time.FixedZone("Asia/Tashkent", 5*60*60)
+
+func endOfDayTashkent(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 23, 59, 59, 999999999, TashkentZone)
 }
 
 // OrderItemInput is one requested purchase line.
@@ -165,6 +189,16 @@ type Voucher struct {
 	RedemptionsAllowed int
 	// ZaxiraCodeHMAC is the stored hash of the backup code; the plain code is derived, not stored.
 	ZaxiraCodeHMAC string
+}
+
+// Notification is one in-app message for a buyer.
+type Notification struct {
+	ID           uuid.UUID
+	Kind         string
+	VoucherID    *uuid.UUID
+	MerchantName string
+	CreatedAt    time.Time
+	ReadAt       *time.Time
 }
 
 // PaymentSession is what the buyer receives when starting a payment.

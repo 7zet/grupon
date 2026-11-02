@@ -248,6 +248,11 @@ func (r *FinanceRepository) OpenDispute(ctx context.Context, voucherID, openerID
 	if err != nil {
 		return false, fmt.Errorf("insert dispute: %w", err)
 	}
+	if disputeID.Valid {
+		if err := queries.SetVoucherDisputeFlag(ctx, sqlc.SetVoucherDisputeFlagParams{Open: true, ID: toPgUUID(voucherID)}); err != nil {
+			return false, fmt.Errorf("flag voucher: %w", err)
+		}
+	}
 	return disputeID.Valid, nil
 }
 
@@ -401,6 +406,9 @@ func (r *FinanceRepository) ResolveDispute(ctx context.Context, disputeID, resol
 	if rows != 1 {
 		return finance.ErrDisputeClosed
 	}
+	if err := queries.SetVoucherDisputeFlag(ctx, sqlc.SetVoucherDisputeFlagParams{Open: false, ID: dispute.VoucherID}); err != nil {
+		return fmt.Errorf("clear voucher flag: %w", err)
+	}
 	if resolution == "customer" {
 		if _, err := queries.InsertRefund(ctx, sqlc.InsertRefundParams{
 			VoucherID:   dispute.VoucherID,
@@ -413,4 +421,32 @@ func (r *FinanceRepository) ResolveDispute(ctx context.Context, disputeID, resol
 		}
 	}
 	return tx.Commit(ctx)
+}
+
+// Open lists payouts, refunds and disputes that still need a decision.
+func (r *FinanceRepository) Open(ctx context.Context) (finance.Queue, error) {
+	queries := sqlc.New(r.pool)
+	payouts, err := queries.ListOpenPayoutRuns(ctx)
+	if err != nil {
+		return finance.Queue{}, fmt.Errorf("list payouts: %w", err)
+	}
+	refunds, err := queries.ListOpenRefunds(ctx)
+	if err != nil {
+		return finance.Queue{}, fmt.Errorf("list refunds: %w", err)
+	}
+	disputes, err := queries.ListOpenDisputes(ctx)
+	if err != nil {
+		return finance.Queue{}, fmt.Errorf("list disputes: %w", err)
+	}
+	var queue finance.Queue
+	for _, row := range payouts {
+		queue.PayoutRuns = append(queue.PayoutRuns, finance.QueueItem{ID: toUUID(row.ID), Title: row.MerchantName, Amount: row.Amount, Status: row.Status, CreatedAt: row.CreatedAt.Time})
+	}
+	for _, row := range refunds {
+		queue.Refunds = append(queue.Refunds, finance.QueueItem{ID: toUUID(row.ID), Title: row.VoucherCode, Amount: row.Amount, Status: row.Status, Reason: row.Reason, CreatedAt: row.CreatedAt.Time})
+	}
+	for _, row := range disputes {
+		queue.Disputes = append(queue.Disputes, finance.QueueItem{ID: toUUID(row.ID), Title: row.VoucherCode + " · " + row.MerchantName, Amount: row.Amount, Status: row.Status, Reason: row.Reason, CreatedAt: row.CreatedAt.Time})
+	}
+	return queue, nil
 }

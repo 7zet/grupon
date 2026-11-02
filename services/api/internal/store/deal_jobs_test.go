@@ -47,7 +47,7 @@ func TestEndedDealsLeaveTheCatalog(t *testing.T) {
 	if err := fixture.pool.QueryRow(ctx, `SELECT status FROM deals WHERE slug = $1`, slug).Scan(&status); err != nil {
 		t.Fatal(err)
 	}
-	if status != "expired" {
-		t.Fatalf("status = %s, want expired", status)
+	if status != "ended" {
+		t.Fatalf("status = %s, want ended", status)
 	}
 }

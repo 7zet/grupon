@@ -86,7 +86,6 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
     slug,
     category_id: category.id,
     subcategory_id: subcategory.id,
-    kind: 'voucher',
     title: text('E2E aksiya'),
     short_description: text('Qisqa'),
     description: text('Tavsif'),

@@ -236,3 +236,34 @@
 - Business documents (FR-01.2), 2026-11-02: owners upload a certificate and a bank letter (PDF, JPG or PNG, up to 10 MB) while the business is draft or rejected. Files are stored privately under DOCUMENTS_LOCAL_DIR, never under the public media path, and are read only by reviewers through the API (403 for owners). Submission requires both kinds (422 documents_required). Re-uploading replaces the previous file.
 - Merchant status: GET /merchant/business returns review_status. The merchant status page at /merchant/review shows it and hosts the upload form. Admin queue page at /admin/merchants.
 - Not decided: whether rejected businesses can see the rejection reason on their status page (the reason is stored, but the merchant API does not return it yet).
+
+## Fixes after the Claude review, 2026-11-02
+- Redemption reversal (PRD FR-05.5): the cashier, owner and manager may reverse only within 10 minutes and only their own redemption for cashiers. After that only support or superadmin can reverse, through POST /admin/vouchers/{id}/reverse, with a reason in the audit trail. Ledger reversal and voucher rollback were already in place.
+- Redemption row numbers never repeat: the next number is the maximum plus one, including reversed rows. The share of the price still follows live uses (GAP-07 floor split, last share takes the remainder).
+- Stock hold is 15 minutes (PRD FR-03.4). Backup codes are 10 characters in two groups of five, Crockford base32 (PRD FR-04.2). The human code stays 8 characters.
+- Buyers get an in-app notification for every redemption (table notifications, GET /me/notifications). The coupons page shows them, with a "not me" button that opens a dispute; an open dispute holds the merchant payout (AT-16). SMS and email are not used for this yet.
+- Not done from the review: the cashier wrong-code rate limit (30/min, block after 10 failures), the expiry formula min(valid_until, purchase+N days) at Asia/Tashkent 23:59, admin finance pages (payouts, refunds, reconcile), staff invitation page, price proof upload, campaign calculator, merchant statements, category closed-flag gate (AT-10), and removal of the leftover columns (password_hash, payouts, USD).
+
+- Merchant panel API (payouts, customers, analytics, reviews and reply, orders, settings) is served by one handler set and the same workspace scope as the rest of the panel. Cashiers cannot reply to reviews or change settings. A reply can be edited for 24 hours after it was first written (PRD §5). Buyer names are shown as "Alisher U." (MaskName). Analytics takes an inclusive end date and queries up to the next midnight.
+- Staff endpoints (invite by phone, change role, remove) are owner-only and every change writes an audit row in the same transaction. The owner role cannot be handed out or removed by invitation.
+- Store test phone numbers are random and retry on a clash with an account left by an earlier run.
+- Still open from the review: merchant web pages for staff, payouts, reviews, orders, customers, analytics and settings; campaign calculator; price proof upload; merchant statements; removal of users.password_hash, google_sub and the USD enum value.
+
+- Price proof is an optional third document kind (`price_proof`); submit still needs the certificate and bank letter only. Migration 00017 adds the kind, and the count in submit now counts only the two required kinds.
+- Passwords and Google sign-in are removed from the schema (migration 00018): `users.password_hash` and `google_sub` are dropped, and the password reset code and hashing helpers are deleted. Login stays phone code only.
+- `currency_code` now holds UZS only. The migration rebuilds the type and refuses to run if any row still says USD, so no money is relabelled silently.
+- Merchant rows created by the seed are approved; otherwise the new deal gate (merchant_not_approved) blocks seeded merchants.
+- `writeJSON` encodes before it writes the status. An encoding failure now returns 500 instead of an empty 200 (this hid a staff list bug: a required email was missing).
+- Playwright runs with `workers: 1`. The specs share seeded accounts, and each phone sign-in replaces the previous code, so parallel runs fail randomly.
+
+- PRD alignment of states (migrations 00019, 00020). Deal: draft, in_review, approved, scheduled, active, paused, ended, archived, changes_requested. Order: created, awaiting_payment, paid, completed, expired, failed, cancelled, partially_refunded, refunded. Payment: created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost (the refund is its own object). Voucher: issued, active, partially_redeemed, redeemed, expired, refunded, voided, plus flags fraud_hold and dispute_open. Dispute: open, awaiting_evidence, under_review, resolved_customer, resolved_merchant, closed. Rows were mapped first (pending_review to in_review, rejected to changes_requested, expired to ended, sold_out to active, pending_payment to awaiting_payment, cancelled voucher to voided, refunded payment to succeeded).
+- Sold out is not a state. It is an active deal with no stock left (the catalog shows it from stock).
+- Approval is two audited steps: in_review to approved, then scheduled or active. The transition query also accepts approved for the second step.
+- Order states: the order is written as awaiting_payment; created is the transient state inside the create transaction. A paid order becomes completed when none of its vouchers can still be redeemed (issued, active or partially_redeemed). A hold that times out sets expired, not cancelled.
+- A multi-use voucher becomes partially_redeemed after each use until its last use, then redeemed.
+- An open dispute sets vouchers.dispute_open; resolving it clears the flag. fraud_hold exists as a column but no fraud rule sets it yet.
+- Merchant status is one value: review_status. The old status column (active/suspended) is removed. The public merchant status is derived from review_status (approved gives active).
+- homepage_section_type keeps deals and categories only.
+- Pilot categories (PRD 03): Beauty & Wellness, Food & Drink, Things to Do, Health & Fitness are open. Automotive, Education, Events, Home Services, Travel, Pickup Goods and Medical exist but are closed by their flags. Cities: the five seeded cities; only Toshkent is open in the pilot.
+- Not done in this step: dispute awaiting_evidence and under_review have no transitions in code; chargeback states have no flow; a late payment refund does not create a refund row yet.
+- Commit and push of the state, category and merchant-status changes were requested in the same session.

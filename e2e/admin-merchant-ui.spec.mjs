@@ -57,7 +57,6 @@ async function submitDeal(owner, title) {
     slug: `ui-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     category_id: category.id,
     subcategory_id: category.subcategories[0].id,
-    kind: 'voucher',
     title: text(title),
     short_description: text('Qisqa'),
     description: text('Tavsif'),

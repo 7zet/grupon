@@ -77,15 +77,13 @@ func (q *Queries) CreateRoleAssignment(ctx context.Context, arg CreateRoleAssign
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, password_hash, google_sub, name, locale, currency, email_verified_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
+INSERT INTO users (email, name, locale, currency, email_verified_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
 `
 
 type CreateUserParams struct {
 	Email           string             `json:"email"`
-	PasswordHash    pgtype.Text        `json:"password_hash"`
-	GoogleSub       pgtype.Text        `json:"google_sub"`
 	Name            string             `json:"name"`
 	Locale          LocaleCode         `json:"locale"`
 	Currency        CurrencyCode       `json:"currency"`
@@ -95,8 +93,6 @@ type CreateUserParams struct {
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.Email,
-		arg.PasswordHash,
-		arg.GoogleSub,
 		arg.Name,
 		arg.Locale,
 		arg.Currency,
@@ -106,8 +102,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,
@@ -146,7 +140,7 @@ func (q *Queries) GetRefreshTokenByHash(ctx context.Context, tokenHash string) (
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE email = $1 AND deleted_at IS NULL
+SELECT id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE email = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -155,8 +149,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,
@@ -173,7 +165,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE id = $1 AND deleted_at IS NULL
+SELECT id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at FROM users WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -182,8 +174,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,
@@ -313,15 +303,11 @@ func (q *Queries) RevokeUserRefreshTokensExceptFamily(ctx context.Context, arg R
 }
 
 const softDeleteUser = `-- name: SoftDeleteUser :exec
-UPDATE users SET deleted_at = now(),
-  email = 'deleted+' || id::text || '@deleted.invalid',
-  google_sub = CASE WHEN google_sub IS NULL THEN NULL ELSE 'deleted:' || id::text END,
-  password_hash = CASE WHEN google_sub IS NULL THEN 'deleted' ELSE NULL END
+UPDATE users SET deleted_at = now(), email = 'deleted+' || id::text || '@deleted.invalid'
 WHERE id = $1 AND deleted_at IS NULL
 `
 
-// Deleted accounts keep a tombstone so the email and google_sub can be reused by a new account
-// while the users_check constraint (a credential must exist) still holds.
+// Deleted accounts keep a tombstone email so the address can be reused by a new account.
 func (q *Queries) SoftDeleteUser(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, softDeleteUser, id)
 	return err
@@ -339,7 +325,7 @@ func (q *Queries) TouchUserLastLogin(ctx context.Context, id pgtype.UUID) error 
 const updateUserProfile = `-- name: UpdateUserProfile :one
 UPDATE users SET name = $2, phone = $3, locale = $4, currency = $5
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, email, password_hash, google_sub, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
+RETURNING id, email, name, phone, avatar_url, locale, currency, email_verified_at, status, last_login_at, deleted_at, created_at, updated_at
 `
 
 type UpdateUserProfileParams struct {
@@ -362,8 +348,6 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.PasswordHash,
-		&i.GoogleSub,
 		&i.Name,
 		&i.Phone,
 		&i.AvatarUrl,

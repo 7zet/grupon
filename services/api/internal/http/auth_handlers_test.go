@@ -43,8 +43,8 @@ func newAuthHarness(t *testing.T, limit int, secure bool) authHarness {
 		Repository: repo, Tokens: tokens, Mailer: mailer, Limiter: limiter, Now: time.Now,
 	}, identity.Config{
 		AccessTokenTTL: 15 * time.Minute, RefreshTokenTTL: 30 * 24 * time.Hour,
-		VerifyEmailTTL: 24 * time.Hour, ResetPasswordTTL: time.Hour,
-		WebBaseURL: "https://grupon.test", BrandName: "Grupon",
+		VerifyEmailTTL: 24 * time.Hour,
+		WebBaseURL:     "https://grupon.test", BrandName: "Grupon",
 	})
 	auth := NewAuthAPI(service, slog.New(slog.NewTextHandler(io.Discard, nil)), AuthOptions{
 		SecureCookies:   secure,

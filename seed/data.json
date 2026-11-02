@@ -58,92 +58,25 @@
   ],
   "categories": [
     {
-      "slug": "coupons",
-      "name": {
-        "uz": "Kuponlar",
-        "ru": "Купоны",
-        "en": "Coupons"
-      },
-      "icon": "ticket",
-      "subcategories": [
-        "daily-deals",
-        "services",
-        "entertainment",
-        "online"
-      ],
-      "active": false
-    },
-    {
       "slug": "beauty-and-spas",
       "name": {
-        "uz": "Go'zallik va spa",
-        "ru": "Красота и спа",
-        "en": "Beauty & Spas"
+        "uz": "Go'zallik va salomatlik",
+        "ru": "Красота и wellness",
+        "en": "Beauty & Wellness"
       },
       "icon": "sparkles",
       "subcategories": [
-        "massage",
-        "hair",
-        "nails",
-        "facial",
-        "spa-day"
+        "salons",
+        "barbers",
+        "spa",
+        "massage"
       ],
       "active": true
-    },
-    {
-      "slug": "things-to-do",
-      "name": {
-        "uz": "Ko'ngilochar",
-        "ru": "Развлечения",
-        "en": "Things To Do"
-      },
-      "icon": "party-popper",
-      "subcategories": [
-        "activities",
-        "cinema",
-        "kids",
-        "sports",
-        "culture"
-      ],
-      "active": true
-    },
-    {
-      "slug": "gifts",
-      "name": {
-        "uz": "Sovg'alar",
-        "ru": "Подарки",
-        "en": "Gifts"
-      },
-      "icon": "gift",
-      "subcategories": [
-        "experiences",
-        "for-her",
-        "for-him",
-        "family"
-      ],
-      "active": false
-    },
-    {
-      "slug": "auto-and-home",
-      "name": {
-        "uz": "Avto va uy",
-        "ru": "Авто и дом",
-        "en": "Auto & Home"
-      },
-      "icon": "car",
-      "subcategories": [
-        "car-wash",
-        "car-service",
-        "cleaning",
-        "repair",
-        "interior"
-      ],
-      "active": false
     },
     {
       "slug": "food-and-drink",
       "name": {
-        "uz": "Taom va ichimlik",
+        "uz": "Ovqat va ichimliklar",
         "ru": "Еда и напитки",
         "en": "Food & Drink"
       },
@@ -151,91 +84,137 @@
       "subcategories": [
         "restaurants",
         "cafes",
-        "delivery",
-        "desserts",
-        "national-cuisine"
+        "set-menus"
       ],
       "active": true
     },
     {
-      "slug": "local",
+      "slug": "things-to-do",
       "name": {
-        "uz": "Mahalliy",
-        "ru": "Местное",
-        "en": "Local"
+        "uz": "Qiziqarli joylar",
+        "ru": "Развлечения",
+        "en": "Things to Do"
       },
-      "icon": "map-pin",
+      "icon": "ticket",
       "subcategories": [
-        "education",
-        "photo",
-        "health",
-        "services"
+        "quests",
+        "karting",
+        "bowling",
+        "attractions"
+      ],
+      "active": true
+    },
+    {
+      "slug": "health-and-fitness",
+      "name": {
+        "uz": "Salomatlik va fitnes",
+        "ru": "Здоровье и фитнес",
+        "en": "Health & Fitness"
+      },
+      "icon": "dumbbell",
+      "subcategories": [
+        "gyms",
+        "yoga",
+        "pools"
+      ],
+      "active": true
+    },
+    {
+      "slug": "automotive",
+      "name": {
+        "uz": "Avtomobil",
+        "ru": "Авто",
+        "en": "Automotive"
+      },
+      "icon": "car",
+      "subcategories": [
+        "car-wash",
+        "detailing"
+      ],
+      "active": false
+    },
+    {
+      "slug": "education",
+      "name": {
+        "uz": "Ta'lim va kurslar",
+        "ru": "Образование и курсы",
+        "en": "Education & Classes"
+      },
+      "icon": "book",
+      "subcategories": [
+        "masterclasses",
+        "courses"
+      ],
+      "active": false
+    },
+    {
+      "slug": "events",
+      "name": {
+        "uz": "Tadbirlar",
+        "ru": "События",
+        "en": "Events & Entertainment"
+      },
+      "icon": "theatre",
+      "subcategories": [
+        "theatre",
+        "concerts"
+      ],
+      "active": false
+    },
+    {
+      "slug": "home-services",
+      "name": {
+        "uz": "Uy xizmatlari",
+        "ru": "Услуги на дому",
+        "en": "Home Services"
+      },
+      "icon": "home",
+      "subcategories": [
+        "cleaning",
+        "repair"
       ],
       "active": false
     },
     {
       "slug": "travel",
       "name": {
-        "uz": "Sayohat",
-        "ru": "Путешествия",
-        "en": "Travel"
+        "uz": "Sayohat va mehmonxona",
+        "ru": "Путешествия и отели",
+        "en": "Travel & Hotels"
       },
       "icon": "plane",
       "subcategories": [
         "hotels",
-        "tours",
-        "day-trips",
-        "resorts"
+        "excursions"
       ],
       "active": false
     },
     {
-      "slug": "goods",
+      "slug": "pickup-goods",
       "name": {
-        "uz": "Tovarlar",
-        "ru": "Товары",
-        "en": "Goods"
+        "uz": "Do'kondan olib ketish",
+        "ru": "Самовывоз",
+        "en": "Pickup Goods"
       },
-      "icon": "package",
+      "icon": "gift",
       "subcategories": [
-        "electronics",
-        "home-goods",
-        "fashion",
-        "health-goods",
-        "kids-goods"
+        "flowers",
+        "cakes"
       ],
       "active": false
     },
     {
-      "slug": "seasonal-deals",
+      "slug": "medical",
       "name": {
-        "uz": "Mavsumiy takliflar",
-        "ru": "Сезонные предложения",
-        "en": "Seasonal Deals"
+        "uz": "Tibbiyot (yopiq)",
+        "ru": "Медицина (закрыто)",
+        "en": "Medical (regulated)"
       },
-      "icon": "calendar",
+      "icon": "heart",
       "subcategories": [
-        "navruz",
-        "new-year",
-        "spring",
-        "summer"
+        "diagnostics"
       ],
       "active": false
-    },
-    {
-      "slug": "health-and-fitness",
-      "name": {
-        "uz": "Sog‘liq va fitnes",
-        "ru": "Здоровье и фитнес",
-        "en": "Health & Fitness"
-      },
-      "icon": "dumbbell",
-      "subcategories": [
-        "gym",
-        "yoga",
-        "pool"
-      ],
-      "active": true
     }
   ],
   "merchantNames": [

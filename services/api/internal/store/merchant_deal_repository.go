@@ -39,12 +39,16 @@ func (r *MerchantDealRepository) ReviewStatus(ctx context.Context, merchantID uu
 
 func (r *MerchantDealRepository) References(ctx context.Context, merchantID uuid.UUID, in merchant.DealInput) error {
 	queries := sqlc.New(r.pool)
-	categoryOK, err := queries.ActiveCategoryExists(ctx, toPgUUID(in.CategoryID))
+	open, err := queries.CategoryOpenState(ctx, toPgUUID(in.CategoryID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return &merchant.InvalidInputError{Field: "category_id", Code: "category_not_found"}
+	}
 	if err != nil {
 		return fmt.Errorf("check category: %w", err)
 	}
-	if !categoryOK {
-		return &merchant.InvalidInputError{Field: "category_id", Code: "category_not_found"}
+	// PRD AT-10 and BR-12: a closed category publishes nothing, and the merchant is told why.
+	if !open {
+		return &merchant.InvalidInputError{Field: "category_id", Code: "category_closed"}
 	}
 	subcategoryCategory, err := queries.SubcategoryCategoryID(ctx, toPgUUID(in.SubcategoryID))
 	if errors.Is(err, pgx.ErrNoRows) {

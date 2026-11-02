@@ -108,7 +108,7 @@ func (q *Queries) ExpireDueVouchers(ctx context.Context, arg ExpireDueVouchersPa
 const expiredUnpaidOrderIDs = `-- name: ExpiredUnpaidOrderIDs :many
 SELECT DISTINCT o.id FROM orders o
 JOIN stock_reservations r ON r.order_id = o.id
-WHERE o.status = 'pending_payment' AND r.released_at IS NULL AND r.expires_at <= $1
+WHERE o.status = 'awaiting_payment' AND r.released_at IS NULL AND r.expires_at <= $1
 ORDER BY o.id LIMIT $2
 `
 
@@ -155,7 +155,7 @@ SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, 
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
        d.status AS deal_status, d.starts_at, d.ends_at, d.max_per_user,
        d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
-       m.status AS merchant_status
+       (m.review_status = 'approved') AS merchant_active
 FROM deal_options o
 JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
 JOIN merchants m ON m.id = d.merchant_id AND m.deleted_at IS NULL
@@ -180,7 +180,7 @@ type GetDealOptionRowsRow struct {
 	VoucherValidDays   pgtype.Int4        `json:"voucher_valid_days"`
 	VoucherValidUntil  pgtype.Timestamptz `json:"voucher_valid_until"`
 	MerchantID         pgtype.UUID        `json:"merchant_id"`
-	MerchantStatus     MerchantStatus     `json:"merchant_status"`
+	MerchantActive     bool               `json:"merchant_active"`
 }
 
 func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error) {
@@ -210,7 +210,7 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 			&i.VoucherValidDays,
 			&i.VoucherValidUntil,
 			&i.MerchantID,
-			&i.MerchantStatus,
+			&i.MerchantActive,
 		); err != nil {
 			return nil, err
 		}
@@ -369,7 +369,7 @@ func (q *Queries) GetVoucherForUser(ctx context.Context, arg GetVoucherForUserPa
 
 const insertOrder = `-- name: InsertOrder :one
 INSERT INTO orders (number, user_id, status, subtotal, total, currency, idempotency_key, request_hash)
-VALUES ($1, $2, 'pending_payment', $3, $4, 'UZS',
+VALUES ($1, $2, 'awaiting_payment', $3, $4, 'UZS',
         $5, $6)
 RETURNING id, created_at
 `
@@ -525,6 +525,48 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 		arg.ZaxiraCodeHmac,
 	)
 	return err
+}
+
+const listBuyerNotifications = `-- name: ListBuyerNotifications :many
+SELECT id, kind, voucher_id, merchant_name, created_at, read_at
+FROM notifications WHERE user_id = $1
+ORDER BY created_at DESC LIMIT 50
+`
+
+type ListBuyerNotificationsRow struct {
+	ID           pgtype.UUID        `json:"id"`
+	Kind         string             `json:"kind"`
+	VoucherID    pgtype.UUID        `json:"voucher_id"`
+	MerchantName string             `json:"merchant_name"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ReadAt       pgtype.Timestamptz `json:"read_at"`
+}
+
+func (q *Queries) ListBuyerNotifications(ctx context.Context, userID pgtype.UUID) ([]ListBuyerNotificationsRow, error) {
+	rows, err := q.db.Query(ctx, listBuyerNotifications, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBuyerNotificationsRow{}
+	for rows.Next() {
+		var i ListBuyerNotificationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.VoucherID,
+			&i.MerchantName,
+			&i.CreatedAt,
+			&i.ReadAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listOrderIDsForUser = `-- name: ListOrderIDsForUser :many
@@ -958,7 +1000,7 @@ SELECT COALESCE(SUM(oi.quantity), 0)::int AS units
 FROM order_items oi
 JOIN orders o ON o.id = oi.order_id
 WHERE o.user_id = $1 AND oi.deal_id = $2
-  AND (o.status = 'paid' OR (o.status = 'pending_payment' AND EXISTS (
+  AND (o.status = 'paid' OR (o.status = 'awaiting_payment' AND EXISTS (
         SELECT 1 FROM stock_reservations r
         WHERE r.order_id = o.id AND r.released_at IS NULL AND r.expires_at > now())))
 `
