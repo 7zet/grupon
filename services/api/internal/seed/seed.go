@@ -104,7 +104,7 @@ func repositoryRoot() (string, error) {
 		return "", err
 	}
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "AGENTS.md")); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, "CLAUDE.md")); err == nil {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
@@ -139,8 +139,23 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if len(data.Cities) != 5 || len(data.Categories) != 11 || len(images) == 0 {
 		return errors.New("seed source counts are invalid")
 	}
+	// Accounts people registered themselves are kept on every reseed: they are copied aside, the catalog and
+	// transactions are reset, and the accounts are written back. Demo accounts are replaced by the seed.
+	if _, err := tx.Exec(ctx, `CREATE TEMP TABLE keep_users ON COMMIT DROP AS SELECT * FROM users WHERE email NOT LIKE '%@local.test'`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `CREATE TEMP TABLE keep_roles ON COMMIT DROP AS SELECT * FROM role_assignments WHERE merchant_id IS NULL AND user_id IN (SELECT id FROM keep_users)`); err != nil {
+		return err
+	}
 	_, err := tx.Exec(ctx, `TRUNCATE users, merchants, cities, categories, homepage_sections, journal_lines, journal_entries, ledger_accounts, redemptions, payout_runs, refunds, disputes, merchant_payout_holds, fraud_signals, outbox, reconciliation_findings CASCADE`)
 	if err != nil {
+		return err
+	}
+	// Write the kept accounts back. Their orders were reset with the transactions, the logins are unchanged.
+	if _, err := tx.Exec(ctx, `INSERT INTO users SELECT * FROM keep_users`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments SELECT * FROM keep_roles`); err != nil {
 		return err
 	}
 	cityIDs := make([]string, len(data.Cities))

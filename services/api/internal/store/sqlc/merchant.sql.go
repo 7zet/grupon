@@ -33,20 +33,45 @@ func (q *Queries) ActiveCityExists(ctx context.Context, id pgtype.UUID) (bool, e
 	return exists, err
 }
 
+const countMerchantDocumentKinds = `-- name: CountMerchantDocumentKinds :one
+SELECT COUNT(*)::int AS kinds FROM merchant_documents WHERE merchant_id = $1
+`
+
+func (q *Queries) CountMerchantDocumentKinds(ctx context.Context, merchantID pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, countMerchantDocumentKinds, merchantID)
+	var kinds int32
+	err := row.Scan(&kinds)
+	return kinds, err
+}
+
 const createMerchant = `-- name: CreateMerchant :one
 
-INSERT INTO merchants (slug, legal_name, display_name, description, phone)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, slug, legal_name, display_name, phone, status, rating_avg::float8 AS rating_avg,
+INSERT INTO merchants (slug, legal_name, display_name, description, phone, stir, org_form, tax_regime,
+                       bank_mfo, bank_account, responsible_name, contract_version, contract_accepted_at,
+                       contract_accepted_ip)
+VALUES ($1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13,
+        $14)
+RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
           rating_count, commission_bps
 `
 
 type CreateMerchantParams struct {
-	Slug        string `json:"slug"`
-	LegalName   string `json:"legal_name"`
-	DisplayName string `json:"display_name"`
-	Description []byte `json:"description"`
-	Phone       string `json:"phone"`
+	Slug               string             `json:"slug"`
+	LegalName          string             `json:"legal_name"`
+	DisplayName        string             `json:"display_name"`
+	Description        []byte             `json:"description"`
+	Phone              string             `json:"phone"`
+	Stir               pgtype.Text        `json:"stir"`
+	OrgForm            pgtype.Text        `json:"org_form"`
+	TaxRegime          pgtype.Text        `json:"tax_regime"`
+	BankMfo            pgtype.Text        `json:"bank_mfo"`
+	BankAccount        pgtype.Text        `json:"bank_account"`
+	ResponsibleName    pgtype.Text        `json:"responsible_name"`
+	ContractVersion    pgtype.Text        `json:"contract_version"`
+	ContractAcceptedAt pgtype.Timestamptz `json:"contract_accepted_at"`
+	ContractAcceptedIp pgtype.Text        `json:"contract_accepted_ip"`
 }
 
 type CreateMerchantRow struct {
@@ -56,6 +81,7 @@ type CreateMerchantRow struct {
 	DisplayName   string         `json:"display_name"`
 	Phone         string         `json:"phone"`
 	Status        MerchantStatus `json:"status"`
+	ReviewStatus  string         `json:"review_status"`
 	RatingAvg     float64        `json:"rating_avg"`
 	RatingCount   int32          `json:"rating_count"`
 	CommissionBps int32          `json:"commission_bps"`
@@ -69,6 +95,15 @@ func (q *Queries) CreateMerchant(ctx context.Context, arg CreateMerchantParams) 
 		arg.DisplayName,
 		arg.Description,
 		arg.Phone,
+		arg.Stir,
+		arg.OrgForm,
+		arg.TaxRegime,
+		arg.BankMfo,
+		arg.BankAccount,
+		arg.ResponsibleName,
+		arg.ContractVersion,
+		arg.ContractAcceptedAt,
+		arg.ContractAcceptedIp,
 	)
 	var i CreateMerchantRow
 	err := row.Scan(
@@ -78,6 +113,7 @@ func (q *Queries) CreateMerchant(ctx context.Context, arg CreateMerchantParams) 
 		&i.DisplayName,
 		&i.Phone,
 		&i.Status,
+		&i.ReviewStatus,
 		&i.RatingAvg,
 		&i.RatingCount,
 		&i.CommissionBps,
@@ -112,4 +148,244 @@ func (q *Queries) CreateMerchantLocation(ctx context.Context, arg CreateMerchant
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getMerchantDocumentKey = `-- name: GetMerchantDocumentKey :one
+SELECT storage_key FROM merchant_documents WHERE merchant_id = $1 AND kind = $2
+`
+
+type GetMerchantDocumentKeyParams struct {
+	MerchantID pgtype.UUID `json:"merchant_id"`
+	Kind       string      `json:"kind"`
+}
+
+func (q *Queries) GetMerchantDocumentKey(ctx context.Context, arg GetMerchantDocumentKeyParams) (string, error) {
+	row := q.db.QueryRow(ctx, getMerchantDocumentKey, arg.MerchantID, arg.Kind)
+	var storage_key string
+	err := row.Scan(&storage_key)
+	return storage_key, err
+}
+
+const listMerchantDocuments = `-- name: ListMerchantDocuments :many
+SELECT kind, storage_key, content_type, size_bytes, uploaded_at FROM merchant_documents
+WHERE merchant_id = $1 ORDER BY kind
+`
+
+type ListMerchantDocumentsRow struct {
+	Kind        string             `json:"kind"`
+	StorageKey  string             `json:"storage_key"`
+	ContentType string             `json:"content_type"`
+	SizeBytes   int32              `json:"size_bytes"`
+	UploadedAt  pgtype.Timestamptz `json:"uploaded_at"`
+}
+
+func (q *Queries) ListMerchantDocuments(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, listMerchantDocuments, merchantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMerchantDocumentsRow{}
+	for rows.Next() {
+		var i ListMerchantDocumentsRow
+		if err := rows.Scan(
+			&i.Kind,
+			&i.StorageKey,
+			&i.ContentType,
+			&i.SizeBytes,
+			&i.UploadedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMerchantsForReview = `-- name: ListMerchantsForReview :many
+SELECT m.id, m.legal_name, m.display_name, m.stir, m.org_form, m.tax_regime, m.bank_mfo, m.bank_account,
+       m.responsible_name, m.review_status, m.submitted_at,
+       ARRAY(SELECT d.kind FROM merchant_documents d WHERE d.merchant_id = m.id ORDER BY d.kind)::text[] AS documents
+FROM merchants m
+WHERE m.deleted_at IS NULL AND m.review_status IN ('submitted', 'in_review')
+  AND ($1::text IS NULL OR m.review_status = $1::text)
+ORDER BY m.submitted_at, m.id
+`
+
+type ListMerchantsForReviewRow struct {
+	ID              pgtype.UUID        `json:"id"`
+	LegalName       string             `json:"legal_name"`
+	DisplayName     string             `json:"display_name"`
+	Stir            pgtype.Text        `json:"stir"`
+	OrgForm         pgtype.Text        `json:"org_form"`
+	TaxRegime       pgtype.Text        `json:"tax_regime"`
+	BankMfo         pgtype.Text        `json:"bank_mfo"`
+	BankAccount     pgtype.Text        `json:"bank_account"`
+	ResponsibleName pgtype.Text        `json:"responsible_name"`
+	ReviewStatus    string             `json:"review_status"`
+	SubmittedAt     pgtype.Timestamptz `json:"submitted_at"`
+	Documents       []string           `json:"documents"`
+}
+
+func (q *Queries) ListMerchantsForReview(ctx context.Context, status pgtype.Text) ([]ListMerchantsForReviewRow, error) {
+	rows, err := q.db.Query(ctx, listMerchantsForReview, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMerchantsForReviewRow{}
+	for rows.Next() {
+		var i ListMerchantsForReviewRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.LegalName,
+			&i.DisplayName,
+			&i.Stir,
+			&i.OrgForm,
+			&i.TaxRegime,
+			&i.BankMfo,
+			&i.BankAccount,
+			&i.ResponsibleName,
+			&i.ReviewStatus,
+			&i.SubmittedAt,
+			&i.Documents,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const merchantReviewStatusByID = `-- name: MerchantReviewStatusByID :one
+SELECT review_status FROM merchants WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) MerchantReviewStatusByID(ctx context.Context, id pgtype.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, merchantReviewStatusByID, id)
+	var review_status string
+	err := row.Scan(&review_status)
+	return review_status, err
+}
+
+const ownedMerchantReviewStatus = `-- name: OwnedMerchantReviewStatus :one
+SELECT m.id, m.review_status FROM merchants m
+JOIN role_assignments ra ON ra.merchant_id = m.id
+WHERE ra.user_id = $1 AND ra.role = 'merchant_owner' AND m.deleted_at IS NULL
+LIMIT 1
+`
+
+type OwnedMerchantReviewStatusRow struct {
+	ID           pgtype.UUID `json:"id"`
+	ReviewStatus string      `json:"review_status"`
+}
+
+func (q *Queries) OwnedMerchantReviewStatus(ctx context.Context, userID pgtype.UUID) (OwnedMerchantReviewStatusRow, error) {
+	row := q.db.QueryRow(ctx, ownedMerchantReviewStatus, userID)
+	var i OwnedMerchantReviewStatusRow
+	err := row.Scan(&i.ID, &i.ReviewStatus)
+	return i, err
+}
+
+const submitMerchantForReview = `-- name: SubmitMerchantForReview :one
+UPDATE merchants SET review_status = 'submitted', submitted_at = $1, updated_at = now()
+WHERE id = $2 AND review_status = 'draft'
+RETURNING id, slug, legal_name, display_name, phone, status, review_status, rating_avg::float8 AS rating_avg,
+          rating_count, commission_bps
+`
+
+type SubmitMerchantForReviewParams struct {
+	At pgtype.Timestamptz `json:"at"`
+	ID pgtype.UUID        `json:"id"`
+}
+
+type SubmitMerchantForReviewRow struct {
+	ID            pgtype.UUID    `json:"id"`
+	Slug          string         `json:"slug"`
+	LegalName     string         `json:"legal_name"`
+	DisplayName   string         `json:"display_name"`
+	Phone         string         `json:"phone"`
+	Status        MerchantStatus `json:"status"`
+	ReviewStatus  string         `json:"review_status"`
+	RatingAvg     float64        `json:"rating_avg"`
+	RatingCount   int32          `json:"rating_count"`
+	CommissionBps int32          `json:"commission_bps"`
+}
+
+func (q *Queries) SubmitMerchantForReview(ctx context.Context, arg SubmitMerchantForReviewParams) (SubmitMerchantForReviewRow, error) {
+	row := q.db.QueryRow(ctx, submitMerchantForReview, arg.At, arg.ID)
+	var i SubmitMerchantForReviewRow
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.LegalName,
+		&i.DisplayName,
+		&i.Phone,
+		&i.Status,
+		&i.ReviewStatus,
+		&i.RatingAvg,
+		&i.RatingCount,
+		&i.CommissionBps,
+	)
+	return i, err
+}
+
+const transitionMerchantReview = `-- name: TransitionMerchantReview :execrows
+UPDATE merchants SET review_status = $1, rejection_reason = $2,
+                     reviewed_at = now(), updated_at = now()
+WHERE id = $3 AND deleted_at IS NULL AND review_status = ANY($4::text[])
+`
+
+type TransitionMerchantReviewParams struct {
+	ToStatus     string      `json:"to_status"`
+	Reason       pgtype.Text `json:"reason"`
+	ID           pgtype.UUID `json:"id"`
+	FromStatuses []string    `json:"from_statuses"`
+}
+
+func (q *Queries) TransitionMerchantReview(ctx context.Context, arg TransitionMerchantReviewParams) (int64, error) {
+	result, err := q.db.Exec(ctx, transitionMerchantReview,
+		arg.ToStatus,
+		arg.Reason,
+		arg.ID,
+		arg.FromStatuses,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const upsertMerchantDocument = `-- name: UpsertMerchantDocument :exec
+INSERT INTO merchant_documents (merchant_id, kind, storage_key, content_type, size_bytes, uploaded_by)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (merchant_id, kind) DO UPDATE SET storage_key = EXCLUDED.storage_key, content_type = EXCLUDED.content_type,
+  size_bytes = EXCLUDED.size_bytes, uploaded_by = EXCLUDED.uploaded_by, uploaded_at = now()
+`
+
+type UpsertMerchantDocumentParams struct {
+	MerchantID  pgtype.UUID `json:"merchant_id"`
+	Kind        string      `json:"kind"`
+	StorageKey  string      `json:"storage_key"`
+	ContentType string      `json:"content_type"`
+	SizeBytes   int32       `json:"size_bytes"`
+	UploadedBy  pgtype.UUID `json:"uploaded_by"`
+}
+
+func (q *Queries) UpsertMerchantDocument(ctx context.Context, arg UpsertMerchantDocumentParams) error {
+	_, err := q.db.Exec(ctx, upsertMerchantDocument,
+		arg.MerchantID,
+		arg.Kind,
+		arg.StorageKey,
+		arg.ContentType,
+		arg.SizeBytes,
+		arg.UploadedBy,
+	)
+	return err
 }

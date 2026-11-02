@@ -42,6 +42,10 @@ type RouterOptions struct {
 	MerchantDeals *MerchantDealAPI
 	// Moderation serves the review queue for platform staff when set.
 	Moderation *ModerationAPI
+	// MerchantReview serves the business review queue for platform staff when set.
+	MerchantReview *MerchantReviewAPI
+	// MerchantDocuments serves business document upload and review downloads when set.
+	MerchantDocuments *MerchantDocumentAPI
 	// MerchantRedemption serves voucher lookup and redemption at the counter when set.
 	MerchantRedemption *MerchantRedemptionAPI
 	// Reviews serves buyer reviews and review reports when set.
@@ -82,12 +86,12 @@ func NewRouter(options RouterOptions) chi.Router {
 	router.Get("/healthz", statusHandler(http.StatusOK, "ok"))
 	router.Get("/readyz", readinessHandler(readinessCheck))
 
-	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil || options.Finance != nil {
+	if options.Catalog != nil || options.Auth != nil || options.Commerce != nil || options.Merchant != nil || options.MerchantWorkspace != nil || options.MerchantMedia != nil || options.MerchantDeals != nil || options.Moderation != nil || options.MerchantReview != nil || options.MerchantDocuments != nil || options.MerchantRedemption != nil || options.Reviews != nil || options.AdminReports != nil || options.Finance != nil {
 		var base gen.ServerInterface = gen.Unimplemented{}
 		if options.Catalog != nil {
 			base = options.Catalog
 		}
-		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports, finance: options.Finance}, gen.ChiServerOptions{
+		gen.HandlerWithOptions(apiServer{ServerInterface: base, auth: options.Auth, commerce: options.Commerce, merchant: options.Merchant, workspace: options.MerchantWorkspace, media: options.MerchantMedia, deals: options.MerchantDeals, moderation: options.Moderation, merchantReview: options.MerchantReview, merchantDocs: options.MerchantDocuments, redeem: options.MerchantRedemption, reviewAPI: options.Reviews, adminReports: options.AdminReports, finance: options.Finance}, gen.ChiServerOptions{
 			BaseRouter:       router,
 			ErrorHandlerFunc: bindingErrorHandler,
 		})
@@ -182,17 +186,19 @@ func recoverPanics(logger *slog.Logger) func(http.Handler) http.Handler {
 // delegated to it; everything else is served by the base handler (the catalog, or 501 responses).
 type apiServer struct {
 	gen.ServerInterface
-	auth         *AuthAPI
-	commerce     *CommerceAPI
-	merchant     *MerchantAPI
-	workspace    *MerchantWorkspaceAPI
-	media        *MerchantMediaAPI
-	deals        *MerchantDealAPI
-	moderation   *ModerationAPI
-	redeem       *MerchantRedemptionAPI
-	reviewAPI    *ReviewAPI
-	adminReports *AdminReportsAPI
-	finance      *FinanceAPI
+	auth           *AuthAPI
+	commerce       *CommerceAPI
+	merchant       *MerchantAPI
+	workspace      *MerchantWorkspaceAPI
+	media          *MerchantMediaAPI
+	deals          *MerchantDealAPI
+	moderation     *ModerationAPI
+	merchantReview *MerchantReviewAPI
+	merchantDocs   *MerchantDocumentAPI
+	redeem         *MerchantRedemptionAPI
+	reviewAPI      *ReviewAPI
+	adminReports   *AdminReportsAPI
+	finance        *FinanceAPI
 }
 
 func (s apiServer) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
@@ -458,4 +464,69 @@ func (s apiServer) UploadMerchantMediaContent(w http.ResponseWriter, r *http.Req
 		return
 	}
 	s.ServerInterface.UploadMerchantMediaContent(w, r, id)
+}
+
+// SubmitMerchantForReview is owned by MerchantAPI when it is mounted.
+func (s apiServer) SubmitMerchantForReview(w http.ResponseWriter, r *http.Request) {
+	if s.merchant != nil {
+		s.merchant.SubmitMerchantForReview(w, r)
+		return
+	}
+	s.ServerInterface.SubmitMerchantForReview(w, r)
+}
+
+func (s apiServer) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params gen.ListMerchantReviewQueueParams) {
+	if s.merchantReview != nil {
+		s.merchantReview.ListMerchantReviewQueue(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantReviewQueue(w, r, params)
+}
+
+func (s apiServer) StartMerchantReview(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.StartMerchantReview(w, r, id)
+		return
+	}
+	s.ServerInterface.StartMerchantReview(w, r, id)
+}
+
+func (s apiServer) ApproveMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.ApproveMerchant(w, r, id)
+		return
+	}
+	s.ServerInterface.ApproveMerchant(w, r, id)
+}
+
+func (s apiServer) RejectMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.RejectMerchant(w, r, id)
+		return
+	}
+	s.ServerInterface.RejectMerchant(w, r, id)
+}
+
+func (s apiServer) ListMerchantDocuments(w http.ResponseWriter, r *http.Request) {
+	if s.merchantDocs != nil {
+		s.merchantDocs.ListMerchantDocuments(w, r)
+		return
+	}
+	s.ServerInterface.ListMerchantDocuments(w, r)
+}
+
+func (s apiServer) UploadMerchantDocument(w http.ResponseWriter, r *http.Request, kind gen.UploadMerchantDocumentParamsKind) {
+	if s.merchantDocs != nil {
+		s.merchantDocs.UploadMerchantDocument(w, r, kind)
+		return
+	}
+	s.ServerInterface.UploadMerchantDocument(w, r, kind)
+}
+
+func (s apiServer) DownloadMerchantDocument(w http.ResponseWriter, r *http.Request, id gen.Id, kind gen.DownloadMerchantDocumentParamsKind) {
+	if s.merchantDocs != nil {
+		s.merchantDocs.DownloadMerchantDocument(w, r, id, kind)
+		return
+	}
+	s.ServerInterface.DownloadMerchantDocument(w, r, id, kind)
 }

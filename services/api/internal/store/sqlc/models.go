@@ -845,24 +845,48 @@ type LedgerAccount struct {
 }
 
 type Merchant struct {
-	ID            pgtype.UUID        `json:"id"`
-	Slug          string             `json:"slug"`
-	LegalName     string             `json:"legal_name"`
-	DisplayName   string             `json:"display_name"`
-	Description   []byte             `json:"description"`
-	LogoUrl       pgtype.Text        `json:"logo_url"`
-	CoverUrl      pgtype.Text        `json:"cover_url"`
-	Phone         string             `json:"phone"`
-	Website       pgtype.Text        `json:"website"`
-	Instagram     pgtype.Text        `json:"instagram"`
-	Telegram      pgtype.Text        `json:"telegram"`
-	Status        MerchantStatus     `json:"status"`
-	RatingAvg     pgtype.Numeric     `json:"rating_avg"`
-	RatingCount   int32              `json:"rating_count"`
-	CommissionBps int32              `json:"commission_bps"`
-	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	Slug               string             `json:"slug"`
+	LegalName          string             `json:"legal_name"`
+	DisplayName        string             `json:"display_name"`
+	Description        []byte             `json:"description"`
+	LogoUrl            pgtype.Text        `json:"logo_url"`
+	CoverUrl           pgtype.Text        `json:"cover_url"`
+	Phone              string             `json:"phone"`
+	Website            pgtype.Text        `json:"website"`
+	Instagram          pgtype.Text        `json:"instagram"`
+	Telegram           pgtype.Text        `json:"telegram"`
+	Status             MerchantStatus     `json:"status"`
+	RatingAvg          pgtype.Numeric     `json:"rating_avg"`
+	RatingCount        int32              `json:"rating_count"`
+	CommissionBps      int32              `json:"commission_bps"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	Stir               pgtype.Text        `json:"stir"`
+	OrgForm            pgtype.Text        `json:"org_form"`
+	TaxRegime          pgtype.Text        `json:"tax_regime"`
+	BankMfo            pgtype.Text        `json:"bank_mfo"`
+	BankAccount        pgtype.Text        `json:"bank_account"`
+	ResponsibleName    pgtype.Text        `json:"responsible_name"`
+	ContractVersion    pgtype.Text        `json:"contract_version"`
+	ContractAcceptedAt pgtype.Timestamptz `json:"contract_accepted_at"`
+	ContractAcceptedIp pgtype.Text        `json:"contract_accepted_ip"`
+	ReviewStatus       string             `json:"review_status"`
+	SubmittedAt        pgtype.Timestamptz `json:"submitted_at"`
+	RejectionReason    pgtype.Text        `json:"rejection_reason"`
+	ReviewedAt         pgtype.Timestamptz `json:"reviewed_at"`
+}
+
+type MerchantDocument struct {
+	ID          pgtype.UUID        `json:"id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	Kind        string             `json:"kind"`
+	StorageKey  string             `json:"storage_key"`
+	ContentType string             `json:"content_type"`
+	SizeBytes   int32              `json:"size_bytes"`
+	UploadedBy  pgtype.UUID        `json:"uploaded_by"`
+	UploadedAt  pgtype.Timestamptz `json:"uploaded_at"`
 }
 
 type MerchantLocation struct {

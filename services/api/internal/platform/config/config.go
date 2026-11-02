@@ -54,6 +54,8 @@ type Config struct {
 	WebRevalidateSecret string
 	// MediaDir is the local storage root for uploaded images (development adapter).
 	MediaDir string
+	// DocumentsDir is the private storage root for business documents. It is never served publicly.
+	DocumentsDir string
 	// MediaPublicBase is the URL prefix browsers use for stored images.
 	MediaPublicBase string
 	// Auth configures sessions, credentials recovery and outbound identity providers.
@@ -172,6 +174,10 @@ func load(lookup lookupEnv) (Config, error) {
 	if mediaDir == "" {
 		mediaDir = ".data/media"
 	}
+	documentsDir := optionalString(lookup, "DOCUMENTS_LOCAL_DIR")
+	if documentsDir == "" {
+		documentsDir = ".data/documents"
+	}
 	mediaPublicBase := optionalString(lookup, "MEDIA_PUBLIC_BASE")
 	if mediaPublicBase == "" {
 		mediaPublicBase = "http://localhost:8080/media"
@@ -191,6 +197,7 @@ func load(lookup lookupEnv) (Config, error) {
 		WebRevalidateURL:    webRevalidateURL,
 		WebRevalidateSecret: webRevalidateSecret,
 		MediaDir:            mediaDir,
+		DocumentsDir:        documentsDir,
 		MediaPublicBase:     mediaPublicBase,
 		Auth:                authConfig,
 		SMTP:                smtpConfig,

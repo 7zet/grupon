@@ -51,8 +51,13 @@ func (r *MerchantWorkspaceRepository) Business(ctx context.Context, merchantID u
 	if err != nil {
 		return merchant.Business{}, fmt.Errorf("load business: %w", err)
 	}
-	return businessFromRow(row.ID, row.Slug, row.LegalName, row.DisplayName, row.Description, row.LogoUrl,
+	business, err := businessFromRow(row.ID, row.Slug, row.LegalName, row.DisplayName, row.Description, row.LogoUrl,
 		row.CoverUrl, row.Phone, row.Website, row.Instagram, row.Telegram, string(row.Status), row.RatingAvg, row.RatingCount)
+	if err != nil {
+		return merchant.Business{}, err
+	}
+	business.ReviewStatus = row.ReviewStatus
+	return business, nil
 }
 
 func (r *MerchantWorkspaceRepository) UpdateBusiness(ctx context.Context, merchantID uuid.UUID, business merchant.Business) (merchant.Business, error) {

@@ -1,7 +1,7 @@
 # Local deals marketplace
 
 This repository contains the web application, Go API and worker for the marketplace described in
-[`AGENTS.md`](./AGENTS.md).
+[`CLAUDE.md`](./CLAUDE.md).
 
 ## Prerequisites
 

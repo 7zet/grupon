@@ -224,3 +224,15 @@
 - Left in the database on purpose: `users.password_hash` and `users.google_sub`, the `currency_code` value `USD`, and the `payouts` table. They are unused by the API and can be dropped in a later migration once admin sign-in is settled.
 - The Google OAuth client, its config (`GOOGLE_*`) and its tests are removed. `identity.Mailer` is still wired but no flow sends mail now.
 - Web: gift checkbox, `is_gift` in the order body, goods kind, and the promo and collection mocks are removed. The `/coupons` page remains and lists deals in the `coupons` category.
+
+## Merchant onboarding (FR-01), 2026-11-02
+- Registration now requires STIR (9 digits), legal form (`mchj`/`yatt`), tax regime (`vat_payer`/`turnover_tax`), bank MFO (5 digits), bank account (20 digits), responsible person and acceptance of the offer (`contract_version`, time and IP stored). Stable error codes: `invalid_stir`, `stir_taken`, `invalid_org_form`, `invalid_tax_regime`, `invalid_mfo`, `invalid_bank_account`, `contract_not_accepted`.
+- A new business starts as `review_status = draft`. `POST /merchant/submit` (owner only) moves it to `submitted`; a second submit returns 409 `already_submitted`. Existing seeded merchants are `approved`.
+- Not built yet: admin approval and rejection of businesses (`in_review`, `approved`, `rejected`), deal creation gated on approval, bank-change hold (72 h), and staff invitations.
+- The web form submits both steps in one action. Coordinates still default to the city centre.
+- Merchant review (FR-01.3), 2026-11-02: platform reviewers (`superadmin`, `admin`, `moderator`) move a business `submitted` → `in_review` → `approved`, or reject it from `submitted`/`in_review` with a reason of 3–500 characters. Each decision writes an `audit_logs` row (entity `merchant`). Endpoints: `GET /admin/merchants`, `POST /admin/merchants/{id}/start-review|approve|reject`. Business creation of deals requires `approved` (409 `merchant_not_approved`).
+- The review queue lists full bank and tax identity for reviewers only. Owners cannot call it (403).
+- Not built yet: the admin web screen for the queue, the merchant-facing status page ("under review"), and document uploads (certificate, bank letter).
+- Business documents (FR-01.2), 2026-11-02: owners upload a certificate and a bank letter (PDF, JPG or PNG, up to 10 MB) while the business is draft or rejected. Files are stored privately under DOCUMENTS_LOCAL_DIR, never under the public media path, and are read only by reviewers through the API (403 for owners). Submission requires both kinds (422 documents_required). Re-uploading replaces the previous file.
+- Merchant status: GET /merchant/business returns review_status. The merchant status page at /merchant/review shows it and hosts the upload form. Admin queue page at /admin/merchants.
+- Not decided: whether rejected businesses can see the rejection reason on their status page (the reason is stored, but the merchant API does not return it yet).

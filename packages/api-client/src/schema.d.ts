@@ -1177,6 +1177,142 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/merchant/submit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send the business to platform review (owner only) */
+    post: operations['submitMerchantForReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List businesses waiting for review */
+    get: operations['listMerchantReviewQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/start-review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a submitted business to in_review */
+    post: operations['startMerchantReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a business that is in review */
+    post: operations['approveMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a submitted or in-review business with a reason */
+    post: operations['rejectMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List uploaded business documents (certificate, bank letter) */
+    get: operations['listMerchantDocuments'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/documents/{kind}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Upload a business document (owner only). Replaces the previous file of the same kind */
+    put: operations['uploadMerchantDocument'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/documents/{kind}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Download a business document for review (reviewers only) */
+    get: operations['downloadMerchantDocument'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1328,6 +1464,9 @@ export interface components {
       rating_count: number;
       commission_bps: number;
       locations?: components['schemas']['MerchantLocation'][];
+      /** @enum {string} */
+      review_status?:
+        'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'suspended' | 'terminated';
     };
     DealSummary: {
       id: components['schemas']['Uuid'];
@@ -1564,6 +1703,18 @@ export interface components {
       address: string;
       lat: number;
       lng: number;
+      /** @description Taxpayer number (STIR) */
+      stir: string;
+      /** @enum {string} */
+      org_form: 'mchj' | 'yatt';
+      /** @enum {string} */
+      tax_regime: 'vat_payer' | 'turnover_tax';
+      bank_mfo: string;
+      bank_account: string;
+      responsible_name: string;
+      contract_version: string;
+      /** @description Must be true: the merchant accepts the offer */
+      contract_accepted: boolean;
     };
     MerchantInput: {
       display_name?: string;
@@ -1808,6 +1959,43 @@ export interface components {
     };
     DealIdRequest: {
       deal_id: components['schemas']['Uuid'];
+    };
+    MerchantReview: {
+      id: components['schemas']['Uuid'];
+      legal_name: string;
+      display_name: string;
+      stir: string;
+      /** @enum {string} */
+      org_form: 'mchj' | 'yatt';
+      /** @enum {string} */
+      tax_regime: 'vat_payer' | 'turnover_tax';
+      bank_mfo: string;
+      bank_account: string;
+      responsible_name: string;
+      /** @enum {string} */
+      review_status: 'submitted' | 'in_review';
+      /** Format: date-time */
+      submitted_at: string;
+      /** @description Document kinds already uploaded */
+      documents?: ('certificate' | 'bank_letter')[];
+    };
+    MerchantReviewList: {
+      items: components['schemas']['MerchantReview'][];
+    };
+    RejectMerchantRequest: {
+      reason: string;
+    };
+    MerchantDocument: {
+      /** @enum {string} */
+      kind: 'certificate' | 'bank_letter';
+      /** @enum {string} */
+      content_type: 'application/pdf' | 'image/jpeg' | 'image/png';
+      size_bytes: number;
+      /** Format: date-time */
+      uploaded_at: string;
+    };
+    MerchantDocumentList: {
+      items: components['schemas']['MerchantDocument'][];
     };
   };
   responses: {
@@ -3778,6 +3966,189 @@ export interface operations {
             /** @constant */
             available: false;
           };
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  submitMerchantForReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Submitted */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Merchant'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMerchantReviewQueue: {
+    parameters: {
+      query?: {
+        status?: 'submitted' | 'in_review';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantReviewList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  startMerchantReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  rejectMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectMerchantRequest'];
+      };
+    };
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMerchantDocuments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Documents */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantDocumentList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  uploadMerchantDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kind: 'certificate' | 'bank_letter';
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/octet-stream': string;
+      };
+    };
+    responses: {
+      /** @description Stored */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  downloadMerchantDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+        kind: 'certificate' | 'bank_letter';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description File */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+          'image/jpeg': string;
+          'image/png': string;
         };
       };
       default: components['responses']['Problem'];

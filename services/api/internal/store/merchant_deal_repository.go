@@ -32,6 +32,11 @@ func NewMerchantDealRepository(pool *pgxpool.Pool, catalog *CatalogRepository) *
 var _ merchant.DealRepository = (*MerchantDealRepository)(nil)
 
 // References checks the taxonomy and locations of a draft belong to valid, owned records.
+// ReviewStatus reads the business review status for the approval gate.
+func (r *MerchantDealRepository) ReviewStatus(ctx context.Context, merchantID uuid.UUID) (string, error) {
+	return NewMerchantReviewRepository(r.pool).ReviewStatus(ctx, merchantID)
+}
+
 func (r *MerchantDealRepository) References(ctx context.Context, merchantID uuid.UUID, in merchant.DealInput) error {
 	queries := sqlc.New(r.pool)
 	categoryOK, err := queries.ActiveCategoryExists(ctx, toPgUUID(in.CategoryID))

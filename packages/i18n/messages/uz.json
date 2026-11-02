@@ -304,7 +304,29 @@
     "errorCategory": "Tanlangan yo‘nalish topilmadi.",
     "errorPhone": "Telefon raqamini to‘g‘ri kiriting.",
     "errorRequired": "Bu maydonni to‘ldiring.",
-    "switchToBusiness": "Biznesga o‘tish"
+    "switchToBusiness": "Biznesga o‘tish",
+    "stir": "STIR (soliq to‘lovchi raqami)",
+    "orgForm": "Tashkiliy shakl",
+    "orgFormMchj": "MChJ",
+    "orgFormYatt": "YaTT",
+    "taxRegime": "Soliq rejimi",
+    "taxVat": "QQS to‘lovchi",
+    "taxTurnover": "Aylanma solig‘i",
+    "bankMfo": "Bank MFO",
+    "bankAccount": "Hisob raqami (20 ta raqam)",
+    "responsibleName": "Mas’ul shaxs (F.I.Sh.)",
+    "contract": "Platforma oferta shartlarini o‘qidim va qabul qilaman",
+    "submitForReview": "Ro‘yxatdan o‘tkazish va tekshiruvga yuborish",
+    "submitted": "Ariza tekshiruvga yuborildi. Platforma tasdiqlagach, takliflar yaratishingiz mumkin bo‘ladi.",
+    "errorStir": "STIR 9 ta raqamdan iborat bo‘lishi kerak.",
+    "errorStirTaken": "Bu STIR bilan biznes allaqachon ro‘yxatdan o‘tgan.",
+    "errorOrgForm": "Tashkiliy shaklni tanlang.",
+    "errorTaxRegime": "Soliq rejimini tanlang.",
+    "errorMfo": "Bank MFO 5 ta raqamdan iborat bo‘lishi kerak.",
+    "errorAccount": "Hisob raqami 20 ta raqamdan iborat bo‘lishi kerak.",
+    "errorResponsible": "Mas’ul shaxsning ismini kiriting.",
+    "errorContract": "Oferta shartlarini qabul qilishingiz kerak.",
+    "errorAlreadySubmitted": "Ariza allaqachon tekshiruvga yuborilgan."
   },
   "Panel": {
     "navOverview": "Umumiy ko‘rinish",
@@ -498,5 +520,59 @@
     "colAction": "Amal",
     "colEntity": "Obyekt",
     "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring"
+  },
+  "MerchantReview": {
+    "title": "Biznes holati",
+    "status": {
+      "draft": "Ariza hali yuborilmagan. Hujjatlarni yuklab, tekshiruvga yuboring.",
+      "submitted": "Ariza tekshiruvga yuborildi. Platforma ko‘rib chiqmoqda.",
+      "in_review": "Ariza hozir ko‘rib chiqilmoqda.",
+      "approved": "Biznes tasdiqlangan. Endi takliflar yaratishingiz mumkin.",
+      "rejected": "Ariza rad etilgan. Hujjatlarni tekshirib, qayta yuboring.",
+      "suspended": "Biznes vaqtincha to‘xtatilgan. Platforma bilan bog‘laning.",
+      "terminated": "Biznes faoliyati tugatilgan."
+    },
+    "draftHint": "Tekshiruv uchun guvohnoma va bank xatini yuklang (PDF, JPG yoki PNG, 10 MB gacha).",
+    "kind": {
+      "certificate": "Guvohnoma (ro‘yxatdan o‘tish)",
+      "bank_letter": "Bank xati (hisob rekvizitlari)"
+    },
+    "uploaded": "Yuklangan",
+    "notUploaded": "Hali yuklanmagan",
+    "submit": "Tekshiruvga yuborish",
+    "errorType": "Faqat PDF, JPG yoki PNG fayl yuklang.",
+    "errorSize": "Fayl 10 MB dan oshmasligi kerak.",
+    "errorMissing": "Avval guvohnoma va bank xatini yuklang.",
+    "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring."
+  },
+  "AdminMerchants": {
+    "title": "Biznes tekshiruvi",
+    "empty": "Tekshiruvni kutayotgan biznes yo‘q.",
+    "stir": "STIR",
+    "orgForm": {
+      "mchj": "MChJ",
+      "yatt": "YaTT"
+    },
+    "tax": {
+      "vat_payer": "QQS to‘lovchi",
+      "turnover_tax": "Aylanma solig‘i"
+    },
+    "status": {
+      "submitted": "Yuborilgan",
+      "in_review": "Ko‘rib chiqilmoqda"
+    },
+    "document": {
+      "certificate": "Guvohnoma",
+      "bank_letter": "Bank xati"
+    },
+    "missing": "yo‘q",
+    "startReview": "Ko‘rib chiqishni boshlash",
+    "approve": "Tasdiqlash",
+    "reject": "Rad etish",
+    "sendReject": "Rad etishni yuborish",
+    "reasonLabel": "Rad etish sababi (merchant ko‘radi)",
+    "reasonError": "Sababni kamida 3 ta belgi bilan yozing.",
+    "errorTransition": "Bu holatda bu amalni bajarib bo‘lmaydi. Sahifani yangilang.",
+    "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring."
   }
 }

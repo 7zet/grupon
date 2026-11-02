@@ -30,6 +30,7 @@ type Querier interface {
 	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
 	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
 	CountAuditLogs(ctx context.Context) (int64, error)
+	CountMerchantDocumentKinds(ctx context.Context, merchantID pgtype.UUID) (int32, error)
 	CountOpenReviewReports(ctx context.Context) (int64, error)
 	CountOrdersForUser(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountOwnedDeals(ctx context.Context, arg CountOwnedDealsParams) (int64, error)
@@ -75,6 +76,7 @@ type Querier interface {
 	GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error)
 	GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDealReviewRowRow, error)
 	GetMediaAssetForMerchant(ctx context.Context, arg GetMediaAssetForMerchantParams) (GetMediaAssetForMerchantRow, error)
+	GetMerchantDocumentKey(ctx context.Context, arg GetMerchantDocumentKeyParams) (string, error)
 	GetMerchantWorkspace(ctx context.Context, id pgtype.UUID) (GetMerchantWorkspaceRow, error)
 	GetOrderByID(ctx context.Context, orderID pgtype.UUID) (GetOrderByIDRow, error)
 	GetOrderIDByIdempotencyKey(ctx context.Context, idempotencyKey string) (pgtype.UUID, error)
@@ -131,8 +133,10 @@ type Querier interface {
 	ListDealMediaForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealMediaForDealsRow, error)
 	ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error)
 	ListMediaAssets(ctx context.Context, arg ListMediaAssetsParams) ([]ListMediaAssetsRow, error)
+	ListMerchantDocuments(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantDocumentsRow, error)
 	ListMerchantLocationRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantLocationRowsRow, error)
 	ListMerchantStaff(ctx context.Context, merchantID pgtype.UUID) ([]RoleAssignment, error)
+	ListMerchantsForReview(ctx context.Context, status pgtype.Text) ([]ListMerchantsForReviewRow, error)
 	ListOpenReviewReports(ctx context.Context, arg ListOpenReviewReportsParams) ([]ListOpenReviewReportsRow, error)
 	ListOrderIDsForUser(ctx context.Context, arg ListOrderIDsForUserParams) ([]pgtype.UUID, error)
 	ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype.UUID) ([]ListOrderItemsForOrdersRow, error)
@@ -163,10 +167,12 @@ type Querier interface {
 	MerchantLocationBelongsTo(ctx context.Context, arg MerchantLocationBelongsToParams) (bool, error)
 	MerchantLocationCoords(ctx context.Context, arg MerchantLocationCoordsParams) (MerchantLocationCoordsRow, error)
 	MerchantOnHold(ctx context.Context, merchantID pgtype.UUID) (bool, error)
+	MerchantReviewStatusByID(ctx context.Context, id pgtype.UUID) (string, error)
 	// Merchant workspace: the signed-in merchant's business, branches and dashboard aggregates.
 	// Every query is scoped by merchant_id; callers never pass an unscoped id.
 	MerchantRoleForUser(ctx context.Context, userID pgtype.UUID) (MerchantRoleForUserRow, error)
 	NextOrderNumberSequence(ctx context.Context) (int64, error)
+	OwnedMerchantReviewStatus(ctx context.Context, userID pgtype.UUID) (OwnedMerchantReviewStatusRow, error)
 	// Redemptions ready for payout: not reversed, not already paid, older than the dispute window, with no
 	// open dispute (BR-15), for one merchant.
 	PayableRedemptions(ctx context.Context, arg PayableRedemptionsParams) ([]PayableRedemptionsRow, error)
@@ -199,10 +205,12 @@ type Querier interface {
 	// while the users_check constraint (a credential must exist) still holds.
 	SoftDeleteUser(ctx context.Context, id pgtype.UUID) error
 	SubcategoryCategoryID(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error)
+	SubmitMerchantForReview(ctx context.Context, arg SubmitMerchantForReviewParams) (SubmitMerchantForReviewRow, error)
 	SuggestCategories(ctx context.Context, arg SuggestCategoriesParams) ([]SuggestCategoriesRow, error)
 	SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]SuggestDealsRow, error)
 	SuggestMerchants(ctx context.Context, arg SuggestMerchantsParams) ([]SuggestMerchantsRow, error)
 	TouchUserLastLogin(ctx context.Context, id pgtype.UUID) error
+	TransitionMerchantReview(ctx context.Context, arg TransitionMerchantReviewParams) (int64, error)
 	TransitionPendingDeal(ctx context.Context, arg TransitionPendingDealParams) (int64, error)
 	TrimRecentlyViewed(ctx context.Context, userID pgtype.UUID) error
 	UpdateMerchantLocationRow(ctx context.Context, arg UpdateMerchantLocationRowParams) (int64, error)
@@ -211,6 +219,7 @@ type Querier interface {
 	UpdateOwnedDeal(ctx context.Context, arg UpdateOwnedDealParams) (int64, error)
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error)
 	UpsertDealOption(ctx context.Context, arg UpsertDealOptionParams) error
+	UpsertMerchantDocument(ctx context.Context, arg UpsertMerchantDocumentParams) error
 	UpsertRecentlyViewed(ctx context.Context, arg UpsertRecentlyViewedParams) error
 	UserUnitsForDeal(ctx context.Context, arg UserUnitsForDealParams) (int32, error)
 	VoucherCodeExists(ctx context.Context, code string) (bool, error)

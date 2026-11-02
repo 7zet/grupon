@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -41,6 +42,17 @@ type RegisterInput struct {
 	Address     string
 	Lat         float64
 	Lng         float64
+
+	// Tax and bank identity (FR-01). The bank account is the one payouts are sent to.
+	STIR             string
+	OrgForm          string
+	TaxRegime        string
+	BankMFO          string
+	BankAccount      string
+	ResponsibleName  string
+	ContractVersion  string
+	ContractAccepted bool
+	ContractIP       string
 }
 
 // Registration is the normalized write set handed to the repository.
@@ -54,23 +66,51 @@ type Registration struct {
 	Address     string
 	Lat         float64
 	Lng         float64
+
+	STIR               string
+	OrgForm            string
+	TaxRegime          string
+	BankMFO            string
+	BankAccount        string
+	ResponsibleName    string
+	ContractVersion    string
+	ContractAcceptedAt time.Time
+	ContractIP         string
 }
 
 // Created is what the caller sees after a successful registration.
 type Created struct {
-	ID          uuid.UUID
-	Slug        string
-	DisplayName string
-	LegalName   string
-	Phone       string
-	Status      string
+	ID           uuid.UUID
+	Slug         string
+	DisplayName  string
+	LegalName    string
+	Phone        string
+	Status       string
+	ReviewStatus string
 }
 
 // Repository persists a registration and its owner role in one transaction. It returns
 // ErrCityNotFound or ErrCategoryNotFound when a reference is inactive or missing.
 type Repository interface {
 	RegisterOwned(ctx context.Context, ownerID uuid.UUID, registration Registration) (Created, error)
+	// SubmitOwned moves the owner's draft business to submitted. It returns ErrNoBusiness when the
+	// user owns none and ErrNotDraft when the business was already submitted.
+	SubmitOwned(ctx context.Context, ownerID uuid.UUID, at time.Time) (Created, error)
 }
+
+// ErrNoBusiness and ErrNotDraft are returned by Submit.
+var (
+	ErrNoBusiness = errors.New("merchant: no business for this owner")
+	ErrNotDraft   = errors.New("merchant: business is not a draft")
+)
+
+var (
+	stirPattern    = regexp.MustCompile(`^[0-9]{9}$`)
+	mfoPattern     = regexp.MustCompile(`^[0-9]{5}$`)
+	accountPattern = regexp.MustCompile(`^[0-9]{20}$`)
+	orgForms       = map[string]bool{"mchj": true, "yatt": true}
+	taxRegimes     = map[string]bool{"vat_payer": true, "turnover_tax": true}
+)
 
 var (
 	phonePattern = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
@@ -80,11 +120,20 @@ var (
 // Service implements merchant registration.
 type Service struct {
 	repo Repository
+	now  func() time.Time
 }
 
-// NewService binds the registration rules to a repository.
-func NewService(repo Repository) *Service {
-	return &Service{repo: repo}
+// NewService binds the registration rules to a repository. now is used for the offer acceptance time.
+func NewService(repo Repository, now func() time.Time) *Service {
+	if now == nil {
+		now = time.Now
+	}
+	return &Service{repo: repo, now: now}
+}
+
+// Submit sends the owner's business to platform review. Only a draft can be submitted.
+func (s *Service) Submit(ctx context.Context, ownerID uuid.UUID) (Created, error) {
+	return s.repo.SubmitOwned(ctx, ownerID, s.now())
 }
 
 // Register validates the sign-up, creates the business and assigns the owner role.
@@ -93,6 +142,7 @@ func (s *Service) Register(ctx context.Context, ownerID uuid.UUID, input Registe
 	if err != nil {
 		return Created{}, err
 	}
+	registration.ContractAcceptedAt = s.now()
 	return s.repo.RegisterOwned(ctx, ownerID, registration)
 }
 
@@ -117,6 +167,22 @@ func normalize(input RegisterInput) (Registration, error) {
 		return Registration{}, &InvalidInputError{Field: "category_id", Code: "required"}
 	case input.CityID == uuid.Nil:
 		return Registration{}, &InvalidInputError{Field: "city_id", Code: "required"}
+	case !stirPattern.MatchString(input.STIR):
+		return Registration{}, &InvalidInputError{Field: "stir", Code: "invalid_stir"}
+	case !orgForms[input.OrgForm]:
+		return Registration{}, &InvalidInputError{Field: "org_form", Code: "invalid_org_form"}
+	case !taxRegimes[input.TaxRegime]:
+		return Registration{}, &InvalidInputError{Field: "tax_regime", Code: "invalid_tax_regime"}
+	case !mfoPattern.MatchString(input.BankMFO):
+		return Registration{}, &InvalidInputError{Field: "bank_mfo", Code: "invalid_mfo"}
+	case !accountPattern.MatchString(input.BankAccount):
+		return Registration{}, &InvalidInputError{Field: "bank_account", Code: "invalid_bank_account"}
+	case len([]rune(strings.TrimSpace(input.ResponsibleName))) < 2 || len([]rune(strings.TrimSpace(input.ResponsibleName))) > 200:
+		return Registration{}, &InvalidInputError{Field: "responsible_name", Code: "length"}
+	case strings.TrimSpace(input.ContractVersion) == "":
+		return Registration{}, &InvalidInputError{Field: "contract_version", Code: "required"}
+	case !input.ContractAccepted:
+		return Registration{}, &InvalidInputError{Field: "contract_accepted", Code: "contract_not_accepted"}
 	}
 
 	suffix, err := randomSuffix()
@@ -133,6 +199,15 @@ func normalize(input RegisterInput) (Registration, error) {
 		Address:     address,
 		Lat:         input.Lat,
 		Lng:         input.Lng,
+
+		STIR:            input.STIR,
+		OrgForm:         input.OrgForm,
+		TaxRegime:       input.TaxRegime,
+		BankMFO:         input.BankMFO,
+		BankAccount:     input.BankAccount,
+		ResponsibleName: strings.TrimSpace(input.ResponsibleName),
+		ContractVersion: strings.TrimSpace(input.ContractVersion),
+		ContractIP:      input.ContractIP,
 	}, nil
 }
 

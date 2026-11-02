@@ -304,7 +304,29 @@
     "errorCategory": "The selected category was not found.",
     "errorPhone": "Enter a valid phone number.",
     "errorRequired": "Fill in this field.",
-    "switchToBusiness": "Switch to business"
+    "switchToBusiness": "Switch to business",
+    "stir": "Taxpayer number (STIR)",
+    "orgForm": "Legal form",
+    "orgFormMchj": "LLC (MChJ)",
+    "orgFormYatt": "Sole proprietor (YaTT)",
+    "taxRegime": "Tax regime",
+    "taxVat": "VAT payer",
+    "taxTurnover": "Turnover tax",
+    "bankMfo": "Bank MFO",
+    "bankAccount": "Bank account (20 digits)",
+    "responsibleName": "Responsible person (full name)",
+    "contract": "I have read and accept the platform offer",
+    "submitForReview": "Register and send for review",
+    "submitted": "Your application was sent for review. Once the platform approves it, you can create offers.",
+    "errorStir": "The taxpayer number must have 9 digits.",
+    "errorStirTaken": "A business with this taxpayer number is already registered.",
+    "errorOrgForm": "Choose a legal form.",
+    "errorTaxRegime": "Choose a tax regime.",
+    "errorMfo": "The bank MFO must have 5 digits.",
+    "errorAccount": "The bank account must have 20 digits.",
+    "errorResponsible": "Enter the responsible person’s name.",
+    "errorContract": "You must accept the offer.",
+    "errorAlreadySubmitted": "The application has already been sent for review."
   },
   "Panel": {
     "navOverview": "Overview",
@@ -498,5 +520,59 @@
     "colAction": "Action",
     "colEntity": "Entity",
     "errorGeneric": "Something went wrong, please try again"
+  },
+  "MerchantReview": {
+    "title": "Business status",
+    "status": {
+      "draft": "The application has not been sent yet. Upload the documents and send it for review.",
+      "submitted": "The application was sent for review. The platform is checking it.",
+      "in_review": "The application is being reviewed now.",
+      "approved": "The business is approved. You can now create offers.",
+      "rejected": "The application was rejected. Check the documents and send it again.",
+      "suspended": "The business is temporarily suspended. Contact the platform.",
+      "terminated": "The business has been closed."
+    },
+    "draftHint": "Upload the registration certificate and the bank letter (PDF, JPG or PNG, up to 10 MB).",
+    "kind": {
+      "certificate": "Registration certificate",
+      "bank_letter": "Bank letter (account details)"
+    },
+    "uploaded": "Uploaded",
+    "notUploaded": "Not uploaded yet",
+    "submit": "Send for review",
+    "errorType": "Upload a PDF, JPG or PNG file.",
+    "errorSize": "The file must be 10 MB or smaller.",
+    "errorMissing": "Upload the certificate and the bank letter first.",
+    "errorGeneric": "The action could not be completed. Please try again."
+  },
+  "AdminMerchants": {
+    "title": "Business review",
+    "empty": "No businesses are waiting for review.",
+    "stir": "Taxpayer number",
+    "orgForm": {
+      "mchj": "LLC (MChJ)",
+      "yatt": "Sole proprietor (YaTT)"
+    },
+    "tax": {
+      "vat_payer": "VAT payer",
+      "turnover_tax": "Turnover tax"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "in_review": "In review"
+    },
+    "document": {
+      "certificate": "Certificate",
+      "bank_letter": "Bank letter"
+    },
+    "missing": "missing",
+    "startReview": "Start review",
+    "approve": "Approve",
+    "reject": "Reject",
+    "sendReject": "Send rejection",
+    "reasonLabel": "Rejection reason (the merchant sees it)",
+    "reasonError": "Write a reason of at least 3 characters.",
+    "errorTransition": "This action is not allowed in the current status. Refresh the page.",
+    "errorGeneric": "The action could not be completed. Please try again."
   }
 }

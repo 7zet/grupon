@@ -146,6 +146,8 @@ func (a *MerchantDealAPI) SubmitMerchantDeal(w http.ResponseWriter, r *http.Requ
 func (a *MerchantDealAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var invalid *merchant.InvalidInputError
 	switch {
+	case errors.Is(err, merchant.ErrMerchantNotApproved):
+		writeProblem(w, r, http.StatusConflict, "merchant_not_approved", nil, nil)
 	case errors.As(err, &invalid):
 		writeProblem(w, r, http.StatusUnprocessableEntity, invalid.Code, nil,
 			map[string][]string{invalid.Field: {invalid.Code}})

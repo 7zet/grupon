@@ -245,7 +245,7 @@ func (q *Queries) DeleteMerchantLocationRow(ctx context.Context, arg DeleteMerch
 
 const getMerchantWorkspace = `-- name: GetMerchantWorkspace :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
 WHERE id = $1 AND deleted_at IS NULL
 `
@@ -263,6 +263,7 @@ type GetMerchantWorkspaceRow struct {
 	Instagram     pgtype.Text    `json:"instagram"`
 	Telegram      pgtype.Text    `json:"telegram"`
 	Status        MerchantStatus `json:"status"`
+	ReviewStatus  string         `json:"review_status"`
 	RatingAvg     float64        `json:"rating_avg"`
 	RatingCount   int32          `json:"rating_count"`
 	CommissionBps int32          `json:"commission_bps"`
@@ -284,6 +285,7 @@ func (q *Queries) GetMerchantWorkspace(ctx context.Context, id pgtype.UUID) (Get
 		&i.Instagram,
 		&i.Telegram,
 		&i.Status,
+		&i.ReviewStatus,
 		&i.RatingAvg,
 		&i.RatingCount,
 		&i.CommissionBps,

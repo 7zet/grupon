@@ -653,6 +653,70 @@ paths:
       summary: Phase 1 admin API stub
       security: [{cookieAuth: []}, {bearerAuth: []}]
       responses: {'200': {description: Stub status, content: {application/json: {schema: {type: object, required: [available], properties: {available: {type: boolean, const: false}}}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/submit:
+    post:
+      tags: [Merchant]
+      operationId: submitMerchantForReview
+      summary: Send the business to platform review (owner only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'202': {description: Submitted, content: {application/json: {schema: {$ref: '#/components/schemas/Merchant'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants:
+    get:
+      tags: [Admin]
+      operationId: listMerchantReviewQueue
+      summary: List businesses waiting for review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: status, in: query, schema: {type: string, enum: [submitted, in_review]}}]
+      responses: {'200': {description: Queue, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantReviewList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/start-review:
+    post:
+      tags: [Admin]
+      operationId: startMerchantReview
+      summary: Move a submitted business to in_review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveMerchant
+      summary: Approve a business that is in review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/reject:
+    post:
+      tags: [Admin]
+      operationId: rejectMerchant
+      summary: Reject a submitted or in-review business with a reason
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectMerchantRequest'}}}}
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/documents:
+    get:
+      tags: [Merchant]
+      operationId: listMerchantDocuments
+      summary: List uploaded business documents (certificate, bank letter)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Documents, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantDocumentList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/documents/{kind}:
+    put:
+      tags: [Merchant]
+      operationId: uploadMerchantDocument
+      summary: Upload a business document (owner only). Replaces the previous file of the same kind
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter]}}]
+      requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+      responses: {'204': {description: Stored}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/documents/{kind}:
+    get:
+      tags: [Admin]
+      operationId: downloadMerchantDocument
+      summary: Download a business document for review (reviewers only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}, {name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter]}}]
+      responses: {'200': {description: File, content: {application/pdf: {schema: {type: string, format: binary}}, image/jpeg: {schema: {type: string, format: binary}}, image/png: {schema: {type: string, format: binary}}}}, default: {$ref: '#/components/responses/Problem'}}
 components:
   securitySchemes:
     cookieAuth:
@@ -778,7 +842,7 @@ components:
     Merchant:
       type: object
       required: [id, slug, legal_name, display_name, description, phone, status, rating_avg, rating_count, commission_bps]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, legal_name: {type: string}, display_name: {type: string}, description: {$ref: '#/components/schemas/LocalizedText'}, logo_url: {type: [string, 'null'], format: uri}, cover_url: {type: [string, 'null'], format: uri}, phone: {type: string}, website: {type: [string, 'null'], format: uri}, instagram: {type: [string, 'null']}, telegram: {type: [string, 'null']}, status: {type: string, enum: [active, suspended]}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, commission_bps: {type: integer, minimum: 0, maximum: 10000}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}}
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, legal_name: {type: string}, display_name: {type: string}, description: {$ref: '#/components/schemas/LocalizedText'}, logo_url: {type: [string, 'null'], format: uri}, cover_url: {type: [string, 'null'], format: uri}, phone: {type: string}, website: {type: [string, 'null'], format: uri}, instagram: {type: [string, 'null']}, telegram: {type: [string, 'null']}, status: {type: string, enum: [active, suspended]}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, commission_bps: {type: integer, minimum: 0, maximum: 10000}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}, review_status: {type: string, enum: [draft, submitted, in_review, approved, rejected, suspended, terminated]}}
     DealSummary:
       type: object
       required: [id, slug, merchant, category, title, status, options, media, sold_count, rating_avg, rating_count, ends_at]
@@ -902,8 +966,8 @@ components:
       properties: {text: {type: string, minLength: 1, maxLength: 2000}}
     RegisterMerchantRequest:
       type: object
-      required: [legal_name, display_name, category_id, city_id, phone, address, lat, lng]
-      properties: {legal_name: {type: string, minLength: 2, maxLength: 300}, display_name: {type: string, minLength: 2, maxLength: 200}, category_id: {$ref: '#/components/schemas/Uuid'}, city_id: {$ref: '#/components/schemas/Uuid'}, phone: {type: string}, address: {type: string}, lat: {type: number}, lng: {type: number}}
+      required: [legal_name, display_name, category_id, city_id, phone, address, lat, lng, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, contract_version, contract_accepted]
+      properties: {legal_name: {type: string, minLength: 2, maxLength: 300}, display_name: {type: string, minLength: 2, maxLength: 200}, category_id: {$ref: '#/components/schemas/Uuid'}, city_id: {$ref: '#/components/schemas/Uuid'}, phone: {type: string}, address: {type: string}, lat: {type: number}, lng: {type: number}, stir: {type: string, pattern: '^[0-9]{9}$', description: Taxpayer number (STIR)}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string, pattern: '^[0-9]{5}$'}, bank_account: {type: string, pattern: '^[0-9]{20}$'}, responsible_name: {type: string, minLength: 2, maxLength: 200}, contract_version: {type: string, maxLength: 20}, contract_accepted: {type: boolean, description: 'Must be true: the merchant accepts the offer'}}
     MerchantInput:
       type: object
       minProperties: 1
@@ -1031,3 +1095,23 @@ components:
       type: object
       required: [deal_id]
       properties: {deal_id: {$ref: '#/components/schemas/Uuid'}}
+    MerchantReview:
+      type: object
+      required: [id, legal_name, display_name, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, review_status, submitted_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter]}, description: Document kinds already uploaded}}
+    MerchantReviewList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantReview'}}}
+    RejectMerchantRequest:
+      type: object
+      required: [reason]
+      properties: {reason: {type: string, minLength: 3, maxLength: 500}}
+    MerchantDocument:
+      type: object
+      required: [kind, content_type, size_bytes, uploaded_at]
+      properties: {kind: {type: string, enum: [certificate, bank_letter]}, content_type: {type: string, enum: [application/pdf, image/jpeg, image/png]}, size_bytes: {type: integer, minimum: 1}, uploaded_at: {type: string, format: date-time}}
+    MerchantDocumentList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantDocument'}}}

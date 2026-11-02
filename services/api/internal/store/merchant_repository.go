@@ -2,9 +2,13 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -50,13 +54,25 @@ func (r *MerchantRepository) RegisterOwned(ctx context.Context, ownerID uuid.UUI
 	}
 
 	created, err := queries.CreateMerchant(ctx, sqlc.CreateMerchantParams{
-		Slug:        registration.Slug,
-		LegalName:   registration.LegalName,
-		DisplayName: registration.DisplayName,
-		Description: []byte(`{"uz":"","ru":"","en":""}`),
-		Phone:       registration.Phone,
+		Slug:               registration.Slug,
+		LegalName:          registration.LegalName,
+		DisplayName:        registration.DisplayName,
+		Description:        []byte(`{"uz":"","ru":"","en":""}`),
+		Phone:              registration.Phone,
+		Stir:               optText(registration.STIR),
+		OrgForm:            optText(registration.OrgForm),
+		TaxRegime:          optText(registration.TaxRegime),
+		BankMfo:            optText(registration.BankMFO),
+		BankAccount:        optText(registration.BankAccount),
+		ResponsibleName:    optText(registration.ResponsibleName),
+		ContractVersion:    optText(registration.ContractVersion),
+		ContractAcceptedAt: pgtype.Timestamptz{Time: registration.ContractAcceptedAt, Valid: true},
+		ContractAcceptedIp: optText(registration.ContractIP),
 	})
 	if err != nil {
+		if isUniqueViolation(err) && strings.Contains(err.Error(), "merchants_stir_key") {
+			return merchant.Created{}, &merchant.InvalidInputError{Field: "stir", Code: "stir_taken"}
+		}
 		return merchant.Created{}, fmt.Errorf("create merchant: %w", err)
 	}
 
@@ -91,12 +107,56 @@ func (r *MerchantRepository) RegisterOwned(ctx context.Context, ownerID uuid.UUI
 		return merchant.Created{}, fmt.Errorf("commit registration: %w", err)
 	}
 	return merchant.Created{
-		ID:          toUUID(created.ID),
-		Slug:        created.Slug,
-		DisplayName: created.DisplayName,
-		LegalName:   created.LegalName,
-		Phone:       created.Phone,
-		Status:      string(created.Status),
+		ID:           toUUID(created.ID),
+		Slug:         created.Slug,
+		DisplayName:  created.DisplayName,
+		LegalName:    created.LegalName,
+		Phone:        created.Phone,
+		Status:       string(created.Status),
+		ReviewStatus: created.ReviewStatus,
+	}, nil
+}
+
+// SubmitOwned sends the owner's draft business to review. The status is checked first so that a
+// missing business and an already submitted one get different errors.
+func (r *MerchantRepository) SubmitOwned(ctx context.Context, ownerID uuid.UUID, at time.Time) (merchant.Created, error) {
+	queries := sqlc.New(r.pool)
+	owned, err := queries.OwnedMerchantReviewStatus(ctx, toPgUUID(ownerID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return merchant.Created{}, merchant.ErrNoBusiness
+	}
+	if err != nil {
+		return merchant.Created{}, fmt.Errorf("load owned business: %w", err)
+	}
+	if owned.ReviewStatus != "draft" {
+		return merchant.Created{}, merchant.ErrNotDraft
+	}
+	kinds, err := queries.CountMerchantDocumentKinds(ctx, owned.ID)
+	if err != nil {
+		return merchant.Created{}, fmt.Errorf("count documents: %w", err)
+	}
+	if kinds < 2 {
+		return merchant.Created{}, merchant.ErrDocumentsRequired
+	}
+	row, err := queries.SubmitMerchantForReview(ctx, sqlc.SubmitMerchantForReviewParams{
+		ID: owned.ID,
+		At: pgtype.Timestamptz{Time: at, Valid: true},
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		// Another request submitted it between the read and the write.
+		return merchant.Created{}, merchant.ErrNotDraft
+	}
+	if err != nil {
+		return merchant.Created{}, fmt.Errorf("submit business: %w", err)
+	}
+	return merchant.Created{
+		ID:           toUUID(row.ID),
+		Slug:         row.Slug,
+		DisplayName:  row.DisplayName,
+		LegalName:    row.LegalName,
+		Phone:        row.Phone,
+		Status:       string(row.Status),
+		ReviewStatus: row.ReviewStatus,
 	}, nil
 }
 

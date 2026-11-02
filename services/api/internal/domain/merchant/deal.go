@@ -231,6 +231,8 @@ type AuditEntry struct {
 
 // DealRepository persists owned deals. Every method is scoped to the merchant.
 type DealRepository interface {
+	// ReviewStatus returns the business review status; only approved businesses may create deals.
+	ReviewStatus(ctx context.Context, merchantID uuid.UUID) (string, error)
 	// References checks categories, subcategories and locations belong to the expected taxonomy and merchant.
 	References(ctx context.Context, merchantID uuid.UUID, in DealInput) error
 	Insert(ctx context.Context, merchantID uuid.UUID, write DealWrite, audit AuditEntry) (uuid.UUID, error)
@@ -259,6 +261,13 @@ func NewDealService(repo DealRepository, now func() time.Time) *DealService {
 
 // Create stores a new draft. Drafts must already be complete, so they can be submitted without edits.
 func (s *DealService) Create(ctx context.Context, merchantID uuid.UUID, actor Actor, in DealInput) (catalog.Deal, error) {
+	status, err := s.repo.ReviewStatus(ctx, merchantID)
+	if err != nil {
+		return catalog.Deal{}, err
+	}
+	if status != "approved" {
+		return catalog.Deal{}, ErrMerchantNotApproved
+	}
 	if err := s.prepare(ctx, merchantID, in); err != nil {
 		return catalog.Deal{}, err
 	}

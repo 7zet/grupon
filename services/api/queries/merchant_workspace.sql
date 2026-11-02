@@ -10,7 +10,7 @@ LIMIT 1;
 
 -- name: GetMerchantWorkspace :one
 SELECT id, slug, legal_name, display_name, description, logo_url, cover_url, phone, website,
-       instagram, telegram, status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
+       instagram, telegram, status, review_status, rating_avg::float8 AS rating_avg, rating_count, commission_bps
 FROM merchants
 WHERE id = $1 AND deleted_at IS NULL;
 

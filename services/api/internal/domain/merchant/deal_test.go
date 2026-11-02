@@ -20,6 +20,10 @@ type fakeDealRepo struct {
 
 func (f *fakeDealRepo) References(context.Context, uuid.UUID, DealInput) error { return nil }
 
+func (f *fakeDealRepo) ReviewStatus(context.Context, uuid.UUID) (string, error) {
+	return "approved", nil
+}
+
 func (f *fakeDealRepo) Insert(_ context.Context, _ uuid.UUID, write DealWrite, _ AuditEntry) (uuid.UUID, error) {
 	f.writes = append(f.writes, write)
 	return uuid.New(), nil

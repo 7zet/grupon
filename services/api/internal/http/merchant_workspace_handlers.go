@@ -238,6 +238,7 @@ func mapBusiness(business merchant.Business) gen.Merchant {
 		Instagram:     business.Instagram,
 		Telegram:      business.Telegram,
 		Status:        gen.MerchantStatus(business.Status),
+		ReviewStatus:  reviewStatusPtr(business.ReviewStatus),
 		RatingAvg:     float32(business.RatingAvg),
 		RatingCount:   business.RatingCount,
 		CommissionBps: 1500,

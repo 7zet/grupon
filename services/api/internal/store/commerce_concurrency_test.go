@@ -16,7 +16,7 @@ import (
 	"github.com/grupon/grupon/services/api/internal/store"
 )
 
-// TestOverSellingIsImpossible is the AGENTS.md stock guarantee: 100 buyers race for 10 units and
+// TestOverSellingIsImpossible is the stock guarantee in CLAUDE.md: 100 buyers race for 10 units and
 // exactly 10 orders succeed. The reservation is one conditional UPDATE inside a transaction.
 func TestOverSellingIsImpossible(t *testing.T) {
 	fixture := newCatalogFixture(t)

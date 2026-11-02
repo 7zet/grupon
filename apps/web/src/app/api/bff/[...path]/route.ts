@@ -12,6 +12,13 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^me$/ },
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
+  { method: 'POST', pattern: /^merchant\/submit$/ },
+  { method: 'GET', pattern: /^merchant\/business$/ },
+  { method: 'GET', pattern: /^merchant\/documents$/ },
+  { method: 'PUT', pattern: /^merchant\/documents\/(certificate|bank_letter)$/ },
+  { method: 'GET', pattern: /^admin\/merchants$/ },
+  { method: 'POST', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject)$`) },
+  { method: 'GET', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter)$`) },
   { method: 'PATCH', pattern: /^merchant\/business$/ },
   { method: 'POST', pattern: /^merchant\/locations$/ },
   { method: 'PATCH', pattern: new RegExp(`^merchant\\/locations\\/${UUID}$`) },
@@ -37,7 +44,12 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
 ];
 
 /** Media bytes are binary: they must be forwarded as-is, never decoded as text. */
-const BINARY_UPLOAD = new RegExp(`^merchant\\/media\\/${UUID}\\/content$`);
+const BINARY_UPLOAD = new RegExp(
+  `^(merchant\\/media\\/${UUID}\\/content|merchant\\/documents\\/(certificate|bank_letter))$`,
+);
+
+/** Business documents are downloaded as files, so the bytes must not be decoded as text. */
+const BINARY_DOWNLOAD = new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter)$`);
 
 function apiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1';
@@ -82,6 +94,16 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
   });
   // A 204 response must not carry a body; the Response constructor rejects one.
   if (upstream.status === 204) return new NextResponse(null, { status: 204 });
+  if (BINARY_DOWNLOAD.test(route) && upstream.ok) {
+    return new NextResponse(await upstream.arrayBuffer(), {
+      status: upstream.status,
+      headers: {
+        'Content-Type': upstream.headers.get('content-type') ?? 'application/octet-stream',
+        'Content-Disposition': 'attachment',
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  }
   return new NextResponse(await upstream.text(), {
     status: upstream.status,
     headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' },

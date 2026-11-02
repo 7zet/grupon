@@ -82,6 +82,10 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return fmt.Errorf("configure media storage: %w", err)
 	}
 	workspaceService := merchant.NewWorkspaceService(store.NewMerchantWorkspaceRepository(pool), time.Now)
+	documentStore, err := storage.NewPrivate(cfg.DocumentsDir)
+	if err != nil {
+		return fmt.Errorf("configure document storage: %w", err)
+	}
 	mediaService := merchant.NewMediaService(store.NewMerchantMediaRepository(pool), mediaStore, time.Now)
 
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.HTTP.Address)
@@ -110,14 +114,16 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		Internal:       httpapi.NewInternalAPI(cfg.InternalToken, invalidateCatalog),
 		Auth:           authAPI,
 		Commerce:       httpapi.NewCommerceAPI(commerceService, authAPI, logger),
-		Merchant:       httpapi.NewMerchantAPI(merchant.NewService(store.NewMerchantRepository(pool)), authAPI, logger),
+		Merchant:       httpapi.NewMerchantAPI(merchant.NewService(store.NewMerchantRepository(pool), time.Now), authAPI, logger),
 		MerchantWorkspace: httpapi.NewMerchantWorkspaceAPI(
 			merchant.NewWorkspaceService(store.NewMerchantWorkspaceRepository(pool), time.Now), authAPI, logger),
 		MerchantMedia: httpapi.NewMerchantMediaAPI(mediaService, workspaceService, authAPI, logger),
 		MerchantDeals: httpapi.NewMerchantDealAPI(
 			merchant.NewDealService(store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool)), time.Now),
 			workspaceService, authAPI, logger),
-		Moderation: httpapi.NewModerationAPI(moderation.NewService(store.NewModerationRepository(pool, store.NewCatalogRepository(pool), store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool))), time.Now), authAPI, logger),
+		MerchantDocuments: httpapi.NewMerchantDocumentAPI(merchant.NewDocumentService(store.NewMerchantDocumentRepository(pool), documentStore), merchant.NewReviewService(store.NewMerchantReviewRepository(pool)), authAPI, logger),
+		MerchantReview:    httpapi.NewMerchantReviewAPI(merchant.NewReviewService(store.NewMerchantReviewRepository(pool)), authAPI, logger),
+		Moderation:        httpapi.NewModerationAPI(moderation.NewService(store.NewModerationRepository(pool, store.NewCatalogRepository(pool), store.NewMerchantDealRepository(pool, store.NewCatalogRepository(pool))), time.Now), authAPI, logger),
 		MerchantRedemption: httpapi.NewMerchantRedemptionAPI(
 			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now).WithBackupCodes(commerceService.Signer().BackupCodeHMAC),
 			workspaceService, authAPI, logger),

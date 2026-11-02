@@ -38,7 +38,7 @@ for (const viewport of [
     const unobscuredBottom = viewport.width < 1024 ? viewport.height - 64 : viewport.height;
     expect(box.y + box.height).toBeLessThanOrEqual(unobscuredBottom);
     await page.screenshot({
-      path: `docs/phase-2/screenshots/deal-${viewport.width}x${viewport.height}.png`,
+      path: `docs/screenshots/deal-${viewport.width}x${viewport.height}.png`,
       fullPage: false,
     });
   });

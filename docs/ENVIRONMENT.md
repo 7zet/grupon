@@ -21,6 +21,7 @@ Plain-language reference for every setting. The API reads its settings at start-
 | `WEB_REVALIDATE_SECRET`                                                                       | yes                          | none                          | Shared secret sent to the web revalidation endpoint.                             |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM`                                                       | yes                          | none                          | Mail server for confirmation emails.                                             |
 | `MEDIA_LOCAL_DIR`                                                                             | yes                          | `.data/media`                 | Folder where merchant images are stored. Must be a persistent volume.            |
+| `DOCUMENTS_LOCAL_DIR` | yes | `.data/documents` | Private folder for merchant certificates and bank letters. Never served publicly; must be a persistent volume with restricted access. |
 | `MEDIA_PUBLIC_BASE`                                                                           | yes                          | `http://localhost:8080/media` | Public address that serves those images.                                         |
 | `TRUST_PROXY_HEADERS`                                                                         | behind a proxy only          | `false`                       | Read the client address from proxy headers. Turn on only behind a trusted proxy. |
 | `BRAND_NAME`                                                                                  | no                           | default brand                 | Name shown in emails.                                                            |
@@ -53,3 +54,17 @@ Run `migrate` once per release before starting the new API and worker. `seed` is
 - Generate `JWT_SECRET`, `VOUCHER_QR_SECRET`, `PAYMENT_MOCK_WEBHOOK_SECRET`, `WEB_REVALIDATE_SECRET` and `INTERNAL_API_TOKEN` separately with a cryptographic random generator.
 - Never reuse the `.env.example` values; they are public.
 - Keep secrets in the platform's secret store, not in the image.
+
+## Test accounts (development seed)
+
+Sign-in is by phone code. In development the code is returned as `dev_code` by `POST /auth/phone/code`
+and shown on the login page. Run `seed` to create these accounts; the seed never deletes accounts that
+people registered themselves.
+
+| Phone | Role | Use |
+|---|---|---|
+| +998900000001 | user | buyer: checkout, vouchers |
+| +998900000002 | merchant_owner | Atlas Wellness 1: deals, staff, submit business |
+| +998900000003 | merchant_cashier | Atlas Wellness 1: redemption only |
+| +998900000004 | superadmin | admin: moderation, merchant review, finance |
+| +998910000004 | user | extra buyer (customer04@local.test) |

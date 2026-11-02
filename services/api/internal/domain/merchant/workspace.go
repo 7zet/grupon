@@ -30,20 +30,22 @@ const (
 
 // Business is the editable merchant profile.
 type Business struct {
-	ID          uuid.UUID
-	Slug        string
-	LegalName   string
-	DisplayName string
-	Description catalog.Text
-	LogoURL     *string
-	CoverURL    *string
-	Phone       string
-	Website     *string
-	Instagram   *string
-	Telegram    *string
-	Status      string
-	RatingAvg   float64
-	RatingCount int
+	ID uuid.UUID
+	// ReviewStatus is draft, submitted, in_review, approved, rejected, suspended or terminated.
+	ReviewStatus string
+	Slug         string
+	LegalName    string
+	DisplayName  string
+	Description  catalog.Text
+	LogoURL      *string
+	CoverURL     *string
+	Phone        string
+	Website      *string
+	Instagram    *string
+	Telegram     *string
+	Status       string
+	RatingAvg    float64
+	RatingCount  int
 }
 
 // BusinessPatch carries the fields a manager or owner may change. Nil means "unchanged".
