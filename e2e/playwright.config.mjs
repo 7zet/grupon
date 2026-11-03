@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 4,
   use: { baseURL: 'http://127.0.0.1:3000', channel: 'msedge', trace: 'retain-on-failure' },
   webServer: {
-    command: 'pnpm --filter @grupon/web start',
+    command: 'corepack pnpm --filter @grupon/web start',
     url: 'http://127.0.0.1:3000/uz',
     reuseExistingServer: true,
     timeout: 120000,

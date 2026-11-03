@@ -35,6 +35,6 @@ Thumbs.db
 .docker-data/
 services/api/.data/
 
-# Dealo reference copy: someone else's repository, kept outside this repo (C:\Usershror\Projects\dealo-docs)
+# Dealo reference copy: a third-party repository, kept outside this repo (../dealo-docs)
 /dealo/
 /dealo.zip

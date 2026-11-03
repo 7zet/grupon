@@ -58,7 +58,8 @@ A stage ends with full tests, a short report, a merge and a tag. The next stage 
 
 ### Stage 0 — order (branch `feat/merchant-and-admin-flows`)
 - [x] Dealo reference copy moved out of the repo (`../dealo-docs`); ignored by `.gitignore`.
-- [ ] `docs/ANALYSIS-DEALO-VS-GRUPON.md` updated or removed (owner decision pending).
+- [x] `docs/ANALYSIS-DEALO-VS-GRUPON.md` removed (owner decision); `docs/ACCEPTANCE.md` replaces it.
+- [x] PostgreSQL data moved to `C:devgrupon-pgdata` (see docs/ENVIRONMENT.md); start with `scripts/dev-db.sh`.
 - [x] Playwright runs in parallel: each spec signs in with its own seeded accounts.
 - [ ] Tag `v0.1` on the branch. Merge into `main` waits for Stage 1 (AT tests passing).
 

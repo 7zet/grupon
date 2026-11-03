@@ -73,3 +73,17 @@ people registered themselves.
 | +998900000008 | superadmin | Admin B: admin approval inside the e2e merchant flow |
 | +998900000009 | merchant_cashier | Cashier B: redemption for merchant 2 |
 | +998910000004 | user | extra buyer (customer04@local.test) |
+
+## Local PostgreSQL
+
+- Data directory: `C:devgrupon-pgdata` (port 5433, user `app`, database `app`). Never inside Windows Temp:
+  Windows deletes empty folders there and the cluster stops starting.
+- Start, stop, check: `scripts/dev-db.sh start | stop | status` (Git Bash).
+- Tests: `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable go test ./...`.
+- Move procedure used once (2026-11-03): stop the server, copy the whole folder, start with the new `-D`,
+  verify (store tests pass), and only then delete the old folder.
+
+## Playwright
+
+- `e2e/playwright.config.mjs` starts the web app with `corepack pnpm`, so it works without `pnpm` on PATH.
+- Each spec uses its own seeded accounts; workers run in parallel.
