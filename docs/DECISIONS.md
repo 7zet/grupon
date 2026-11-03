@@ -271,3 +271,9 @@
 - Burst fraud rule (PRD 12.1, AT-14): more than five redemptions by one staff member in a minute records a `redemption_burst` fraud signal, holds the merchant's payouts, and sets `fraud_hold` on the vouchers that staff scanned in that minute. A voucher with `fraud_hold` or an open dispute cannot be redeemed (409 `voucher_on_hold`). Gap: the payout hold covers the whole merchant, not only the burst amount.
 - A scan of a voucher that belongs to another business is refused with `ErrWrongMerchant` and writes an audit row (`voucher_scan_denied`) in the same request (AT-04). A lookup has only the staff id, so its audit row records the role as `merchant_cashier`.
 - AT-01 is tested on the webhook path with the mock provider; ledger lines per payment are not yet asserted.
+
+- AT-05: an expired, refunded or voided voucher is refused with 422 and its reason (was 409).
+- AT-09: a refused payout preparation writes a `payout_prepare_denied` audit row.
+- AT-13: a late payment's refund is a row in `refunds` tied to the payment (`payment_id`); `voucher_id` and `requested_by` became optional for system refunds (migration 00021).
+- Multi-use vouchers: a partially used voucher stays usable until its last visit. This was broken since partially_redeemed was introduced (the use query only accepted `active`); fixed with AT-15.
+- sqlc keeps the enum types from before migrations 00019 and 00020 (it does not follow DROP TYPE and CREATE TYPE). Code compares those statuses with string literals until the enum is regenerated.

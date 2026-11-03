@@ -54,6 +54,8 @@ type Store interface {
 	PaymentByID(ctx context.Context, paymentID uuid.UUID) (Payment, error)
 	LockPaymentByProviderID(ctx context.Context, provider, providerPaymentID string) (Payment, error)
 	SetPaymentStatus(ctx context.Context, paymentID uuid.UUID, status string) error
+	// RecordLateRefund writes the refund of a payment that arrived after its order expired (AT-13).
+	RecordLateRefund(ctx context.Context, paymentID uuid.UUID, amount int64, reason string) error
 
 	// Vouchers.
 	VoucherCodeTaken(ctx context.Context, code string) (bool, error)

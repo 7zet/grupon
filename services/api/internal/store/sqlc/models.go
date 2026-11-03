@@ -985,6 +985,7 @@ type Refund struct {
 	ApprovedBy  pgtype.UUID        `json:"approved_by"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	PaymentID   pgtype.UUID        `json:"payment_id"`
 }
 
 type Review struct {

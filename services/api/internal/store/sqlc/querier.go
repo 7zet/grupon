@@ -111,6 +111,8 @@ type Querier interface {
 	InsertFraudSignal(ctx context.Context, arg InsertFraudSignalParams) error
 	InsertJournalEntry(ctx context.Context, arg InsertJournalEntryParams) (pgtype.UUID, error)
 	InsertJournalLine(ctx context.Context, arg InsertJournalLineParams) error
+	// AT-13: the system refunds a payment that arrived after its order expired. The provider refund already happened.
+	InsertLateRefund(ctx context.Context, arg InsertLateRefundParams) error
 	InsertOrder(ctx context.Context, arg InsertOrderParams) (InsertOrderRow, error)
 	InsertOrderItem(ctx context.Context, arg InsertOrderItemParams) (pgtype.UUID, error)
 	InsertOutbox(ctx context.Context, arg InsertOutboxParams) error

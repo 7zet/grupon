@@ -29,6 +29,21 @@ func NewFinanceRepository(pool *pgxpool.Pool) *FinanceRepository {
 var _ finance.Repository = (*FinanceRepository)(nil)
 
 // PayableRedemptions lists redemptions ready for payout for one merchant.
+// RecordDenied writes an audit row for a refused finance action.
+func (r *FinanceRepository) RecordDenied(ctx context.Context, actor finance.Actor, action string, entityID uuid.UUID) error {
+	if err := sqlc.New(r.pool).InsertAuditLog(ctx, sqlc.InsertAuditLogParams{
+		ActorUserID: toPgUUID(actor.UserID),
+		ActorRole:   sqlc.AppRole(actor.Role),
+		Action:      action,
+		EntityType:  "merchant",
+		EntityID:    toPgUUID(entityID),
+		AfterData:   []byte(`{}`),
+	}); err != nil {
+		return fmt.Errorf("write audit log: %w", err)
+	}
+	return nil
+}
+
 func (r *FinanceRepository) PayableRedemptions(ctx context.Context, merchantID uuid.UUID, before time.Time) ([]finance.Payable, error) {
 	rows, err := sqlc.New(r.pool).PayableRedemptions(ctx, sqlc.PayableRedemptionsParams{
 		MerchantID:     toPgUUID(merchantID),

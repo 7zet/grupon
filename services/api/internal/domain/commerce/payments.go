@@ -303,6 +303,13 @@ func (s *Service) refundLatePayment(ctx context.Context, provider payments.Provi
 		)
 		return
 	}
+	if err := s.repo.RecordLateRefund(ctx, payment.ID, payment.Amount, "payment arrived after the order expired"); err != nil {
+		s.logger.ErrorContext(ctx, "late payment refunded but refund record failed",
+			slog.String("payment_id", payment.ID.String()),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
 	s.logger.WarnContext(ctx, "late payment refunded",
 		slog.String("payment_id", payment.ID.String()),
 		slog.String("order_id", payment.OrderID.String()),

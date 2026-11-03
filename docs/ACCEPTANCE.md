@@ -7,22 +7,22 @@
 | AT | Scenario | Status | Evidence / what is missing |
 |---|---|---|---|
 | AT-01 | Webhook duplicate | ✅ | `store/at_payments_test.go` (TestAT01…): 5 deliveries, 1 voucher, order paid. Ledger lines are not checked yet |
-| AT-02 | Parallel redeem | 🟡 | Atomic redeem in one transaction; no 100-parallel test |
+| AT-02 | Parallel redeem | ✅ | `store/at_redeem_test.go` (TestAT02…): 100 concurrent scans, one redemption |
 | AT-03 | Inventory oversell | ✅ | `store/commerce_concurrency_test.go` (TestOverSellingIsImpossible) |
 | AT-04 | Foreign merchant scans voucher | ✅ | `domain/redemption` TestForeignMerchantScanIsRefusedAndAudited: refused, voucher unchanged, `voucher_scan_denied` audit row |
-| AT-05 | Expired / refunded voucher scan | 🟡 | Domain tests in `domain/redemption`; no AT-level check of "no ledger row" |
+| AT-05 | Expired / refunded voucher scan | 🟡 | Domain test refuses it and changes nothing; HTTP now answers 422 with the reason, the mapping has no test yet |
 | AT-06 | Price version lock | ⏳ | Plan: snapshot the terms in the order and test it (no deal versioning). Test first |
 | AT-07 | Failed payment, hold expires | ✅ | `store/at_payments_test.go` (TestAT07…): stock returned, no voucher, order `expired` |
 | AT-08 | Reconciliation alert | ⏳ | PSP kerak (3-bosqich) |
-| AT-09 | Cashier cannot approve payout | 🟡 | Moderator/finance role tests exist; cashier case not tested |
-| AT-10 | Closed category gate | 🟡 | `category_closed` check exists; no test |
+| AT-09 | Cashier cannot approve payout | ✅ | `store/at_gates_test.go` (TestAT09…): ErrForbidden, `payout_prepare_denied` audit row |
+| AT-10 | Closed category gate | ✅ | `store/at_gates_test.go` (TestAT10…): `category_closed` on `category_id`; open category passes |
 | AT-11 | Refund within 14 days | ✅ | `store/finance_test.go` (TestUnusedVoucherRefundsAutomaticallyWithinFourteenDays) |
 | AT-12 | Voucher expiry at Tashkent 23:59 | ✅ | `domain/commerce/voucher_window_test.go` |
-| AT-13 | Late payment auto-refund | 🟡 | Mock late payment is refunded at provider; no `refunds` row yet (Stage 1) |
+| AT-13 | Late payment auto-refund | ✅ | `store/at_payments_test.go` (TestAT13…): refund row on the payment (migration 00021), no voucher, order stays expired |
 | AT-14 | Collusion fraud signal | ✅ | `store/at_fraud_test.go`: burst signal, payout hold, vouchers `fraud_hold`, held voucher refused (`voucher_on_hold`). Gap: the hold stops the whole merchant's payouts, not only the burst amount |
-| AT-15 | Multi-use, parallel last use | 🟡 | `partially_redeemed`/`redeemed` transition in SQL; no parallel test |
-| AT-16 | Dispute holds payout | 🟡 | Dispute holds payout in code; no AT test |
+| AT-15 | Multi-use, parallel last use | ✅ | `store/at_redeem_test.go`: two racing scans, one succeeds; second visit also tested. Fixed a bug: partially used vouchers could not be used again |
+| AT-16 | Dispute holds payout | ✅ | `store/at_gates_test.go` (TestAT16…): disputed redemption leaves the payable set, the other stays |
 | AT-17 | Bank account change hold (72 h) | ⏳ | 3-bosqich (not started) |
 | AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover) |
 
-Counts: ✅ 8 · 🟡 7 · ❔ 0 · ⏳ 3. Stage 1 turns every 🟡 and ❔ into ✅ or into a documented ⏳.
+Counts: ✅ 14 · 🟡 1 · ❔ 0 · ⏳ 3 (AT-06 test first; AT-08 and AT-17 need PSP / 3-bosqich).

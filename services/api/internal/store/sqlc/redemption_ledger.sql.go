@@ -19,7 +19,7 @@ UPDATE vouchers SET
   redeemed_by_user_id = $1,
   redeemed_location_id = $2,
   updated_at = now()
-WHERE id = $3 AND status = 'active'
+WHERE id = $3 AND status IN ('active', 'partially_redeemed') AND redemptions_used < redemptions_allowed
 `
 
 type ApplyVoucherUseParams struct {

@@ -43,7 +43,10 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 	if voucher.FraudHold || voucher.DisputeOpen {
 		return false, redemption.ErrOnHold
 	}
-	if voucher.Status != sqlc.VoucherStatusActive || voucher.RedemptionsUsed >= voucher.RedemptionsAllowed {
+	// A multi-use voucher keeps its usable status between visits; only redeemed or refunded ones are closed.
+	// Literal values: sqlc keeps the enum from before migration 00019, so its constants lack partially_redeemed.
+	usable := voucher.Status == "active" || voucher.Status == "partially_redeemed"
+	if !usable || voucher.RedemptionsUsed >= voucher.RedemptionsAllowed {
 		return false, nil
 	}
 	if !at.Before(voucher.ValidUntil.Time) || at.Before(voucher.ValidFrom.Time) {

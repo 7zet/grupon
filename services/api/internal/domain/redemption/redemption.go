@@ -291,7 +291,7 @@ func (s *Service) view(ctx context.Context, voucher commerce.Voucher) (commerce.
 
 // EffectiveStatus returns the status staff should act on. An active voucher past its end date is expired.
 func EffectiveStatus(voucher commerce.Voucher, at time.Time) string {
-	if voucher.Status == StatusActive && !at.Before(voucher.ValidUntil) {
+	if (voucher.Status == StatusActive || voucher.Status == "partially_redeemed") && !at.Before(voucher.ValidUntil) {
 		return StatusExpired
 	}
 	return voucher.Status

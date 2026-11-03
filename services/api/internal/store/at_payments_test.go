@@ -170,3 +170,43 @@ func TestAT07FailedPaymentAndExpiredHoldReturnStockAndIssueNoVoucher(t *testing.
 		t.Fatalf("order status = %s, want expired", got)
 	}
 }
+
+// AT-13: the hold runs out and the order expires. The provider's success arrives later. The system refunds the
+// payment, no voucher is issued, and the refund is recorded against the payment.
+func TestAT13LatePaymentIsRefundedAndRecorded(t *testing.T) {
+	env := newATEnv(t, 1)
+	order := env.order(t, 1)
+	session, err := env.service.PayOrder(env.ctx, env.buyer, order.ID, env.mock.Name())
+	if err != nil {
+		t.Fatalf("pay order: %v", err)
+	}
+	if _, err := env.fixture.pool.Exec(env.ctx, `
+		UPDATE stock_reservations SET expires_at = now() - interval '1 minute' WHERE order_id = $1`, order.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := env.service.ReleaseExpiredReservations(env.ctx, 100); err != nil {
+		t.Fatalf("release expired holds: %v", err)
+	}
+	if got := env.scalarText(t, `SELECT status::text FROM orders WHERE id = $1`, order.ID); got != "expired" {
+		t.Fatalf("order status = %s, want expired before the late payment", got)
+	}
+
+	providerID := env.scalarText(t, `SELECT provider_payment_id FROM payments WHERE id = $1`, session.PaymentID)
+	body, signature, err := env.mock.SignedWebhook(providerID, payments.OutcomeSucceeded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := env.service.HandleWebhook(env.ctx, env.mock.Name(), body, signature); err != nil {
+		t.Fatalf("late success webhook: %v", err)
+	}
+
+	if got := env.count(t, `SELECT count(*) FROM refunds WHERE payment_id = $1 AND status = 'succeeded'`, session.PaymentID); got != 1 {
+		t.Fatalf("refund rows = %d, want 1", got)
+	}
+	if got := env.count(t, `SELECT count(*) FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id WHERE oi.order_id = $1`, order.ID); got != 0 {
+		t.Fatalf("vouchers = %d, want 0", got)
+	}
+	if got := env.scalarText(t, `SELECT status::text FROM orders WHERE id = $1`, order.ID); got != "expired" {
+		t.Fatalf("order status = %s, want still expired", got)
+	}
+}

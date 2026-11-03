@@ -110,6 +110,8 @@ type Queue struct {
 // Repository performs the writes. Each method is one transaction that also writes its ledger entry
 // and outbox event, so a money movement is either fully recorded or not at all.
 type Repository interface {
+	// RecordDenied writes the audit row for a finance action the actor's role may not do (AT-09).
+	RecordDenied(ctx context.Context, actor Actor, action string, entityID uuid.UUID) error
 	PayableRedemptions(ctx context.Context, merchantID uuid.UUID, before time.Time) ([]Payable, error)
 	MerchantOnHold(ctx context.Context, merchantID uuid.UUID) (bool, error)
 	CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error)
@@ -152,6 +154,9 @@ func NewService(repo Repository, now func() time.Time) *Service {
 // and superadmins prepare; a separate approver pays (four-eyes).
 func (s *Service) PreparePayout(ctx context.Context, actor Actor, merchantID uuid.UUID) (uuid.UUID, error) {
 	if !financeOperator(actor.Role) {
+		if err := s.repo.RecordDenied(ctx, actor, "payout_prepare_denied", merchantID); err != nil {
+			return uuid.Nil, err
+		}
 		return uuid.Nil, ErrForbidden
 	}
 	onHold, err := s.repo.MerchantOnHold(ctx, merchantID)

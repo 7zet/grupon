@@ -16,7 +16,7 @@ UPDATE vouchers SET
   redeemed_by_user_id = sqlc.arg(staff_user_id),
   redeemed_location_id = sqlc.arg(location_id),
   updated_at = now()
-WHERE id = sqlc.arg(id) AND status = 'active';
+WHERE id = sqlc.arg(id) AND status IN ('active', 'partially_redeemed') AND redemptions_used < redemptions_allowed;
 
 -- name: InsertRedemption :one
 INSERT INTO redemptions (voucher_id, merchant_id, merchant_location_id, staff_user_id, sequence, amount, commission, geo_lat, geo_lng)

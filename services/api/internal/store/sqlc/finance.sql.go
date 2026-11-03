@@ -312,6 +312,23 @@ func (q *Queries) InsertFraudSignal(ctx context.Context, arg InsertFraudSignalPa
 	return err
 }
 
+const insertLateRefund = `-- name: InsertLateRefund :exec
+INSERT INTO refunds (payment_id, amount, reason, status)
+VALUES ($1, $2, $3, 'succeeded')
+`
+
+type InsertLateRefundParams struct {
+	PaymentID pgtype.UUID `json:"payment_id"`
+	Amount    int64       `json:"amount"`
+	Reason    string      `json:"reason"`
+}
+
+// AT-13: the system refunds a payment that arrived after its order expired. The provider refund already happened.
+func (q *Queries) InsertLateRefund(ctx context.Context, arg InsertLateRefundParams) error {
+	_, err := q.db.Exec(ctx, insertLateRefund, arg.PaymentID, arg.Amount, arg.Reason)
+	return err
+}
+
 const insertOutbox = `-- name: InsertOutbox :exec
 INSERT INTO outbox (topic, payload) VALUES ($1, $2)
 `

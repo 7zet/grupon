@@ -166,3 +166,8 @@ ORDER BY d.created_at;
 -- name: SetVoucherDisputeFlag :exec
 -- PRD 08: an open dispute sets the voucher flag, which blocks redemption until the dispute closes.
 UPDATE vouchers SET dispute_open = sqlc.arg(open)::boolean, updated_at = now() WHERE id = sqlc.arg(id);
+
+-- name: InsertLateRefund :exec
+-- AT-13: the system refunds a payment that arrived after its order expired. The provider refund already happened.
+INSERT INTO refunds (payment_id, amount, reason, status)
+VALUES (sqlc.arg(payment_id), sqlc.arg(amount), sqlc.arg(reason), 'succeeded');

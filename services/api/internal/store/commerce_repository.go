@@ -411,6 +411,10 @@ func (s *commerceStore) LockPaymentByProviderID(ctx context.Context, provider, p
 	}, nil
 }
 
+func (s *commerceStore) RecordLateRefund(ctx context.Context, paymentID uuid.UUID, amount int64, reason string) error {
+	return s.q.InsertLateRefund(ctx, sqlc.InsertLateRefundParams{PaymentID: toPgUUID(paymentID), Amount: amount, Reason: reason})
+}
+
 func (s *commerceStore) SetPaymentStatus(ctx context.Context, paymentID uuid.UUID, status string) error {
 	return s.q.SetPaymentStatus(ctx, sqlc.SetPaymentStatusParams{
 		Status:     sqlc.PaymentStatus(status),
