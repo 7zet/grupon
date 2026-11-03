@@ -13,6 +13,11 @@ const SEEDED_PHONES = {
   'owner@local.test': '+998900000002',
   'cashier@local.test': '+998900000003',
   'admin@local.test': '+998900000004',
+  'owner-b@local.test': '+998900000005',
+  'owner-c@local.test': '+998900000006',
+  'owner-d@local.test': '+998900000007',
+  'admin-b@local.test': '+998900000008',
+  'cashier-b@local.test': '+998900000009',
 };
 
 /** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
@@ -92,7 +97,7 @@ async function signIn(page, email) {
 }
 
 test('admin approves and rejects deals in the moderation queue', async ({ page }) => {
-  const owner = await login('owner@local.test');
+  const owner = await login('owner-c@local.test');
   const stamp = Date.now();
   const approveTitle = `Moderatsiya approve ${stamp}`;
   const rejectTitle = `Moderatsiya reject ${stamp}`;
@@ -120,7 +125,7 @@ test('buyers cannot open the moderation queue', async ({ page }) => {
 });
 
 test('merchant uploads a photo and opens the deal wizard', async ({ page }) => {
-  await signIn(page, 'owner@local.test');
+  await signIn(page, 'owner-c@local.test');
   await page.goto('/uz/merchant/media');
   await page.locator('input[type=file]').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: PNG });
   await expect(page.locator('main img').first()).toBeVisible({ timeout: 15000 });

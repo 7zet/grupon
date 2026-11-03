@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const OWNER_PHONE = '+998900000002';
+const OWNER_PHONE = '+998900000007'; // owner-d: only this spec uses it
 
 /** Signs in as the seeded merchant owner through the phone code form (development shows the code on the page). */
 async function signInOwner(page) {

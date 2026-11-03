@@ -67,4 +67,9 @@ people registered themselves.
 | +998900000002 | merchant_owner | Atlas Wellness 1: deals, staff, submit business |
 | +998900000003 | merchant_cashier | Atlas Wellness 1: redemption only |
 | +998900000004 | superadmin | admin: moderation, merchant review, finance |
+| +998900000005 | merchant_owner | Owner B: merchant 2 (e2e merchant flow) |
+| +998900000006 | merchant_owner | Owner C: merchant 3 (e2e admin UI) |
+| +998900000007 | merchant_owner | Owner D: merchant 4 (e2e merchant panel) |
+| +998900000008 | superadmin | Admin B: admin approval inside the e2e merchant flow |
+| +998900000009 | merchant_cashier | Cashier B: redemption for merchant 2 |
 | +998910000004 | user | extra buyer (customer04@local.test) |

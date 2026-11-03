@@ -50,3 +50,25 @@ tokens and components. Do not redesign what exists.
 - Commits: add the trailer `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`. Never commit
   `Grupon_hisobot.pdf` (the owner's own file).
 - If something is unclear, write the assumption in `docs/DECISIONS.md` and continue.
+
+## Current stage: 0 then 1
+
+Only the tasks of the current stage are listed here. Stage 2 and later are not started; do not plan for them.
+A stage ends with full tests, a short report, a merge and a tag. The next stage starts only after the finish line.
+
+### Stage 0 — order (branch `feat/merchant-and-admin-flows`)
+- [x] Dealo reference copy moved out of the repo (`../dealo-docs`); ignored by `.gitignore`.
+- [ ] `docs/ANALYSIS-DEALO-VS-GRUPON.md` updated or removed (owner decision pending).
+- [x] Playwright runs in parallel: each spec signs in with its own seeded accounts.
+- [ ] Tag `v0.1` on the branch. Merge into `main` waits for Stage 1 (AT tests passing).
+
+### Stage 1 — demo-ready (code only)
+Finish line: every AT in `docs/ACCEPTANCE.md` is ✅, or marked "PSP kerak", "SMS kerak" or "3-bosqich".
+- [ ] Write the missing AT tests (🟡 and ❔ rows); AT-06 starts with a test, then a terms snapshot in the order if needed.
+- [ ] Dispute: `awaiting_evidence`, `under_review`, `closed`; fraud rule sets `fraud_hold`.
+- [ ] Late payment writes a `refunds` row (AT-13).
+- [ ] Price-proof upload page for merchants (backend exists).
+- [ ] Category flags at category level: publishable, purchasable.
+- [ ] Merchant redemption history; cashier e2e with its own login.
+- [ ] Deal wizard tested end to end in the browser.
+- [ ] SMS adapter interface, with `LogSender` as the only implementation until a provider is chosen.

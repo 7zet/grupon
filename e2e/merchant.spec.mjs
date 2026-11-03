@@ -14,6 +14,11 @@ const SEEDED_PHONES = {
   'owner@local.test': '+998900000002',
   'cashier@local.test': '+998900000003',
   'admin@local.test': '+998900000004',
+  'owner-b@local.test': '+998900000005',
+  'owner-c@local.test': '+998900000006',
+  'owner-d@local.test': '+998900000007',
+  'admin-b@local.test': '+998900000008',
+  'cashier-b@local.test': '+998900000009',
 };
 
 /** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
@@ -46,14 +51,14 @@ function call(token, method, path, body, headers = {}) {
 const text = (value) => ({ uz: value, ru: value, en: value });
 
 test('cashier cannot create deals', async () => {
-  const cashier = await login('cashier@local.test');
+  const cashier = await login('cashier-b@local.test');
   const response = await call(cashier, 'POST', '/merchant/deals', {});
   expect(response.status).toBe(403);
 });
 
 test('owner creates, admin approves, buyer buys, owner redeems on mobile', async ({ browser }) => {
-  const owner = await login('owner@local.test');
-  const admin = await login('admin@local.test');
+  const owner = await login('owner-b@local.test');
+  const admin = await login('admin-b@local.test');
   const buyer = await login('user@local.test');
 
   const config = await (await fetch(`${API}/config`)).json();
@@ -137,7 +142,7 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await page.goto(`${WEB}/uz/login`);
-  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES['owner@local.test'].slice(4));
+  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES['owner-b@local.test'].slice(4));
   await page.getByRole('button', { name: /Kod yuborish/ }).click();
   const hint = page.getByText(/Test rejimi kodi: \d{6}/);
   await expect(hint).toBeVisible();

@@ -180,12 +180,12 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 	}
 	userIDs := make([]string, 24)
-	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test"}
+	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test", "owner-b@local.test", "owner-c@local.test", "owner-d@local.test", "admin-b@local.test", "cashier-b@local.test"}
 	for i := range userIDs {
 		email := fmt.Sprintf("customer%02d@local.test", i)
 		name := fmt.Sprintf("Seed Customer %02d", i)
 		if i < len(emails) {
-			email, name = emails[i], []string{"Test User", "Merchant Owner", "Merchant Cashier", "Superadmin"}[i]
+			email, name = emails[i], []string{"Test User", "Merchant Owner", "Merchant Cashier", "Superadmin", "Merchant Owner B", "Merchant Owner C", "Merchant Owner D", "Superadmin B", "Merchant Cashier B"}[i]
 		}
 		if err := tx.QueryRow(ctx, `INSERT INTO users(email,name,locale,currency,email_verified_at,phone) VALUES($1,$2,$3,'UZS',now(),$4) RETURNING id`, email, name, []string{"uz", "ru", "en"}[i%3], seedPhone(i)).Scan(&userIDs[i]); err != nil {
 			return err
@@ -217,6 +217,14 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[3]); err != nil {
+		return err
+	}
+	// Parallel e2e specs each sign in as their own owner, admin and cashier. Owner B has merchant 2; owner C and D
+	// have merchants 3 and 4. Cashier B works for merchant 2.
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,'merchant_owner',$2),($3,'merchant_owner',$4),($5,'merchant_owner',$6),($7,'merchant_cashier',$2)`, userIDs[4], merchantIDs[1], userIDs[5], merchantIDs[2], userIDs[6], merchantIDs[3], userIDs[8]); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[7]); err != nil {
 		return err
 	}
 	deals := make([]dealSeed, 100)
@@ -330,7 +338,7 @@ func active(flag *bool) bool {
 // seedPhone is the development sign-in phone of the seeded user at index i. The first four are the
 // named test accounts; the rest get numbers from a reserved development range.
 func seedPhone(i int) string {
-	named := []string{"+998900000001", "+998900000002", "+998900000003", "+998900000004"}
+	named := []string{"+998900000001", "+998900000002", "+998900000003", "+998900000004", "+998900000005", "+998900000006", "+998900000007", "+998900000008", "+998900000009"}
 	if i < len(named) {
 		return named[i]
 	}

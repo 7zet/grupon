@@ -34,3 +34,7 @@ Thumbs.db
 # Local infrastructure data
 .docker-data/
 services/api/.data/
+
+# Dealo reference copy: someone else's repository, kept outside this repo (C:\Usershror\Projects\dealo-docs)
+/dealo/
+/dealo.zip
