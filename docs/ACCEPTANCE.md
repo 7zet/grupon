@@ -25,4 +25,4 @@
 | AT-17 | Bank account change hold (72 h) | ⏳ | 3-bosqich (not started) |
 | AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover) |
 
-Counts: ✅ 4 · 🟡 8 · ❔ 3 · ⏳ 3. Stage 1 turns every 🟡 and ❔ into ✅ or into a documented ⏳.
+Counts: ✅ 4 · 🟡 7 · ❔ 4 · ⏳ 3. Stage 1 turns every 🟡 and ❔ into ✅ or into a documented ⏳.
