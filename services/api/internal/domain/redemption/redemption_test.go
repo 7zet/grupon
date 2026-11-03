@@ -19,6 +19,13 @@ type fakeRepo struct {
 	locations  map[uuid.UUID]bool
 	redeemed   bool
 	audits     int
+	denied     []string
+}
+
+// RecordDenied keeps the action of each refused scan so tests can check the audit trail.
+func (f *fakeRepo) RecordDenied(_ context.Context, audit AuditEntry) error {
+	f.denied = append(f.denied, audit.Action)
+	return nil
 }
 
 func (f *fakeRepo) Find(context.Context, uuid.UUID) (commerce.Voucher, error) { return f.voucher, nil }
@@ -98,6 +105,21 @@ func TestRedeemOnceAndReportStates(t *testing.T) {
 	}
 	if _, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID, nil); !errors.Is(err, ErrAlreadyRedeemed) {
 		t.Fatalf("second redeem: got %v", err)
+	}
+}
+
+// AT-04: a cashier of another business scans the voucher. The scan is refused, the voucher does not change, and an audit row is written.
+func TestForeignMerchantScanIsRefusedAndAudited(t *testing.T) {
+	repo, service, _, locationID, actor := newFixture(StatusActive, now.AddDate(0, 1, 0))
+	otherMerchant := uuid.New()
+	if _, err := service.Redeem(context.Background(), otherMerchant, actor, repo.voucher.ID, locationID, nil); !errors.Is(err, ErrWrongMerchant) {
+		t.Fatalf("foreign scan: got %v, want ErrWrongMerchant", err)
+	}
+	if repo.redeemed || repo.audits != 0 {
+		t.Fatalf("voucher changed by a refused scan: redeemed=%v audits=%d", repo.redeemed, repo.audits)
+	}
+	if len(repo.denied) != 1 || repo.denied[0] != "voucher_scan_denied" {
+		t.Fatalf("denied audit rows = %v, want one voucher_scan_denied", repo.denied)
 	}
 }
 

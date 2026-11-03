@@ -154,9 +154,7 @@ type HomepageSectionType string
 
 const (
 	HomepageSectionTypeDeals      HomepageSectionType = "deals"
-	HomepageSectionTypeCollection HomepageSectionType = "collection"
 	HomepageSectionTypeCategories HomepageSectionType = "categories"
-	HomepageSectionTypeBanner     HomepageSectionType = "banner"
 )
 
 func (e *HomepageSectionType) Scan(src interface{}) error {

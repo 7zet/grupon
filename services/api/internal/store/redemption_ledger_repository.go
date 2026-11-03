@@ -40,6 +40,9 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 	if err != nil {
 		return false, fmt.Errorf("lock voucher: %w", err)
 	}
+	if voucher.FraudHold || voucher.DisputeOpen {
+		return false, redemption.ErrOnHold
+	}
 	if voucher.Status != sqlc.VoucherStatusActive || voucher.RedemptionsUsed >= voucher.RedemptionsAllowed {
 		return false, nil
 	}
@@ -115,6 +118,12 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 			Reason:     "redemption burst under review",
 		}); err != nil {
 			return false, fmt.Errorf("hold merchant payouts: %w", err)
+		}
+		if _, err := queries.HoldBurstVouchers(ctx, sqlc.HoldBurstVouchersParams{
+			StaffUserID: toPgUUID(audit.ActorID),
+			Since:       pgtype.Timestamptz{Time: at.Add(-time.Minute), Valid: true},
+		}); err != nil {
+			return false, fmt.Errorf("hold burst vouchers: %w", err)
 		}
 	}
 	if _, err := PostEntry(ctx, queries, ledger.Redeemed(toUUID(redemptionID).String(), merchantID.String(), amount, commission)); err != nil {

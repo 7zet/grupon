@@ -32,6 +32,8 @@ var (
 	ErrExpired         = errors.New("redemption: voucher expired")
 	ErrRefunded        = errors.New("redemption: voucher refunded")
 	ErrVoided          = errors.New("redemption: voucher voided")
+	// ErrOnHold means fraud review or an open dispute holds the voucher.
+	ErrOnHold = errors.New("redemption: voucher is on hold for review")
 )
 
 // ReversalWindow is how long the cashier may undo a redemption; after it, only support can.
@@ -105,6 +107,8 @@ type Repository interface {
 	// AttemptStats counts a staff member's lookups: in the last minute, and failed ones since blockSince.
 	AttemptStats(ctx context.Context, staffID uuid.UUID, minuteSince, blockSince time.Time) (AttemptCounts, error)
 	RecordAttempt(ctx context.Context, staffID uuid.UUID, failed bool) error
+	// RecordDenied writes the audit row for a scan by a staff member of another business (AT-04).
+	RecordDenied(ctx context.Context, audit AuditEntry) error
 	LocationOwned(ctx context.Context, merchantID, locationID uuid.UUID) (bool, error)
 	// Redeem marks the voucher redeemed only while it is still active and inside its validity window.
 	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry, geo *Geo) (bool, error)
@@ -175,12 +179,29 @@ func (s *Service) Lookup(ctx context.Context, merchantID, staffID uuid.UUID, tok
 	}
 	_ = s.repo.RecordAttempt(ctx, staffID, false)
 	if voucher.MerchantID != merchantID {
+		if err := s.repo.RecordDenied(ctx, deniedScan(staffID, scannerRole, voucher.ID, merchantID, voucher.MerchantID)); err != nil {
+			return commerce.VoucherView{}, err
+		}
 		return commerce.VoucherView{}, ErrWrongMerchant
 	}
 	return s.view(ctx, voucher)
 }
 
 // Redeem marks an active voucher as used at one of the merchant's branches.
+// scannerRole is the role recorded for lookups, which carry only the staff id. Scanning is a cashier action.
+const scannerRole = "merchant_cashier"
+
+// deniedScan builds the audit row for a scan that was refused because the voucher belongs to another business.
+func deniedScan(actorID uuid.UUID, role string, voucherID, merchantID, ownerID uuid.UUID) AuditEntry {
+	return AuditEntry{
+		ActorID:   actorID,
+		Role:      role,
+		VoucherID: voucherID,
+		Action:    "voucher_scan_denied",
+		After:     map[string]any{"scanning_merchant_id": merchantID.String(), "voucher_merchant_id": ownerID.String()},
+	}
+}
+
 // Geo is the staff device position at redemption. It is optional and only feeds fraud rules.
 type Geo struct {
 	Lat float64
@@ -193,6 +214,9 @@ func (s *Service) Redeem(ctx context.Context, merchantID uuid.UUID, actor mercha
 		return commerce.VoucherView{}, err
 	}
 	if voucher.MerchantID != merchantID {
+		if err := s.repo.RecordDenied(ctx, deniedScan(actor.UserID, actor.Role, voucherID, merchantID, voucher.MerchantID)); err != nil {
+			return commerce.VoucherView{}, err
+		}
 		return commerce.VoucherView{}, ErrWrongMerchant
 	}
 	owned, err := s.repo.LocationOwned(ctx, merchantID, locationID)

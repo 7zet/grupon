@@ -267,3 +267,7 @@
 - Pilot categories (PRD 03): Beauty & Wellness, Food & Drink, Things to Do, Health & Fitness are open. Automotive, Education, Events, Home Services, Travel, Pickup Goods and Medical exist but are closed by their flags. Cities: the five seeded cities; only Toshkent is open in the pilot.
 - Not done in this step: dispute awaiting_evidence and under_review have no transitions in code; chargeback states have no flow; a late payment refund does not create a refund row yet.
 - Commit and push of the state, category and merchant-status changes were requested in the same session.
+
+- Burst fraud rule (PRD 12.1, AT-14): more than five redemptions by one staff member in a minute records a `redemption_burst` fraud signal, holds the merchant's payouts, and sets `fraud_hold` on the vouchers that staff scanned in that minute. A voucher with `fraud_hold` or an open dispute cannot be redeemed (409 `voucher_on_hold`). Gap: the payout hold covers the whole merchant, not only the burst amount.
+- A scan of a voucher that belongs to another business is refused with `ErrWrongMerchant` and writes an audit row (`voucher_scan_denied`) in the same request (AT-04). A lookup has only the staff id, so its audit row records the role as `merchant_cashier`.
+- AT-01 is tested on the webhook path with the mock provider; ledger lines per payment are not yet asserted.

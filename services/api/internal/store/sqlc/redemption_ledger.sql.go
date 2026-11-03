@@ -55,6 +55,28 @@ func (q *Queries) CompleteFullyUsedOrder(ctx context.Context, voucherID pgtype.U
 	return result.RowsAffected(), nil
 }
 
+const holdBurstVouchers = `-- name: HoldBurstVouchers :execrows
+UPDATE vouchers SET fraud_hold = true, updated_at = now()
+WHERE id IN (
+  SELECT r.voucher_id FROM redemptions r
+  WHERE r.staff_user_id = $1 AND r.created_at >= $2 AND r.reversed_at IS NULL
+)
+`
+
+type HoldBurstVouchersParams struct {
+	StaffUserID pgtype.UUID        `json:"staff_user_id"`
+	Since       pgtype.Timestamptz `json:"since"`
+}
+
+// PRD 12.1: vouchers scanned by a staff member during a redemption burst wait for fraud review.
+func (q *Queries) HoldBurstVouchers(ctx context.Context, arg HoldBurstVouchersParams) (int64, error) {
+	result, err := q.db.Exec(ctx, holdBurstVouchers, arg.StaffUserID, arg.Since)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertBuyerNotification = `-- name: InsertBuyerNotification :exec
 INSERT INTO notifications (user_id, kind, voucher_id, merchant_name)
 VALUES ($1, 'voucher_redeemed', $2, $3)
@@ -200,6 +222,7 @@ func (q *Queries) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID 
 
 const lockVoucherForRedemption = `-- name: LockVoucherForRedemption :one
 SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
+       v.fraud_hold, v.dispute_open,
        oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
@@ -221,6 +244,8 @@ type LockVoucherForRedemptionRow struct {
 	RedemptionsAllowed int32              `json:"redemptions_allowed"`
 	ValidFrom          pgtype.Timestamptz `json:"valid_from"`
 	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
+	FraudHold          bool               `json:"fraud_hold"`
+	DisputeOpen        bool               `json:"dispute_open"`
 	UnitPriceSnapshot  int64              `json:"unit_price_snapshot"`
 	CommissionBps      int32              `json:"commission_bps"`
 	MerchantName       string             `json:"merchant_name"`
@@ -237,6 +262,8 @@ func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherF
 		&i.RedemptionsAllowed,
 		&i.ValidFrom,
 		&i.ValidUntil,
+		&i.FraudHold,
+		&i.DisputeOpen,
 		&i.UnitPriceSnapshot,
 		&i.CommissionBps,
 		&i.MerchantName,

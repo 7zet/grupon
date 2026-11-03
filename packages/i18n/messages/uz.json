@@ -492,7 +492,8 @@
     "location_not_found": "Filial topilmadi",
     "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring",
     "voucher_voided": "Bu vaucher bekor qilingan",
-    "status_voided": "Bekor qilingan"
+    "status_voided": "Bekor qilingan",
+    "voucher_on_hold": "Vaucher tekshiruvda. Qo'llab-quvvatlash bilan bog'laning"
   },
   "Reviews": {
     "formTitle": "Sharh qoldiring",

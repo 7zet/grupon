@@ -1,5 +1,6 @@
 -- name: LockVoucherForRedemption :one
 SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
+       v.fraud_hold, v.dispute_open,
        oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
@@ -82,3 +83,11 @@ WHERE o.id = (SELECT oi.order_id FROM vouchers v JOIN order_items oi ON oi.id = 
     SELECT 1 FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
     WHERE oi.order_id = o.id AND v.status IN ('issued', 'active', 'partially_redeemed')
   );
+
+-- name: HoldBurstVouchers :execrows
+-- PRD 12.1: vouchers scanned by a staff member during a redemption burst wait for fraud review.
+UPDATE vouchers SET fraud_hold = true, updated_at = now()
+WHERE id IN (
+  SELECT r.voucher_id FROM redemptions r
+  WHERE r.staff_user_id = sqlc.arg(staff_user_id) AND r.created_at >= sqlc.arg(since) AND r.reversed_at IS NULL
+);

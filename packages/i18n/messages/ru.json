@@ -492,7 +492,8 @@
     "location_not_found": "Филиал не найден",
     "errorGeneric": "Произошла ошибка, попробуйте снова",
     "voucher_voided": "Этот ваучер аннулирован",
-    "status_voided": "Аннулирован"
+    "status_voided": "Аннулирован",
+    "voucher_on_hold": "Ваучер на проверке. Свяжитесь с поддержкой"
   },
   "Reviews": {
     "formTitle": "Оставьте отзыв",

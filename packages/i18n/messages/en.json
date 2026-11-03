@@ -492,7 +492,8 @@
     "location_not_found": "Branch not found",
     "errorGeneric": "Something went wrong, please try again",
     "voucher_voided": "This voucher was voided",
-    "status_voided": "Voided"
+    "status_voided": "Voided",
+    "voucher_on_hold": "This voucher is under review. Contact support"
   },
   "Reviews": {
     "formTitle": "Leave a review",

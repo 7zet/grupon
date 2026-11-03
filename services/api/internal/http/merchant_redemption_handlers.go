@@ -107,6 +107,8 @@ func (a *MerchantRedemptionAPI) fail(w http.ResponseWriter, r *http.Request, err
 		writeProblem(w, r, http.StatusConflict, "voucher_expired", nil, nil)
 	case errors.Is(err, redemption.ErrRefunded):
 		writeProblem(w, r, http.StatusConflict, "voucher_refunded", nil, nil)
+	case errors.Is(err, redemption.ErrOnHold):
+		writeProblem(w, r, http.StatusConflict, "voucher_on_hold", nil, nil)
 	case errors.Is(err, redemption.ErrVoided):
 		writeProblem(w, r, http.StatusConflict, "voucher_voided", nil, nil)
 	default:

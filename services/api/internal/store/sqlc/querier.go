@@ -99,6 +99,8 @@ type Querier interface {
 	GetVoucherForReview(ctx context.Context, id pgtype.UUID) (GetVoucherForReviewRow, error)
 	GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error)
 	HideReviewRow(ctx context.Context, id pgtype.UUID) (int64, error)
+	// PRD 12.1: vouchers scanned by a staff member during a redemption burst wait for fraud review.
+	HoldBurstVouchers(ctx context.Context, arg HoldBurstVouchersParams) (int64, error)
 	IncrementPhoneOTPAttempts(ctx context.Context, id pgtype.UUID) error
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertBuyerNotification(ctx context.Context, arg InsertBuyerNotificationParams) error

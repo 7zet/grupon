@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -115,6 +116,25 @@ func (r *RedemptionRepository) AttemptStats(ctx context.Context, staffID uuid.UU
 }
 
 // RecordAttempt stores one scanner lookup and whether it failed.
+// RecordDenied writes an audit row for a refused scan. The voucher is untouched.
+func (r *RedemptionRepository) RecordDenied(ctx context.Context, audit redemption.AuditEntry) error {
+	payload, err := json.Marshal(audit.After)
+	if err != nil {
+		return fmt.Errorf("encode audit: %w", err)
+	}
+	if err := sqlc.New(r.pool).InsertAuditLog(ctx, sqlc.InsertAuditLogParams{
+		ActorUserID: toPgUUID(audit.ActorID),
+		ActorRole:   sqlc.AppRole(audit.Role),
+		Action:      audit.Action,
+		EntityType:  "voucher",
+		EntityID:    toPgUUID(audit.VoucherID),
+		AfterData:   payload,
+	}); err != nil {
+		return fmt.Errorf("write audit log: %w", err)
+	}
+	return nil
+}
+
 func (r *RedemptionRepository) RecordAttempt(ctx context.Context, staffID uuid.UUID, failed bool) error {
 	if err := sqlc.New(r.pool).InsertRedemptionAttempt(ctx, sqlc.InsertRedemptionAttemptParams{
 		StaffUserID: toPgUUID(staffID),
