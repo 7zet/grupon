@@ -11,7 +11,7 @@
 | AT-03 | Inventory oversell | ✅ | `store/commerce_concurrency_test.go` (TestOverSellingIsImpossible) |
 | AT-04 | Foreign merchant scans voucher | ✅ | `domain/redemption` TestForeignMerchantScanIsRefusedAndAudited: refused, voucher unchanged, `voucher_scan_denied` audit row |
 | AT-05 | Expired / refunded voucher scan | 🟡 | Domain test refuses it and changes nothing; HTTP now answers 422 with the reason, the mapping has no test yet |
-| AT-06 | Price version lock | ⏳ | Plan: snapshot the terms in the order and test it (no deal versioning). Test first |
+| AT-06 | Price version lock | 🟡 | `store/at_gates_test.go` (TestAT06…): order total and item price keep the agreed price. Terms are not snapshotted yet: deal terms live on the deal row, and the order and voucher do not copy them |
 | AT-07 | Failed payment, hold expires | ✅ | `store/at_payments_test.go` (TestAT07…): stock returned, no voucher, order `expired` |
 | AT-08 | Reconciliation alert | ⏳ | PSP kerak (3-bosqich) |
 | AT-09 | Cashier cannot approve payout | ✅ | `store/at_gates_test.go` (TestAT09…): ErrForbidden, `payout_prepare_denied` audit row |
@@ -25,4 +25,4 @@
 | AT-17 | Bank account change hold (72 h) | ⏳ | 3-bosqich (not started) |
 | AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover) |
 
-Counts: ✅ 14 · 🟡 1 · ❔ 0 · ⏳ 3 (AT-06 test first; AT-08 and AT-17 need PSP / 3-bosqich).
+Counts: ✅ 14 · 🟡 2 · ❔ 0 · ⏳ 2 (AT-08 and AT-17 wait for PSP / 3-bosqich).

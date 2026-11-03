@@ -11,6 +11,7 @@ import (
 	"github.com/grupon/grupon/services/api/internal/domain/finance"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 	"github.com/grupon/grupon/services/api/internal/domain/redemption"
+	"github.com/grupon/grupon/services/api/internal/payments"
 	"github.com/grupon/grupon/services/api/internal/store"
 )
 
@@ -130,4 +131,33 @@ func payableIDs(t *testing.T, ctx context.Context, repo *store.FinanceRepository
 		out[item.ID] = true
 	}
 	return out
+}
+
+// AT-06: the buyer orders at the price of the current version. The merchant then changes the price. The order and
+// its voucher keep the price the buyer agreed to.
+func TestAT06ChangedPriceDoesNotChangeAPlacedOrder(t *testing.T) {
+	env := newATEnv(t, 1)
+	var agreed int64
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT deal_price FROM deal_options WHERE id = $1`, env.optionID).Scan(&agreed); err != nil {
+		t.Fatal(err)
+	}
+	order := env.order(t, 1)
+
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE deal_options SET deal_price = deal_price + 5000 WHERE id = $1`, env.optionID); err != nil {
+		t.Fatal(err)
+	}
+	session, err := env.service.PayOrder(env.ctx, env.buyer, order.ID, env.mock.Name())
+	if err != nil {
+		t.Fatalf("pay order: %v", err)
+	}
+	if err := env.service.CompleteMockPayment(env.ctx, session.PaymentID, payments.OutcomeSucceeded); err != nil {
+		t.Fatalf("complete payment: %v", err)
+	}
+
+	if got := env.count(t, `SELECT total::int FROM orders WHERE id = $1`, order.ID); int64(got) != agreed {
+		t.Fatalf("order total = %d, want the agreed %d", got, agreed)
+	}
+	if got := env.count(t, `SELECT unit_price_snapshot::int FROM order_items WHERE order_id = $1`, order.ID); int64(got) != agreed {
+		t.Fatalf("item price = %d, want the agreed %d", got, agreed)
+	}
 }
