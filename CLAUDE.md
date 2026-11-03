@@ -65,9 +65,9 @@ A stage ends with full tests, a short report, a merge and a tag. The next stage 
 
 ### Stage 1 — demo-ready (code only)
 Finish line: every AT in `docs/ACCEPTANCE.md` is ✅, or marked "PSP kerak", "SMS kerak" or "3-bosqich".
-- [ ] Write the missing AT tests (🟡 and ❔ rows); AT-06 starts with a test, then a terms snapshot in the order if needed.
-- [ ] Dispute: `awaiting_evidence`, `under_review`, `closed`; fraud rule sets `fraud_hold`.
-- [ ] Late payment writes a `refunds` row (AT-13).
+- [~] AT tests: 14 of 18 green, 2 partial (AT-05 HTTP mapping test, AT-06 terms snapshot), AT-08 and AT-17 waiting for PSP / 3-bosqich. See docs/ACCEPTANCE.md.
+- [~] Dispute: `awaiting_evidence`, `under_review`, `closed` still open. Fraud burst rule sets `fraud_hold` (done, AT-14).
+- [x] Late payment writes a `refunds` row (AT-13).
 - [ ] Price-proof upload page for merchants (backend exists).
 - [ ] Category flags at category level: publishable, purchasable.
 - [ ] Merchant redemption history; cashier e2e with its own login.
