@@ -319,7 +319,10 @@ type CommerceConfig struct {
 	// MockPaymentsEnabled exposes the mock provider. It defaults to on in development only.
 	MockPaymentsEnabled bool
 	// MockWebhookSecret signs and verifies mock provider webhooks. It must be at least 32 bytes.
-	MockWebhookSecret string
+	MockWebhookSecret         string
+	ManualPaymentEnabled      bool
+	ManualPaymentHold         time.Duration
+	ManualPaymentInstructions string
 }
 
 func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) {
@@ -351,7 +354,19 @@ func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) 
 		return CommerceConfig{}, fmt.Errorf("PAYMENT_MOCK_WEBHOOK_SECRET must be at least 32 bytes")
 	}
 
-	return CommerceConfig{QRSecret: qrSecret, MockPaymentsEnabled: mockEnabled, MockWebhookSecret: mockSecret}, nil
+	manualEnabled, err := boolValue(lookup, "MANUAL_PAYMENT_ENABLED", false)
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	manualHold, err := durationValue(lookup, "MANUAL_PAYMENT_HOLD", 24*time.Hour)
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	manualInstructions, err := stringValue(lookup, "MANUAL_PAYMENT_INSTRUCTIONS", "Bank transfer details will be provided by support. Include your order number.")
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	return CommerceConfig{QRSecret: qrSecret, MockPaymentsEnabled: mockEnabled, MockWebhookSecret: mockSecret, ManualPaymentEnabled: manualEnabled, ManualPaymentHold: manualHold, ManualPaymentInstructions: manualInstructions}, nil
 }
 
 func loadSMTP(lookup lookupEnv) (SMTPConfig, error) {

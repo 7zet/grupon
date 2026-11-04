@@ -30,6 +30,10 @@ func New(cfg config.Config, pool *pgxpool.Pool, deals commerce.DealCatalog, logg
 			return nil, fmt.Errorf("configure mock payments: %w", err)
 		}
 	}
+	var manual *payments.Manual
+	if cfg.Commerce.ManualPaymentEnabled {
+		manual = &payments.Manual{Instructions: cfg.Commerce.ManualPaymentInstructions}
+	}
 
 	var mailer mail.Sender = mail.NewLogSender(logger)
 	if cfg.SMTP.Host != "" {
@@ -40,6 +44,8 @@ func New(cfg config.Config, pool *pgxpool.Pool, deals commerce.DealCatalog, logg
 		Repository: store.NewCommerceRepository(pool),
 		Deals:      deals,
 		Mock:       mock,
+		Manual:     manual,
+		ManualHold: cfg.Commerce.ManualPaymentHold,
 		Mailer:     mailer,
 		Signer:     signer,
 		Logger:     logger,

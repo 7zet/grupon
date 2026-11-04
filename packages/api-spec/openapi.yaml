@@ -277,6 +277,15 @@ paths:
       parameters: [{$ref: '#/components/parameters/Id'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MockOutcomeRequest'}}}}
       responses: {'202': {description: Mock webhook scheduled}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/payments/{id}/manual-confirm:
+    post:
+      tags: [Admin]
+      operationId: confirmManualPayment
+      summary: Confirm a manual pilot payment through the normal settlement path
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ManualPaymentConfirmation'}}}}
+      responses: {'204': {description: Confirmed idempotently}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/payments/webhooks/{provider}:
     post:
       tags: [Orders]
@@ -1034,15 +1043,19 @@ components:
     PayOrderRequest:
       type: object
       required: [provider, terms_accepted]
-      properties: {provider: {type: string, enum: [mock]}, terms_accepted: {type: boolean, const: true}}
+      properties: {provider: {type: string, enum: [mock, manual]}, terms_accepted: {type: boolean, const: true}}
     PaymentSession:
       type: object
       required: [payment_id, provider, status, redirect_url]
-      properties: {payment_id: {$ref: '#/components/schemas/Uuid'}, provider: {type: string, enum: [mock, payme, click, uzum]}, status: {type: string, enum: [created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost]}, redirect_url: {type: string, format: uri-reference}}
+      properties: {payment_id: {$ref: '#/components/schemas/Uuid'}, provider: {type: string, enum: [mock, manual, payme, click, uzum]}, status: {type: string, enum: [created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost]}, redirect_url: {type: string, format: uri-reference}, instructions: {type: string}}
     MockOutcomeRequest:
       type: object
       required: [outcome]
       properties: {outcome: {type: string, enum: [succeeded, failed]}}
+    ManualPaymentConfirmation:
+      type: object
+      required: [reference, note]
+      properties: {reference: {type: string, minLength: 1, maxLength: 200}, note: {type: string, minLength: 1, maxLength: 1000}}
     Voucher:
       type: object
       required: [id, deal, option, merchant, terms_snapshot, code, qr_token, status, valid_from, valid_until]

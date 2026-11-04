@@ -38,6 +38,9 @@ func TestLoadUsesDefaults(t *testing.T) {
 	if got.ShutdownTimeout != defaultShutdownTimeout {
 		t.Errorf("ShutdownTimeout = %v, want %v", got.ShutdownTimeout, defaultShutdownTimeout)
 	}
+	if got.Commerce.ManualPaymentEnabled {
+		t.Error("ManualPaymentEnabled = true, want false by default")
+	}
 }
 
 func TestLoadReadsEnvironment(t *testing.T) {

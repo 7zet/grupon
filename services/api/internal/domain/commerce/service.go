@@ -18,11 +18,13 @@ type Dependencies struct {
 	Providers []payments.Provider
 	// Mock is the mock provider when mock payments are enabled, so the complete endpoint can
 	// sign webhooks. Nil disables the mock completion path.
-	Mock   *payments.Mock
-	Mailer mail.Sender
-	Signer *QRSigner
-	Logger *slog.Logger
-	Now    func() time.Time
+	Mock       *payments.Mock
+	Manual     *payments.Manual
+	ManualHold time.Duration
+	Mailer     mail.Sender
+	Signer     *QRSigner
+	Logger     *slog.Logger
+	Now        func() time.Time
 	// BrandName and WebBaseURL are used in notification emails.
 	BrandName  string
 	WebBaseURL string
@@ -34,6 +36,8 @@ type Service struct {
 	deals      DealCatalog
 	providers  map[string]payments.Provider
 	mock       *payments.Mock
+	manual     *payments.Manual
+	manualHold time.Duration
 	mailer     mail.Sender
 	signer     *QRSigner
 	logger     *slog.Logger
@@ -54,6 +58,9 @@ func NewService(deps Dependencies) (*Service, error) {
 	if deps.Mock != nil {
 		providers[deps.Mock.Name()] = deps.Mock
 	}
+	if deps.Manual != nil {
+		providers[deps.Manual.Name()] = deps.Manual
+	}
 	logger := deps.Logger
 	if logger == nil {
 		logger = slog.Default()
@@ -71,6 +78,8 @@ func NewService(deps Dependencies) (*Service, error) {
 		deals:      deps.Deals,
 		providers:  providers,
 		mock:       deps.Mock,
+		manual:     deps.Manual,
+		manualHold: deps.ManualHold,
 		mailer:     mailer,
 		signer:     deps.Signer,
 		logger:     logger,

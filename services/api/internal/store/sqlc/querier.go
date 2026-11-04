@@ -75,6 +75,7 @@ type Querier interface {
 	ExpiredUnpaidOrderIDs(ctx context.Context, arg ExpiredUnpaidOrderIDsParams) ([]pgtype.UUID, error)
 	// Vouchers whose window closed more than 90 days ago and still hold unused value (PRD §8.5).
 	ExpiredVouchersForBreakage(ctx context.Context, arg ExpiredVouchersForBreakageParams) ([]ExpiredVouchersForBreakageRow, error)
+	ExtendReservations(ctx context.Context, arg ExtendReservationsParams) error
 	FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (int64, error)
 	GetActiveMerchantBySlug(ctx context.Context, slug string) (GetActiveMerchantBySlugRow, error)
 	GetDealDetailRowBySlug(ctx context.Context, slug string) (GetDealDetailRowBySlugRow, error)
@@ -210,6 +211,7 @@ type Querier interface {
 	RecomputeDealRatings(ctx context.Context) (int64, error)
 	RecomputeDealSoldCounts(ctx context.Context) (int64, error)
 	RecomputeMerchantRatings(ctx context.Context) (int64, error)
+	RecordManualPaymentConfirmation(ctx context.Context, arg RecordManualPaymentConfirmationParams) error
 	RedeemVoucherIfActive(ctx context.Context, arg RedeemVoucherIfActiveParams) (int64, error)
 	RedemptionAttemptStats(ctx context.Context, arg RedemptionAttemptStatsParams) (RedemptionAttemptStatsRow, error)
 	RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetailRow, error)

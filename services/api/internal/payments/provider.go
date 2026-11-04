@@ -38,6 +38,7 @@ type PaymentRequest struct {
 type Session struct {
 	ProviderPaymentID string
 	RedirectURL       string
+	Instructions      string
 }
 
 // Event is a verified provider notification about one payment attempt.

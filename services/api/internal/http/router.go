@@ -263,6 +263,14 @@ func (s apiServer) CompleteMockPayment(w http.ResponseWriter, r *http.Request, i
 	s.ServerInterface.CompleteMockPayment(w, r, id)
 }
 
+func (s apiServer) ConfirmManualPayment(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.commerce != nil {
+		s.commerce.ConfirmManualPayment(w, r, id)
+		return
+	}
+	s.ServerInterface.ConfirmManualPayment(w, r, id)
+}
+
 func (s apiServer) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider gen.ReceivePaymentWebhookParamsProvider, params gen.ReceivePaymentWebhookParams) {
 	if s.commerce != nil {
 		s.commerce.ReceivePaymentWebhook(w, r, provider, params)

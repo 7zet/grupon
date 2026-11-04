@@ -69,6 +69,7 @@ and a documented manual-payment operating mode pass pilot checks.
 **Holat:** In progress.
 
 - 2026-11-04: Mandatory TOTP 2FA completed for admin, moderator, support, finance, and superadmin: QR enrollment, ten one-time recovery codes, audited lifecycle/recovery use, and an eight-hour session ceiling; merchant owners remain out of scope.
+- 2026-11-04: Manual payment pilot completed behind `MANUAL_PAYMENT_ENABLED` (default off): configurable hold, buyer-facing instruction payload, admin confirmation with reference/note and audit, and webhook-equivalent idempotent voucher/ledger settlement.
 
 Task list:
 

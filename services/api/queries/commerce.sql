@@ -114,6 +114,10 @@ WHERE id = sqlc.arg(order_id);
 SELECT deal_option_id, quantity, expires_at FROM stock_reservations
 WHERE order_id = sqlc.arg(order_id) AND released_at IS NULL ORDER BY deal_option_id;
 
+-- name: ExtendReservations :exec
+UPDATE stock_reservations SET expires_at = sqlc.arg(expires_at), updated_at = now()
+WHERE order_id = sqlc.arg(order_id) AND released_at IS NULL;
+
 -- name: MarkReservationsReleased :many
 UPDATE stock_reservations SET released_at = now(), updated_at = now()
 WHERE order_id = sqlc.arg(order_id) AND released_at IS NULL
@@ -143,6 +147,11 @@ FOR UPDATE;
 UPDATE payments SET status = sqlc.arg(status)::payment_status,
                     raw_payload = COALESCE(sqlc.narg(raw_payload)::jsonb, raw_payload), updated_at = now()
 WHERE id = sqlc.arg(id);
+
+-- name: RecordManualPaymentConfirmation :exec
+INSERT INTO audit_logs(actor_user_id, actor_role, action, entity_type, entity_id, after_data)
+VALUES (sqlc.arg(actor_id), sqlc.arg(actor_role)::app_role, 'manual_payment_confirmed', 'payment',
+        sqlc.arg(payment_id), jsonb_build_object('reference', sqlc.arg(reference)::text, 'note', sqlc.arg(note)::text));
 
 -- name: InsertVoucher :exec
 INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,

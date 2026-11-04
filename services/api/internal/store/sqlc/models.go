@@ -285,10 +285,11 @@ func (ns NullOrderStatus) Value() (driver.Value, error) {
 type PaymentProvider string
 
 const (
-	PaymentProviderMock  PaymentProvider = "mock"
-	PaymentProviderPayme PaymentProvider = "payme"
-	PaymentProviderClick PaymentProvider = "click"
-	PaymentProviderUzum  PaymentProvider = "uzum"
+	PaymentProviderMock   PaymentProvider = "mock"
+	PaymentProviderPayme  PaymentProvider = "payme"
+	PaymentProviderClick  PaymentProvider = "click"
+	PaymentProviderUzum   PaymentProvider = "uzum"
+	PaymentProviderManual PaymentProvider = "manual"
 )
 
 func (e *PaymentProvider) Scan(src interface{}) error {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
+	"github.com/grupon/grupon/services/api/internal/domain/identity"
 	"github.com/grupon/grupon/services/api/internal/http/gen"
 	"github.com/grupon/grupon/services/api/internal/payments"
 )
@@ -175,11 +176,44 @@ func (a *CommerceAPI) PayOrder(w http.ResponseWriter, r *http.Request, id gen.Id
 		return
 	}
 	writeJSON(w, http.StatusOK, gen.PaymentSession{
-		PaymentId:   gen.Uuid(session.PaymentID),
-		Provider:    gen.PaymentSessionProvider(session.Provider),
-		Status:      gen.PaymentSessionStatus(session.Status),
-		RedirectUrl: session.RedirectURL,
+		PaymentId:    gen.Uuid(session.PaymentID),
+		Provider:     gen.PaymentSessionProvider(session.Provider),
+		Status:       gen.PaymentSessionStatus(session.Status),
+		RedirectUrl:  session.RedirectURL,
+		Instructions: optionalText(session.Instructions),
 	})
+}
+
+func optionalText(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+// ConfirmManualPayment is absent (404) when the pilot mode is disabled.
+func (a *CommerceAPI) ConfirmManualPayment(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	account, ok := a.auth.authenticate(w, r)
+	if !ok {
+		return
+	}
+	if !account.HasRole(identity.RoleAdmin, identity.RoleSuperadmin) {
+		writeProblem(w, r, http.StatusForbidden, "forbidden", nil, nil)
+		return
+	}
+	var body gen.ManualPaymentConfirmation
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	role := identity.RoleAdmin
+	if account.HasRole(identity.RoleSuperadmin) {
+		role = identity.RoleSuperadmin
+	}
+	if err := a.service.ConfirmManualPayment(r.Context(), uuid.UUID(id), account.ID, string(role), body.Reference, body.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // CompleteMockPayment simulates the buyer's choice on the mock checkout page. The outcome travels

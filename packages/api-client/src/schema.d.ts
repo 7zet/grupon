@@ -534,6 +534,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/payments/{id}/manual-confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm a manual pilot payment through the normal settlement path */
+    post: operations['confirmManualPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/payments/webhooks/{provider}': {
     parameters: {
       query?: never;
@@ -1841,14 +1858,14 @@ export interface components {
     };
     PayOrderRequest: {
       /** @enum {string} */
-      provider: 'mock';
+      provider: 'mock' | 'manual';
       /** @constant */
       terms_accepted: true;
     };
     PaymentSession: {
       payment_id: components['schemas']['Uuid'];
       /** @enum {string} */
-      provider: 'mock' | 'payme' | 'click' | 'uzum';
+      provider: 'mock' | 'manual' | 'payme' | 'click' | 'uzum';
       /** @enum {string} */
       status:
         | 'created'
@@ -1860,10 +1877,15 @@ export interface components {
         | 'chargeback_lost';
       /** Format: uri-reference */
       redirect_url: string;
+      instructions?: string;
     };
     MockOutcomeRequest: {
       /** @enum {string} */
       outcome: 'succeeded' | 'failed';
+    };
+    ManualPaymentConfirmation: {
+      reference: string;
+      note: string;
     };
     Voucher: {
       id: components['schemas']['Uuid'];
@@ -3149,6 +3171,31 @@ export interface operations {
     responses: {
       /** @description Mock webhook scheduled */
       202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  confirmManualPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManualPaymentConfirmation'];
+      };
+    };
+    responses: {
+      /** @description Confirmed idempotently */
+      204: {
         headers: {
           [name: string]: unknown;
         };
