@@ -61,11 +61,11 @@ A stage ends with full tests, a short report, a merge and a tag. The next stage 
 - [x] `docs/ANALYSIS-DEALO-VS-GRUPON.md` removed (owner decision); `docs/ACCEPTANCE.md` replaces it.
 - [x] PostgreSQL data moved to `C:devgrupon-pgdata` (see docs/ENVIRONMENT.md); start with `scripts/dev-db.sh`.
 - [x] Playwright runs in parallel: each spec signs in with its own seeded accounts.
-- [ ] Tag `v0.1` on the branch. Merge into `main` waits for Stage 1 (AT tests passing).
+- [x] Tag `v0.1` on the branch. Merge into `main` waits for Stage 1 (AT tests passing).
 
 ### Stage 1 — demo-ready (code only)
 Finish line: every AT in `docs/ACCEPTANCE.md` is ✅, or marked "PSP kerak", "SMS kerak" or "3-bosqich".
-- [~] AT tests: 14 of 18 green, 2 partial (AT-05 HTTP mapping test, AT-06 terms snapshot), AT-08 and AT-17 waiting for PSP / 3-bosqich. See docs/ACCEPTANCE.md.
+- [~] AT tests: 15 of 18 green, 1 partial (AT-06 terms snapshot), AT-08 and AT-17 waiting for PSP / 3-bosqich. See docs/ACCEPTANCE.md.
 - [~] Dispute: `awaiting_evidence`, `under_review`, `closed` still open. Fraud burst rule sets `fraud_hold` (done, AT-14).
 - [x] Late payment writes a `refunds` row (AT-13).
 - [ ] Price-proof upload page for merchants (backend exists).
