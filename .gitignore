@@ -24,6 +24,7 @@ playwright-report/
 # Runtime data
 tmp/
 *.log
+/.data/
 
 # Editor and operating system files
 .idea/

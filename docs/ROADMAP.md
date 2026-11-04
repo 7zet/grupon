@@ -37,6 +37,8 @@ and baseline `v0.1` exists.
 - `price_proof` upload is present in the merchant review form and private-document backend.
 - SMS delivery has the `identity.CodeSender` port; `sms.LogSender` is the only runtime implementation.
 - Latest verified non-browser gates (2026-11-04): full Go tests, Go vet, web typecheck, and 6/6 web unit tests pass.
+- Full Playwright rerun (2026-11-04): 16/16 passed with four workers in 25.2 seconds. Non-fatal Next.js
+  image warnings were logged for localhost media SSRF protection and external Unsplash timeouts.
 
 ### Open — ordered
 
@@ -46,7 +48,6 @@ and baseline `v0.1` exists.
 4. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
 5. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
 6. Add browser coverage for the existing `price_proof` upload UI.
-7. Rerun the full four-worker Playwright suite after the recent AT commits; the last verified 16/16 run predates them.
 
 ## Bosqich 2 — Pilot-tayyor
 
