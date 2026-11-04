@@ -22,7 +22,10 @@ const SEEDED_PHONES = {
 
 /** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
 async function login(email) {
-  const phone = SEEDED_PHONES[email];
+  return loginPhone(SEEDED_PHONES[email]);
+}
+
+async function loginPhone(phone) {
   const sent = await fetch(`${API}/auth/phone/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -86,8 +89,12 @@ async function submitDeal(owner, title) {
 }
 
 async function signIn(page, email) {
+  return signInPhone(page, SEEDED_PHONES[email]);
+}
+
+async function signInPhone(page, phone) {
   await page.goto('/uz/login');
-  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES[email].slice(4));
+  await page.getByLabel(/Telefon raqami/).fill(phone.slice(4));
   await page.getByRole('button', { name: /Kod yuborish/ }).click();
   const hint = page.getByText(/Test rejimi kodi: \d{6}/);
   await expect(hint).toBeVisible();
@@ -95,6 +102,42 @@ async function signIn(page, email) {
   await page.getByRole('button', { name: /^Kirish$/ }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
+
+test('merchant attaches price proof before submission and admin sees it', async ({ page }) => {
+  const suffix = String(Date.now()).slice(-7);
+  const phone = `+99890${suffix}`;
+  const owner = await loginPhone(phone);
+  const config = await (await fetch(`${API}/config`)).json();
+  const category = config.categories.find((item) => item.deal_creation_enabled);
+  const city = config.cities[0];
+  const displayName = `Price proof ${suffix}`;
+  const registered = await call(owner, 'POST', '/merchants', {
+    legal_name: `${displayName} MChJ`, display_name: displayName,
+    category_id: category.id, city_id: city.id, phone, address: 'Test kochasi 1',
+    lat: 41.3, lng: 69.2, stir: `4${suffix}0`.slice(0, 9), org_form: 'mchj',
+    tax_regime: 'vat_payer', bank_mfo: '00014', bank_account: `2020800090010${suffix}`.padEnd(20, '0').slice(0, 20),
+    responsible_name: 'Alisher Usmonov', contract_version: 'v1.1', contract_accepted: true,
+  });
+  expect(registered.status).toBe(201);
+
+  await signInPhone(page, phone);
+  await page.goto('/uz/merchant/review');
+  await page.waitForLoadState('networkidle');
+  for (let index = 0; index < 3; index += 1) {
+    const field = page.locator('input[type=file]').nth(index);
+    const uploaded = page.waitForResponse((response) => response.url().includes('/api/bff/merchant/documents/'));
+    await field.setInputFiles({ name: 'proof.png', mimeType: 'image/png', buffer: PNG });
+    expect((await uploaded).status()).toBe(204);
+    await expect(field.locator('xpath=..').getByText('Yuklangan')).toBeVisible();
+  }
+  await page.getByRole('button', { name: /Tekshiruvga yuborish/ }).click();
+  await expect(page.getByRole('status')).toContainText(/Ariza tekshiruvga yuborildi/);
+
+  await signIn(page, 'admin@local.test');
+  await page.goto('/uz/admin/merchants');
+  const merchant = page.getByText(displayName).locator('xpath=ancestor::li');
+  await expect(merchant.getByRole('link', { name: /Narx tasdig'i/ })).toBeVisible();
+});
 
 test('admin approves and rejects deals in the moderation queue', async ({ page }) => {
   const owner = await login('owner-c@local.test');

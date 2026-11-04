@@ -50,11 +50,12 @@ and baseline `v0.1` exists.
   row scoping; owners and managers see the full merchant history.
 - Cashier B's browser flow signs in independently, redeems by code, sees the row in scoped history, and is denied
   direct access to merchant payouts and platform finance.
+- Merchant onboarding E2E uploads certificate, bank letter, and optional price proof before submission; the admin
+  review queue exposes the private price-proof document to reviewers.
 
 ### Open — ordered
 
-1. Add browser coverage for the existing `price_proof` upload UI.
-2. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
+1. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
 
 ## Bosqich 2 — Pilot-tayyor
 
