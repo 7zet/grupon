@@ -62,6 +62,8 @@ type Config struct {
 	Auth AuthConfig
 	// SMTP configures outbound email. Email is logged instead of sent when SMTPHost is empty.
 	SMTP SMTPConfig
+	// SMS selects the phone-code delivery adapter. Only log is implemented for the pilot.
+	SMS SMSConfig
 	// Commerce configures vouchers and payment providers.
 	Commerce CommerceConfig
 	// TrustProxyHeaders makes rate limiting and audit use X-Forwarded-For or X-Real-IP. Enable only
@@ -87,6 +89,8 @@ type SMTPConfig struct {
 	Port int
 	From string
 }
+
+type SMSConfig struct{ Provider string }
 
 // HTTPConfig contains the public HTTP server settings.
 type HTTPConfig struct {
@@ -161,6 +165,10 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	smsConfig, err := loadSMS(lookup)
+	if err != nil {
+		return Config{}, err
+	}
 	commerceConfig, err := loadCommerce(lookup, environment)
 	if err != nil {
 		return Config{}, err
@@ -201,6 +209,7 @@ func load(lookup lookupEnv) (Config, error) {
 		MediaPublicBase:     mediaPublicBase,
 		Auth:                authConfig,
 		SMTP:                smtpConfig,
+		SMS:                 smsConfig,
 		Commerce:            commerceConfig,
 		TrustProxyHeaders:   trustProxy,
 		HTTP: HTTPConfig{
@@ -212,6 +221,17 @@ func load(lookup lookupEnv) (Config, error) {
 		},
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func loadSMS(lookup lookupEnv) (SMSConfig, error) {
+	provider, err := stringValue(lookup, "SMS_PROVIDER", "log")
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	if provider != "log" {
+		return SMSConfig{}, fmt.Errorf("SMS_PROVIDER %q is not configured; only log is available", provider)
+	}
+	return SMSConfig{Provider: provider}, nil
 }
 
 // optionalString returns the trimmed value of an optional variable, or an empty string.

@@ -72,6 +72,7 @@ and a documented manual-payment operating mode pass pilot checks.
 - 2026-11-04: Manual payment pilot completed behind `MANUAL_PAYMENT_ENABLED` (default off): configurable hold, buyer-facing instruction payload, admin confirmation with reference/note and audit, and webhook-equivalent idempotent voucher/ledger settlement.
 - 2026-11-04: Scanner PWA completed for `/merchant/redeem`: install manifest, scanner icon, online-only redemption screen, and offline navigation fallback. Camera access on a real phone requires HTTPS; verify after staging deploy.
 - 2026-11-04: Portable hosting preparation completed: production API/worker/migrate/web images, compose file, backup/restore scripts, health/readiness endpoints, and deployment runbook. Docker daemon is unavailable on this machine, so image builds and runtime checks are unverified.
+- 2026-11-04: SMS provider selection completed with `SMS_PROVIDER=log` as the default and the existing `CodeSender` interface preserved. No real SMS provider was implemented; provider choice is required before pilot launch.
 
 Task list:
 
