@@ -478,6 +478,8 @@
     "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring"
   },
   "Redeem": {
+    "internetNeededTitle": "Internet kerak",
+    "internetNeededBody": "Vaucherni ishlatish uchun internet ulanishi kerak. Qayta ulanib, yana urinib ko‘ring.",
     "title": "Vaucher tekshirish",
     "locationLabel": "Filial",
     "codeLabel": "Vaucher kodi",

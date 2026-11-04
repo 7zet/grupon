@@ -478,6 +478,8 @@
     "errorGeneric": "Something went wrong, please try again"
   },
   "Redeem": {
+    "internetNeededTitle": "Internet needed",
+    "internetNeededBody": "Voucher redemption needs an internet connection. Reconnect and try again.",
     "title": "Redeem voucher",
     "locationLabel": "Branch",
     "codeLabel": "Voucher code",

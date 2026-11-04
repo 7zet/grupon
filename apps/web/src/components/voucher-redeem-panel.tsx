@@ -63,6 +63,16 @@ export function VoucherRedeemPanel({
   const [scanning, setScanning] = useState(false);
   const [message, setMessage] = useState<ProblemKey | null>(null);
   const [done, setDone] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const sync = () => setOnline(navigator.onLine);
+    sync();
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/scanner-sw.js');
+    return () => { window.removeEventListener('online', sync); window.removeEventListener('offline', sync); };
+  }, []);
 
   async function lookup(body: { code: string } | { qr_token: string }) {
     setMessage(null);
@@ -120,6 +130,7 @@ export function VoucherRedeemPanel({
   }
 
   const status = voucher?.status;
+  if (!online) return <section role="alert" className="max-w-xl rounded-card border border-warning bg-warning-tint p-5 text-ink"><h2 className="font-semibold">{t('internetNeededTitle')}</h2><p className="mt-2">{t('internetNeededBody')}</p></section>;
   return (
     <div className="grid gap-6">
       <section className="grid max-w-xl gap-3">
