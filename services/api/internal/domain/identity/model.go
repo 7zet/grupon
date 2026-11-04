@@ -106,6 +106,30 @@ type Session struct {
 	RefreshToken string
 }
 
+// TwoFactorChallenge is returned after phone verification for privileged accounts.
+type TwoFactorChallenge struct {
+	Token      string
+	Enrollment bool
+}
+
+// PhoneVerification contains either a completed session or a mandatory 2FA challenge.
+type PhoneVerification struct {
+	Session   *Session
+	Challenge *TwoFactorChallenge
+}
+
+// TwoFactorEnrollment is the authenticator setup material. Recovery codes are only returned once.
+type TwoFactorEnrollment struct {
+	OTPAuthURI    string
+	Secret        string
+	RecoveryCodes []string
+}
+
+type TwoFactorState struct {
+	Secret  string
+	Enabled bool
+}
+
 // LocaleValid reports whether a locale is supported.
 func LocaleValid(locale string) bool { return validLocales[locale] }
 

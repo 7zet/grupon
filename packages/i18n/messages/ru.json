@@ -173,6 +173,14 @@
     "en": "English"
   },
   "Auth": {
+    "setupTwoFactor": "Защитите рабочую учётную запись",
+    "twoFactorTitle": "Двухфакторная проверка",
+    "twoFactorCode": "Код аутентификатора или восстановления",
+    "errorTwoFactorInvalid": "Неверный код",
+    "qrAlt": "QR-код для аутентификатора",
+    "recoveryTitle": "Сохраните коды восстановления",
+    "recoveryHint": "Каждый код действует один раз.",
+    "continue": "Продолжить",
     "loginTitle": "Войдите в аккаунт",
     "loginSubtitle": "Войдите, чтобы продолжить покупку.",
     "registerTitle": "Создайте аккаунт",

@@ -101,7 +101,35 @@ paths:
       summary: Sign in with the code; creates the account on first use
       security: []
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PhoneCodeVerify'}}}}
+      responses: {'200': {description: Session, content: {application/json: {schema: {$ref: '#/components/schemas/AuthSession'}}}}, '202': {description: Mandatory privileged-user 2FA challenge, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorChallenge'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/auth/2fa/enroll:
+    post:
+      tags: [Authentication]
+      operationId: enrollTwoFactor
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorChallengeRequest'}}}}
+      responses: {'200': {description: Authenticator setup, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorEnrollment'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/auth/2fa/enable:
+    post:
+      tags: [Authentication]
+      operationId: enableTwoFactor
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorVerifyRequest'}}}}
+      responses: {'200': {description: Session and recovery codes, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorEnabled'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/auth/2fa/verify:
+    post:
+      tags: [Authentication]
+      operationId: verifyTwoFactor
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorVerifyRequest'}}}}
       responses: {'200': {description: Session, content: {application/json: {schema: {$ref: '#/components/schemas/AuthSession'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/me/2fa:
+    delete:
+      tags: [Account]
+      operationId: disableTwoFactor
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TwoFactorCode'}}}}
+      responses: {'204': {description: Disabled}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/auth/refresh:
     post:
       tags: [Authentication]
@@ -948,6 +976,30 @@ components:
       type: object
       required: [phone, code]
       properties: {phone: {type: string, pattern: '^\+998[0-9]{9}$'}, code: {type: string, pattern: '^[0-9]{6}$'}}
+    TwoFactorChallenge:
+      type: object
+      required: [challenge_token, enrollment_required]
+      properties: {challenge_token: {type: string}, enrollment_required: {type: boolean}}
+    TwoFactorChallengeRequest:
+      type: object
+      required: [challenge_token]
+      properties: {challenge_token: {type: string}}
+    TwoFactorCode:
+      type: object
+      required: [code]
+      properties: {code: {type: string, minLength: 6, maxLength: 32}}
+    TwoFactorVerifyRequest:
+      type: object
+      required: [challenge_token, code]
+      properties: {challenge_token: {type: string}, code: {type: string, minLength: 6, maxLength: 32}}
+    TwoFactorEnrollment:
+      type: object
+      required: [otpauth_uri, secret]
+      properties: {otpauth_uri: {type: string}, secret: {type: string}}
+    TwoFactorEnabled:
+      type: object
+      required: [session, recovery_codes]
+      properties: {session: {$ref: '#/components/schemas/AuthSession'}, recovery_codes: {type: array, minItems: 10, maxItems: 10, items: {type: string}}}
     PhoneCodeSent:
       type: object
       required: [cooldown_seconds]

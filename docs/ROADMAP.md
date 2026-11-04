@@ -66,7 +66,9 @@ None. Stage 1 meets its finish line.
 **Finish line:** Production hosting and observability are ready; real SMS, Scanner PWA, privileged-user 2FA,
 and a documented manual-payment operating mode pass pilot checks.
 
-**Holat:** Not started.
+**Holat:** In progress.
+
+- 2026-11-04: Mandatory TOTP 2FA completed for admin, moderator, support, finance, and superadmin: QR enrollment, ten one-time recovery codes, audited lifecycle/recovery use, and an eight-hour session ceiling; merchant owners remain out of scope.
 
 Task list:
 

@@ -8,6 +8,9 @@ import { NextResponse } from 'next/server';
 const API_PATHS: Record<string, string> = {
   'phone-code': '/auth/phone/code',
   'phone-verify': '/auth/phone/verify',
+  '2fa-enroll': '/auth/2fa/enroll',
+  '2fa-enable': '/auth/2fa/enable',
+  '2fa-verify': '/auth/2fa/verify',
 };
 
 function apiBaseUrl(): string {

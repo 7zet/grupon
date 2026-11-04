@@ -34,12 +34,16 @@ func (a *AuthAPI) VerifyPhoneCode(w http.ResponseWriter, r *http.Request) {
 	if _, ok := decodeBody(w, r, &body); !ok {
 		return
 	}
-	session, err := a.identity.VerifyCode(r.Context(), a.meta(r), body.Phone, body.Code)
+	result, err := a.identity.VerifyPhone(r.Context(), a.meta(r), body.Phone, body.Code)
 	if err != nil {
 		a.phoneFail(w, r, err)
 		return
 	}
-	a.writeSession(w, http.StatusOK, session)
+	if result.Challenge != nil {
+		writeJSON(w, http.StatusAccepted, gen.TwoFactorChallenge{ChallengeToken: result.Challenge.Token, EnrollmentRequired: result.Challenge.Enrollment})
+		return
+	}
+	a.writeSession(w, http.StatusOK, *result.Session)
 }
 
 // phoneFail maps phone sign-in errors to stable problem codes; everything else goes to the shared mapping.

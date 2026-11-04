@@ -30,6 +30,9 @@ type Repository struct {
 	refresh    map[string]identity.RefreshToken
 	authTokens map[string]*authToken
 	phoneCodes []*phoneCode
+	twoFactor  map[uuid.UUID]identity.TwoFactorState
+	challenges map[string]*authToken
+	recovery   map[uuid.UUID]map[string]bool
 }
 
 var _ identity.Repository = (*Repository)(nil)
@@ -46,7 +49,78 @@ func NewRepository(now func() time.Time) *Repository {
 		roles:      map[uuid.UUID][]identity.Role{},
 		refresh:    map[string]identity.RefreshToken{},
 		authTokens: map[string]*authToken{},
+		twoFactor:  map[uuid.UUID]identity.TwoFactorState{}, challenges: map[string]*authToken{}, recovery: map[uuid.UUID]map[string]bool{},
 	}
+}
+
+func (r *Repository) CreateTwoFactorChallenge(_ context.Context, id uuid.UUID, hash string, expires time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.challenges[hash] = &authToken{userID: id, expiresAt: expires}
+	return nil
+}
+func (r *Repository) GetTwoFactorChallenge(_ context.Context, hash string) (uuid.UUID, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	v, ok := r.challenges[hash]
+	if !ok || v.used || !r.now().Before(v.expiresAt) {
+		return uuid.Nil, identity.ErrTwoFactorInvalid
+	}
+	return v.userID, nil
+}
+func (r *Repository) ConsumeTwoFactorChallenge(_ context.Context, hash string) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	v, ok := r.challenges[hash]
+	if !ok || v.used || !r.now().Before(v.expiresAt) {
+		return false, nil
+	}
+	v.used = true
+	return true, nil
+}
+func (r *Repository) GetTwoFactor(_ context.Context, id uuid.UUID) (identity.TwoFactorState, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	v, ok := r.twoFactor[id]
+	if !ok {
+		return v, identity.ErrNotFound
+	}
+	return v, nil
+}
+func (r *Repository) BeginTwoFactorEnrollment(_ context.Context, id uuid.UUID, secret string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.twoFactor[id] = identity.TwoFactorState{Secret: secret}
+	return nil
+}
+func (r *Repository) EnableTwoFactor(_ context.Context, id uuid.UUID, hashes []string, _ identity.Role) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	v := r.twoFactor[id]
+	v.Enabled = true
+	r.twoFactor[id] = v
+	r.recovery[id] = map[string]bool{}
+	for _, h := range hashes {
+		r.recovery[id][h] = false
+	}
+	return nil
+}
+func (r *Repository) DisableTwoFactor(_ context.Context, id uuid.UUID, _ identity.Role) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.twoFactor, id)
+	delete(r.recovery, id)
+	return nil
+}
+func (r *Repository) UseRecoveryCode(_ context.Context, id uuid.UUID, hash string, _ identity.Role) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	used, ok := r.recovery[id][hash]
+	if !ok || used {
+		return false, nil
+	}
+	r.recovery[id][hash] = true
+	return true, nil
 }
 
 // GrantRole adds a role to a user, as a superadmin would.

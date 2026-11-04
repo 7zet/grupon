@@ -208,6 +208,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/auth/2fa/enroll': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['enrollTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/2fa/enable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['enableTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/2fa/verify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['verifyTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/2fa': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations['disableTwoFactor'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/refresh': {
     parameters: {
       query?: never;
@@ -1700,6 +1764,28 @@ export interface components {
       phone: string;
       code: string;
     };
+    TwoFactorChallenge: {
+      challenge_token: string;
+      enrollment_required: boolean;
+    };
+    TwoFactorChallengeRequest: {
+      challenge_token: string;
+    };
+    TwoFactorCode: {
+      code: string;
+    };
+    TwoFactorVerifyRequest: {
+      challenge_token: string;
+      code: string;
+    };
+    TwoFactorEnrollment: {
+      otpauth_uri: string;
+      secret: string;
+    };
+    TwoFactorEnabled: {
+      session: components['schemas']['AuthSession'];
+      recovery_codes: string[];
+    };
     PhoneCodeSent: {
       cooldown_seconds: number;
       /** @description Development only. Absent in every other environment. */
@@ -2512,6 +2598,113 @@ export interface operations {
         content: {
           'application/json': components['schemas']['AuthSession'];
         };
+      };
+      /** @description Mandatory privileged-user 2FA challenge */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TwoFactorChallenge'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  enrollTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorChallengeRequest'];
+      };
+    };
+    responses: {
+      /** @description Authenticator setup */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TwoFactorEnrollment'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  enableTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorVerifyRequest'];
+      };
+    };
+    responses: {
+      /** @description Session and recovery codes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TwoFactorEnabled'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  verifyTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorVerifyRequest'];
+      };
+    };
+    responses: {
+      /** @description Session */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthSession'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  disableTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TwoFactorCode'];
+      };
+    };
+    responses: {
+      /** @description Disabled */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       default: components['responses']['Problem'];
     };

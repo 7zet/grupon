@@ -303,6 +303,19 @@ func (s apiServer) Logout(w http.ResponseWriter, r *http.Request) {
 	s.ServerInterface.Logout(w, r)
 }
 
+func (s apiServer) EnrollTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.EnrollTwoFactor(w, r)
+}
+func (s apiServer) EnableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.EnableTwoFactor(w, r)
+}
+func (s apiServer) VerifyTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.VerifyTwoFactor(w, r)
+}
+func (s apiServer) DisableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.DisableTwoFactor(w, r)
+}
+
 func (s apiServer) GetMe(w http.ResponseWriter, r *http.Request) {
 	if s.auth != nil {
 		s.auth.GetMe(w, r)
