@@ -8,8 +8,9 @@ LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 SELECT count(*) FROM deals WHERE status = 'in_review' AND deleted_at IS NULL;
 
 -- name: GetDealReviewRow :one
-SELECT id, merchant_id, status, starts_at FROM deals
-WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
+SELECT d.id, d.merchant_id, d.status, d.starts_at, c.publish_enabled
+FROM deals d JOIN categories c ON c.id = d.category_id
+WHERE d.id = sqlc.arg(id) AND d.deleted_at IS NULL;
 
 -- name: TransitionPendingDeal :execrows
 UPDATE deals SET status = sqlc.arg(status)::deal_status,

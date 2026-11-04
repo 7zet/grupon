@@ -39,7 +39,7 @@ func (f *fakeRepo) Detail(context.Context, uuid.UUID) (catalog.Deal, error) {
 }
 
 func pendingDeal(startsAt time.Time) *fakeRepo {
-	return &fakeRepo{record: Record{ID: uuid.New(), MerchantID: uuid.New(), Status: statusInReview, StartsAt: startsAt}}
+	return &fakeRepo{record: Record{ID: uuid.New(), MerchantID: uuid.New(), Status: statusInReview, StartsAt: startsAt, PublishEnabled: true}}
 }
 
 func TestFinanceCannotModerate(t *testing.T) {

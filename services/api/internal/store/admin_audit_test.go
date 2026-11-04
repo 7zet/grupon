@@ -38,7 +38,7 @@ func seededID(t *testing.T, fixture catalogFixture, query string, args ...any) u
 func pendingDeal(t *testing.T, fixture catalogFixture, ownerID, merchantID uuid.UUID) uuid.UUID {
 	t.Helper()
 	ctx := context.Background()
-	categoryID := seededID(t, fixture, `SELECT id FROM categories WHERE is_active ORDER BY sort_order LIMIT 1`)
+	categoryID := seededID(t, fixture, `SELECT id FROM categories WHERE searchable ORDER BY sort_order LIMIT 1`)
 	subcategoryID := seededID(t, fixture, `SELECT id FROM subcategories WHERE category_id = $1 ORDER BY sort_order LIMIT 1`, categoryID)
 	locationID := seededID(t, fixture, `SELECT id FROM merchant_locations WHERE merchant_id = $1 LIMIT 1`, merchantID)
 	text := catalog.Text{Uz: "matn", Ru: "текст", En: "text"}

@@ -602,14 +602,18 @@ type AuditLog struct {
 }
 
 type Category struct {
-	ID        pgtype.UUID        `json:"id"`
-	Slug      string             `json:"slug"`
-	Name      []byte             `json:"name"`
-	Icon      string             `json:"icon"`
-	SortOrder int32              `json:"sort_order"`
-	IsActive  bool               `json:"is_active"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID                  pgtype.UUID        `json:"id"`
+	Slug                string             `json:"slug"`
+	Name                []byte             `json:"name"`
+	Icon                string             `json:"icon"`
+	SortOrder           int32              `json:"sort_order"`
+	Searchable          bool               `json:"searchable"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	DealCreationEnabled bool               `json:"deal_creation_enabled"`
+	PublishEnabled      bool               `json:"publish_enabled"`
+	Purchasable         bool               `json:"purchasable"`
+	Redeemable          bool               `json:"redeemable"`
 }
 
 type City struct {

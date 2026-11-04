@@ -69,11 +69,16 @@ type Subcategory struct {
 
 // Category is an active top-level taxonomy node.
 type Category struct {
-	ID            uuid.UUID     `json:"id"`
-	Slug          string        `json:"slug"`
-	Name          Text          `json:"name"`
-	Icon          string        `json:"icon"`
-	Subcategories []Subcategory `json:"subcategories"`
+	ID                  uuid.UUID     `json:"id"`
+	Slug                string        `json:"slug"`
+	Name                Text          `json:"name"`
+	Icon                string        `json:"icon"`
+	Searchable          bool          `json:"searchable"`
+	DealCreationEnabled bool          `json:"deal_creation_enabled"`
+	PublishEnabled      bool          `json:"publish_enabled"`
+	Purchasable         bool          `json:"purchasable"`
+	Redeemable          bool          `json:"redeemable"`
+	Subcategories       []Subcategory `json:"subcategories"`
 }
 
 // Merchant is a business that publishes deals.

@@ -155,33 +155,35 @@ SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, 
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
        d.status AS deal_status, d.terms, d.starts_at, d.ends_at, d.max_per_user,
        d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
-       (m.review_status = 'approved') AS merchant_active
+       (m.review_status = 'approved') AS merchant_active, c.purchasable AS category_purchasable
 FROM deal_options o
 JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
 JOIN merchants m ON m.id = d.merchant_id AND m.deleted_at IS NULL
+JOIN categories c ON c.id = d.category_id
 WHERE o.id = ANY($1::uuid[])
 `
 
 type GetDealOptionRowsRow struct {
-	OptionID           pgtype.UUID        `json:"option_id"`
-	DealID             pgtype.UUID        `json:"deal_id"`
-	OptionTitle        []byte             `json:"option_title"`
-	OriginalPrice      int64              `json:"original_price"`
-	DealPrice          int64              `json:"deal_price"`
-	RedemptionsAllowed int32              `json:"redemptions_allowed"`
-	StockTotal         int32              `json:"stock_total"`
-	StockSold          int32              `json:"stock_sold"`
-	StockReserved      int32              `json:"stock_reserved"`
-	OptionIsActive     bool               `json:"option_is_active"`
-	DealStatus         DealStatus         `json:"deal_status"`
-	Terms              []byte             `json:"terms"`
-	StartsAt           pgtype.Timestamptz `json:"starts_at"`
-	EndsAt             pgtype.Timestamptz `json:"ends_at"`
-	MaxPerUser         int32              `json:"max_per_user"`
-	VoucherValidDays   pgtype.Int4        `json:"voucher_valid_days"`
-	VoucherValidUntil  pgtype.Timestamptz `json:"voucher_valid_until"`
-	MerchantID         pgtype.UUID        `json:"merchant_id"`
-	MerchantActive     bool               `json:"merchant_active"`
+	OptionID            pgtype.UUID        `json:"option_id"`
+	DealID              pgtype.UUID        `json:"deal_id"`
+	OptionTitle         []byte             `json:"option_title"`
+	OriginalPrice       int64              `json:"original_price"`
+	DealPrice           int64              `json:"deal_price"`
+	RedemptionsAllowed  int32              `json:"redemptions_allowed"`
+	StockTotal          int32              `json:"stock_total"`
+	StockSold           int32              `json:"stock_sold"`
+	StockReserved       int32              `json:"stock_reserved"`
+	OptionIsActive      bool               `json:"option_is_active"`
+	DealStatus          DealStatus         `json:"deal_status"`
+	Terms               []byte             `json:"terms"`
+	StartsAt            pgtype.Timestamptz `json:"starts_at"`
+	EndsAt              pgtype.Timestamptz `json:"ends_at"`
+	MaxPerUser          int32              `json:"max_per_user"`
+	VoucherValidDays    pgtype.Int4        `json:"voucher_valid_days"`
+	VoucherValidUntil   pgtype.Timestamptz `json:"voucher_valid_until"`
+	MerchantID          pgtype.UUID        `json:"merchant_id"`
+	MerchantActive      bool               `json:"merchant_active"`
+	CategoryPurchasable bool               `json:"category_purchasable"`
 }
 
 func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID) ([]GetDealOptionRowsRow, error) {
@@ -213,6 +215,7 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 			&i.VoucherValidUntil,
 			&i.MerchantID,
 			&i.MerchantActive,
+			&i.CategoryPurchasable,
 		); err != nil {
 			return nil, err
 		}
@@ -928,10 +931,11 @@ func (q *Queries) ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStock
 const reserveOptionStock = `-- name: ReserveOptionStock :one
 UPDATE deal_options
 SET stock_reserved = stock_reserved + $1, updated_at = now()
-WHERE id = $2
+WHERE deal_options.id = $2
   AND is_active = true
+  AND EXISTS (SELECT 1 FROM deals d JOIN categories c ON c.id = d.category_id WHERE d.id = deal_options.deal_id AND c.purchasable)
   AND stock_total - stock_sold - stock_reserved >= $1
-RETURNING id
+RETURNING deal_options.id
 `
 
 type ReserveOptionStockParams struct {

@@ -1487,6 +1487,11 @@ export interface components {
       slug: string;
       name: components['schemas']['LocalizedText'];
       icon: string;
+      searchable: boolean;
+      deal_creation_enabled: boolean;
+      publish_enabled: boolean;
+      purchasable: boolean;
+      redeemable: boolean;
       subcategories: components['schemas']['Subcategory'][];
     };
     CategoryList: {

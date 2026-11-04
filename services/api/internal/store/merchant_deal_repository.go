@@ -39,7 +39,7 @@ func (r *MerchantDealRepository) ReviewStatus(ctx context.Context, merchantID uu
 
 func (r *MerchantDealRepository) References(ctx context.Context, merchantID uuid.UUID, in merchant.DealInput) error {
 	queries := sqlc.New(r.pool)
-	open, err := queries.CategoryOpenState(ctx, toPgUUID(in.CategoryID))
+	capabilities, err := queries.CategoryCapabilities(ctx, toPgUUID(in.CategoryID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return &merchant.InvalidInputError{Field: "category_id", Code: "category_not_found"}
 	}
@@ -47,7 +47,7 @@ func (r *MerchantDealRepository) References(ctx context.Context, merchantID uuid
 		return fmt.Errorf("check category: %w", err)
 	}
 	// PRD AT-10 and BR-12: a closed category publishes nothing, and the merchant is told why.
-	if !open {
+	if !capabilities.DealCreationEnabled {
 		return &merchant.InvalidInputError{Field: "category_id", Code: "category_closed"}
 	}
 	subcategoryCategory, err := queries.SubcategoryCategoryID(ctx, toPgUUID(in.SubcategoryID))
@@ -72,6 +72,17 @@ func (r *MerchantDealRepository) References(ctx context.Context, merchantID uuid
 		return &merchant.InvalidInputError{Field: "location_ids", Code: "location_not_found"}
 	}
 	return nil
+}
+
+func (r *MerchantDealRepository) CategoryAllowsDealCreation(ctx context.Context, categoryID uuid.UUID) (bool, error) {
+	capabilities, err := sqlc.New(r.pool).CategoryCapabilities(ctx, toPgUUID(categoryID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check category: %w", err)
+	}
+	return capabilities.DealCreationEnabled, nil
 }
 
 // Insert stores a new deal with its children and audit row.
@@ -183,7 +194,7 @@ func (r *MerchantDealRepository) Record(ctx context.Context, merchantID, dealID 
 	if err != nil {
 		return merchant.DealRecord{}, fmt.Errorf("get deal record: %w", err)
 	}
-	return merchant.DealRecord{ID: toUUID(row.ID), Status: string(row.Status), Fingerprint: row.ReviewFingerprint}, nil
+	return merchant.DealRecord{ID: toUUID(row.ID), Status: string(row.Status), Fingerprint: row.ReviewFingerprint, CategoryID: toUUID(row.CategoryID)}, nil
 }
 
 // SetStatus moves an owned deal to a new workflow status and audits the change.

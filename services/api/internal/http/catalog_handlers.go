@@ -331,11 +331,16 @@ func mapCategory(category catalog.Category) gen.Category {
 		subcategories = append(subcategories, gen.Subcategory{Id: gen.Uuid(sub.ID), Slug: sub.Slug, Name: mapText(sub.Name)})
 	}
 	return gen.Category{
-		Id:            gen.Uuid(category.ID),
-		Slug:          category.Slug,
-		Name:          mapText(category.Name),
-		Icon:          category.Icon,
-		Subcategories: subcategories,
+		Id:                  gen.Uuid(category.ID),
+		Slug:                category.Slug,
+		Name:                mapText(category.Name),
+		Icon:                category.Icon,
+		Searchable:          category.Searchable,
+		DealCreationEnabled: category.DealCreationEnabled,
+		PublishEnabled:      category.PublishEnabled,
+		Purchasable:         category.Purchasable,
+		Redeemable:          category.Redeemable,
+		Subcategories:       subcategories,
 	}
 }
 

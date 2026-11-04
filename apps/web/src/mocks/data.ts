@@ -28,6 +28,11 @@ export const categories: Category[] = seed.categories.map((category, index) => (
   slug: category.slug,
   name: category.name,
   icon: category.icon,
+  searchable: category.active,
+  deal_creation_enabled: category.active,
+  publish_enabled: category.active,
+  purchasable: category.active,
+  redeemable: true,
   subcategories: category.subcategories.map((slug, subIndex) => ({
     id: uid(3 + index, subIndex + 1),
     slug,
@@ -245,5 +250,4 @@ export const reviews: Review[] = Array.from({ length: 20 }, (_, index) => ({
       }
     : {}),
 }));
-
 

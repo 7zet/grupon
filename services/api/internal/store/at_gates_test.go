@@ -8,8 +8,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/grupon/grupon/services/api/internal/domain/commerce"
 	"github.com/grupon/grupon/services/api/internal/domain/finance"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
+	"github.com/grupon/grupon/services/api/internal/domain/moderation"
 	"github.com/grupon/grupon/services/api/internal/domain/redemption"
 	"github.com/grupon/grupon/services/api/internal/payments"
 	"github.com/grupon/grupon/services/api/internal/store"
@@ -47,6 +50,92 @@ func TestAT10ClosedCategoryRefusesADealWithAReason(t *testing.T) {
 	open := categoryBySlug(t, env, "beauty-and-spas")
 	if err := repo.References(env.ctx, merchantID, merchant.DealInput{CategoryID: open, SubcategoryID: subcategoryOf(t, env, open)}); err != nil {
 		t.Fatalf("open category: got %v, want no error", err)
+	}
+
+	ownerID := seededID(t, env.fixture, `SELECT id FROM users WHERE email='owner@local.test'`)
+	dealID := pendingDeal(t, env.fixture, ownerID, merchantID)
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE deals SET status='draft' WHERE id=$1`, dealID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE categories SET deal_creation_enabled=false WHERE id=$1`, open); err != nil {
+		t.Fatal(err)
+	}
+	service := merchant.NewDealService(repo, time.Now)
+	_, err = service.Submit(env.ctx, merchantID, dealID, merchant.Actor{UserID: ownerID, Role: merchant.RoleOwner})
+	if !errors.As(err, &invalid) || invalid.Code != "category_closed" {
+		t.Fatalf("submit after category closure: %v", err)
+	}
+}
+
+func TestCategorySearchableHidesCategoryAndDeals(t *testing.T) {
+	env := newATEnv(t, 1)
+	var categoryID, dealID uuid.UUID
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT d.category_id,d.id FROM deals d JOIN deal_options o ON o.deal_id=d.id WHERE o.id=$1`, env.optionID).Scan(&categoryID, &dealID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE categories SET searchable=false WHERE id=$1`, categoryID); err != nil {
+		t.Fatal(err)
+	}
+	repo := store.NewCatalogRepository(env.fixture.pool)
+	categories, err := repo.ListCategories(env.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range categories {
+		if item.ID == categoryID {
+			t.Fatal("non-searchable category was listed")
+		}
+	}
+	ids, err := repo.SearchDealIDs(env.ctx, catalog.DealFilter{}, catalog.SortPopular, catalog.Page{Number: 1, Size: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range ids {
+		if id == dealID {
+			t.Fatal("deal in non-searchable category was listed")
+		}
+	}
+}
+
+func TestCategoryPublishEnabledBlocksModerationApproval(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	ownerID := seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`)
+	adminID := seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`)
+	merchantID := seededID(t, fixture, `SELECT merchant_id FROM role_assignments WHERE user_id=$1 AND merchant_id IS NOT NULL LIMIT 1`, ownerID)
+	dealID := pendingDeal(t, fixture, ownerID, merchantID)
+	if _, err := fixture.pool.Exec(ctx, `UPDATE categories SET publish_enabled=false WHERE id=(SELECT category_id FROM deals WHERE id=$1)`, dealID); err != nil {
+		t.Fatal(err)
+	}
+	deals := store.NewMerchantDealRepository(fixture.pool, store.NewCatalogRepository(fixture.pool))
+	service := moderation.NewService(store.NewModerationRepository(fixture.pool, store.NewCatalogRepository(fixture.pool), deals), time.Now)
+	if _, err := service.Approve(ctx, moderation.Actor{UserID: adminID, Role: "superadmin"}, dealID); !errors.Is(err, moderation.ErrCategoryPublishDisabled) {
+		t.Fatalf("approve: %v", err)
+	}
+}
+
+func TestCategoryPurchasableBlocksCheckout(t *testing.T) {
+	env := newATEnv(t, 1)
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE categories SET purchasable=false WHERE id=(SELECT d.category_id FROM deals d JOIN deal_options o ON o.deal_id=d.id WHERE o.id=$1)`, env.optionID); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := env.service.CreateOrder(env.ctx, env.buyer, commerce.OrderInput{IdempotencyKey: uuid.NewString(), Items: []commerce.OrderItemInput{{OptionID: env.optionID, Quantity: 1}}})
+	if !errors.Is(err, commerce.ErrCategoryNotPurchasable) {
+		t.Fatalf("checkout: %v", err)
+	}
+}
+
+func TestCategoryRedeemableBlocksOnlyWhenFalse(t *testing.T) {
+	env := newATEnv(t, 1)
+	voucherID := env.sellOneVoucher(t, env.buyer)
+	merchantID, locationID := env.merchantAndLocation(t)
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE categories SET redeemable=false WHERE id=(SELECT category_id FROM deals WHERE id=(SELECT deal_id FROM vouchers WHERE id=$1))`, voucherID); err != nil {
+		t.Fatal(err)
+	}
+	repo := store.NewRedemptionRepository(env.fixture.pool, store.NewCommerceRepository(env.fixture.pool), store.NewCatalogRepository(env.fixture.pool))
+	_, err := repo.UseVoucher(env.ctx, merchantID, voucherID, locationID, time.Now(), redemption.AuditEntry{ActorID: env.buyer, Role: "merchant_cashier", VoucherID: voucherID, Action: "voucher_redeemed"}, nil)
+	if !errors.Is(err, redemption.ErrCategoryNotRedeemable) {
+		t.Fatalf("redeem: %v", err)
 	}
 }
 

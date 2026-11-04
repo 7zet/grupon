@@ -12,7 +12,7 @@ import (
 )
 
 const activeCategoryExists = `-- name: ActiveCategoryExists :one
-SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND is_active = true)
+SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND searchable = true)
 `
 
 func (q *Queries) ActiveCategoryExists(ctx context.Context, id pgtype.UUID) (bool, error) {
@@ -33,15 +33,30 @@ func (q *Queries) ActiveCityExists(ctx context.Context, id pgtype.UUID) (bool, e
 	return exists, err
 }
 
-const categoryOpenState = `-- name: CategoryOpenState :one
-SELECT is_active FROM categories WHERE id = $1
+const categoryCapabilities = `-- name: CategoryCapabilities :one
+SELECT searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable
+FROM categories WHERE id = $1
 `
 
-func (q *Queries) CategoryOpenState(ctx context.Context, id pgtype.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, categoryOpenState, id)
-	var is_active bool
-	err := row.Scan(&is_active)
-	return is_active, err
+type CategoryCapabilitiesRow struct {
+	Searchable          bool `json:"searchable"`
+	DealCreationEnabled bool `json:"deal_creation_enabled"`
+	PublishEnabled      bool `json:"publish_enabled"`
+	Purchasable         bool `json:"purchasable"`
+	Redeemable          bool `json:"redeemable"`
+}
+
+func (q *Queries) CategoryCapabilities(ctx context.Context, id pgtype.UUID) (CategoryCapabilitiesRow, error) {
+	row := q.db.QueryRow(ctx, categoryCapabilities, id)
+	var i CategoryCapabilitiesRow
+	err := row.Scan(
+		&i.Searchable,
+		&i.DealCreationEnabled,
+		&i.PublishEnabled,
+		&i.Purchasable,
+		&i.Redeemable,
+	)
+	return i, err
 }
 
 const countMerchantDocumentKinds = `-- name: CountMerchantDocumentKinds :one

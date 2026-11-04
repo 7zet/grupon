@@ -257,6 +257,8 @@ func (a *CommerceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 			map[string][]string{validation.Field: {validation.Code}})
 	case errors.Is(err, commerce.ErrOptionUnavailable):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "option_unavailable", nil, nil)
+	case errors.Is(err, commerce.ErrCategoryNotPurchasable):
+		writeProblem(w, r, http.StatusUnprocessableEntity, "category_not_purchasable", nil, nil)
 	case errors.Is(err, commerce.ErrMaxPerUserExceeded):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "max_per_user_exceeded", nil, nil)
 	case errors.Is(err, commerce.ErrIdempotencyConflict):

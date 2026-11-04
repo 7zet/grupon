@@ -159,7 +159,7 @@ func (q *Queries) GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDet
 }
 
 const getOwnedDealRecord = `-- name: GetOwnedDealRecord :one
-SELECT id, status, review_fingerprint
+SELECT id, status, review_fingerprint, category_id
 FROM deals
 WHERE id = $1 AND merchant_id = $2 AND deleted_at IS NULL
 `
@@ -173,12 +173,18 @@ type GetOwnedDealRecordRow struct {
 	ID                pgtype.UUID `json:"id"`
 	Status            DealStatus  `json:"status"`
 	ReviewFingerprint string      `json:"review_fingerprint"`
+	CategoryID        pgtype.UUID `json:"category_id"`
 }
 
 func (q *Queries) GetOwnedDealRecord(ctx context.Context, arg GetOwnedDealRecordParams) (GetOwnedDealRecordRow, error) {
 	row := q.db.QueryRow(ctx, getOwnedDealRecord, arg.ID, arg.MerchantID)
 	var i GetOwnedDealRecordRow
-	err := row.Scan(&i.ID, &i.Status, &i.ReviewFingerprint)
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.ReviewFingerprint,
+		&i.CategoryID,
+	)
 	return i, err
 }
 

@@ -1,10 +1,12 @@
 -- name: LockVoucherForRedemption :one
 SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
        v.fraud_hold, v.dispute_open,
-       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
+       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name, c.redeemable AS category_redeemable
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN merchants m ON m.id = v.merchant_id
+JOIN deals d ON d.id = v.deal_id
+JOIN categories c ON c.id = d.category_id
 WHERE v.id = sqlc.arg(id) AND v.merchant_id = sqlc.arg(merchant_id)
 FOR UPDATE OF v;
 

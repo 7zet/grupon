@@ -32,7 +32,7 @@ UPDATE deals SET deleted_at = now(), updated_at = now()
 WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id) AND status = 'draft' AND deleted_at IS NULL;
 
 -- name: GetOwnedDealRecord :one
-SELECT id, status, review_fingerprint
+SELECT id, status, review_fingerprint, category_id
 FROM deals
 WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id) AND deleted_at IS NULL;
 

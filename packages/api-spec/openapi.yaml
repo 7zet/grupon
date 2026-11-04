@@ -854,8 +854,8 @@ components:
       properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}}
     Category:
       type: object
-      required: [id, slug, name, icon, subcategories]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}, icon: {type: string}, subcategories: {type: array, items: {$ref: '#/components/schemas/Subcategory'}}}
+      required: [id, slug, name, icon, searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable, subcategories]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}, icon: {type: string}, searchable: {type: boolean}, deal_creation_enabled: {type: boolean}, publish_enabled: {type: boolean}, purchasable: {type: boolean}, redeemable: {type: boolean}, subcategories: {type: array, items: {$ref: '#/components/schemas/Subcategory'}}}
     CategoryList:
       type: object
       required: [items]

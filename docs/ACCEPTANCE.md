@@ -15,7 +15,7 @@
 | AT-07 | Failed payment, hold expires | ✅ | `store/at_payments_test.go` (TestAT07…): stock returned, no voucher, order `expired` |
 | AT-08 | Reconciliation alert | ⏳ | Deferred: needs PSP (Stage 3) |
 | AT-09 | Cashier cannot approve payout | ✅ | `store/at_gates_test.go` (TestAT09…): ErrForbidden, `payout_prepare_denied` audit row |
-| AT-10 | Closed category gate | ✅ | `store/at_gates_test.go` (TestAT10…): `category_closed` on `category_id`; open category passes |
+| AT-10 | Closed category gate | ✅ | `store/at_gates_test.go`: create and submit return `category_closed`; separate tests prove search, publish, checkout, and redemption capability gates |
 | AT-11 | Refund within 14 days | ✅ | `store/finance_test.go` (TestUnusedVoucherRefundsAutomaticallyWithinFourteenDays) |
 | AT-12 | Voucher expiry at Tashkent 23:59 | ✅ | `domain/commerce/voucher_window_test.go` |
 | AT-13 | Late payment auto-refund | ✅ | `store/at_payments_test.go` (TestAT13…): refund row on the payment (migration 00021), no voucher, order stays expired |

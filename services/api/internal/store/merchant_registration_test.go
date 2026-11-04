@@ -32,7 +32,7 @@ func TestMerchantRegistrationCreatesBusinessLocationAndOwnerRole(t *testing.T) {
 	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM cities WHERE is_active LIMIT 1`).Scan(&cityID); err != nil {
 		t.Fatal(err)
 	}
-	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE is_active LIMIT 1`).Scan(&categoryID); err != nil {
+	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE searchable LIMIT 1`).Scan(&categoryID); err != nil {
 		t.Fatal(err)
 	}
 	input := onboardingInput(cityID, categoryID)
@@ -82,7 +82,7 @@ func TestMerchantSubmitIsOneWayAndSTIRIsUnique(t *testing.T) {
 	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM cities WHERE is_active LIMIT 1`).Scan(&cityID); err != nil {
 		t.Fatal(err)
 	}
-	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE is_active LIMIT 1`).Scan(&categoryID); err != nil {
+	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE searchable LIMIT 1`).Scan(&categoryID); err != nil {
 		t.Fatal(err)
 	}
 	input := onboardingInput(cityID, categoryID)
@@ -161,7 +161,7 @@ func TestMerchantReviewMovesBusinessAndWritesAudit(t *testing.T) {
 	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM cities WHERE is_active LIMIT 1`).Scan(&cityID); err != nil {
 		t.Fatal(err)
 	}
-	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE is_active LIMIT 1`).Scan(&categoryID); err != nil {
+	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM categories WHERE searchable LIMIT 1`).Scan(&categoryID); err != nil {
 		t.Fatal(err)
 	}
 	input := onboardingInput(cityID, categoryID)

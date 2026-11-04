@@ -72,7 +72,9 @@ func (r *CatalogRepository) ListCategories(ctx context.Context) ([]catalog.Categ
 		if subcategories == nil {
 			subcategories = []catalog.Subcategory{}
 		}
-		categories = append(categories, catalog.Category{ID: id, Slug: row.Slug, Name: name, Icon: row.Icon, Subcategories: subcategories})
+		categories = append(categories, catalog.Category{ID: id, Slug: row.Slug, Name: name, Icon: row.Icon,
+			Searchable: row.Searchable, DealCreationEnabled: row.DealCreationEnabled, PublishEnabled: row.PublishEnabled,
+			Purchasable: row.Purchasable, Redeemable: row.Redeemable, Subcategories: subcategories})
 	}
 	return categories, nil
 }

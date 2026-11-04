@@ -223,10 +223,12 @@ func (q *Queries) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID 
 const lockVoucherForRedemption = `-- name: LockVoucherForRedemption :one
 SELECT v.id, v.user_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_from, v.valid_until,
        v.fraud_hold, v.dispute_open,
-       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name
+       oi.unit_price_snapshot, m.commission_bps, m.display_name AS merchant_name, c.redeemable AS category_redeemable
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN merchants m ON m.id = v.merchant_id
+JOIN deals d ON d.id = v.deal_id
+JOIN categories c ON c.id = d.category_id
 WHERE v.id = $1 AND v.merchant_id = $2
 FOR UPDATE OF v
 `
@@ -249,6 +251,7 @@ type LockVoucherForRedemptionRow struct {
 	UnitPriceSnapshot  int64              `json:"unit_price_snapshot"`
 	CommissionBps      int32              `json:"commission_bps"`
 	MerchantName       string             `json:"merchant_name"`
+	CategoryRedeemable bool               `json:"category_redeemable"`
 }
 
 func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherForRedemptionParams) (LockVoucherForRedemptionRow, error) {
@@ -267,6 +270,7 @@ func (q *Queries) LockVoucherForRedemption(ctx context.Context, arg LockVoucherF
 		&i.UnitPriceSnapshot,
 		&i.CommissionBps,
 		&i.MerchantName,
+		&i.CategoryRedeemable,
 	)
 	return i, err
 }

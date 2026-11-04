@@ -7,9 +7,9 @@ WHERE is_active = true
 ORDER BY sort_order, slug;
 
 -- name: ListActiveCategories :many
-SELECT id, slug, name, icon
+SELECT id, slug, name, icon, searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable
 FROM categories
-WHERE is_active = true
+WHERE searchable = true
 ORDER BY sort_order, slug;
 
 -- name: ListSubcategories :many
@@ -88,7 +88,7 @@ WITH candidates AS (
          pr.min_price, pr.max_discount
   FROM deals d
   JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
-  JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+  JOIN categories cat ON cat.id = d.category_id AND cat.searchable = true
   JOIN subcategories sub ON sub.id = d.subcategory_id
   CROSS JOIN LATERAL (
     SELECT MIN(o.deal_price) AS min_price,
@@ -144,7 +144,7 @@ LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 SELECT COUNT(*)
 FROM deals d
 JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
-JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+JOIN categories cat ON cat.id = d.category_id AND cat.searchable = true
 JOIN subcategories sub ON sub.id = d.subcategory_id
 CROSS JOIN LATERAL (
   SELECT MIN(o.deal_price) AS min_price,

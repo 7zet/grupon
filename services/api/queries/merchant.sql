@@ -32,7 +32,7 @@ RETURNING id;
 SELECT EXISTS (SELECT 1 FROM cities WHERE id = $1 AND is_active = true);
 
 -- name: ActiveCategoryExists :one
-SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND is_active = true);
+SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND searchable = true);
 
 -- name: ListMerchantsForReview :many
 SELECT m.id, m.legal_name, m.display_name, m.stir, m.org_form, m.tax_regime, m.bank_mfo, m.bank_account,
@@ -67,5 +67,6 @@ ON CONFLICT (merchant_id, kind) DO UPDATE SET storage_key = EXCLUDED.storage_key
 SELECT kind, storage_key, content_type, size_bytes, uploaded_at FROM merchant_documents
 WHERE merchant_id = sqlc.arg(merchant_id) ORDER BY kind;
 
--- name: CategoryOpenState :one
-SELECT is_active FROM categories WHERE id = sqlc.arg(id);
+-- name: CategoryCapabilities :one
+SELECT searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable
+FROM categories WHERE id = sqlc.arg(id);

@@ -166,7 +166,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	subcategoryIDs := make([][]string, len(data.Categories))
 	for i, category := range data.Categories {
 		name, _ := json.Marshal(category.Name)
-		if err := tx.QueryRow(ctx, `INSERT INTO categories(slug,name,icon,sort_order,is_active) VALUES($1,$2,$3,$4,$5) RETURNING id`, category.Slug, name, category.Icon, i, active(category.Active)).Scan(&categoryIDs[i]); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO categories(slug,name,icon,sort_order,searchable,deal_creation_enabled,publish_enabled,purchasable,redeemable) VALUES($1,$2,$3,$4,$5,$5,$5,$5,true) RETURNING id`, category.Slug, name, category.Icon, i, active(category.Active)).Scan(&categoryIDs[i]); err != nil {
 			return err
 		}
 		for j, slug := range category.Subcategories {

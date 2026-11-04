@@ -15,7 +15,7 @@ const countPublishedDeals = `-- name: CountPublishedDeals :one
 SELECT COUNT(*)
 FROM deals d
 JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
-JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+JOIN categories cat ON cat.id = d.category_id AND cat.searchable = true
 JOIN subcategories sub ON sub.id = d.subcategory_id
 CROSS JOIN LATERAL (
   SELECT MIN(o.deal_price) AS min_price,
@@ -221,17 +221,22 @@ func (q *Queries) GetDealDetailRowBySlug(ctx context.Context, slug string) (GetD
 }
 
 const listActiveCategories = `-- name: ListActiveCategories :many
-SELECT id, slug, name, icon
+SELECT id, slug, name, icon, searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable
 FROM categories
-WHERE is_active = true
+WHERE searchable = true
 ORDER BY sort_order, slug
 `
 
 type ListActiveCategoriesRow struct {
-	ID   pgtype.UUID `json:"id"`
-	Slug string      `json:"slug"`
-	Name []byte      `json:"name"`
-	Icon string      `json:"icon"`
+	ID                  pgtype.UUID `json:"id"`
+	Slug                string      `json:"slug"`
+	Name                []byte      `json:"name"`
+	Icon                string      `json:"icon"`
+	Searchable          bool        `json:"searchable"`
+	DealCreationEnabled bool        `json:"deal_creation_enabled"`
+	PublishEnabled      bool        `json:"publish_enabled"`
+	Purchasable         bool        `json:"purchasable"`
+	Redeemable          bool        `json:"redeemable"`
 }
 
 func (q *Queries) ListActiveCategories(ctx context.Context) ([]ListActiveCategoriesRow, error) {
@@ -248,6 +253,11 @@ func (q *Queries) ListActiveCategories(ctx context.Context) ([]ListActiveCategor
 			&i.Slug,
 			&i.Name,
 			&i.Icon,
+			&i.Searchable,
+			&i.DealCreationEnabled,
+			&i.PublishEnabled,
+			&i.Purchasable,
+			&i.Redeemable,
 		); err != nil {
 			return nil, err
 		}
@@ -882,7 +892,7 @@ WITH candidates AS (
          pr.min_price, pr.max_discount
   FROM deals d
   JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
-  JOIN categories cat ON cat.id = d.category_id AND cat.is_active = true
+  JOIN categories cat ON cat.id = d.category_id AND cat.searchable = true
   JOIN subcategories sub ON sub.id = d.subcategory_id
   CROSS JOIN LATERAL (
     SELECT MIN(o.deal_price) AS min_price,

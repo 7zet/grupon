@@ -25,7 +25,7 @@ type Querier interface {
 	ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunParams) (int64, error)
 	ApproveRequestedRefund(ctx context.Context, arg ApproveRequestedRefundParams) (ApproveRequestedRefundRow, error)
 	AttachRedemptionToRun(ctx context.Context, arg AttachRedemptionToRunParams) (int64, error)
-	CategoryOpenState(ctx context.Context, id pgtype.UUID) (bool, error)
+	CategoryCapabilities(ctx context.Context, id pgtype.UUID) (CategoryCapabilitiesRow, error)
 	ClaimOutboxBatch(ctx context.Context, batchSize int32) ([]ClaimOutboxBatchRow, error)
 	ClaimRefreshToken(ctx context.Context, id pgtype.UUID) (RefreshToken, error)
 	// PRD 08: a paid order becomes completed once none of its vouchers can still be redeemed.

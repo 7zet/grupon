@@ -23,10 +23,11 @@ const (
 
 // Errors returned by moderation. The HTTP layer maps them to problem codes.
 var (
-	ErrNotFound     = errors.New("moderation: deal not found")
-	ErrNotPending   = errors.New("moderation: deal is not waiting for review")
-	ErrForbidden    = errors.New("moderation: role may not moderate deals")
-	ErrReasonNeeded = errors.New("moderation: rejection reason is required")
+	ErrNotFound                = errors.New("moderation: deal not found")
+	ErrNotPending              = errors.New("moderation: deal is not waiting for review")
+	ErrForbidden               = errors.New("moderation: role may not moderate deals")
+	ErrReasonNeeded            = errors.New("moderation: rejection reason is required")
+	ErrCategoryPublishDisabled = errors.New("moderation: category publishing is disabled")
 )
 
 // InvalidReasonError reports a rejection reason that is too short or too long.
@@ -42,10 +43,11 @@ type Actor struct {
 
 // Record is the review state of a deal.
 type Record struct {
-	ID         uuid.UUID
-	MerchantID uuid.UUID
-	Status     string
-	StartsAt   time.Time
+	ID             uuid.UUID
+	MerchantID     uuid.UUID
+	Status         string
+	StartsAt       time.Time
+	PublishEnabled bool
 }
 
 // AuditEntry records a moderation decision.
@@ -110,6 +112,9 @@ func (s *Service) Approve(ctx context.Context, actor Actor, dealID uuid.UUID) (c
 	record, err := s.pending(ctx, actor, dealID)
 	if err != nil {
 		return catalog.Deal{}, err
+	}
+	if !record.PublishEnabled {
+		return catalog.Deal{}, ErrCategoryPublishDisabled
 	}
 	to := statusActive
 	if record.StartsAt.After(s.now()) {

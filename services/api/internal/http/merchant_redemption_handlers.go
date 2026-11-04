@@ -109,6 +109,8 @@ func (a *MerchantRedemptionAPI) fail(w http.ResponseWriter, r *http.Request, err
 		writeProblem(w, r, http.StatusUnprocessableEntity, "voucher_refunded", nil, nil)
 	case errors.Is(err, redemption.ErrOnHold):
 		writeProblem(w, r, http.StatusConflict, "voucher_on_hold", nil, nil)
+	case errors.Is(err, redemption.ErrCategoryNotRedeemable):
+		writeProblem(w, r, http.StatusUnprocessableEntity, "category_not_redeemable", nil, nil)
 	case errors.Is(err, redemption.ErrVoided):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "voucher_voided", nil, nil)
 	default:

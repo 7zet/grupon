@@ -10,14 +10,15 @@ import (
 )
 
 var (
-	ErrNotFound          = errors.New("commerce: not found")
-	ErrOrderNotFound     = errors.New("commerce: order not found")
-	ErrPaymentNotFound   = errors.New("commerce: payment not found")
-	ErrVoucherNotFound   = errors.New("commerce: voucher not found")
-	ErrDealNotFound      = errors.New("commerce: deal not found")
-	ErrUserNotFound      = errors.New("commerce: user not found")
-	ErrOptionUnavailable = errors.New("commerce: option unavailable")
-	ErrDealUnavailable   = errors.New("commerce: deal unavailable")
+	ErrNotFound               = errors.New("commerce: not found")
+	ErrOrderNotFound          = errors.New("commerce: order not found")
+	ErrPaymentNotFound        = errors.New("commerce: payment not found")
+	ErrVoucherNotFound        = errors.New("commerce: voucher not found")
+	ErrDealNotFound           = errors.New("commerce: deal not found")
+	ErrUserNotFound           = errors.New("commerce: user not found")
+	ErrOptionUnavailable      = errors.New("commerce: option unavailable")
+	ErrCategoryNotPurchasable = errors.New("commerce: category is not purchasable")
+	ErrDealUnavailable        = errors.New("commerce: deal unavailable")
 	// ErrInsufficientStock means the conditional stock reservation matched no rows.
 	ErrInsufficientStock   = errors.New("commerce: insufficient stock")
 	ErrMaxPerUserExceeded  = errors.New("commerce: max per user exceeded")

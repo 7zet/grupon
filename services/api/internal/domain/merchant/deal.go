@@ -212,6 +212,7 @@ type DealRecord struct {
 	ID          uuid.UUID
 	Status      string
 	Fingerprint string
+	CategoryID  uuid.UUID
 }
 
 // DealWrite is what the repository persists for one save.
@@ -236,6 +237,7 @@ type DealRepository interface {
 	ReviewStatus(ctx context.Context, merchantID uuid.UUID) (string, error)
 	// References checks categories, subcategories and locations belong to the expected taxonomy and merchant.
 	References(ctx context.Context, merchantID uuid.UUID, in DealInput) error
+	CategoryAllowsDealCreation(ctx context.Context, categoryID uuid.UUID) (bool, error)
 	Insert(ctx context.Context, merchantID uuid.UUID, write DealWrite, audit AuditEntry) (uuid.UUID, error)
 	Update(ctx context.Context, merchantID, dealID uuid.UUID, write DealWrite, audit AuditEntry) error
 	Record(ctx context.Context, merchantID, dealID uuid.UUID) (DealRecord, error)
@@ -312,6 +314,13 @@ func (s *DealService) Submit(ctx context.Context, merchantID, dealID uuid.UUID, 
 	}
 	if current.Status != DealDraft && current.Status != DealChangesRequested {
 		return catalog.Deal{}, ErrDealStateInvalid
+	}
+	enabled, err := s.repo.CategoryAllowsDealCreation(ctx, current.CategoryID)
+	if err != nil {
+		return catalog.Deal{}, err
+	}
+	if !enabled {
+		return catalog.Deal{}, &InvalidInputError{Field: "category_id", Code: "category_closed"}
 	}
 	if err := s.repo.SetStatus(ctx, merchantID, dealID, DealInReview, actor.audit("deal_submitted", dealID, DealInReview)); err != nil {
 		return catalog.Deal{}, err

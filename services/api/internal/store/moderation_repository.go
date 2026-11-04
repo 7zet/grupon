@@ -62,10 +62,11 @@ func (r *ModerationRepository) Record(ctx context.Context, dealID uuid.UUID) (mo
 		return moderation.Record{}, fmt.Errorf("get deal review row: %w", err)
 	}
 	return moderation.Record{
-		ID:         toUUID(row.ID),
-		MerchantID: toUUID(row.MerchantID),
-		Status:     string(row.Status),
-		StartsAt:   row.StartsAt.Time,
+		ID:             toUUID(row.ID),
+		MerchantID:     toUUID(row.MerchantID),
+		Status:         string(row.Status),
+		StartsAt:       row.StartsAt.Time,
+		PublishEnabled: row.PublishEnabled,
 	}, nil
 }
 

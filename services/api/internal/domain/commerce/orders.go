@@ -87,6 +87,9 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 	maxByDeal := make(map[uuid.UUID]int)
 	for _, item := range input.Items {
 		record, ok := byID[item.OptionID]
+		if ok && !record.CategoryPurchasable {
+			return Order{}, ErrCategoryNotPurchasable
+		}
 		if !ok || !record.SellableAt(now) {
 			return Order{}, ErrOptionUnavailable
 		}

@@ -19,6 +19,9 @@ type fakeDealRepo struct {
 }
 
 func (f *fakeDealRepo) References(context.Context, uuid.UUID, DealInput) error { return nil }
+func (f *fakeDealRepo) CategoryAllowsDealCreation(context.Context, uuid.UUID) (bool, error) {
+	return true, nil
+}
 
 func (f *fakeDealRepo) ReviewStatus(context.Context, uuid.UUID) (string, error) {
 	return "approved", nil

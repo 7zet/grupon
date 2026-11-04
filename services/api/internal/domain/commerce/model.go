@@ -51,25 +51,26 @@ const (
 
 // OptionRecord is the purchase-relevant state of one deal option, read in one query.
 type OptionRecord struct {
-	ID                 uuid.UUID
-	DealID             uuid.UUID
-	Title              catalog.Text
-	OriginalPrice      int64
-	DealPrice          int64
-	StockTotal         int
-	StockSold          int
-	StockReserved      int
-	RedemptionsAllowed int
-	IsActive           bool
-	DealStatus         string
-	StartsAt           time.Time
-	EndsAt             time.Time
-	MaxPerUser         int
-	VoucherValidDays   *int
-	VoucherValidUntil  *time.Time
-	MerchantID         uuid.UUID
-	MerchantActive     bool
-	Terms              catalog.Text
+	ID                  uuid.UUID
+	DealID              uuid.UUID
+	Title               catalog.Text
+	OriginalPrice       int64
+	DealPrice           int64
+	StockTotal          int
+	StockSold           int
+	StockReserved       int
+	RedemptionsAllowed  int
+	IsActive            bool
+	DealStatus          string
+	StartsAt            time.Time
+	EndsAt              time.Time
+	MaxPerUser          int
+	VoucherValidDays    *int
+	VoucherValidUntil   *time.Time
+	MerchantID          uuid.UUID
+	MerchantActive      bool
+	CategoryPurchasable bool
+	Terms               catalog.Text
 }
 
 // Available is the number of units that can still be reserved.

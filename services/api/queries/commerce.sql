@@ -1,10 +1,11 @@
 -- name: ReserveOptionStock :one
 UPDATE deal_options
 SET stock_reserved = stock_reserved + sqlc.arg(quantity), updated_at = now()
-WHERE id = sqlc.arg(option_id)
+WHERE deal_options.id = sqlc.arg(option_id)
   AND is_active = true
+  AND EXISTS (SELECT 1 FROM deals d JOIN categories c ON c.id = d.category_id WHERE d.id = deal_options.deal_id AND c.purchasable)
   AND stock_total - stock_sold - stock_reserved >= sqlc.arg(quantity)
-RETURNING id;
+RETURNING deal_options.id;
 
 -- name: ReleaseOptionStock :exec
 UPDATE deal_options
@@ -26,10 +27,11 @@ SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, 
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
        d.status AS deal_status, d.terms, d.starts_at, d.ends_at, d.max_per_user,
        d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
-       (m.review_status = 'approved') AS merchant_active
+       (m.review_status = 'approved') AS merchant_active, c.purchasable AS category_purchasable
 FROM deal_options o
 JOIN deals d ON d.id = o.deal_id AND d.deleted_at IS NULL
 JOIN merchants m ON m.id = d.merchant_id AND m.deleted_at IS NULL
+JOIN categories c ON c.id = d.category_id
 WHERE o.id = ANY(sqlc.arg(option_ids)::uuid[]);
 
 -- name: UserUnitsForDeal :one

@@ -25,13 +25,14 @@ const (
 
 // Errors returned by lookup and redemption. The HTTP layer maps them to problem codes.
 var (
-	ErrNotFound        = errors.New("redemption: voucher not found")
-	ErrInvalidToken    = errors.New("redemption: qr token is not valid")
-	ErrWrongMerchant   = errors.New("redemption: voucher belongs to another merchant")
-	ErrAlreadyRedeemed = errors.New("redemption: voucher already redeemed")
-	ErrExpired         = errors.New("redemption: voucher expired")
-	ErrRefunded        = errors.New("redemption: voucher refunded")
-	ErrVoided          = errors.New("redemption: voucher voided")
+	ErrNotFound              = errors.New("redemption: voucher not found")
+	ErrInvalidToken          = errors.New("redemption: qr token is not valid")
+	ErrWrongMerchant         = errors.New("redemption: voucher belongs to another merchant")
+	ErrAlreadyRedeemed       = errors.New("redemption: voucher already redeemed")
+	ErrExpired               = errors.New("redemption: voucher expired")
+	ErrRefunded              = errors.New("redemption: voucher refunded")
+	ErrVoided                = errors.New("redemption: voucher voided")
+	ErrCategoryNotRedeemable = errors.New("redemption: category is not redeemable")
 	// ErrOnHold means fraud review or an open dispute holds the voucher.
 	ErrOnHold = errors.New("redemption: voucher is on hold for review")
 )

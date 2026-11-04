@@ -23,15 +23,17 @@ func (q *Queries) CountPendingDeals(ctx context.Context) (int64, error) {
 }
 
 const getDealReviewRow = `-- name: GetDealReviewRow :one
-SELECT id, merchant_id, status, starts_at FROM deals
-WHERE id = $1 AND deleted_at IS NULL
+SELECT d.id, d.merchant_id, d.status, d.starts_at, c.publish_enabled
+FROM deals d JOIN categories c ON c.id = d.category_id
+WHERE d.id = $1 AND d.deleted_at IS NULL
 `
 
 type GetDealReviewRowRow struct {
-	ID         pgtype.UUID        `json:"id"`
-	MerchantID pgtype.UUID        `json:"merchant_id"`
-	Status     DealStatus         `json:"status"`
-	StartsAt   pgtype.Timestamptz `json:"starts_at"`
+	ID             pgtype.UUID        `json:"id"`
+	MerchantID     pgtype.UUID        `json:"merchant_id"`
+	Status         DealStatus         `json:"status"`
+	StartsAt       pgtype.Timestamptz `json:"starts_at"`
+	PublishEnabled bool               `json:"publish_enabled"`
 }
 
 func (q *Queries) GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDealReviewRowRow, error) {
@@ -42,6 +44,7 @@ func (q *Queries) GetDealReviewRow(ctx context.Context, id pgtype.UUID) (GetDeal
 		&i.MerchantID,
 		&i.Status,
 		&i.StartsAt,
+		&i.PublishEnabled,
 	)
 	return i, err
 }

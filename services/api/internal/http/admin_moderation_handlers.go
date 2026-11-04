@@ -104,6 +104,8 @@ func (a *ModerationAPI) fail(w http.ResponseWriter, r *http.Request, err error) 
 		writeProblem(w, r, http.StatusNotFound, "not_found", nil, nil)
 	case errors.Is(err, moderation.ErrNotPending):
 		writeProblem(w, r, http.StatusConflict, "deal_not_pending_review", nil, nil)
+	case errors.Is(err, moderation.ErrCategoryPublishDisabled):
+		writeProblem(w, r, http.StatusUnprocessableEntity, "category_publish_disabled", nil, nil)
 	default:
 		a.logger.ErrorContext(r.Context(), "moderation request failed",
 			slog.String("request_id", middleware.GetReqID(r.Context())),
