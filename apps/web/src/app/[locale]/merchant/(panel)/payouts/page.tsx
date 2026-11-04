@@ -2,11 +2,13 @@ import type { components } from '@grupon/api-client';
 import { formatMoney } from '@grupon/ui';
 import type { Currency, Locale } from '@grupon/config';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 import { StatementsDownload, type StatementRow } from '@/components/statements-download';
-import { accountGet, loadForVisitor } from '@/lib/account-api';
+import { accountGet, accountGetOrNull, loadForVisitor } from '@/lib/account-api';
 
 type PayoutPage = components['schemas']['PayoutPage'];
+type User = components['schemas']['User'];
 
 const STATUS_KEYS = {
   pending: 'payoutPending',
@@ -19,6 +21,10 @@ export default async function PayoutsPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   const t = await getTranslations('MerchantPanel');
   const format = await getFormatter();
+  const user = await loadForVisitor(locale, `/${locale}/merchant/payouts`, () =>
+    accountGetOrNull<User>('/me'),
+  );
+  if (!user?.roles.some((role) => role === 'merchant_owner' || role === 'merchant_manager')) notFound();
   const list = await loadForVisitor(locale, `/${locale}/merchant/payouts`, () =>
     accountGet<PayoutPage>('/merchant/payouts'),
   );

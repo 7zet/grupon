@@ -56,7 +56,7 @@ test('cashier cannot create deals', async () => {
   expect(response.status).toBe(403);
 });
 
-test('owner creates, admin approves, buyer buys, owner redeems on mobile', async ({ browser }) => {
+test('owner creates, admin approves, buyer buys, cashier redeems and sees own history', async ({ browser }) => {
   const owner = await login('owner-b@local.test');
   const admin = await login('admin-b@local.test');
   const buyer = await login('user@local.test');
@@ -138,11 +138,11 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
   }
   expect(voucher, 'voucher issued after webhook').toBeTruthy();
 
-  // Owner redeems at the counter on a phone-sized screen.
+  // Cashier B signs in with their own account and redeems at the counter on a phone-sized screen.
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await page.goto(`${WEB}/uz/login`);
-  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES['owner-b@local.test'].slice(4));
+  await page.getByLabel(/Telefon raqami/).fill(SEEDED_PHONES['cashier-b@local.test'].slice(4));
   await page.getByRole('button', { name: /Kod yuborish/ }).click();
   const hint = page.getByText(/Test rejimi kodi: \d{6}/);
   await expect(hint).toBeVisible();
@@ -155,9 +155,17 @@ test('owner creates, admin approves, buyer buys, owner redeems on mobile', async
   await expect(page.getByRole('heading', { name: 'E2E aksiya' })).toBeVisible();
   await page.getByRole('button', { name: /Ishlatilganini tasdiqlash/ }).click();
   await expect(page.getByRole('status')).toHaveText(/Vaucher ishlatildi/);
+  await expect(page.getByRole('row').filter({ hasText: 'E2E aksiya' }).first()).toBeVisible();
+
+  // Cashiers have no payouts or platform-finance access, including direct URLs.
+  await page.goto(`${WEB}/uz/merchant/payouts`);
+  await expect(page.getByRole('heading', { name: /Bu sahifani topa olmadik/ })).toBeVisible();
+  await page.goto(`${WEB}/uz/admin/finance`);
+  await expect(page.getByRole('heading', { name: /Bu sahifani topa olmadik/ })).toBeVisible();
 
   // The same voucher cannot be used twice.
-  const again = await call(owner, 'POST', `/merchant/vouchers/${voucher.id}/redeem`, { location_id: locationId });
+  const cashier = await login('cashier-b@local.test');
+  const again = await call(cashier, 'POST', `/merchant/vouchers/${voucher.id}/redeem`, { location_id: locationId });
   expect(again.status).toBe(409);
   await context.close();
 });

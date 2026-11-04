@@ -48,12 +48,13 @@ and baseline `v0.1` exists.
   and redemption; pilot categories are fully enabled and closed categories retain redemption only.
 - Merchant redemption history is available on the Redeem page with masked buyers, reversal state, and cashier-only
   row scoping; owners and managers see the full merchant history.
+- Cashier B's browser flow signs in independently, redeems by code, sees the row in scoped history, and is denied
+  direct access to merchant payouts and platform finance.
 
 ### Open — ordered
 
-1. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
-2. Add browser coverage for the existing `price_proof` upload UI.
-3. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
+1. Add browser coverage for the existing `price_proof` upload UI.
+2. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
 
 ## Bosqich 2 — Pilot-tayyor
 
