@@ -71,6 +71,7 @@ and a documented manual-payment operating mode pass pilot checks.
 - 2026-11-04: Mandatory TOTP 2FA completed for admin, moderator, support, finance, and superadmin: QR enrollment, ten one-time recovery codes, audited lifecycle/recovery use, and an eight-hour session ceiling; merchant owners remain out of scope.
 - 2026-11-04: Manual payment pilot completed behind `MANUAL_PAYMENT_ENABLED` (default off): configurable hold, buyer-facing instruction payload, admin confirmation with reference/note and audit, and webhook-equivalent idempotent voucher/ledger settlement.
 - 2026-11-04: Scanner PWA completed for `/merchant/redeem`: install manifest, scanner icon, online-only redemption screen, and offline navigation fallback. Camera access on a real phone requires HTTPS; verify after staging deploy.
+- 2026-11-04: Portable hosting preparation completed: production API/worker/migrate/web images, compose file, backup/restore scripts, health/readiness endpoints, and deployment runbook. Docker daemon is unavailable on this machine, so image builds and runtime checks are unverified.
 
 Task list:
 
