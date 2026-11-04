@@ -7,6 +7,7 @@ import { accountGet, loadForVisitor } from '@/lib/account-api';
 type ReviewList = components['schemas']['ReviewList'];
 
 const REPLY_WINDOW_MS = 24 * 60 * 60 * 1000;
+const reviewsRenderTime = Date.now();
 
 /** Reviews of this business. One reply per review; the API allows edits for 24 hours after the reply is first written. */
 export default async function ReviewsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -16,8 +17,6 @@ export default async function ReviewsPage({ params }: { params: Promise<{ locale
   const list = await loadForVisitor(locale, `/${locale}/merchant/reviews`, () =>
     accountGet<ReviewList>('/merchant/reviews'),
   );
-  const now = Date.now();
-
   return (
     <div className="grid gap-8">
       <h1 className="text-title font-bold">{t('reviewsTitle')}</h1>
@@ -40,7 +39,9 @@ export default async function ReviewsPage({ params }: { params: Promise<{ locale
                 reviewId={review.id}
                 initialText={review.reply?.text ?? null}
                 canEdit={
-                  review.reply ? now - Date.parse(review.reply.created_at) <= REPLY_WINDOW_MS : true
+                  review.reply
+                    ? reviewsRenderTime - Date.parse(review.reply.created_at) <= REPLY_WINDOW_MS
+                    : true
                 }
               />
             </li>

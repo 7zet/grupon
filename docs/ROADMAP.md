@@ -43,6 +43,7 @@ and baseline `v0.1` exists.
   remain through review, merchant resolution releases the hold, and customer resolution keeps the existing refund flow.
   Verified by `TestDisputeAllowedTransitionsAuditAndPayoutHold`, `TestDisputeCustomerResolutionKeepsRefundBehavior`,
   `TestDisputeForbiddenTransitionAndRBAC`, and HTTP 422/403 mapping tests.
+- Merchant reviews compute their reply-window reference outside render; the full web lint gate is green.
 
 ### Open — ordered
 
