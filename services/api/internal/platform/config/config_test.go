@@ -38,6 +38,12 @@ func TestLoadUsesDefaults(t *testing.T) {
 	if got.ShutdownTimeout != defaultShutdownTimeout {
 		t.Errorf("ShutdownTimeout = %v, want %v", got.ShutdownTimeout, defaultShutdownTimeout)
 	}
+	if got.Commerce.ManualPaymentEnabled {
+		t.Error("ManualPaymentEnabled = true, want false by default")
+	}
+	if got.SMS.Provider != "log" {
+		t.Errorf("SMS.Provider = %q, want log", got.SMS.Provider)
+	}
 }
 
 func TestLoadReadsEnvironment(t *testing.T) {
@@ -94,6 +100,7 @@ func TestLoadRejectsInvalidEnvironment(t *testing.T) {
 		"empty environment":        {"APP_ENV": " "},
 		"empty address":            {"API_ADDR": ""},
 		"invalid log level":        {"LOG_LEVEL": "verbose"},
+		"unknown SMS provider":     {"SMS_PROVIDER": "pilot-sms"},
 		"invalid duration":         {"HTTP_READ_TIMEOUT": "eventually"},
 		"non-positive duration":    {"HTTP_IDLE_TIMEOUT": "0s"},
 		"negative shutdown period": {"SHUTDOWN_TIMEOUT": "-1s"},

@@ -1,0 +1,37 @@
+# Portable production composition. Copy .env.production.example to a private .env.production;
+# never commit real secrets. Run migrations once before bringing up api/worker/web.
+services:
+  migrate:
+    build: {context: ., dockerfile: services/api/Dockerfile, target: migrate}
+    env_file: ${ENV_FILE:-.env.production}
+    restart: 'no'
+
+  api:
+    build: {context: ., dockerfile: services/api/Dockerfile, target: api}
+    env_file: ${ENV_FILE:-.env.production}
+    restart: unless-stopped
+    depends_on: {migrate: {condition: service_completed_successfully}}
+    volumes: [api_data:/app/data]
+    ports: ['${API_PORT:-8080}:8080']
+
+  worker:
+    build: {context: ., dockerfile: services/api/Dockerfile, target: worker}
+    env_file: ${ENV_FILE:-.env.production}
+    restart: unless-stopped
+    depends_on: {migrate: {condition: service_completed_successfully}}
+    volumes: [api_data:/app/data]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    env_file: ${ENV_FILE:-.env.production}
+    restart: unless-stopped
+    depends_on: {api: {condition: service_started}}
+    ports: ['${WEB_PORT:-3000}:3000']
+
+volumes:
+  api_data:

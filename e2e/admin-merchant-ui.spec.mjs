@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { createHmac } from 'node:crypto';
 
 const API = process.env.API_URL ?? 'http://127.0.0.1:8080/api/v1';
 const PASSWORD = 'Password123!';
@@ -19,6 +20,16 @@ const SEEDED_PHONES = {
   'admin-b@local.test': '+998900000008',
   'cashier-b@local.test': '+998900000009',
 };
+const SEEDED_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
+
+function totp(secret = SEEDED_TOTP_SECRET) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; let bits = '';
+  for (const char of secret) bits += alphabet.indexOf(char).toString(2).padStart(5, '0');
+  const key = Buffer.from(bits.match(/.{1,8}/g).map((byte) => String.fromCharCode(parseInt(byte.padEnd(8, '0'), 2))).join(''), 'binary');
+  const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+  const sum = createHmac('sha1', key).update(counter).digest(); const offset = sum[19] & 15;
+  return String((sum.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
+}
 
 /** Signs in with the seeded phone: request a code, then verify it (development returns the code). */
 async function login(email) {
@@ -38,6 +49,12 @@ async function loginPhone(phone) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone, code }),
   });
+  if (response.status === 202) {
+    const { challenge_token } = await response.json();
+    const verified = await fetch(`${API}/auth/2fa/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge_token, code: totp() }) });
+    expect(verified.status).toBe(200);
+    return (await verified.json()).access_token;
+  }
   expect(response.status).toBe(200);
   return (await response.json()).access_token;
 }
@@ -100,6 +117,12 @@ async function signInPhone(page, phone) {
   await expect(hint).toBeVisible();
   await page.getByLabel(/Tasdiqlash kodi/).fill((await hint.textContent()).match(/\d{6}/)[0]);
   await page.getByRole('button', { name: /^Kirish$/ }).click();
+
+  const twoFactor = page.locator('#two-factor-code');
+  if (await twoFactor.waitFor({ state: 'visible', timeout: 3000 }).then(() => true).catch(() => false)) {
+    await twoFactor.fill(totp());
+    await page.getByRole('button', { name: /^Kirish$/ }).click();
+  }
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
 

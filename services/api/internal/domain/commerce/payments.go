@@ -75,11 +75,17 @@ func (s *Service) PayOrder(ctx context.Context, userID, orderID uuid.UUID, provi
 		if err := tx.InsertPayment(ctx, payment); err != nil {
 			return fmt.Errorf("insert payment: %w", err)
 		}
+		if providerName == "manual" && s.manualHold > 0 {
+			if err := tx.ExtendReservations(ctx, orderID, now.Add(s.manualHold)); err != nil {
+				return fmt.Errorf("extend manual reservation: %w", err)
+			}
+		}
 		session = PaymentSession{
-			PaymentID:   paymentID,
-			Provider:    providerName,
-			Status:      PaymentCreated,
-			RedirectURL: created.RedirectURL,
+			PaymentID:    paymentID,
+			Provider:     providerName,
+			Status:       PaymentCreated,
+			RedirectURL:  created.RedirectURL,
+			Instructions: created.Instructions,
 		}
 		return nil
 	})
@@ -111,11 +117,40 @@ func (s *Service) HandleWebhook(ctx context.Context, providerName string, body [
 		return err
 	}
 
+	return s.applyPaymentEvent(ctx, provider, providerName, event, nil)
+}
+
+type manualConfirmation struct {
+	actorID                    uuid.UUID
+	actorRole, reference, note string
+}
+
+// ConfirmManualPayment applies the same event path as a verified provider webhook. The audit row
+// is inserted inside the settlement transaction, so a recorded confirmation can never exist without
+// its vouchers and ledger effects.
+func (s *Service) ConfirmManualPayment(ctx context.Context, paymentID, actorID uuid.UUID, actorRole, reference, note string) error {
+	if s.manual == nil {
+		return ErrPaymentNotFound
+	}
+	if reference == "" || note == "" {
+		return invalid("reference", "required")
+	}
+	payment, err := s.repo.PaymentByID(ctx, paymentID)
+	if err != nil {
+		return err
+	}
+	if payment.Provider != s.manual.Name() {
+		return ErrPaymentNotFound
+	}
+	return s.applyPaymentEvent(ctx, s.manual, s.manual.Name(), payments.Event{ProviderPaymentID: payment.ProviderPaymentID, Outcome: payments.OutcomeSucceeded}, &manualConfirmation{actorID: actorID, actorRole: actorRole, reference: reference, note: note})
+}
+
+func (s *Service) applyPaymentEvent(ctx context.Context, provider payments.Provider, providerName string, event payments.Event, confirmation *manualConfirmation) error {
 	var (
 		paidOrder *settledOrder
 		refund    *refundDue
 	)
-	err = s.repo.InTx(ctx, func(tx Store) error {
+	err := s.repo.InTx(ctx, func(tx Store) error {
 		paidOrder, refund = nil, nil
 		payment, err := tx.LockPaymentByProviderID(ctx, providerName, event.ProviderPaymentID)
 		if err != nil {
@@ -143,6 +178,11 @@ func (s *Service) HandleWebhook(ctx context.Context, providerName string, body [
 				settled, err := s.settlePaid(ctx, tx, payment, order.ID)
 				if err != nil {
 					return err
+				}
+				if confirmation != nil {
+					if err := tx.RecordManualConfirmation(ctx, payment.ID, confirmation.actorID, confirmation.actorRole, confirmation.reference, confirmation.note); err != nil {
+						return err
+					}
 				}
 				paidOrder = settled
 				return nil

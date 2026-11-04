@@ -153,8 +153,10 @@ const (
 // newIdentityService wires the identity rules to PostgreSQL, the mailer and the Google client.
 func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.RateLimiter, logger *slog.Logger) (*identity.Service, error) {
 	// Codes are logged only in development. Other environments have no sender until an SMS provider exists.
+	// Provider selection is explicit even though the pilot currently ships only the safe LogSender.
+	// A real provider can be added behind this switch without changing identity's CodeSender port.
 	var codeSender identity.CodeSender
-	if cfg.Environment == "development" {
+	if cfg.SMS.Provider == "log" {
 		codeSender = sms.NewLogSender(logger)
 	}
 	tokens, err := identity.NewTokenIssuer(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL, time.Now)

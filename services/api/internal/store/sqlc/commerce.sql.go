@@ -137,6 +137,21 @@ func (q *Queries) ExpiredUnpaidOrderIDs(ctx context.Context, arg ExpiredUnpaidOr
 	return items, nil
 }
 
+const extendReservations = `-- name: ExtendReservations :exec
+UPDATE stock_reservations SET expires_at = $1, updated_at = now()
+WHERE order_id = $2 AND released_at IS NULL
+`
+
+type ExtendReservationsParams struct {
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	OrderID   pgtype.UUID        `json:"order_id"`
+}
+
+func (q *Queries) ExtendReservations(ctx context.Context, arg ExtendReservationsParams) error {
+	_, err := q.db.Exec(ctx, extendReservations, arg.ExpiresAt, arg.OrderID)
+	return err
+}
+
 const failOpenPayments = `-- name: FailOpenPayments :execrows
 UPDATE payments SET status = 'failed', updated_at = now()
 WHERE order_id = $1 AND status IN ('created', 'pending')
@@ -910,6 +925,31 @@ func (q *Queries) NextOrderNumberSequence(ctx context.Context) (int64, error) {
 	var value int64
 	err := row.Scan(&value)
 	return value, err
+}
+
+const recordManualPaymentConfirmation = `-- name: RecordManualPaymentConfirmation :exec
+INSERT INTO audit_logs(actor_user_id, actor_role, action, entity_type, entity_id, after_data)
+VALUES ($1, $2::app_role, 'manual_payment_confirmed', 'payment',
+        $3, jsonb_build_object('reference', $4::text, 'note', $5::text))
+`
+
+type RecordManualPaymentConfirmationParams struct {
+	ActorID   pgtype.UUID `json:"actor_id"`
+	ActorRole AppRole     `json:"actor_role"`
+	PaymentID pgtype.UUID `json:"payment_id"`
+	Reference string      `json:"reference"`
+	Note      string      `json:"note"`
+}
+
+func (q *Queries) RecordManualPaymentConfirmation(ctx context.Context, arg RecordManualPaymentConfirmationParams) error {
+	_, err := q.db.Exec(ctx, recordManualPaymentConfirmation,
+		arg.ActorID,
+		arg.ActorRole,
+		arg.PaymentID,
+		arg.Reference,
+		arg.Note,
+	)
+	return err
 }
 
 const releaseOptionStock = `-- name: ReleaseOptionStock :exec

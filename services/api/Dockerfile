@@ -14,6 +14,7 @@ WORKDIR /app
 COPY --from=build /out/api /app/api
 # Local storage writes here; mount a persistent volume in production.
 ENV MEDIA_LOCAL_DIR=/app/data/media
+ENV DOCUMENTS_LOCAL_DIR=/app/data/documents
 USER nonroot
 EXPOSE 8080
 ENTRYPOINT ["/app/api"]

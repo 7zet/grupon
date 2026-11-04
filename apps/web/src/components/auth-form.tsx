@@ -6,6 +6,8 @@ import { useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import QRCode from 'qrcode';
+import Image from 'next/image';
 
 /** Uzbekistan mobile numbers: +998 followed by nine digits. The prefix is fixed in the UI. */
 const phoneSchema = z.object({
@@ -16,6 +18,8 @@ const codeSchema = z.object({
 });
 type PhoneValues = z.infer<typeof phoneSchema>;
 type CodeValues = z.infer<typeof codeSchema>;
+const twoFactorSchema = z.object({ code: z.string().min(6).max(32) });
+type TwoFactorValues = z.infer<typeof twoFactorSchema>;
 
 const PHONE_PREFIX = '+998';
 
@@ -46,6 +50,11 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
   const [phone, setPhone] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
+  const [qr, setQr] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
 
   const phoneForm = useForm<PhoneValues>({
     resolver: zodResolver(phoneSchema),
@@ -55,6 +64,7 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
     resolver: zodResolver(codeSchema),
     defaultValues: { code: '' },
   });
+  const twoFactorForm = useForm<TwoFactorValues>({resolver: zodResolver(twoFactorSchema), defaultValues: {code: ''}});
 
   async function sendCode(values: PhoneValues) {
     setServerError(null);
@@ -86,9 +96,39 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
       setServerError(t(problemKey(problem.code)));
       return;
     }
+    if (response.status === 202) {
+      const pending = (await response.json()) as {challenge_token: string; enrollment_required: boolean};
+      setChallenge(pending.challenge_token);
+      setEnrolling(pending.enrollment_required);
+      if (pending.enrollment_required) {
+        const setupResponse = await fetch('/api/auth/2fa-enroll', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({challenge_token: pending.challenge_token})});
+        if (!setupResponse.ok) { setServerError(t('errorGeneric')); return; }
+        const setup = (await setupResponse.json()) as {otpauth_uri: string; secret: string};
+        setSecret(setup.secret);
+        setQr(await QRCode.toDataURL(setup.otpauth_uri, {margin: 1, width: 240}));
+      }
+      return;
+    }
     router.replace(next);
     router.refresh();
   }
+
+  async function verifyTwoFactor(values: TwoFactorValues) {
+    setServerError(null);
+    const action = enrolling ? '2fa-enable' : '2fa-verify';
+    const response = await fetch(`/api/auth/${action}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({challenge_token: challenge, code: values.code})});
+    if (!response.ok) { setServerError(t('errorTwoFactorInvalid')); return; }
+    if (enrolling) {
+      const enabled = (await response.json()) as {recovery_codes: string[]};
+      setRecoveryCodes(enabled.recovery_codes);
+      return;
+    }
+    router.replace(next); router.refresh();
+  }
+
+  if (recoveryCodes) return <div className="mx-auto mt-10 grid max-w-md gap-4"><h2 className="text-title font-bold">{t('recoveryTitle')}</h2><p className="text-ink-muted">{t('recoveryHint')}</p><ul className="grid grid-cols-2 gap-2 rounded-control-ui bg-surface p-4 font-mono">{recoveryCodes.map((item) => <li key={item}>{item}</li>)}</ul><button className="rounded-control-ui bg-brand px-5 py-3 font-semibold text-surface" onClick={() => {router.replace(next); router.refresh();}}>{t('continue')}</button></div>;
+
+  if (challenge) return <form className="mx-auto mt-10 grid max-w-md gap-5" onSubmit={twoFactorForm.handleSubmit(verifyTwoFactor)}><h2 className="text-title font-bold">{enrolling ? t('setupTwoFactor') : t('twoFactorTitle')}</h2>{qr && <Image src={qr} alt={t('qrAlt')} width={240} height={240} unoptimized className="mx-auto" />}{secret && <code className="break-all rounded-control-ui bg-surface p-3 text-center">{secret}</code>}<label htmlFor="two-factor-code" className="font-medium text-ink">{t('twoFactorCode')}</label><input id="two-factor-code" autoComplete="one-time-code" className="rounded-control-ui border border-border bg-surface px-4 py-3 text-center tracking-widest" {...twoFactorForm.register('code')} />{serverError && <ErrorBox message={serverError} />}<button type="submit" className="rounded-control-ui bg-brand px-5 py-3 font-semibold text-surface">{t('verifyCode')}</button></form>;
 
   if (phone === null) {
     const errors = phoneForm.formState.errors;

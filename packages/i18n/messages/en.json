@@ -206,7 +206,15 @@
     "errorOtpCooldown": "A code was sent recently. Try again in a minute",
     "errorOtpInvalid": "The code is wrong or has expired",
     "errorOtpAttempts": "Too many wrong attempts. Request a new code",
-    "errorOtpUnavailable": "Codes cannot be sent right now. Try again later"
+    "errorOtpUnavailable": "Codes cannot be sent right now. Try again later",
+    "setupTwoFactor": "Secure this staff account",
+    "twoFactorTitle": "Two-factor verification",
+    "twoFactorCode": "Authenticator or recovery code",
+    "errorTwoFactorInvalid": "That authenticator or recovery code is invalid",
+    "qrAlt": "Authenticator enrollment QR code",
+    "recoveryTitle": "Save your recovery codes",
+    "recoveryHint": "Each code works once. Store these codes somewhere safe.",
+    "continue": "Continue"
   },
   "Account": {
     "title": "My account",
@@ -470,6 +478,8 @@
     "errorGeneric": "Something went wrong, please try again"
   },
   "Redeem": {
+    "internetNeededTitle": "Internet needed",
+    "internetNeededBody": "Voucher redemption needs an internet connection. Reconnect and try again.",
     "title": "Redeem voucher",
     "locationLabel": "Branch",
     "codeLabel": "Voucher code",

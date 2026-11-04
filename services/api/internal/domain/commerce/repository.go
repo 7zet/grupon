@@ -44,6 +44,7 @@ type Store interface {
 	LockOrder(ctx context.Context, orderID uuid.UUID) (Order, error)
 	ListOrders(ctx context.Context, userID uuid.UUID, limit, offset int) ([]Order, int64, error)
 	UnreleasedReservations(ctx context.Context, orderID uuid.UUID) ([]Reservation, error)
+	ExtendReservations(ctx context.Context, orderID uuid.UUID, expiresAt time.Time) error
 	ReleaseReservations(ctx context.Context, orderID uuid.UUID) ([]Reservation, error)
 	SetOrderStatus(ctx context.Context, orderID uuid.UUID, status string, paidAt *time.Time) error
 	ExpiredUnpaidOrderIDs(ctx context.Context, now time.Time, batch int) ([]uuid.UUID, error)
@@ -54,6 +55,7 @@ type Store interface {
 	PaymentByID(ctx context.Context, paymentID uuid.UUID) (Payment, error)
 	LockPaymentByProviderID(ctx context.Context, provider, providerPaymentID string) (Payment, error)
 	SetPaymentStatus(ctx context.Context, paymentID uuid.UUID, status string) error
+	RecordManualConfirmation(ctx context.Context, paymentID, actorID uuid.UUID, actorRole, reference, note string) error
 	// RecordLateRefund writes the refund of a payment that arrived after its order expired (AT-13).
 	RecordLateRefund(ctx context.Context, paymentID uuid.UUID, amount int64, reason string) error
 

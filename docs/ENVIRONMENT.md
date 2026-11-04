@@ -16,6 +16,10 @@ Plain-language reference for every setting. The API reads its settings at start-
 | `INTERNAL_API_TOKEN`                                                                          | yes                          | none                          | Protects `POST /internal/cache/invalidate`.                                      |
 | `PAYMENT_MOCK_ENABLED`                                                                        | yes, must be `false`         | `false`                       | Turns on the mock payment provider. Keep it off in production.                   |
 | `PAYMENT_MOCK_WEBHOOK_SECRET`                                                                 | when mock is on              | none                          | At least 32 bytes.                                                               |
+| `MANUAL_PAYMENT_ENABLED`                                                                      | no                           | `false`                       | Enables the pilot manual-payment confirmation mode.                              |
+| `MANUAL_PAYMENT_HOLD`                                                                         | no                           | `24h`                         | Reservation hold used for manual-payment attempts.                               |
+| `MANUAL_PAYMENT_INSTRUCTIONS`                                                                 | when manual mode is on       | support message               | Instructions returned to the buyer for a manual payment.                         |
+| `SMS_PROVIDER`                                                                                | no                           | `log`                         | Selected phone-code sender; only the logging sender is implemented currently.    |
 | `WEB_PUBLIC_URL`                                                                              | yes                          | `http://localhost:3000`       | Public address of the web app, used in links and redirects.                      |
 | `WEB_REVALIDATE_URL`                                                                          | yes                          | none                          | Web endpoint that clears cached pages.                                           |
 | `WEB_REVALIDATE_SECRET`                                                                       | yes                          | none                          | Shared secret sent to the web revalidation endpoint.                             |
@@ -73,6 +77,18 @@ people registered themselves.
 | +998900000008 | superadmin | Admin B: admin approval inside the e2e merchant flow |
 | +998900000009 | merchant_cashier | Cashier B: redemption for merchant 2 |
 | +998910000004 | user | extra buyer (customer04@local.test) |
+
+### Development admin 2FA
+
+The seeded superadmins (`+998900000004` and `+998900000008`) require TOTP after the normal
+development phone-code sign-in. Add the development-only Base32 secret
+`JBSWY3DPEHPK3PXP` to an authenticator app, then enter its six-digit code on the second screen.
+This seed data is loaded only by `cmd/seed`, which refuses production; it is not a production bypass.
+
+For a real enrollment, phone sign-in presents a QR setup screen, scan it with an authenticator, and
+enter the generated code. The ten recovery codes are shown once after enablement; only hashes are
+stored in `two_factor_recovery_codes`, so plaintext recovery codes cannot be retrieved later. Save
+them in the operator's approved secret store when they are displayed.
 
 ## Local PostgreSQL
 

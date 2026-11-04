@@ -285,10 +285,11 @@ func (ns NullOrderStatus) Value() (driver.Value, error) {
 type PaymentProvider string
 
 const (
-	PaymentProviderMock  PaymentProvider = "mock"
-	PaymentProviderPayme PaymentProvider = "payme"
-	PaymentProviderClick PaymentProvider = "click"
-	PaymentProviderUzum  PaymentProvider = "uzum"
+	PaymentProviderMock   PaymentProvider = "mock"
+	PaymentProviderPayme  PaymentProvider = "payme"
+	PaymentProviderClick  PaymentProvider = "click"
+	PaymentProviderUzum   PaymentProvider = "uzum"
+	PaymentProviderManual PaymentProvider = "manual"
 )
 
 func (e *PaymentProvider) Scan(src interface{}) error {
@@ -1058,6 +1059,21 @@ type Subcategory struct {
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
+type TwoFactorChallenge struct {
+	TokenHash  string             `json:"token_hash"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	ConsumedAt pgtype.Timestamptz `json:"consumed_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type TwoFactorRecoveryCode struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	CodeHash  string             `json:"code_hash"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type User struct {
 	ID              pgtype.UUID        `json:"id"`
 	Email           string             `json:"email"`
@@ -1072,6 +1088,13 @@ type User struct {
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type UserTwoFactor struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	Secret    string             `json:"secret"`
+	EnabledAt pgtype.Timestamptz `json:"enabled_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Voucher struct {

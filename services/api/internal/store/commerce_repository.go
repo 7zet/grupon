@@ -340,6 +340,10 @@ func (s *commerceStore) UnreleasedReservations(ctx context.Context, orderID uuid
 	return reservations, nil
 }
 
+func (s *commerceStore) ExtendReservations(ctx context.Context, orderID uuid.UUID, expiresAt time.Time) error {
+	return s.q.ExtendReservations(ctx, sqlc.ExtendReservationsParams{OrderID: toPgUUID(orderID), ExpiresAt: pgtype.Timestamptz{Time: expiresAt, Valid: true}})
+}
+
 func (s *commerceStore) ReleaseReservations(ctx context.Context, orderID uuid.UUID) ([]commerce.Reservation, error) {
 	rows, err := s.q.MarkReservationsReleased(ctx, toPgUUID(orderID))
 	if err != nil {
@@ -437,6 +441,10 @@ func (s *commerceStore) SetPaymentStatus(ctx context.Context, paymentID uuid.UUI
 		RawPayload: nil,
 		ID:         toPgUUID(paymentID),
 	})
+}
+
+func (s *commerceStore) RecordManualConfirmation(ctx context.Context, paymentID, actorID uuid.UUID, actorRole, reference, note string) error {
+	return s.q.RecordManualPaymentConfirmation(ctx, sqlc.RecordManualPaymentConfirmationParams{PaymentID: toPgUUID(paymentID), ActorID: toPgUUID(actorID), ActorRole: sqlc.AppRole(actorRole), Reference: reference, Note: note})
 }
 
 func (s *commerceStore) VoucherCodeTaken(ctx context.Context, code string) (bool, error) {

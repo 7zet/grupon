@@ -173,6 +173,14 @@
     "en": "English"
   },
   "Auth": {
+    "setupTwoFactor": "Xodim hisobini himoyalang",
+    "twoFactorTitle": "Ikki bosqichli tasdiqlash",
+    "twoFactorCode": "Autentifikator yoki tiklash kodi",
+    "errorTwoFactorInvalid": "Kod noto‘g‘ri",
+    "qrAlt": "Autentifikator uchun QR-kod",
+    "recoveryTitle": "Tiklash kodlarini saqlang",
+    "recoveryHint": "Har bir kod faqat bir marta ishlaydi.",
+    "continue": "Davom etish",
     "loginTitle": "Hisobingizga kiring",
     "loginSubtitle": "Xaridni davom ettirish uchun tizimga kiring.",
     "registerTitle": "Yangi hisob yarating",
@@ -470,6 +478,8 @@
     "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring"
   },
   "Redeem": {
+    "internetNeededTitle": "Internet kerak",
+    "internetNeededBody": "Vaucherni ishlatish uchun internet ulanishi kerak. Qayta ulanib, yana urinib ko‘ring.",
     "title": "Vaucher tekshirish",
     "locationLabel": "Filial",
     "codeLabel": "Vaucher kodi",

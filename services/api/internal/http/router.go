@@ -263,6 +263,14 @@ func (s apiServer) CompleteMockPayment(w http.ResponseWriter, r *http.Request, i
 	s.ServerInterface.CompleteMockPayment(w, r, id)
 }
 
+func (s apiServer) ConfirmManualPayment(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.commerce != nil {
+		s.commerce.ConfirmManualPayment(w, r, id)
+		return
+	}
+	s.ServerInterface.ConfirmManualPayment(w, r, id)
+}
+
 func (s apiServer) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider gen.ReceivePaymentWebhookParamsProvider, params gen.ReceivePaymentWebhookParams) {
 	if s.commerce != nil {
 		s.commerce.ReceivePaymentWebhook(w, r, provider, params)
@@ -301,6 +309,19 @@ func (s apiServer) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ServerInterface.Logout(w, r)
+}
+
+func (s apiServer) EnrollTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.EnrollTwoFactor(w, r)
+}
+func (s apiServer) EnableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.EnableTwoFactor(w, r)
+}
+func (s apiServer) VerifyTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.VerifyTwoFactor(w, r)
+}
+func (s apiServer) DisableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	s.auth.DisableTwoFactor(w, r)
 }
 
 func (s apiServer) GetMe(w http.ResponseWriter, r *http.Request) {

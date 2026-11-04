@@ -97,38 +97,53 @@ func (s *Service) RequestCode(ctx context.Context, meta RequestMeta, rawPhone st
 // VerifyCode checks the newest unused code for the phone. A correct code signs the account in and
 // creates it on first use.
 func (s *Service) VerifyCode(ctx context.Context, meta RequestMeta, rawPhone, code string) (Session, error) {
-	phone, err := NormalizePhone(rawPhone)
+	user, err := s.verifyPhoneCode(ctx, meta, rawPhone, code)
 	if err != nil {
 		return Session{}, err
 	}
-	if err := s.allow(ctx, ipKey("otp:verify", meta.IP), hashedKey("otp:verify:phone", phone)); err != nil {
+	roles, err := s.repo.ListRoles(ctx, user.ID)
+	if err != nil {
 		return Session{}, err
+	}
+	if _, required := privileged(roles); required {
+		return Session{}, ErrTwoFactorRequired
+	}
+	return s.openSession(ctx, meta, user, uuid.Must(uuid.NewV7()))
+}
+
+func (s *Service) verifyPhoneCode(ctx context.Context, meta RequestMeta, rawPhone, code string) (User, error) {
+	phone, err := NormalizePhone(rawPhone)
+	if err != nil {
+		return User{}, err
+	}
+	if err := s.allow(ctx, ipKey("otp:verify", meta.IP), hashedKey("otp:verify:phone", phone)); err != nil {
+		return User{}, err
 	}
 	latest, err := s.repo.LatestPhoneOTP(ctx, phone)
 	if errors.Is(err, ErrNotFound) {
-		return Session{}, ErrOTPInvalid
+		return User{}, ErrOTPInvalid
 	}
 	if err != nil {
-		return Session{}, err
+		return User{}, err
 	}
 	if !s.now().Before(latest.ExpiresAt) {
-		return Session{}, ErrOTPInvalid
+		return User{}, ErrOTPInvalid
 	}
 	if latest.Attempts >= otpMaxAttempts {
-		return Session{}, ErrOTPTooManyTries
+		return User{}, ErrOTPTooManyTries
 	}
 	if subtle.ConstantTimeCompare([]byte(HashToken(phone+":"+strings.TrimSpace(code))), []byte(latest.CodeHash)) != 1 {
 		if err := s.repo.IncrementPhoneOTPAttempts(ctx, latest.ID); err != nil {
-			return Session{}, err
+			return User{}, err
 		}
-		return Session{}, ErrOTPInvalid
+		return User{}, ErrOTPInvalid
 	}
 	consumed, err := s.repo.ConsumePhoneOTP(ctx, latest.ID)
 	if err != nil {
-		return Session{}, err
+		return User{}, err
 	}
 	if !consumed {
-		return Session{}, ErrOTPInvalid
+		return User{}, ErrOTPInvalid
 	}
 
 	user, err := s.repo.GetUserByPhone(ctx, phone)
@@ -136,15 +151,15 @@ func (s *Service) VerifyCode(ctx context.Context, meta RequestMeta, rawPhone, co
 		user, err = s.repo.CreatePhoneUser(ctx, phone, placeholderEmail(phone))
 	}
 	if err != nil {
-		return Session{}, err
+		return User{}, err
 	}
 	if user.Status == StatusBlocked {
-		return Session{}, ErrAccountBlocked
+		return User{}, ErrAccountBlocked
 	}
 	if err := s.repo.TouchLastLogin(ctx, user.ID); err != nil {
-		return Session{}, err
+		return User{}, err
 	}
-	return s.openSession(ctx, meta, user, uuid.Must(uuid.NewV7()))
+	return user, nil
 }
 
 func newOTPCode() (string, error) {

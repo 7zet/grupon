@@ -207,10 +207,11 @@ type Notification struct {
 
 // PaymentSession is what the buyer receives when starting a payment.
 type PaymentSession struct {
-	PaymentID   uuid.UUID
-	Provider    string
-	Status      string
-	RedirectURL string
+	PaymentID    uuid.UUID
+	Provider     string
+	Status       string
+	RedirectURL  string
+	Instructions string
 }
 
 // Contact is the user data the notifications need.

@@ -62,6 +62,8 @@ type Config struct {
 	Auth AuthConfig
 	// SMTP configures outbound email. Email is logged instead of sent when SMTPHost is empty.
 	SMTP SMTPConfig
+	// SMS selects the phone-code delivery adapter. Only log is implemented for the pilot.
+	SMS SMSConfig
 	// Commerce configures vouchers and payment providers.
 	Commerce CommerceConfig
 	// TrustProxyHeaders makes rate limiting and audit use X-Forwarded-For or X-Real-IP. Enable only
@@ -87,6 +89,8 @@ type SMTPConfig struct {
 	Port int
 	From string
 }
+
+type SMSConfig struct{ Provider string }
 
 // HTTPConfig contains the public HTTP server settings.
 type HTTPConfig struct {
@@ -161,6 +165,10 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	smsConfig, err := loadSMS(lookup)
+	if err != nil {
+		return Config{}, err
+	}
 	commerceConfig, err := loadCommerce(lookup, environment)
 	if err != nil {
 		return Config{}, err
@@ -201,6 +209,7 @@ func load(lookup lookupEnv) (Config, error) {
 		MediaPublicBase:     mediaPublicBase,
 		Auth:                authConfig,
 		SMTP:                smtpConfig,
+		SMS:                 smsConfig,
 		Commerce:            commerceConfig,
 		TrustProxyHeaders:   trustProxy,
 		HTTP: HTTPConfig{
@@ -212,6 +221,17 @@ func load(lookup lookupEnv) (Config, error) {
 		},
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func loadSMS(lookup lookupEnv) (SMSConfig, error) {
+	provider, err := stringValue(lookup, "SMS_PROVIDER", "log")
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	if provider != "log" {
+		return SMSConfig{}, fmt.Errorf("SMS_PROVIDER %q is not configured; only log is available", provider)
+	}
+	return SMSConfig{Provider: provider}, nil
 }
 
 // optionalString returns the trimmed value of an optional variable, or an empty string.
@@ -319,7 +339,10 @@ type CommerceConfig struct {
 	// MockPaymentsEnabled exposes the mock provider. It defaults to on in development only.
 	MockPaymentsEnabled bool
 	// MockWebhookSecret signs and verifies mock provider webhooks. It must be at least 32 bytes.
-	MockWebhookSecret string
+	MockWebhookSecret         string
+	ManualPaymentEnabled      bool
+	ManualPaymentHold         time.Duration
+	ManualPaymentInstructions string
 }
 
 func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) {
@@ -351,7 +374,19 @@ func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) 
 		return CommerceConfig{}, fmt.Errorf("PAYMENT_MOCK_WEBHOOK_SECRET must be at least 32 bytes")
 	}
 
-	return CommerceConfig{QRSecret: qrSecret, MockPaymentsEnabled: mockEnabled, MockWebhookSecret: mockSecret}, nil
+	manualEnabled, err := boolValue(lookup, "MANUAL_PAYMENT_ENABLED", false)
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	manualHold, err := durationValue(lookup, "MANUAL_PAYMENT_HOLD", 24*time.Hour)
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	manualInstructions, err := stringValue(lookup, "MANUAL_PAYMENT_INSTRUCTIONS", "Bank transfer details will be provided by support. Include your order number.")
+	if err != nil {
+		return CommerceConfig{}, err
+	}
+	return CommerceConfig{QRSecret: qrSecret, MockPaymentsEnabled: mockEnabled, MockWebhookSecret: mockSecret, ManualPaymentEnabled: manualEnabled, ManualPaymentHold: manualHold, ManualPaymentInstructions: manualInstructions}, nil
 }
 
 func loadSMTP(lookup lookupEnv) (SMTPConfig, error) {

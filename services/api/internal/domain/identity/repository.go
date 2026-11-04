@@ -35,6 +35,15 @@ type Repository interface {
 	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOTP, error)
 	IncrementPhoneOTPAttempts(ctx context.Context, id uuid.UUID) error
 	ConsumePhoneOTP(ctx context.Context, id uuid.UUID) (bool, error)
+
+	CreateTwoFactorChallenge(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
+	GetTwoFactorChallenge(ctx context.Context, tokenHash string) (uuid.UUID, error)
+	ConsumeTwoFactorChallenge(ctx context.Context, tokenHash string) (bool, error)
+	GetTwoFactor(ctx context.Context, userID uuid.UUID) (TwoFactorState, error)
+	BeginTwoFactorEnrollment(ctx context.Context, userID uuid.UUID, secret string) error
+	EnableTwoFactor(ctx context.Context, userID uuid.UUID, recoveryHashes []string, actorRole Role) error
+	DisableTwoFactor(ctx context.Context, userID uuid.UUID, actorRole Role) error
+	UseRecoveryCode(ctx context.Context, userID uuid.UUID, codeHash string, actorRole Role) (bool, error)
 }
 
 // RateLimiter counts attempts per key. Implementations decide the window and the limit.

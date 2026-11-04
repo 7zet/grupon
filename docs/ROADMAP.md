@@ -66,7 +66,20 @@ None. Stage 1 meets its finish line.
 **Finish line:** Production hosting and observability are ready; real SMS, Scanner PWA, privileged-user 2FA,
 and a documented manual-payment operating mode pass pilot checks.
 
-**Holat:** Not started.
+**Holat:** Code complete, waiting on external.
+
+- 2026-11-04: Mandatory TOTP 2FA completed for admin, moderator, support, finance, and superadmin: QR enrollment, ten one-time recovery codes, audited lifecycle/recovery use, and an eight-hour session ceiling; merchant owners remain out of scope.
+- 2026-11-04: Manual payment pilot completed behind `MANUAL_PAYMENT_ENABLED` (default off): configurable hold, buyer-facing instruction payload, admin confirmation with reference/note and audit, and webhook-equivalent idempotent voucher/ledger settlement.
+- 2026-11-04: Scanner PWA completed for `/merchant/redeem`: install manifest, scanner icon, online-only redemption screen, and offline navigation fallback. Camera access on a real phone requires HTTPS; verify after staging deploy.
+- 2026-11-04: Portable hosting preparation completed: production API/worker/migrate/web images, compose file, backup/restore scripts, health/readiness endpoints, and deployment runbook. Docker daemon is unavailable on this machine, so image builds and runtime checks are unverified.
+- 2026-11-04: SMS provider selection completed with `SMS_PROVIDER=log` as the default and the existing `CodeSender` interface preserved. No real SMS provider was implemented; provider choice is required before pilot launch.
+
+External completion list:
+
+1. Verify production Docker images and runtime with a working Docker daemon.
+2. Choose and implement the real SMS provider.
+3. Deploy staging over HTTPS and test Scanner PWA camera access on a real phone.
+4. Complete a seven-day staging run.
 
 Task list:
 

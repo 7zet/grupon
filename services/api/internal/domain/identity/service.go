@@ -126,6 +126,9 @@ func (s *Service) Refresh(ctx context.Context, meta RequestMeta, raw string) (Se
 	if err != nil {
 		return Session{}, err
 	}
+	// Rotation never extends the original session boundary. Privileged sessions are therefore
+	// capped at eight hours even when the global refresh-token TTL is longer.
+	next.row.ExpiresAt = current.ExpiresAt
 	if err := s.repo.RotateRefreshToken(ctx, current.ID, next.row); err != nil {
 		if errors.Is(err, ErrRefreshTokenReused) {
 			if revokeErr := s.repo.RevokeRefreshFamily(ctx, current.FamilyID); revokeErr != nil {
@@ -238,6 +241,16 @@ func (s *Service) openSession(ctx context.Context, meta RequestMeta, user User, 
 	next, err := s.newRefreshToken(user.ID, familyID, meta)
 	if err != nil {
 		return Session{}, err
+	}
+	roles, err := s.repo.ListRoles(ctx, user.ID)
+	if err != nil {
+		return Session{}, err
+	}
+	if _, required := privileged(roles); required {
+		limit := s.now().Add(8 * time.Hour)
+		if next.row.ExpiresAt.After(limit) {
+			next.row.ExpiresAt = limit
+		}
 	}
 	if err := s.repo.CreateRefreshToken(ctx, next.row); err != nil {
 		return Session{}, err

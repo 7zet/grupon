@@ -79,6 +79,63 @@ func (a *AuthAPI) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (a *AuthAPI) EnrollTwoFactor(w http.ResponseWriter, r *http.Request) {
+	var body gen.TwoFactorChallengeRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	enrollment, err := a.identity.BeginTwoFactor(r.Context(), body.ChallengeToken)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, gen.TwoFactorEnrollment{OtpauthUri: enrollment.OTPAuthURI, Secret: enrollment.Secret})
+}
+
+func (a *AuthAPI) EnableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	var body gen.TwoFactorVerifyRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	session, codes, err := a.identity.EnableTwoFactor(r.Context(), a.meta(r), body.ChallengeToken, body.Code)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.setSessionCookies(w, session)
+	writeJSON(w, http.StatusOK, gen.TwoFactorEnabled{Session: a.sessionResponse(session), RecoveryCodes: codes})
+}
+
+func (a *AuthAPI) VerifyTwoFactor(w http.ResponseWriter, r *http.Request) {
+	var body gen.TwoFactorVerifyRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	session, err := a.identity.CompleteTwoFactor(r.Context(), a.meta(r), body.ChallengeToken, body.Code)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.writeSession(w, http.StatusOK, session)
+}
+
+func (a *AuthAPI) DisableTwoFactor(w http.ResponseWriter, r *http.Request) {
+	account, ok := a.authenticate(w, r)
+	if !ok {
+		return
+	}
+	var body gen.TwoFactorCode
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	if err := a.identity.DisableTwoFactor(r.Context(), account, body.Code); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.clearSessionCookies(w)
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // GetMe returns the current profile.
 func (a *AuthAPI) GetMe(w http.ResponseWriter, r *http.Request) {
 	account, ok := a.authenticate(w, r)
@@ -186,12 +243,16 @@ func AccountFromContext(ctx context.Context) (identity.Account, bool) {
 
 func (a *AuthAPI) writeSession(w http.ResponseWriter, status int, session identity.Session) {
 	a.setSessionCookies(w, session)
-	writeJSON(w, status, gen.AuthSession{
+	writeJSON(w, status, a.sessionResponse(session))
+}
+
+func (a *AuthAPI) sessionResponse(session identity.Session) gen.AuthSession {
+	return gen.AuthSession{
 		AccessToken:  session.AccessToken,
 		RefreshToken: session.RefreshToken,
 		ExpiresIn:    gen.AuthSessionExpiresIn(a.identity.AccessTokenTTL().Seconds()),
 		User:         toUserResponse(session.Account),
-	})
+	}
 }
 
 func (a *AuthAPI) setSessionCookies(w http.ResponseWriter, session identity.Session) {
@@ -251,6 +312,10 @@ func (a *AuthAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusUnauthorized, "refresh_token_reused", nil, nil)
 	case errors.Is(err, identity.ErrUnauthenticated):
 		writeProblem(w, r, http.StatusUnauthorized, "unauthenticated", nil, nil)
+	case errors.Is(err, identity.ErrTwoFactorInvalid):
+		writeProblem(w, r, http.StatusUnauthorized, "two_factor_invalid", nil, nil)
+	case errors.Is(err, identity.ErrTwoFactorRequired), errors.Is(err, identity.ErrTwoFactorSetup):
+		writeProblem(w, r, http.StatusForbidden, "two_factor_required", nil, nil)
 	case errors.Is(err, identity.ErrForbidden):
 		writeProblem(w, r, http.StatusForbidden, "forbidden", nil, nil)
 	case errors.Is(err, identity.ErrNotFound):
