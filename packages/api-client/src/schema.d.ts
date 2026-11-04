@@ -1160,6 +1160,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/disputes/{id}/request-evidence': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ask the parties for evidence on an open dispute (support) */
+    post: operations['requestDisputeEvidence'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/start-review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a dispute with evidence into review (support) */
+    post: operations['startDisputeReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/close': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Close a resolved dispute (support or system) */
+    post: operations['closeDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/status': {
     parameters: {
       query?: never;
@@ -4056,6 +4107,69 @@ export interface operations {
     };
     responses: {
       /** @description Resolved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  requestDisputeEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Awaiting evidence */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  startDisputeReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Under review */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  closeDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Closed */
       204: {
         headers: {
           [name: string]: unknown;

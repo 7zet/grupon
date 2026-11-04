@@ -440,7 +440,7 @@ FROM disputes d
 JOIN redemptions rd ON rd.id = d.redemption_id
 JOIN vouchers v ON v.id = rd.voucher_id
 JOIN merchants m ON m.id = rd.merchant_id
-WHERE d.status = 'open'
+WHERE d.status <> 'closed'
 ORDER BY d.created_at
 `
 
@@ -663,7 +663,7 @@ WHERE r.merchant_id = $1
   AND r.reversed_at IS NULL
   AND r.payout_run_id IS NULL
   AND r.created_at <= $2
-  AND NOT EXISTS (SELECT 1 FROM disputes d WHERE d.redemption_id = r.id AND d.status = 'open')
+  AND NOT EXISTS (SELECT 1 FROM disputes d WHERE d.redemption_id = r.id AND d.status IN ('open', 'awaiting_evidence', 'under_review'))
 ORDER BY r.created_at, r.id
 `
 
@@ -783,23 +783,6 @@ func (q *Queries) RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetai
 	return i, err
 }
 
-const resolveDispute = `-- name: ResolveDispute :execrows
-UPDATE disputes SET status = $1, resolved_at = now() WHERE id = $2 AND status = 'open'
-`
-
-type ResolveDisputeParams struct {
-	Status string      `json:"status"`
-	ID     pgtype.UUID `json:"id"`
-}
-
-func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (int64, error) {
-	result, err := q.db.Exec(ctx, resolveDispute, arg.Status, arg.ID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const setRefundStatus = `-- name: SetRefundStatus :execrows
 UPDATE refunds SET status = $1, updated_at = now() WHERE id = $2
 `
@@ -830,6 +813,27 @@ type SetVoucherDisputeFlagParams struct {
 func (q *Queries) SetVoucherDisputeFlag(ctx context.Context, arg SetVoucherDisputeFlagParams) error {
 	_, err := q.db.Exec(ctx, setVoucherDisputeFlag, arg.Open, arg.ID)
 	return err
+}
+
+const transitionDispute = `-- name: TransitionDispute :execrows
+UPDATE disputes
+SET status = $1,
+    resolved_at = CASE WHEN $1::text IN ('resolved_customer', 'resolved_merchant') THEN now() ELSE resolved_at END
+WHERE id = $2 AND status = $3
+`
+
+type TransitionDisputeParams struct {
+	ToStatus   string      `json:"to_status"`
+	ID         pgtype.UUID `json:"id"`
+	FromStatus string      `json:"from_status"`
+}
+
+func (q *Queries) TransitionDispute(ctx context.Context, arg TransitionDisputeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, transitionDispute, arg.ToStatus, arg.ID, arg.FromStatus)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const voucherForRefund = `-- name: VoucherForRefund :one

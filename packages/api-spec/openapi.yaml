@@ -646,6 +646,30 @@ paths:
       parameters: [{$ref: '#/components/parameters/Id'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ResolveDisputeRequest'}}}}
       responses: {'204': {description: Resolved}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/request-evidence:
+    post:
+      tags: [Admin]
+      operationId: requestDisputeEvidence
+      summary: Ask the parties for evidence on an open dispute (support)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Awaiting evidence}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/start-review:
+    post:
+      tags: [Admin]
+      operationId: startDisputeReview
+      summary: Move a dispute with evidence into review (support)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Under review}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/close:
+    post:
+      tags: [Admin]
+      operationId: closeDispute
+      summary: Close a resolved dispute (support or system)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Closed}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/admin/status:
     get:
       tags: [Admin]

@@ -596,6 +596,9 @@
     "approve": "Tasdiqlash",
     "reconcile": "Bank bilan solishtirish",
     "markPaid": "Bank orqali to‘langan deb belgilash",
+    "requestEvidence": "Dalil so‘rash",
+    "startReview": "Ko‘rib chiqishni boshlash",
+    "close": "Nizoni yopish",
     "resolveCustomer": "Xaridor foydasiga hal qilish",
     "resolveMerchant": "Merchant foydasiga hal qilish",
     "bankDocRef": "Bank hujjati raqami",
@@ -604,13 +607,19 @@
       "approved": "Tasdiqlangan",
       "sent": "Yuborilgan",
       "requested": "So‘ralgan",
-      "processing": "Jarayonda"
+      "processing": "Jarayonda",
+      "open": "Ochiq",
+      "awaiting_evidence": "Dalil kutilmoqda",
+      "under_review": "Ko‘rib chiqilmoqda",
+      "resolved_customer": "Xaridor foydasiga hal qilindi",
+      "resolved_merchant": "Merchant foydasiga hal qilindi"
     },
     "error": {
       "generic": "Amalni bajarib bo‘lmadi.",
       "self_approval": "Tayyorlagan odam o‘zi tasdiqlay olmaydi.",
       "not_pending": "Bu holatda amal bajarilmaydi.",
-      "forbidden": "Sizda bu amal uchun ruxsat yo‘q."
+      "forbidden": "Sizda bu amal uchun ruxsat yo‘q.",
+      "invalid_dispute_transition": "Nizoni joriy holatdan bu holatga o‘tkazib bo‘lmaydi."
     }
   },
   "MerchantPanel": {

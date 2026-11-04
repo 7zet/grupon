@@ -237,6 +237,136 @@ func TestSupportApprovesRefundOlderThanFourteenDays(t *testing.T) {
 	}
 }
 
+func openTestDispute(t *testing.T, fixture catalogFixture) (uuid.UUID, uuid.UUID, uuid.UUID, *finance.Service) {
+	t.Helper()
+	ctx := context.Background()
+	voucherID, buyerID, merchantID, price := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	var redemptionID uuid.UUID
+	if err := fixture.pool.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission,created_at)
+		SELECT $1,$2,(SELECT id FROM merchant_locations WHERE merchant_id=$2 LIMIT 1),(SELECT id FROM users WHERE email='owner@local.test'),1,$3,0,now()-interval '4 days' RETURNING id`,
+		voucherID, merchantID, price).Scan(&redemptionID); err != nil {
+		t.Fatal(err)
+	}
+	service := finance.NewService(store.NewFinanceRepository(fixture.pool), time.Now)
+	if err := service.OpenDispute(ctx, buyerID, voucherID, "not my redemption"); err != nil {
+		t.Fatalf("open dispute: %v", err)
+	}
+	var disputeID uuid.UUID
+	if err := fixture.pool.QueryRow(ctx, `SELECT id FROM disputes WHERE redemption_id=$1`, redemptionID).Scan(&disputeID); err != nil {
+		t.Fatal(err)
+	}
+	return disputeID, redemptionID, merchantID, service
+}
+
+func disputeStatus(t *testing.T, fixture catalogFixture, disputeID uuid.UUID) string {
+	t.Helper()
+	var status string
+	if err := fixture.pool.QueryRow(context.Background(), `SELECT status FROM disputes WHERE id=$1`, disputeID).Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	return status
+}
+
+func TestDisputeAllowedTransitionsAuditAndPayoutHold(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	disputeID, redemptionID, merchantID, service := openTestDispute(t, fixture)
+	support := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`), Role: "support"}
+	approver := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`), Role: "finance"}
+	repo := store.NewFinanceRepository(fixture.pool)
+
+	assertHeld := func(wantHeld bool) {
+		items, err := repo.PayableRedemptions(ctx, merchantID, time.Now().Add(-3*24*time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+		found := false
+		for _, item := range items {
+			found = found || item.ID == redemptionID
+		}
+		if found == wantHeld {
+			t.Fatalf("payable=%v, want held=%v", found, wantHeld)
+		}
+	}
+
+	assertHeld(true)
+	if err := service.RequestDisputeEvidence(ctx, support, disputeID); err != nil {
+		t.Fatal(err)
+	}
+	if got := disputeStatus(t, fixture, disputeID); got != "awaiting_evidence" {
+		t.Fatalf("status=%s", got)
+	}
+	assertHeld(true)
+	if err := service.StartDisputeReview(ctx, support, disputeID); err != nil {
+		t.Fatal(err)
+	}
+	if got := disputeStatus(t, fixture, disputeID); got != "under_review" {
+		t.Fatalf("status=%s", got)
+	}
+	assertHeld(true)
+	if err := service.ResolveDispute(ctx, approver, disputeID, "merchant"); err != nil {
+		t.Fatal(err)
+	}
+	if got := disputeStatus(t, fixture, disputeID); got != "resolved_merchant" {
+		t.Fatalf("status=%s", got)
+	}
+	assertHeld(false)
+	if err := service.CloseDispute(ctx, support, disputeID); err != nil {
+		t.Fatal(err)
+	}
+	if got := disputeStatus(t, fixture, disputeID); got != "closed" {
+		t.Fatalf("status=%s", got)
+	}
+	var audits int
+	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE entity_type='dispute' AND entity_id=$1`, disputeID).Scan(&audits); err != nil || audits != 4 {
+		t.Fatalf("audits=%d err=%v", audits, err)
+	}
+}
+
+func TestDisputeCustomerResolutionKeepsRefundBehavior(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	disputeID, _, _, service := openTestDispute(t, fixture)
+	support := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`), Role: "support"}
+	approver := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`), Role: "finance"}
+	if err := service.RequestDisputeEvidence(ctx, support, disputeID); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.StartDisputeReview(ctx, support, disputeID); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.ResolveDispute(ctx, approver, disputeID, "customer"); err != nil {
+		t.Fatal(err)
+	}
+	var refunds int
+	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM refunds r JOIN disputes d ON d.id=$1 JOIN redemptions rd ON rd.id=d.redemption_id WHERE r.voucher_id=rd.voucher_id AND r.status='requested'`, disputeID).Scan(&refunds); err != nil || refunds != 1 {
+		t.Fatalf("refunds=%d err=%v", refunds, err)
+	}
+	if err := service.CloseDispute(ctx, finance.Actor{Role: "system"}, disputeID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDisputeForbiddenTransitionAndRBAC(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	disputeID, _, _, service := openTestDispute(t, fixture)
+	support := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`), Role: "support"}
+	wrong := finance.Actor{UserID: support.UserID, Role: "user"}
+	if err := service.StartDisputeReview(ctx, support, disputeID); !errors.Is(err, finance.ErrInvalidTransition) {
+		t.Fatalf("forbidden transition: %v", err)
+	}
+	if err := service.RequestDisputeEvidence(ctx, wrong, disputeID); !errors.Is(err, finance.ErrForbidden) {
+		t.Fatalf("request evidence RBAC: %v", err)
+	}
+	if err := service.ResolveDispute(ctx, support, disputeID, "merchant"); !errors.Is(err, finance.ErrForbidden) {
+		t.Fatalf("resolve RBAC: %v", err)
+	}
+	if err := service.CloseDispute(ctx, finance.Actor{UserID: support.UserID, Role: "finance"}, disputeID); !errors.Is(err, finance.ErrForbidden) {
+		t.Fatalf("close RBAC: %v", err)
+	}
+}
+
 func TestOutboxPublishesEachEventOnce(t *testing.T) {
 	fixture := newCatalogFixture(t)
 	ctx := context.Background()

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -390,9 +391,9 @@ func (r *FinanceRepository) ApproveRefund(ctx context.Context, refundID, approve
 	return ref, tx.Commit(ctx)
 }
 
-// ResolveDispute closes an open dispute. A customer resolution also files a refund request for the
-// redemption amount; the resolver cannot approve it, so a second person must.
-func (r *FinanceRepository) ResolveDispute(ctx context.Context, disputeID, resolverID uuid.UUID, resolution string) error {
+// TransitionDispute changes state and writes its audit row in one transaction. Customer resolution
+// keeps the existing refund request behavior; merchant resolution releases the payout hold.
+func (r *FinanceRepository) TransitionDispute(ctx context.Context, disputeID uuid.UUID, actor finance.Actor, from []string, to string) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin dispute resolution: %w", err)
@@ -407,33 +408,56 @@ func (r *FinanceRepository) ResolveDispute(ctx context.Context, disputeID, resol
 	if err != nil {
 		return fmt.Errorf("load dispute: %w", err)
 	}
-	if dispute.Status != "open" {
-		return finance.ErrDisputeClosed
+	allowed := false
+	for _, status := range from {
+		if dispute.Status == status {
+			allowed = true
+			break
+		}
 	}
-	status := "resolved_merchant"
-	if resolution == "customer" {
-		status = "resolved_customer"
+	if !allowed {
+		return finance.ErrInvalidTransition
 	}
-	rows, err := queries.ResolveDispute(ctx, sqlc.ResolveDisputeParams{ID: toPgUUID(disputeID), Status: status})
+	rows, err := queries.TransitionDispute(ctx, sqlc.TransitionDisputeParams{ID: toPgUUID(disputeID), FromStatus: dispute.Status, ToStatus: to})
 	if err != nil {
-		return fmt.Errorf("close dispute: %w", err)
+		return fmt.Errorf("transition dispute: %w", err)
 	}
 	if rows != 1 {
-		return finance.ErrDisputeClosed
+		return finance.ErrInvalidTransition
 	}
-	if err := queries.SetVoucherDisputeFlag(ctx, sqlc.SetVoucherDisputeFlagParams{Open: false, ID: dispute.VoucherID}); err != nil {
-		return fmt.Errorf("clear voucher flag: %w", err)
+	if to == "resolved_customer" || to == "resolved_merchant" {
+		if err := queries.SetVoucherDisputeFlag(ctx, sqlc.SetVoucherDisputeFlagParams{Open: false, ID: dispute.VoucherID}); err != nil {
+			return fmt.Errorf("clear voucher flag: %w", err)
+		}
 	}
-	if resolution == "customer" {
+	if to == "resolved_customer" {
 		if _, err := queries.InsertRefund(ctx, sqlc.InsertRefundParams{
 			VoucherID:   dispute.VoucherID,
 			Amount:      dispute.Amount,
 			Reason:      "dispute resolved for customer",
 			Status:      "requested",
-			RequestedBy: toPgUUID(resolverID),
+			RequestedBy: toPgUUID(actor.UserID),
 		}); err != nil {
 			return fmt.Errorf("file dispute refund: %w", err)
 		}
+	}
+	after, err := json.Marshal(map[string]string{"from": dispute.Status, "to": to})
+	if err != nil {
+		return fmt.Errorf("encode dispute audit: %w", err)
+	}
+	actorID := pgtype.UUID{}
+	if actor.UserID != uuid.Nil {
+		actorID = toPgUUID(actor.UserID)
+	}
+	if err := queries.InsertAuditLog(ctx, sqlc.InsertAuditLogParams{
+		ActorUserID: actorID,
+		ActorRole:   sqlc.AppRole(actor.Role),
+		Action:      "dispute_" + to,
+		EntityType:  "dispute",
+		EntityID:    toPgUUID(disputeID),
+		AfterData:   after,
+	}); err != nil {
+		return fmt.Errorf("write dispute audit: %w", err)
 	}
 	return tx.Commit(ctx)
 }

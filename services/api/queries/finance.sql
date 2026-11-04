@@ -7,7 +7,7 @@ WHERE r.merchant_id = sqlc.arg(merchant_id)
   AND r.reversed_at IS NULL
   AND r.payout_run_id IS NULL
   AND r.created_at <= sqlc.arg(eligible_before)
-  AND NOT EXISTS (SELECT 1 FROM disputes d WHERE d.redemption_id = r.id AND d.status = 'open')
+  AND NOT EXISTS (SELECT 1 FROM disputes d WHERE d.redemption_id = r.id AND d.status IN ('open', 'awaiting_evidence', 'under_review'))
 ORDER BY r.created_at, r.id;
 
 -- name: MerchantOnHold :one
@@ -139,8 +139,11 @@ SELECT d.id, d.redemption_id, d.status, r.voucher_id, r.merchant_id, r.amount, r
 FROM disputes d JOIN redemptions r ON r.id = d.redemption_id
 WHERE d.id = sqlc.arg(id) FOR UPDATE OF d;
 
--- name: ResolveDispute :execrows
-UPDATE disputes SET status = sqlc.arg(status), resolved_at = now() WHERE id = sqlc.arg(id) AND status = 'open';
+-- name: TransitionDispute :execrows
+UPDATE disputes
+SET status = sqlc.arg(to_status),
+    resolved_at = CASE WHEN sqlc.arg(to_status)::text IN ('resolved_customer', 'resolved_merchant') THEN now() ELSE resolved_at END
+WHERE id = sqlc.arg(id) AND status = sqlc.arg(from_status);
 
 -- name: ListOpenPayoutRuns :many
 SELECT pr.id, m.display_name AS merchant_name, pr.amount, pr.status, pr.created_at
@@ -160,7 +163,7 @@ FROM disputes d
 JOIN redemptions rd ON rd.id = d.redemption_id
 JOIN vouchers v ON v.id = rd.voucher_id
 JOIN merchants m ON m.id = rd.merchant_id
-WHERE d.status = 'open'
+WHERE d.status <> 'closed'
 ORDER BY d.created_at;
 
 -- name: SetVoucherDisputeFlag :exec

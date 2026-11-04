@@ -24,6 +24,7 @@ const (
 	AppRoleSupport         AppRole = "support"
 	AppRoleFinance         AppRole = "finance"
 	AppRoleSuperadmin      AppRole = "superadmin"
+	AppRoleSystem          AppRole = "system"
 )
 
 func (e *AppRole) Scan(src interface{}) error {

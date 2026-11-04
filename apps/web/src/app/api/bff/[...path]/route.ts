@@ -22,9 +22,22 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^admin\/finance\/queue$/ },
   { method: 'POST', pattern: new RegExp(`^admin\\/payouts\\/${UUID}\\/(approve|reconcile)$`) },
   { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/(approve|paid)$`) },
-  { method: 'POST', pattern: new RegExp(`^admin\\/disputes\\/${UUID}\\/resolve$`) },
-  { method: 'POST', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject)$`) },
-  { method: 'GET', pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`) },
+  {
+    method: 'POST',
+    pattern: new RegExp(
+      `^admin\\/disputes\\/${UUID}\\/(request-evidence|start-review|resolve|close)$`,
+    ),
+  },
+  {
+    method: 'POST',
+    pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject)$`),
+  },
+  {
+    method: 'GET',
+    pattern: new RegExp(
+      `^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`,
+    ),
+  },
   { method: 'PATCH', pattern: /^merchant\/business$/ },
   { method: 'GET', pattern: /^merchant\/payouts$/ },
   { method: 'GET', pattern: /^merchant\/customers$/ },
@@ -67,7 +80,9 @@ const BINARY_UPLOAD = new RegExp(
 );
 
 /** Business documents are downloaded as files, so the bytes must not be decoded as text. */
-const BINARY_DOWNLOAD = new RegExp(`^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`);
+const BINARY_DOWNLOAD = new RegExp(
+  `^admin\\/merchants\\/${UUID}\\/documents\\/(certificate|bank_letter|price_proof)$`,
+);
 
 function apiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1';
@@ -103,11 +118,7 @@ async function forward(request: Request, context: { params: Promise<{ path: stri
     method: request.method,
     headers,
     body:
-      request.method === 'GET'
-        ? null
-        : binary
-          ? await request.arrayBuffer()
-          : await request.text(),
+      request.method === 'GET' ? null : binary ? await request.arrayBuffer() : await request.text(),
     cache: 'no-store',
   });
   // A 204 response must not carry a body; the Response constructor rejects one.

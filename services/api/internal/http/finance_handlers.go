@@ -186,6 +186,42 @@ func (a *FinanceAPI) ResolveDispute(w http.ResponseWriter, r *http.Request, id g
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (a *FinanceAPI) RequestDisputeEvidence(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.RequestDisputeEvidence(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *FinanceAPI) StartDisputeReview(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.StartDisputeReview(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *FinanceAPI) CloseDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.CloseDispute(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (a *FinanceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, redemption.ErrReversalWindowClosed):
@@ -216,6 +252,8 @@ func (a *FinanceAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusConflict, "dispute_closed", nil, nil)
 	case errors.Is(err, finance.ErrInvalidResolution):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_resolution", nil, nil)
+	case errors.Is(err, finance.ErrInvalidTransition):
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_dispute_transition", nil, nil)
 	case errors.Is(err, finance.ErrSelfApproval):
 		writeProblem(w, r, http.StatusForbidden, "self_approval", nil, nil)
 	default:
@@ -299,6 +337,30 @@ func (s apiServer) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen
 		return
 	}
 	s.ServerInterface.ResolveDispute(w, r, id)
+}
+
+func (s apiServer) RequestDisputeEvidence(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.RequestDisputeEvidence(w, r, id)
+		return
+	}
+	s.ServerInterface.RequestDisputeEvidence(w, r, id)
+}
+
+func (s apiServer) StartDisputeReview(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.StartDisputeReview(w, r, id)
+		return
+	}
+	s.ServerInterface.StartDisputeReview(w, r, id)
+}
+
+func (s apiServer) CloseDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.CloseDispute(w, r, id)
+		return
+	}
+	s.ServerInterface.CloseDispute(w, r, id)
 }
 
 // SupportReverseVoucher undoes a redemption after the merchant window (PRD FR-05.5). Support and

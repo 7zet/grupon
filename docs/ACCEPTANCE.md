@@ -21,7 +21,7 @@
 | AT-13 | Late payment auto-refund | ✅ | `store/at_payments_test.go` (TestAT13…): refund row on the payment (migration 00021), no voucher, order stays expired |
 | AT-14 | Collusion fraud signal | ✅ | `store/at_fraud_test.go`: burst signal, payout hold, vouchers `fraud_hold`, held voucher refused (`voucher_on_hold`). Gap: the hold stops the whole merchant's payouts, not only the burst amount |
 | AT-15 | Multi-use, parallel last use | ✅ | `store/at_redeem_test.go`: two racing scans, one succeeds; second visit also tested. Fixed a bug: partially used vouchers could not be used again |
-| AT-16 | Dispute holds payout | ✅ | `store/at_gates_test.go` (TestAT16…): disputed redemption leaves the payable set, the other stays |
+| AT-16 | Dispute holds payout | ✅ | `store/at_gates_test.go` (TestAT16…): disputed redemption leaves the payable set. `store/finance_test.go` (`TestDisputeAllowedTransitionsAuditAndPayoutHold`): hold remains through evidence/review and is released on merchant resolution; all transitions are audited |
 | AT-17 | Bank account change hold (72 h) | ⏳ | Deferred: Stage 3 |
 | AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover) |
 

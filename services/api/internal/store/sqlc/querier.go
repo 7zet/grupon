@@ -213,7 +213,6 @@ type Querier interface {
 	RefundDetail(ctx context.Context, id pgtype.UUID) (RefundDetailRow, error)
 	ReleaseOptionStock(ctx context.Context, arg ReleaseOptionStockParams) error
 	ReserveOptionStock(ctx context.Context, arg ReserveOptionStockParams) (pgtype.UUID, error)
-	ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (int64, error)
 	ReviewReplyByReview(ctx context.Context, reviewID pgtype.UUID) (ReviewReplyByReviewRow, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	RevokeRefreshFamily(ctx context.Context, familyID pgtype.UUID) error
@@ -239,6 +238,7 @@ type Querier interface {
 	SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]SuggestDealsRow, error)
 	SuggestMerchants(ctx context.Context, arg SuggestMerchantsParams) ([]SuggestMerchantsRow, error)
 	TouchUserLastLogin(ctx context.Context, id pgtype.UUID) error
+	TransitionDispute(ctx context.Context, arg TransitionDisputeParams) (int64, error)
 	TransitionMerchantReview(ctx context.Context, arg TransitionMerchantReviewParams) (int64, error)
 	TransitionPendingDeal(ctx context.Context, arg TransitionPendingDealParams) (int64, error)
 	TrimRecentlyViewed(ctx context.Context, userID pgtype.UUID) error

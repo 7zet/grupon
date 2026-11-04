@@ -39,15 +39,18 @@ and baseline `v0.1` exists.
 - Latest verified non-browser gates (2026-11-04): full Go tests, Go vet, web typecheck, and 6/6 web unit tests pass.
 - Full Playwright rerun (2026-11-04): 16/16 passed with four workers in 25.2 seconds. Non-fatal Next.js
   image warnings were logged for localhost media SSRF protection and external Unsplash timeouts.
+- Disputes enforce the full state machine and role split; every transition is audited atomically, payout holds
+  remain through review, merchant resolution releases the hold, and customer resolution keeps the existing refund flow.
+  Verified by `TestDisputeAllowedTransitionsAuditAndPayoutHold`, `TestDisputeCustomerResolutionKeepsRefundBehavior`,
+  `TestDisputeForbiddenTransitionAndRBAC`, and HTTP 422/403 mapping tests.
 
 ### Open — ordered
 
-1. Complete dispute state transitions `awaiting_evidence`, `under_review`, and `closed`, with audit/history tests.
-2. Add category-level `publishable` and `purchasable` flags; do not block existing voucher redemption.
-3. Implement merchant redemption history. `GET /merchant/redemptions` is in OpenAPI but has no handler/domain/store implementation.
-4. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
+1. Add category-level `publishable` and `purchasable` flags; do not block existing voucher redemption.
+2. Implement merchant redemption history. `GET /merchant/redemptions` is in OpenAPI but has no handler/domain/store implementation.
+3. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
+4. Add browser coverage for the existing `price_proof` upload UI.
 5. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
-6. Add browser coverage for the existing `price_proof` upload UI.
 
 ## Bosqich 2 — Pilot-tayyor
 

@@ -596,6 +596,9 @@
     "approve": "Approve",
     "reconcile": "Reconcile with bank",
     "markPaid": "Mark as paid by bank",
+    "requestEvidence": "Request evidence",
+    "startReview": "Start review",
+    "close": "Close dispute",
     "resolveCustomer": "Resolve for the customer",
     "resolveMerchant": "Resolve for the merchant",
     "bankDocRef": "Bank document reference",
@@ -604,13 +607,19 @@
       "approved": "Approved",
       "sent": "Sent",
       "requested": "Requested",
-      "processing": "Processing"
+      "processing": "Processing",
+      "open": "Open",
+      "awaiting_evidence": "Awaiting evidence",
+      "under_review": "Under review",
+      "resolved_customer": "Resolved for customer",
+      "resolved_merchant": "Resolved for merchant"
     },
     "error": {
       "generic": "The action could not be completed.",
       "self_approval": "The person who prepared it cannot approve it.",
       "not_pending": "The action is not allowed in this status.",
-      "forbidden": "You do not have permission for this action."
+      "forbidden": "You do not have permission for this action.",
+      "invalid_dispute_transition": "This dispute cannot move from its current status."
     }
   },
   "MerchantPanel": {

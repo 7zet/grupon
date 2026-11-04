@@ -18,16 +18,26 @@ const STATUS_KEYS = {
   sent: 'status.sent',
   requested: 'status.requested',
   processing: 'status.processing',
+  open: 'status.open',
+  awaiting_evidence: 'status.awaiting_evidence',
+  under_review: 'status.under_review',
+  resolved_customer: 'status.resolved_customer',
+  resolved_merchant: 'status.resolved_merchant',
 } as const;
 
 /** Finance desk: payouts to approve or reconcile, refunds to approve or mark paid, disputes to decide. */
 export default async function FinancePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations('AdminFinance');
-  const user = await loadForVisitor(locale, `/${locale}/admin/finance`, () => accountGetOrNull<User>('/me'));
+  const user = await loadForVisitor(locale, `/${locale}/admin/finance`, () =>
+    accountGetOrNull<User>('/me'),
+  );
   if (!user?.roles.some((role) => FINANCE_ROLES.includes(role))) notFound();
   const queue = await accountGet<Queue>('/admin/finance/queue');
-  const money = (amount: number) => formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
+  const canSupport = user.roles.includes('support') || user.roles.includes('superadmin');
+  const canResolve = user.roles.includes('finance') || user.roles.includes('superadmin');
+  const money = (amount: number) =>
+    formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
   const empty = queue.payout_runs.length + queue.refunds.length + queue.disputes.length === 0;
 
   return (
@@ -40,9 +50,13 @@ export default async function FinancePage({ params }: { params: Promise<{ locale
           <h2 className="text-lead font-semibold">{t('payouts')}</h2>
           <ul className="grid gap-3">
             {queue.payout_runs.map((item) => (
-              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+              <li
+                key={item.id}
+                className="grid gap-2 rounded-card border border-border bg-surface p-4"
+              >
                 <p className="text-small">
-                  {item.merchant_name} · {money(item.amount)} · {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
+                  {item.merchant_name} · {money(item.amount)} ·{' '}
+                  {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
                 </p>
                 <FinanceActions kind="payout" id={item.id} status={item.status} />
               </li>
@@ -56,9 +70,13 @@ export default async function FinancePage({ params }: { params: Promise<{ locale
           <h2 className="text-lead font-semibold">{t('refunds')}</h2>
           <ul className="grid gap-3">
             {queue.refunds.map((item) => (
-              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+              <li
+                key={item.id}
+                className="grid gap-2 rounded-card border border-border bg-surface p-4"
+              >
                 <p className="text-small">
-                  {item.voucher_code} · {money(item.amount)} · {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
+                  {item.voucher_code} · {money(item.amount)} ·{' '}
+                  {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
                 </p>
                 <p className="text-small text-ink-muted">{item.reason}</p>
                 <FinanceActions kind="refund" id={item.id} status={item.status} />
@@ -73,12 +91,22 @@ export default async function FinancePage({ params }: { params: Promise<{ locale
           <h2 className="text-lead font-semibold">{t('disputes')}</h2>
           <ul className="grid gap-3">
             {queue.disputes.map((item) => (
-              <li key={item.id} className="grid gap-2 rounded-card border border-border bg-surface p-4">
+              <li
+                key={item.id}
+                className="grid gap-2 rounded-card border border-border bg-surface p-4"
+              >
                 <p className="text-small">
-                  {item.voucher_code} · {item.merchant_name} · {money(item.amount)}
+                  {item.voucher_code} · {item.merchant_name} · {money(item.amount)} ·{' '}
+                  {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.open')}
                 </p>
                 <p className="text-small text-ink-muted">{item.reason}</p>
-                <FinanceActions kind="dispute" id={item.id} status={item.status} />
+                <FinanceActions
+                  kind="dispute"
+                  id={item.id}
+                  status={item.status}
+                  canSupport={canSupport}
+                  canResolve={canResolve}
+                />
               </li>
             ))}
           </ul>

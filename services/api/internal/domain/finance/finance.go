@@ -33,6 +33,7 @@ var (
 	ErrNoRedemption      = errors.New("finance: voucher has no redemption to dispute")
 	ErrNotSent           = errors.New("finance: payout has not been sent to the bank")
 	ErrDisputeClosed     = errors.New("finance: dispute is already resolved")
+	ErrInvalidTransition = errors.New("finance: dispute transition is not allowed")
 	ErrInvalidResolution = errors.New("finance: resolution must be customer or merchant")
 )
 
@@ -130,8 +131,8 @@ type Repository interface {
 	MarkPayoutReconciled(ctx context.Context, runID uuid.UUID) (bool, error)
 	// ApproveRefund approves a requested refund and posts it. The approver cannot be the requester.
 	ApproveRefund(ctx context.Context, refundID, approverID uuid.UUID) (RefundRef, error)
-	// ResolveDispute closes an open dispute; customer resolutions also open a refund request.
-	ResolveDispute(ctx context.Context, disputeID, resolverID uuid.UUID, resolution string) error
+	// TransitionDispute changes one state atomically with its audit row and resolution side effects.
+	TransitionDispute(ctx context.Context, disputeID uuid.UUID, actor Actor, from []string, to string) error
 	// Open lists the open payouts, refunds and disputes for the finance desk.
 	Open(ctx context.Context) (Queue, error)
 }
@@ -340,13 +341,37 @@ func (s *Service) ApproveRefund(ctx context.Context, actor Actor, refundID uuid.
 // ResolveDispute decides a dispute. "customer" refunds the buyer (a refund request for support to
 // approve); "merchant" releases the held payout.
 func (s *Service) ResolveDispute(ctx context.Context, actor Actor, disputeID uuid.UUID, resolution string) error {
-	if !supportOrFinance(actor.Role) {
+	if !financeApprover(actor.Role) {
 		return ErrForbidden
 	}
 	if resolution != "customer" && resolution != "merchant" {
 		return ErrInvalidResolution
 	}
-	return s.repo.ResolveDispute(ctx, disputeID, actor.UserID, resolution)
+	return s.repo.TransitionDispute(ctx, disputeID, actor, []string{"under_review"}, "resolved_"+resolution)
+}
+
+// RequestDisputeEvidence moves a newly opened dispute to evidence collection. Support owns this step.
+func (s *Service) RequestDisputeEvidence(ctx context.Context, actor Actor, disputeID uuid.UUID) error {
+	if !supportActor(actor.Role) {
+		return ErrForbidden
+	}
+	return s.repo.TransitionDispute(ctx, disputeID, actor, []string{"open"}, "awaiting_evidence")
+}
+
+// StartDisputeReview moves a dispute with collected evidence into finance review.
+func (s *Service) StartDisputeReview(ctx context.Context, actor Actor, disputeID uuid.UUID) error {
+	if !supportActor(actor.Role) {
+		return ErrForbidden
+	}
+	return s.repo.TransitionDispute(ctx, disputeID, actor, []string{"awaiting_evidence"}, "under_review")
+}
+
+// CloseDispute closes either resolved outcome. It has no ledger side effect.
+func (s *Service) CloseDispute(ctx context.Context, actor Actor, disputeID uuid.UUID) error {
+	if !supportActor(actor.Role) && actor.Role != "system" {
+		return ErrForbidden
+	}
+	return s.repo.TransitionDispute(ctx, disputeID, actor, []string{"resolved_customer", "resolved_merchant"}, "closed")
 }
 
 // Queue lists what the finance desk must act on. Support sees refunds and disputes, finance sees all.
@@ -366,6 +391,10 @@ func (s *Service) Queue(ctx context.Context, actor Actor) (Queue, error) {
 
 func supportOrFinance(role string) bool {
 	return role == "support" || role == "finance" || role == "superadmin"
+}
+
+func supportActor(role string) bool {
+	return role == "support" || role == "superadmin"
 }
 
 func financeOperator(role string) bool {
