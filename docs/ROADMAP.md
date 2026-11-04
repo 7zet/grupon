@@ -52,10 +52,12 @@ and baseline `v0.1` exists.
   direct access to merchant payouts and platform finance.
 - Merchant onboarding E2E uploads certificate, bank letter, and optional price proof before submission; the admin
   review queue exposes the private price-proof document to reviewers.
+- The six-step deal wizard is covered end to end: validation, live preview, options, three media selections,
+  localized details, branch/schedule, and browser submission ending in `in_review`.
 
 ### Open — ordered
 
-1. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
+1. Run the Stage 1 closing verification and release sequence.
 
 ## Bosqich 2 — Pilot-tayyor
 

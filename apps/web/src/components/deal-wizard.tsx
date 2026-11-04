@@ -18,7 +18,6 @@ type Props = {
 
 type Draft = {
   slug: string;
-  kind: 'voucher' | 'product';
   categoryId: string;
   subcategoryId: string;
   title: Localized;
@@ -40,7 +39,6 @@ type Draft = {
 const empty: Localized = { uz: '', ru: '', en: '' };
 const initial: Draft = {
   slug: '',
-  kind: 'voucher',
   categoryId: '',
   subcategoryId: '',
   title: empty,
@@ -112,7 +110,6 @@ function toBody(draft: Draft, media: MediaAsset[]) {
     slug: draft.slug,
     category_id: draft.categoryId,
     subcategory_id: draft.subcategoryId,
-    kind: draft.kind,
     title: localized(draft.title),
     short_description: localized(draft.shortDescription),
     description: localized(draft.description),
@@ -246,17 +243,6 @@ export function DealWizard({ categories, locations, media }: Props) {
                 value={draft.slug}
                 onChange={(e) => update({ slug: e.target.value })}
               />
-            </label>
-            <label className="grid gap-1 text-sm">
-              {t('kind')}
-              <select
-                className={inputClass}
-                value={draft.kind}
-                onChange={(e) => update({ kind: e.target.value as Draft['kind'] })}
-              >
-                <option value="voucher">{t('kindVoucher')}</option>
-                <option value="product">{t('kindProduct')}</option>
-              </select>
             </label>
             <label className="grid gap-1 text-sm">
               {t('category')}

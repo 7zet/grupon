@@ -167,13 +167,63 @@ test('buyers cannot open the moderation queue', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Moderatsiya navbati/ })).toHaveCount(0);
 });
 
-test('merchant uploads a photo and opens the deal wizard', async ({ page }) => {
+test('merchant completes all six deal-wizard steps and submits for review', async ({ page }) => {
   await signIn(page, 'owner-c@local.test');
   await page.goto('/uz/merchant/media');
-  await page.locator('input[type=file]').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: PNG });
-  await expect(page.locator('main img').first()).toBeVisible({ timeout: 15000 });
+  await page.waitForLoadState('networkidle');
+  const existing = await page.locator('main img').count();
+  for (let index = 0; index < 3; index += 1) {
+    await page.locator('input[type=file]').setInputFiles({ name: `wizard-${Date.now()}-${index}.png`, mimeType: 'image/png', buffer: PNG });
+    await page.getByRole('button', { name: /Qirqib yuklash/ }).click();
+    await expect(page.locator('main img')).toHaveCount(existing + index + 1, { timeout: 15000 });
+  }
 
   await page.goto('/uz/merchant/deals/new');
   await expect(page.getByRole('heading', { name: /Yangi aksiya/ })).toBeVisible();
-  await expect(page.getByText(/Asosiy/).first()).toBeVisible();
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+  await expect(page.getByRole('alert').first()).toBeVisible();
+
+  const fillGroup = async (name, value) => {
+    const fields = page.getByRole('group', { name });
+    for (const input of await fields.locator('input').all()) await input.fill(value);
+  };
+  const title = `Wizard aksiya ${Date.now()}`;
+  await page.getByLabel(/Manzil \(slug\)/).fill(`wizard-${Date.now()}`);
+  await page.locator('main select').nth(0).selectOption({ index: 1 });
+  await page.locator('main select').nth(1).selectOption({ index: 1 });
+  await fillGroup('Sarlavha', title);
+  await fillGroup('Qisqa tavsif', 'Qisqa tavsif');
+  await fillGroup('Tavsif', 'To\'liq tavsif');
+  await expect(page.getByLabel('Ko‘rinish').getByText(title)).toBeVisible();
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+
+  await fillGroup('Variant nomi', 'Standart');
+  await page.getByLabel(/Asl narx/).fill('200000');
+  await page.getByLabel(/Chegirmali narx/).fill('100000');
+  await page.getByLabel(/Zaxira/).fill('10');
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+
+  const mediaChoices = page.locator('input[type=checkbox]');
+  for (let index = 0; index < 3; index += 1) await mediaChoices.nth(index).check({ force: true });
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+
+  for (let index = 1; index <= 3; index += 1) await fillGroup(`Afzalliklar ${index}`, `Afzallik ${index}`);
+  await fillGroup('Shartlar', 'Foydalanish shartlari');
+  await fillGroup('Foydalanish yo‘riqnomasi', 'Kassirga kodni ko‘rsating');
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+
+  await page.locator('input[type=checkbox]').first().check();
+  await page.getByLabel(/^Boshlanish$/).fill('2027-01-01T10:00');
+  await page.getByLabel(/^Tugash$/).fill('2027-02-01T10:00');
+  await page.getByRole('button', { name: /^Keyingi$/ }).click();
+
+  await expect(page.getByText(title).last()).toBeVisible();
+  const created = page.waitForResponse((response) => response.url().endsWith('/api/bff/merchant/deals') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: /Tekshiruvga yuborish/ }).click();
+  const createdResponse = await created;
+  expect(createdResponse.status(), `${await createdResponse.text()}\n${createdResponse.request().postData()}`).toBe(201);
+  await expect(page.getByRole('alert').first()).toContainText('Tekshiruvga yuborildi');
+  await page.goto('/uz/merchant/deals');
+  const row = page.getByRole('row').filter({ hasText: title });
+  await expect(row).toContainText(/Ko'rib chiqilmoqda/);
 });
