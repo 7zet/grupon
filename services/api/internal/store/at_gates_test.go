@@ -139,6 +139,38 @@ func TestCategoryRedeemableBlocksOnlyWhenFalse(t *testing.T) {
 	}
 }
 
+func TestMerchantRedemptionHistoryScopesCashierAndMasksBuyer(t *testing.T) {
+	env := newATEnv(t, 2)
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE users SET name='Alisher Usmonov' WHERE id=$1`, env.buyer); err != nil {
+		t.Fatal(err)
+	}
+	merchantID, locationID := env.merchantAndLocation(t)
+	var before int64
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT count(*) FROM redemptions WHERE merchant_id=$1`, merchantID).Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	cashierID := seededID(t, env.fixture, `SELECT id FROM users WHERE email='cashier@local.test'`)
+	ownerID := seededID(t, env.fixture, `SELECT id FROM users WHERE email='owner@local.test'`)
+	repo := store.NewRedemptionRepository(env.fixture.pool, store.NewCommerceRepository(env.fixture.pool), store.NewCatalogRepository(env.fixture.pool))
+	for _, actorID := range []uuid.UUID{cashierID, ownerID} {
+		voucherID := env.sellOneVoucher(t, env.buyer)
+		ok, err := repo.UseVoucher(env.ctx, merchantID, voucherID, locationID, time.Now(), redemption.AuditEntry{ActorID: actorID, Role: "merchant_cashier", VoucherID: voucherID, Action: "voucher_redeemed"}, nil)
+		if err != nil || !ok {
+			t.Fatalf("redeem: ok=%v err=%v", ok, err)
+		}
+	}
+	service := redemption.NewService(repo, nil, time.Now)
+	page := catalog.Page{Number: 1, Size: 20}
+	cashier, err := service.History(env.ctx, merchantID, merchant.Actor{UserID: cashierID, Role: merchant.RoleCashier}, page)
+	if err != nil || cashier.Total != 1 || cashier.Items[0].Buyer != "Alisher U." {
+		t.Fatalf("cashier history: %+v err=%v", cashier, err)
+	}
+	owner, err := service.History(env.ctx, merchantID, merchant.Actor{UserID: ownerID, Role: merchant.RoleOwner}, page)
+	if err != nil || owner.Total != before+2 {
+		t.Fatalf("owner history total=%d err=%v", owner.Total, err)
+	}
+}
+
 // AT-16: a buyer opens a dispute ("this was not me"). The disputed redemption leaves the payout; the other stays.
 func TestAT16OpenDisputeKeepsTheDisputedAmountOutOfThePayout(t *testing.T) {
 	env := newATEnv(t, 2)

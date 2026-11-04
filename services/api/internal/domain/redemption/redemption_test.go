@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 )
@@ -160,6 +161,9 @@ func (f *fakeRepo) ReversalCandidate(context.Context, uuid.UUID, uuid.UUID) (Red
 func (f *fakeRepo) ReverseUse(context.Context, uuid.UUID, Redemption, string, AuditEntry) error {
 	f.reversed = true
 	return nil
+}
+func (f *fakeRepo) History(context.Context, uuid.UUID, *uuid.UUID, catalog.Page) ([]HistoryItem, int64, error) {
+	return nil, 0, nil
 }
 
 func TestCashierCanReverseOnlyWithinTheWindow(t *testing.T) {

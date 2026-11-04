@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
+	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 	"github.com/grupon/grupon/services/api/internal/domain/redemption"
 	"github.com/grupon/grupon/services/api/internal/http/gen"
@@ -69,6 +70,24 @@ func (a *MerchantRedemptionAPI) RedeemMerchantVoucher(w http.ResponseWriter, r *
 		return
 	}
 	writeJSON(w, http.StatusOK, mapVoucher(view))
+}
+
+func (a *MerchantRedemptionAPI) ListMerchantRedemptions(w http.ResponseWriter, r *http.Request, params gen.ListMerchantRedemptionsParams) {
+	actor, merchantID, ok := a.scope(w, r)
+	if !ok {
+		return
+	}
+	pageNumber, pageSize := pagination(params.Page, nil)
+	result, err := a.redemption.History(r.Context(), merchantID, actor, catalog.Page{Number: pageNumber, Size: pageSize})
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	items := make([]gen.MerchantRedemption, 0, len(result.Items))
+	for _, item := range result.Items {
+		items = append(items, gen.MerchantRedemption{Id: gen.Uuid(item.ID), Time: item.Time, Deal: mapText(item.Deal), Option: mapText(item.Option), Buyer: item.Buyer, Branch: item.Branch, Cashier: item.Cashier, Reversed: item.Reversed})
+	}
+	writeJSON(w, http.StatusOK, gen.MerchantRedemptionPage{Items: items, Page: result.Page.Number, PageSize: result.Page.Size, Total: result.Total})
 }
 
 // scope authenticates the caller and resolves their merchant. Any merchant role may redeem.
@@ -138,4 +157,12 @@ func (s apiServer) RedeemMerchantVoucher(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.ServerInterface.RedeemMerchantVoucher(w, r, id)
+}
+
+func (s apiServer) ListMerchantRedemptions(w http.ResponseWriter, r *http.Request, params gen.ListMerchantRedemptionsParams) {
+	if s.redeem != nil {
+		s.redeem.ListMerchantRedemptions(w, r, params)
+		return
+	}
+	s.ServerInterface.ListMerchantRedemptions(w, r, params)
 }

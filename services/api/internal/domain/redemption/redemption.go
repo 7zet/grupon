@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
 	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 )
@@ -55,6 +56,23 @@ type Redemption struct {
 	Amount     int64
 	Commission int64
 	CreatedAt  time.Time
+}
+
+type HistoryItem struct {
+	ID       uuid.UUID
+	Time     time.Time
+	Deal     catalog.Text
+	Option   catalog.Text
+	Buyer    string
+	Branch   string
+	Cashier  string
+	Reversed bool
+}
+
+type HistoryPage struct {
+	Items []HistoryItem
+	Page  catalog.Page
+	Total int64
 }
 
 var codePattern = regexp.MustCompile(`^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$`)
@@ -120,6 +138,39 @@ type Repository interface {
 	LatestOpenRedemptionForVoucher(ctx context.Context, voucherID uuid.UUID) (Redemption, error)
 	// ReverseUse marks the redemption reversed and rolls the voucher count back, with a reversing entry.
 	ReverseUse(ctx context.Context, merchantID uuid.UUID, found Redemption, reason string, audit AuditEntry) error
+	History(ctx context.Context, merchantID uuid.UUID, staffID *uuid.UUID, page catalog.Page) ([]HistoryItem, int64, error)
+}
+
+func (s *Service) History(ctx context.Context, merchantID uuid.UUID, actor merchant.Actor, page catalog.Page) (HistoryPage, error) {
+	var staffID *uuid.UUID
+	if actor.Role == merchant.RoleCashier {
+		staffID = &actor.UserID
+	} else if actor.Role != merchant.RoleOwner && actor.Role != merchant.RoleManager {
+		return HistoryPage{}, merchant.ErrForbidden
+	}
+	items, total, err := s.repo.History(ctx, merchantID, staffID, page)
+	if err != nil {
+		return HistoryPage{}, err
+	}
+	for i := range items {
+		items[i].Buyer = maskBuyer(items[i].Buyer)
+	}
+	return HistoryPage{Items: items, Page: page, Total: total}, nil
+}
+
+func maskBuyer(name string) string {
+	parts := strings.Fields(name)
+	if len(parts) == 0 {
+		return ""
+	}
+	if len(parts) == 1 {
+		return parts[0]
+	}
+	runes := []rune(parts[len(parts)-1])
+	if len(runes) == 0 {
+		return parts[0]
+	}
+	return parts[0] + " " + string(runes[0]) + "."
 }
 
 // Service implements lookup and redemption rules.

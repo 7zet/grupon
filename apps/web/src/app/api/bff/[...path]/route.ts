@@ -45,6 +45,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^merchant\/reviews$/ },
   { method: 'PUT', pattern: new RegExp(`^merchant\\/reviews\\/${UUID}\\/reply$`) },
   { method: 'GET', pattern: /^merchant\/orders$/ },
+  { method: 'GET', pattern: /^merchant\/redemptions$/ },
   { method: 'GET', pattern: /^merchant\/settings$/ },
   { method: 'PATCH', pattern: /^merchant\/settings$/ },
   { method: 'GET', pattern: /^merchant\/staff$/ },

@@ -34,6 +34,7 @@ type Querier interface {
 	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
 	CountAuditLogs(ctx context.Context) (int64, error)
 	CountMerchantDocumentKinds(ctx context.Context, merchantID pgtype.UUID) (int32, error)
+	CountMerchantRedemptionHistory(ctx context.Context, arg CountMerchantRedemptionHistoryParams) (int64, error)
 	CountOpenReviewReports(ctx context.Context) (int64, error)
 	CountOrdersForUser(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CountOwnedDeals(ctx context.Context, arg CountOwnedDealsParams) (int64, error)
@@ -149,6 +150,7 @@ type Querier interface {
 	ListMediaAssets(ctx context.Context, arg ListMediaAssetsParams) ([]ListMediaAssetsRow, error)
 	ListMerchantDocuments(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantDocumentsRow, error)
 	ListMerchantLocationRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantLocationRowsRow, error)
+	ListMerchantRedemptionHistory(ctx context.Context, arg ListMerchantRedemptionHistoryParams) ([]ListMerchantRedemptionHistoryRow, error)
 	ListMerchantStaff(ctx context.Context, merchantID pgtype.UUID) ([]RoleAssignment, error)
 	ListMerchantStaffRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantStaffRowsRow, error)
 	ListMerchantsForReview(ctx context.Context, status pgtype.Text) ([]ListMerchantsForReviewRow, error)

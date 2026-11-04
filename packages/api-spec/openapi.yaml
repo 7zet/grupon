@@ -395,7 +395,7 @@ paths:
       summary: List recent redemptions
       security: [{cookieAuth: []}, {bearerAuth: []}]
       parameters: [{$ref: '#/components/parameters/Page'}]
-      responses: {'200': {description: Vouchers, content: {application/json: {schema: {$ref: '#/components/schemas/VoucherPage'}}}}}
+      responses: {'200': {description: Redemption history, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantRedemptionPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/customers:
     get:
       tags: [Merchant]
@@ -997,6 +997,12 @@ components:
       properties: {id: {$ref: '#/components/schemas/Uuid'}, deal: {$ref: '#/components/schemas/DealSummary'}, option: {$ref: '#/components/schemas/DealOption'}, merchant: {$ref: '#/components/schemas/Merchant'}, terms_snapshot: {$ref: '#/components/schemas/LocalizedText'}, buyer_first_name: {type: string}, code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, qr_token: {type: string, description: Rotates every 30 seconds; the voucher page must refetch.}, qr_token_expires_at: {type: string, format: date-time}, backup_code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, status: {type: string, enum: [active, redeemed, expired, refunded, cancelled]}, valid_from: {type: string, format: date-time}, valid_until: {type: string, format: date-time}, redeemed_at: {type: [string, 'null'], format: date-time}, location: {$ref: '#/components/schemas/MerchantLocation'}}
     VoucherPage:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Voucher'}}}}]
+    MerchantRedemption:
+      type: object
+      required: [id, time, deal, option, buyer, branch, cashier, reversed]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
+    MerchantRedemptionPage:
+      allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantRedemption'}}}}]
     ReviewInput:
       type: object
       required: [rating, text, locale]

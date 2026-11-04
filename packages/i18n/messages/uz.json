@@ -493,7 +493,20 @@
     "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring",
     "voucher_voided": "Bu vaucher bekor qilingan",
     "status_voided": "Bekor qilingan",
-    "voucher_on_hold": "Vaucher tekshiruvda. Qo'llab-quvvatlash bilan bog'laning"
+    "voucher_on_hold": "Vaucher tekshiruvda. Qo'llab-quvvatlash bilan bog'laning",
+    "historyTitle": "Ishlatish tarixi",
+    "historyEmpty": "Hali ishlatishlar yo'q",
+    "history": {
+      "time": "Vaqt",
+      "deal": "Taklif",
+      "option": "Variant",
+      "buyer": "Xaridor",
+      "branch": "Filial",
+      "cashier": "Kassir",
+      "reversed": "Bekor qilingan"
+    },
+    "yes": "Ha",
+    "no": "Yo'q"
   },
   "Reviews": {
     "formTitle": "Sharh qoldiring",

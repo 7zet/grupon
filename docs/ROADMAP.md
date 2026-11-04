@@ -46,13 +46,14 @@ and baseline `v0.1` exists.
 - Merchant reviews compute their reply-window reference outside render; the full web lint gate is green.
 - Category capabilities are enforced independently for search, deal creation/submission, publishing, checkout,
   and redemption; pilot categories are fully enabled and closed categories retain redemption only.
+- Merchant redemption history is available on the Redeem page with masked buyers, reversal state, and cashier-only
+  row scoping; owners and managers see the full merchant history.
 
 ### Open — ordered
 
-1. Implement merchant redemption history. `GET /merchant/redemptions` is in OpenAPI but has no handler/domain/store implementation.
-2. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
-3. Add browser coverage for the existing `price_proof` upload UI.
-4. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
+1. Add a cashier redemption E2E using Cashier B's own login; current E2E only checks cashier deal denial and owner redemption.
+2. Add browser coverage for the existing `price_proof` upload UI.
+3. Test the complete six-step deal wizard, live preview, validation, and submission in the browser; current E2E only opens step one.
 
 ## Bosqich 2 — Pilot-tayyor
 

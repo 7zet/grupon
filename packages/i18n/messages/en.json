@@ -493,7 +493,20 @@
     "errorGeneric": "Something went wrong, please try again",
     "voucher_voided": "This voucher was voided",
     "status_voided": "Voided",
-    "voucher_on_hold": "This voucher is under review. Contact support"
+    "voucher_on_hold": "This voucher is under review. Contact support",
+    "historyTitle": "Redemption history",
+    "historyEmpty": "No redemptions yet",
+    "history": {
+      "time": "Time",
+      "deal": "Deal",
+      "option": "Option",
+      "buyer": "Buyer",
+      "branch": "Branch",
+      "cashier": "Cashier",
+      "reversed": "Reversed"
+    },
+    "yes": "Yes",
+    "no": "No"
   },
   "Reviews": {
     "formTitle": "Leave a review",

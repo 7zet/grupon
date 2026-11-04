@@ -1805,6 +1805,20 @@ export interface components {
     VoucherPage: components['schemas']['PageMeta'] & {
       items: components['schemas']['Voucher'][];
     };
+    MerchantRedemption: {
+      id: components['schemas']['Uuid'];
+      /** Format: date-time */
+      time: string;
+      deal: components['schemas']['LocalizedText'];
+      option: components['schemas']['LocalizedText'];
+      buyer: string;
+      branch: string;
+      cashier: string;
+      reversed: boolean;
+    };
+    MerchantRedemptionPage: components['schemas']['PageMeta'] & {
+      items: components['schemas']['MerchantRedemption'][];
+    };
     ReviewInput: {
       rating: number;
       text: string;
@@ -3395,15 +3409,16 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Vouchers */
+      /** @description Redemption history */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['VoucherPage'];
+          'application/json': components['schemas']['MerchantRedemptionPage'];
         };
       };
+      default: components['responses']['Problem'];
     };
   };
   listMerchantCustomers: {
