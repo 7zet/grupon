@@ -24,6 +24,7 @@ const (
 	AppRoleSupport         AppRole = "support"
 	AppRoleFinance         AppRole = "finance"
 	AppRoleSuperadmin      AppRole = "superadmin"
+	AppRoleSystem          AppRole = "system"
 )
 
 func (e *AppRole) Scan(src interface{}) error {
@@ -65,7 +66,6 @@ type CurrencyCode string
 
 const (
 	CurrencyCodeUZS CurrencyCode = "UZS"
-	CurrencyCodeUSD CurrencyCode = "USD"
 )
 
 func (e *CurrencyCode) Scan(src interface{}) error {
@@ -101,48 +101,6 @@ func (ns NullCurrencyCode) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.CurrencyCode), nil
-}
-
-type DealKind string
-
-const (
-	DealKindVoucher DealKind = "voucher"
-	DealKindProduct DealKind = "product"
-)
-
-func (e *DealKind) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = DealKind(s)
-	case string:
-		*e = DealKind(s)
-	default:
-		return fmt.Errorf("unsupported scan type for DealKind: %T", src)
-	}
-	return nil
-}
-
-type NullDealKind struct {
-	DealKind DealKind `json:"deal_kind"`
-	Valid    bool     `json:"valid"` // Valid is true if DealKind is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullDealKind) Scan(value interface{}) error {
-	if value == nil {
-		ns.DealKind, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.DealKind.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullDealKind) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.DealKind), nil
 }
 
 type DealStatus string
@@ -193,58 +151,11 @@ func (ns NullDealStatus) Value() (driver.Value, error) {
 	return string(ns.DealStatus), nil
 }
 
-type FulfillmentStatus string
-
-const (
-	FulfillmentStatusNotApplicable FulfillmentStatus = "not_applicable"
-	FulfillmentStatusProcessing    FulfillmentStatus = "processing"
-	FulfillmentStatusShipped       FulfillmentStatus = "shipped"
-	FulfillmentStatusDelivered     FulfillmentStatus = "delivered"
-	FulfillmentStatusReturned      FulfillmentStatus = "returned"
-)
-
-func (e *FulfillmentStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = FulfillmentStatus(s)
-	case string:
-		*e = FulfillmentStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for FulfillmentStatus: %T", src)
-	}
-	return nil
-}
-
-type NullFulfillmentStatus struct {
-	FulfillmentStatus FulfillmentStatus `json:"fulfillment_status"`
-	Valid             bool              `json:"valid"` // Valid is true if FulfillmentStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullFulfillmentStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.FulfillmentStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.FulfillmentStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullFulfillmentStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.FulfillmentStatus), nil
-}
-
 type HomepageSectionType string
 
 const (
 	HomepageSectionTypeDeals      HomepageSectionType = "deals"
-	HomepageSectionTypeCollection HomepageSectionType = "collection"
 	HomepageSectionTypeCategories HomepageSectionType = "categories"
-	HomepageSectionTypeBanner     HomepageSectionType = "banner"
 )
 
 func (e *HomepageSectionType) Scan(src interface{}) error {
@@ -323,48 +234,6 @@ func (ns NullLocaleCode) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.LocaleCode), nil
-}
-
-type MerchantStatus string
-
-const (
-	MerchantStatusActive    MerchantStatus = "active"
-	MerchantStatusSuspended MerchantStatus = "suspended"
-)
-
-func (e *MerchantStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MerchantStatus(s)
-	case string:
-		*e = MerchantStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MerchantStatus: %T", src)
-	}
-	return nil
-}
-
-type NullMerchantStatus struct {
-	MerchantStatus MerchantStatus `json:"merchant_status"`
-	Valid          bool           `json:"valid"` // Valid is true if MerchantStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullMerchantStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.MerchantStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.MerchantStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullMerchantStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.MerchantStatus), nil
 }
 
 type OrderStatus string
@@ -500,49 +369,6 @@ func (ns NullPaymentStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PaymentStatus), nil
-}
-
-type PayoutStatus string
-
-const (
-	PayoutStatusPending    PayoutStatus = "pending"
-	PayoutStatusProcessing PayoutStatus = "processing"
-	PayoutStatusPaid       PayoutStatus = "paid"
-)
-
-func (e *PayoutStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = PayoutStatus(s)
-	case string:
-		*e = PayoutStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for PayoutStatus: %T", src)
-	}
-	return nil
-}
-
-type NullPayoutStatus struct {
-	PayoutStatus PayoutStatus `json:"payout_status"`
-	Valid        bool         `json:"valid"` // Valid is true if PayoutStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullPayoutStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.PayoutStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.PayoutStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullPayoutStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.PayoutStatus), nil
 }
 
 type RedemptionMethod string
@@ -775,43 +601,19 @@ type AuditLog struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
-type Banner struct {
-	ID        pgtype.UUID        `json:"id"`
-	ImageUrl  []byte             `json:"image_url"`
-	Link      string             `json:"link"`
-	Placement string             `json:"placement"`
-	StartsAt  pgtype.Timestamptz `json:"starts_at"`
-	EndsAt    pgtype.Timestamptz `json:"ends_at"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
-type Cart struct {
-	ID        pgtype.UUID        `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
-type CartItem struct {
-	ID           pgtype.UUID        `json:"id"`
-	CartID       pgtype.UUID        `json:"cart_id"`
-	DealOptionID pgtype.UUID        `json:"deal_option_id"`
-	Quantity     int32              `json:"quantity"`
-	IsGift       bool               `json:"is_gift"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-}
-
 type Category struct {
-	ID        pgtype.UUID        `json:"id"`
-	Slug      string             `json:"slug"`
-	Name      []byte             `json:"name"`
-	Icon      string             `json:"icon"`
-	SortOrder int32              `json:"sort_order"`
-	IsActive  bool               `json:"is_active"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID                  pgtype.UUID        `json:"id"`
+	Slug                string             `json:"slug"`
+	Name                []byte             `json:"name"`
+	Icon                string             `json:"icon"`
+	SortOrder           int32              `json:"sort_order"`
+	Searchable          bool               `json:"searchable"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	DealCreationEnabled bool               `json:"deal_creation_enabled"`
+	PublishEnabled      bool               `json:"publish_enabled"`
+	Purchasable         bool               `json:"purchasable"`
+	Redeemable          bool               `json:"redeemable"`
 }
 
 type City struct {
@@ -826,35 +628,12 @@ type City struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
-type Collection struct {
-	ID          pgtype.UUID        `json:"id"`
-	Slug        string             `json:"slug"`
-	Title       []byte             `json:"title"`
-	Description []byte             `json:"description"`
-	CoverUrl    string             `json:"cover_url"`
-	StartsAt    pgtype.Timestamptz `json:"starts_at"`
-	EndsAt      pgtype.Timestamptz `json:"ends_at"`
-	IsActive    bool               `json:"is_active"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-}
-
-type CollectionDeal struct {
-	ID           pgtype.UUID        `json:"id"`
-	CollectionID pgtype.UUID        `json:"collection_id"`
-	DealID       pgtype.UUID        `json:"deal_id"`
-	SortOrder    int32              `json:"sort_order"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-}
-
 type Deal struct {
 	ID                     pgtype.UUID        `json:"id"`
 	Slug                   string             `json:"slug"`
 	MerchantID             pgtype.UUID        `json:"merchant_id"`
 	CategoryID             pgtype.UUID        `json:"category_id"`
 	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
-	Kind                   DealKind           `json:"kind"`
 	Title                  []byte             `json:"title"`
 	ShortDescription       []byte             `json:"short_description"`
 	Description            []byte             `json:"description"`
@@ -865,7 +644,6 @@ type Deal struct {
 	RedemptionMethod       RedemptionMethod   `json:"redemption_method"`
 	RedemptionInstructions []byte             `json:"redemption_instructions"`
 	BookingRequired        bool               `json:"booking_required"`
-	IsGiftable             bool               `json:"is_giftable"`
 	Status                 DealStatus         `json:"status"`
 	RejectionReason        pgtype.Text        `json:"rejection_reason"`
 	StartsAt               pgtype.Timestamptz `json:"starts_at"`
@@ -884,6 +662,7 @@ type Deal struct {
 	TitleUzSearch          interface{}        `json:"title_uz_search"`
 	TitleRuSearch          interface{}        `json:"title_ru_search"`
 	TitleEnSearch          interface{}        `json:"title_en_search"`
+	ReviewFingerprint      string             `json:"review_fingerprint"`
 }
 
 type DealLocation struct {
@@ -908,30 +687,40 @@ type DealMedium struct {
 }
 
 type DealOption struct {
-	ID            pgtype.UUID        `json:"id"`
-	DealID        pgtype.UUID        `json:"deal_id"`
-	Title         []byte             `json:"title"`
-	OriginalPrice int64              `json:"original_price"`
-	DealPrice     int64              `json:"deal_price"`
-	Currency      CurrencyCode       `json:"currency"`
-	StockTotal    int32              `json:"stock_total"`
-	StockSold     int32              `json:"stock_sold"`
-	StockReserved int32              `json:"stock_reserved"`
-	SortOrder     int32              `json:"sort_order"`
-	IsActive      bool               `json:"is_active"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	DealID             pgtype.UUID        `json:"deal_id"`
+	Title              []byte             `json:"title"`
+	OriginalPrice      int64              `json:"original_price"`
+	DealPrice          int64              `json:"deal_price"`
+	Currency           CurrencyCode       `json:"currency"`
+	StockTotal         int32              `json:"stock_total"`
+	StockSold          int32              `json:"stock_sold"`
+	StockReserved      int32              `json:"stock_reserved"`
+	SortOrder          int32              `json:"sort_order"`
+	IsActive           bool               `json:"is_active"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
 }
 
-type ExchangeRate struct {
-	ID          pgtype.UUID        `json:"id"`
-	Base        CurrencyCode       `json:"base"`
-	Quote       CurrencyCode       `json:"quote"`
-	Rate        pgtype.Numeric     `json:"rate"`
-	Source      string             `json:"source"`
-	EffectiveAt pgtype.Timestamptz `json:"effective_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+type Dispute struct {
+	ID           pgtype.UUID        `json:"id"`
+	RedemptionID pgtype.UUID        `json:"redemption_id"`
+	OpenedBy     pgtype.UUID        `json:"opened_by"`
+	Reason       string             `json:"reason"`
+	Status       string             `json:"status"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ResolvedAt   pgtype.Timestamptz `json:"resolved_at"`
+}
+
+type FraudSignal struct {
+	ID            pgtype.UUID        `json:"id"`
+	MerchantID    pgtype.UUID        `json:"merchant_id"`
+	SubjectUserID pgtype.UUID        `json:"subject_user_id"`
+	Rule          string             `json:"rule"`
+	Detail        []byte             `json:"detail"`
+	Status        string             `json:"status"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type HomepageSection struct {
@@ -949,25 +738,75 @@ type HomepageSection struct {
 	UpdatedAt pgtype.Timestamptz  `json:"updated_at"`
 }
 
+type JournalEntry struct {
+	ID             pgtype.UUID        `json:"id"`
+	Kind           string             `json:"kind"`
+	Reference      string             `json:"reference"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type JournalLine struct {
+	ID        pgtype.UUID `json:"id"`
+	EntryID   pgtype.UUID `json:"entry_id"`
+	AccountID pgtype.UUID `json:"account_id"`
+	Direction string      `json:"direction"`
+	Amount    int64       `json:"amount"`
+}
+
+type LedgerAccount struct {
+	ID        pgtype.UUID        `json:"id"`
+	Code      string             `json:"code"`
+	Kind      string             `json:"kind"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Merchant struct {
-	ID            pgtype.UUID        `json:"id"`
-	Slug          string             `json:"slug"`
-	LegalName     string             `json:"legal_name"`
-	DisplayName   string             `json:"display_name"`
-	Description   []byte             `json:"description"`
-	LogoUrl       pgtype.Text        `json:"logo_url"`
-	CoverUrl      pgtype.Text        `json:"cover_url"`
-	Phone         string             `json:"phone"`
-	Website       pgtype.Text        `json:"website"`
-	Instagram     pgtype.Text        `json:"instagram"`
-	Telegram      pgtype.Text        `json:"telegram"`
-	Status        MerchantStatus     `json:"status"`
-	RatingAvg     pgtype.Numeric     `json:"rating_avg"`
-	RatingCount   int32              `json:"rating_count"`
-	CommissionBps int32              `json:"commission_bps"`
-	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	Slug               string             `json:"slug"`
+	LegalName          string             `json:"legal_name"`
+	DisplayName        string             `json:"display_name"`
+	Description        []byte             `json:"description"`
+	LogoUrl            pgtype.Text        `json:"logo_url"`
+	CoverUrl           pgtype.Text        `json:"cover_url"`
+	Phone              string             `json:"phone"`
+	Website            pgtype.Text        `json:"website"`
+	Instagram          pgtype.Text        `json:"instagram"`
+	Telegram           pgtype.Text        `json:"telegram"`
+	RatingAvg          pgtype.Numeric     `json:"rating_avg"`
+	RatingCount        int32              `json:"rating_count"`
+	CommissionBps      int32              `json:"commission_bps"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	Stir               pgtype.Text        `json:"stir"`
+	OrgForm            pgtype.Text        `json:"org_form"`
+	TaxRegime          pgtype.Text        `json:"tax_regime"`
+	BankMfo            pgtype.Text        `json:"bank_mfo"`
+	BankAccount        pgtype.Text        `json:"bank_account"`
+	ResponsibleName    pgtype.Text        `json:"responsible_name"`
+	ContractVersion    pgtype.Text        `json:"contract_version"`
+	ContractAcceptedAt pgtype.Timestamptz `json:"contract_accepted_at"`
+	ContractAcceptedIp pgtype.Text        `json:"contract_accepted_ip"`
+	ReviewStatus       string             `json:"review_status"`
+	SubmittedAt        pgtype.Timestamptz `json:"submitted_at"`
+	RejectionReason    pgtype.Text        `json:"rejection_reason"`
+	ReviewedAt         pgtype.Timestamptz `json:"reviewed_at"`
+	OrderEmails        bool               `json:"order_emails"`
+	ReviewEmails       bool               `json:"review_emails"`
+	PayoutEmails       bool               `json:"payout_emails"`
+	DefaultLocationID  pgtype.UUID        `json:"default_location_id"`
+}
+
+type MerchantDocument struct {
+	ID          pgtype.UUID        `json:"id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	Kind        string             `json:"kind"`
+	StorageKey  string             `json:"storage_key"`
+	ContentType string             `json:"content_type"`
+	SizeBytes   int32              `json:"size_bytes"`
+	UploadedBy  pgtype.UUID        `json:"uploaded_by"`
+	UploadedAt  pgtype.Timestamptz `json:"uploaded_at"`
 }
 
 type MerchantLocation struct {
@@ -983,19 +822,51 @@ type MerchantLocation struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MerchantMediaAsset struct {
+	ID          pgtype.UUID        `json:"id"`
+	MerchantID  pgtype.UUID        `json:"merchant_id"`
+	Filename    string             `json:"filename"`
+	ContentType string             `json:"content_type"`
+	Size        int64              `json:"size"`
+	StorageKey  string             `json:"storage_key"`
+	Width       pgtype.Int4        `json:"width"`
+	Height      pgtype.Int4        `json:"height"`
+	Status      string             `json:"status"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type MerchantPayoutHold struct {
+	MerchantID pgtype.UUID        `json:"merchant_id"`
+	Reason     string             `json:"reason"`
+	HoldUntil  pgtype.Timestamptz `json:"hold_until"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type Notification struct {
+	ID           pgtype.UUID        `json:"id"`
+	UserID       pgtype.UUID        `json:"user_id"`
+	Kind         string             `json:"kind"`
+	VoucherID    pgtype.UUID        `json:"voucher_id"`
+	MerchantName string             `json:"merchant_name"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ReadAt       pgtype.Timestamptz `json:"read_at"`
+}
+
 type Order struct {
-	ID              pgtype.UUID        `json:"id"`
-	Number          string             `json:"number"`
-	UserID          pgtype.UUID        `json:"user_id"`
-	Status          OrderStatus        `json:"status"`
-	Subtotal        int64              `json:"subtotal"`
-	Total           int64              `json:"total"`
-	Currency        CurrencyCode       `json:"currency"`
-	IdempotencyKey  string             `json:"idempotency_key"`
-	ShippingAddress []byte             `json:"shipping_address"`
-	PaidAt          pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	ID             pgtype.UUID        `json:"id"`
+	Number         string             `json:"number"`
+	UserID         pgtype.UUID        `json:"user_id"`
+	Status         OrderStatus        `json:"status"`
+	Subtotal       int64              `json:"subtotal"`
+	Total          int64              `json:"total"`
+	Currency       CurrencyCode       `json:"currency"`
+	IdempotencyKey string             `json:"idempotency_key"`
+	PaidAt         pgtype.Timestamptz `json:"paid_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	RequestHash    pgtype.Text        `json:"request_hash"`
 }
 
 type OrderItem struct {
@@ -1007,13 +878,17 @@ type OrderItem struct {
 	UnitPriceSnapshot     int64              `json:"unit_price_snapshot"`
 	OriginalPriceSnapshot int64              `json:"original_price_snapshot"`
 	Quantity              int32              `json:"quantity"`
-	IsGift                bool               `json:"is_gift"`
-	GiftRecipientName     pgtype.Text        `json:"gift_recipient_name"`
-	GiftRecipientEmail    pgtype.Text        `json:"gift_recipient_email"`
-	GiftMessage           pgtype.Text        `json:"gift_message"`
-	FulfillmentStatus     FulfillmentStatus  `json:"fulfillment_status"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	TermsSnapshot         []byte             `json:"terms_snapshot"`
+}
+
+type Outbox struct {
+	ID          pgtype.UUID        `json:"id"`
+	Topic       string             `json:"topic"`
+	Payload     []byte             `json:"payload"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	PublishedAt pgtype.Timestamptz `json:"published_at"`
 }
 
 type Payment struct {
@@ -1029,36 +904,26 @@ type Payment struct {
 	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
 }
 
-type Payout struct {
-	ID          pgtype.UUID        `json:"id"`
-	MerchantID  pgtype.UUID        `json:"merchant_id"`
-	PeriodStart pgtype.Date        `json:"period_start"`
-	PeriodEnd   pgtype.Date        `json:"period_end"`
-	Gross       int64              `json:"gross"`
-	Commission  int64              `json:"commission"`
-	Net         int64              `json:"net"`
-	Status      PayoutStatus       `json:"status"`
-	PaidAt      pgtype.Timestamptz `json:"paid_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+type PayoutRun struct {
+	ID         pgtype.UUID        `json:"id"`
+	MerchantID pgtype.UUID        `json:"merchant_id"`
+	Amount     int64              `json:"amount"`
+	Status     string             `json:"status"`
+	PreparedBy pgtype.UUID        `json:"prepared_by"`
+	ApprovedBy pgtype.UUID        `json:"approved_by"`
+	BankDocRef pgtype.Text        `json:"bank_doc_ref"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
-type PromoCode struct {
-	ID            pgtype.UUID        `json:"id"`
-	BrandName     string             `json:"brand_name"`
-	BrandLogoUrl  pgtype.Text        `json:"brand_logo_url"`
-	Title         []byte             `json:"title"`
-	Code          pgtype.Text        `json:"code"`
-	DiscountLabel []byte             `json:"discount_label"`
-	Url           string             `json:"url"`
-	CategoryID    pgtype.UUID        `json:"category_id"`
-	StartsAt      pgtype.Timestamptz `json:"starts_at"`
-	EndsAt        pgtype.Timestamptz `json:"ends_at"`
-	IsActive      bool               `json:"is_active"`
-	ClickCount    int64              `json:"click_count"`
-	IsVerified    bool               `json:"is_verified"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+type PhoneOtp struct {
+	ID         pgtype.UUID        `json:"id"`
+	Phone      string             `json:"phone"`
+	CodeHash   string             `json:"code_hash"`
+	Attempts   int32              `json:"attempts"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	ConsumedAt pgtype.Timestamptz `json:"consumed_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }
 
 type RecentlyViewed struct {
@@ -1068,6 +933,39 @@ type RecentlyViewed struct {
 	ViewedAt  pgtype.Timestamptz `json:"viewed_at"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ReconciliationFinding struct {
+	ID        pgtype.UUID        `json:"id"`
+	CheckName string             `json:"check_name"`
+	Expected  int64              `json:"expected"`
+	Actual    int64              `json:"actual"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type Redemption struct {
+	ID                 pgtype.UUID        `json:"id"`
+	VoucherID          pgtype.UUID        `json:"voucher_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	MerchantLocationID pgtype.UUID        `json:"merchant_location_id"`
+	StaffUserID        pgtype.UUID        `json:"staff_user_id"`
+	Sequence           int32              `json:"sequence"`
+	Amount             int64              `json:"amount"`
+	Commission         int64              `json:"commission"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	ReversedAt         pgtype.Timestamptz `json:"reversed_at"`
+	ReversedByUserID   pgtype.UUID        `json:"reversed_by_user_id"`
+	ReversalReason     pgtype.Text        `json:"reversal_reason"`
+	PayoutRunID        pgtype.UUID        `json:"payout_run_id"`
+	GeoLat             pgtype.Numeric     `json:"geo_lat"`
+	GeoLng             pgtype.Numeric     `json:"geo_lng"`
+}
+
+type RedemptionAttempt struct {
+	ID          pgtype.UUID        `json:"id"`
+	StaffUserID pgtype.UUID        `json:"staff_user_id"`
+	Failed      bool               `json:"failed"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -1081,6 +979,19 @@ type RefreshToken struct {
 	Ip        *netip.Addr        `json:"ip"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Refund struct {
+	ID          pgtype.UUID        `json:"id"`
+	VoucherID   pgtype.UUID        `json:"voucher_id"`
+	Amount      int64              `json:"amount"`
+	Reason      string             `json:"reason"`
+	Status      string             `json:"status"`
+	RequestedBy pgtype.UUID        `json:"requested_by"`
+	ApprovedBy  pgtype.UUID        `json:"approved_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	PaymentID   pgtype.UUID        `json:"payment_id"`
 }
 
 type Review struct {
@@ -1126,14 +1037,6 @@ type RoleAssignment struct {
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
-type SavedDeal struct {
-	ID        pgtype.UUID        `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	DealID    pgtype.UUID        `json:"deal_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-}
-
 type StockReservation struct {
 	ID           pgtype.UUID        `json:"id"`
 	DealOptionID pgtype.UUID        `json:"deal_option_id"`
@@ -1158,8 +1061,6 @@ type Subcategory struct {
 type User struct {
 	ID              pgtype.UUID        `json:"id"`
 	Email           string             `json:"email"`
-	PasswordHash    pgtype.Text        `json:"password_hash"`
-	GoogleSub       pgtype.Text        `json:"google_sub"`
 	Name            string             `json:"name"`
 	Phone           pgtype.Text        `json:"phone"`
 	AvatarUrl       pgtype.Text        `json:"avatar_url"`
@@ -1190,4 +1091,9 @@ type Voucher struct {
 	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
+	RedemptionsUsed    int32              `json:"redemptions_used"`
+	ZaxiraCodeHmac     pgtype.Text        `json:"zaxira_code_hmac"`
+	FraudHold          bool               `json:"fraud_hold"`
+	DisputeOpen        bool               `json:"dispute_open"`
 }

@@ -174,24 +174,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/promo-codes': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List active promo codes */
-    get: operations['listPromoCodes'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/promo-codes/{id}/click': {
+  '/api/v1/auth/phone/code': {
     parameters: {
       query?: never;
       header?: never;
@@ -200,49 +183,15 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Track promo-code outbound click */
-    post: operations['trackPromoCodeClick'];
+    /** Send a one-time sign-in code to a phone number */
+    post: operations['requestPhoneCode'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/collections': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List active seasonal collections */
-    get: operations['listCollections'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/collections/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get collection and deals */
-    get: operations['getCollection'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/register': {
+  '/api/v1/auth/phone/verify': {
     parameters: {
       query?: never;
       header?: never;
@@ -251,42 +200,8 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Register with email and password */
-    post: operations['register'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/login': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Sign in with email and password */
-    post: operations['login'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/google': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Exchange Google authorization code with PKCE */
-    post: operations['exchangeGoogleCode'];
+    /** Sign in with the code; creates the account on first use */
+    post: operations['verifyPhoneCode'];
     delete?: never;
     options?: never;
     head?: never;
@@ -319,59 +234,8 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Revoke current refresh token */
+    /** Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired */
     post: operations['logout'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/verify-email': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Verify email token */
-    post: operations['verifyEmail'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/forgot-password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Request password-reset email */
-    post: operations['forgotPassword'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/reset-password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Reset password with token */
-    post: operations['resetPassword'];
     delete?: never;
     options?: never;
     head?: never;
@@ -395,23 +259,6 @@ export interface paths {
     head?: never;
     /** Update profile preferences */
     patch: operations['updateMe'];
-    trace?: never;
-  };
-  '/api/v1/me/password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /** Change current password */
-    put: operations['changePassword'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
     trace?: never;
   };
   '/api/v1/me/orders': {
@@ -477,41 +324,6 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me/saved-deals': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** List saved deals */
-    get: operations['listSavedDeals'];
-    put?: never;
-    /** Save a deal or merge a guest save */
-    post: operations['saveDeal'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/me/saved-deals/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Remove saved deal */
-    delete: operations['unsaveDeal'];
     options?: never;
     head?: never;
     patch?: never;
@@ -604,24 +416,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/cart': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get server-side cart */
-    get: operations['getCart'];
-    /** Replace or merge guest cart */
-    put: operations['replaceCart'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/orders': {
     parameters: {
       query?: never;
@@ -631,7 +425,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Atomically create order and ten-minute stock reservations */
+    /**
+     * Atomically create order and ten-minute stock reservations
+     * @description Same Idempotency-Key and body replays the order with 200. Same key with a different body is 422 idempotency_conflict.
+     */
     post: operations['createOrder'];
     delete?: never;
     options?: never;
@@ -1020,6 +817,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/merchant/media/{id}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Store image bytes for a pending asset (local storage adapter only) */
+    put: operations['uploadMerchantMediaContent'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/merchant/settings': {
     parameters: {
       query?: never;
@@ -1048,7 +862,7 @@ export interface paths {
     /** List staff */
     get: operations['listMerchantStaff'];
     put?: never;
-    /** Invite manager or cashier by email */
+    /** Invite a manager or cashier by phone (owner only) */
     post: operations['inviteMerchantStaff'];
     delete?: never;
     options?: never;
@@ -1074,6 +888,329 @@ export interface paths {
     patch: operations['updateMerchantStaff'];
     trace?: never;
   };
+  '/api/v1/admin/moderation/deals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Deals waiting for review */
+    get: operations['listModerationDeals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/deals/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a deal under review */
+    post: operations['approveDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/deals/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a deal under review with a reason */
+    post: operations['rejectDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/review-reports': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open review reports */
+    get: operations['listReviewReports'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/review-reports/{id}/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Close a report without changing the review */
+    post: operations['dismissReviewReport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/reviews/{id}/hide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Hide a review and close its open reports */
+    post: operations['hideReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/audit-logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Audit trail of admin and sensitive merchant actions */
+    get: operations['listAuditLogs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/vouchers/{id}/reverse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Undo the latest redemption (cashier: within 10 minutes) */
+    post: operations['reverseMerchantVoucher'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/vouchers/{id}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ask for a refund of an unused voucher */
+    post: operations['requestVoucherRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/vouchers/{id}/dispute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dispute a redemption (this was not me) */
+    post: operations['openVoucherDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/payouts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Prepare a payout run for a merchant (finance operator) */
+    post: operations['preparePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/payouts/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve and send a payout run (four-eyes) */
+    post: operations['approvePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/paid': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark an approved refund as sent to the bank */
+    post: operations['markRefundPaid'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/payouts/{id}/reconcile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record that the bank confirmed a sent payout run */
+    post: operations['reconcilePayout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support approves a refund request (over 14 days or from a dispute) */
+    post: operations['approveRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/resolve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve a dispute in favour of the customer (refund) or the merchant (payout) */
+    post: operations['resolveDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/request-evidence': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ask the parties for evidence on an open dispute (support) */
+    post: operations['requestDisputeEvidence'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/start-review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a dispute with evidence into review (support) */
+    post: operations['startDisputeReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/disputes/{id}/close': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Close a resolved dispute (support or system) */
+    post: operations['closeDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/status': {
     parameters: {
       query?: never;
@@ -1091,6 +1228,193 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/merchant/submit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send the business to platform review (owner only) */
+    post: operations['submitMerchantForReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List businesses waiting for review */
+    get: operations['listMerchantReviewQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/start-review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a submitted business to in_review */
+    post: operations['startMerchantReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a business that is in review */
+    post: operations['approveMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a submitted or in-review business with a reason */
+    post: operations['rejectMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List uploaded business documents (certificate, bank letter) */
+    get: operations['listMerchantDocuments'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/documents/{kind}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Upload a business document (owner only). Replaces the previous file of the same kind */
+    put: operations['uploadMerchantDocument'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/documents/{kind}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Download a business document for review (reviewers only) */
+    get: operations['downloadMerchantDocument'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/vouchers/{id}/reverse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5) */
+    post: operations['supportReverseVoucher'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List my notifications, newest first */
+    get: operations['listMyNotifications'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/finance/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Open payouts, refunds and disputes for the finance desk */
+    get: operations['getFinanceQueue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1100,7 +1424,7 @@ export interface components {
     /** @enum {string} */
     Locale: 'uz' | 'ru' | 'en';
     /** @enum {string} */
-    Currency: 'UZS' | 'USD';
+    Currency: 'UZS';
     /** @enum {string} */
     Role:
       | 'user'
@@ -1163,40 +1487,44 @@ export interface components {
       slug: string;
       name: components['schemas']['LocalizedText'];
       icon: string;
+      searchable: boolean;
+      deal_creation_enabled: boolean;
+      publish_enabled: boolean;
+      purchasable: boolean;
+      redeemable: boolean;
       subcategories: components['schemas']['Subcategory'][];
     };
     CategoryList: {
       items: components['schemas']['Category'][];
-    };
-    ExchangeRate: {
-      /** @constant */
-      base: 'UZS';
-      /** @constant */
-      quote: 'USD';
-      rate: string;
-      /** Format: date-time */
-      effective_at: string;
     };
     PublicConfig: {
       locales: components['schemas']['Locale'][];
       currencies: components['schemas']['Currency'][];
       cities: components['schemas']['City'][];
       categories: components['schemas']['Category'][];
-      exchange_rate: components['schemas']['ExchangeRate'];
     };
     /** @enum {string} */
     DealStatus:
       | 'draft'
-      | 'pending_review'
-      | 'rejected'
+      | 'in_review'
+      | 'approved'
       | 'scheduled'
       | 'active'
       | 'paused'
-      | 'sold_out'
-      | 'expired';
+      | 'ended'
+      | 'archived'
+      | 'changes_requested';
     /** @enum {string} */
     OrderStatus:
-      'pending_payment' | 'paid' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
+      | 'created'
+      | 'awaiting_payment'
+      | 'paid'
+      | 'completed'
+      | 'expired'
+      | 'failed'
+      | 'cancelled'
+      | 'partially_refunded'
+      | 'refunded';
     DealOption: {
       id: components['schemas']['Uuid'];
       title: components['schemas']['LocalizedText'];
@@ -1252,14 +1580,15 @@ export interface components {
       rating_count: number;
       commission_bps: number;
       locations?: components['schemas']['MerchantLocation'][];
+      /** @enum {string} */
+      review_status?:
+        'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'suspended' | 'terminated';
     };
     DealSummary: {
       id: components['schemas']['Uuid'];
       slug: string;
       merchant: components['schemas']['Merchant'];
       category: components['schemas']['Category'];
-      /** @enum {string} */
-      kind: 'voucher' | 'product';
       title: components['schemas']['LocalizedText'];
       status: components['schemas']['DealStatus'];
       options: components['schemas']['DealOption'][];
@@ -1288,7 +1617,6 @@ export interface components {
       redemption_method: 'qr' | 'code' | 'qr_or_code';
       redemption_instructions?: components['schemas']['LocalizedText'];
       booking_required: boolean;
-      is_giftable: boolean;
       voucher_valid_days?: number | null;
       /** Format: date-time */
       voucher_valid_until?: string | null;
@@ -1336,52 +1664,14 @@ export interface components {
     SuggestionList: {
       items: components['schemas']['Suggestion'][];
     };
-    PromoCode: {
-      id: components['schemas']['Uuid'];
-      brand_name: string;
-      /** Format: uri */
-      brand_logo_url?: string | null;
-      title: components['schemas']['LocalizedText'];
-      code?: string | null;
-      discount_label: components['schemas']['LocalizedText'];
-      /** Format: uri */
-      url: string;
-      /** Format: date-time */
-      starts_at: string;
-      /** Format: date-time */
-      ends_at: string;
-      is_verified: boolean;
-    };
-    PromoCodePage: components['schemas']['PageMeta'] & {
-      items: components['schemas']['PromoCode'][];
-    };
-    Collection: {
-      id: components['schemas']['Uuid'];
-      slug: string;
-      title: components['schemas']['LocalizedText'];
-      description: components['schemas']['LocalizedText'];
-      /** Format: uri */
-      cover_url: string;
-      /** Format: date-time */
-      starts_at: string;
-      /** Format: date-time */
-      ends_at: string;
-    };
-    CollectionList: {
-      items: components['schemas']['Collection'][];
-    };
-    CollectionDetail: components['schemas']['Collection'] & {
-      deals: components['schemas']['DealPage'];
-    };
     HomepageSection: {
       id: components['schemas']['Uuid'];
       key: string;
       title: components['schemas']['LocalizedText'];
       /** @enum {string} */
-      type: 'deals' | 'collection' | 'categories' | 'banner';
+      type: 'deals' | 'categories';
       sort_order: number;
       deals?: components['schemas']['DealSummary'][];
-      collection?: components['schemas']['Collection'];
       categories?: components['schemas']['Category'][];
     };
     Homepage: {
@@ -1403,39 +1693,23 @@ export interface components {
       status: 'active' | 'blocked';
       roles: components['schemas']['Role'][];
     };
-    RegisterRequest: {
-      /** Format: email */
-      email: string;
-      password: string;
-      name: string;
-      locale: components['schemas']['Locale'];
-      currency: components['schemas']['Currency'];
+    PhoneCodeRequest: {
+      phone: string;
     };
-    LoginRequest: {
-      /** Format: email */
-      email: string;
-      password: string;
-    };
-    GoogleCodeRequest: {
+    PhoneCodeVerify: {
+      phone: string;
       code: string;
-      code_verifier: string;
-      /** Format: uri */
-      redirect_uri: string;
     };
-    TokenRequest: {
-      token: string;
+    PhoneCodeSent: {
+      cooldown_seconds: number;
+      /** @description Development only. Absent in every other environment. */
+      dev_code?: string;
     };
-    EmailRequest: {
-      /** Format: email */
-      email: string;
-    };
-    ResetPasswordRequest: {
-      token: string;
-      password: string;
-    };
+    /** @description Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients. */
     AuthSession: {
       user: components['schemas']['User'];
       access_token: string;
+      refresh_token: string;
       /** @constant */
       expires_in: 900;
     };
@@ -1445,59 +1719,22 @@ export interface components {
       locale?: components['schemas']['Locale'];
       currency?: components['schemas']['Currency'];
     };
-    ChangePasswordRequest: {
-      current_password: string;
-      new_password: string;
-    };
-    DealIdRequest: {
-      deal_id: components['schemas']['Uuid'];
-    };
-    CartItemInput: {
+    CreateOrderItem: {
       deal_option_id: components['schemas']['Uuid'];
       quantity: number;
-      is_gift: boolean;
-    };
-    CartInput: {
-      items: components['schemas']['CartItemInput'][];
-      /** @default false */
-      merge: boolean;
-    };
-    CartItem: components['schemas']['CartItemInput'] & {
-      option: components['schemas']['DealOption'];
-      deal: components['schemas']['DealSummary'];
-      line_total: components['schemas']['Money'];
-    };
-    Cart: {
-      items: components['schemas']['CartItem'][];
-      subtotal: components['schemas']['Money'];
-    };
-    CreateOrderItem: components['schemas']['CartItemInput'] & {
-      gift_recipient_name?: string;
-      /** Format: email */
-      gift_recipient_email?: string;
-      gift_message?: string;
     };
     CreateOrderRequest: {
       items: components['schemas']['CreateOrderItem'][];
-      shipping_address?: {
-        [key: string]: unknown;
-      };
     };
     OrderItem: {
       id: components['schemas']['Uuid'];
       deal_id: components['schemas']['Uuid'];
       deal_option_id: components['schemas']['Uuid'];
       title_snapshot: components['schemas']['LocalizedText'];
+      terms_snapshot: components['schemas']['LocalizedText'];
       unit_price: components['schemas']['Money'];
       original_price: components['schemas']['Money'];
       quantity: number;
-      is_gift?: boolean;
-      gift_recipient_name?: string | null;
-      /** Format: email */
-      gift_recipient_email?: string | null;
-      gift_message?: string | null;
-      /** @enum {string} */
-      fulfillment_status: 'not_applicable' | 'processing' | 'shipped' | 'delivered' | 'returned';
     };
     Order: {
       id: components['schemas']['Uuid'];
@@ -1505,9 +1742,6 @@ export interface components {
       status: components['schemas']['OrderStatus'];
       subtotal: components['schemas']['Money'];
       total: components['schemas']['Money'];
-      shipping_address?: {
-        [key: string]: unknown;
-      } | null;
       items: components['schemas']['OrderItem'][];
       /** Format: date-time */
       reservation_expires_at?: string | null;
@@ -1530,7 +1764,14 @@ export interface components {
       /** @enum {string} */
       provider: 'mock' | 'payme' | 'click' | 'uzum';
       /** @enum {string} */
-      status: 'created' | 'pending' | 'succeeded' | 'failed' | 'refunded';
+      status:
+        | 'created'
+        | 'pending'
+        | 'succeeded'
+        | 'failed'
+        | 'chargeback_open'
+        | 'chargeback_won'
+        | 'chargeback_lost';
       /** Format: uri-reference */
       redirect_url: string;
     };
@@ -1543,9 +1784,14 @@ export interface components {
       deal: components['schemas']['DealSummary'];
       option: components['schemas']['DealOption'];
       merchant: components['schemas']['Merchant'];
+      terms_snapshot: components['schemas']['LocalizedText'];
       buyer_first_name?: string;
       code: string;
+      /** @description Rotates every 30 seconds; the voucher page must refetch. */
       qr_token: string;
+      /** Format: date-time */
+      qr_token_expires_at?: string;
+      backup_code?: string;
       /** @enum {string} */
       status: 'active' | 'redeemed' | 'expired' | 'refunded' | 'cancelled';
       /** Format: date-time */
@@ -1558,6 +1804,20 @@ export interface components {
     };
     VoucherPage: components['schemas']['PageMeta'] & {
       items: components['schemas']['Voucher'][];
+    };
+    MerchantRedemption: {
+      id: components['schemas']['Uuid'];
+      /** Format: date-time */
+      time: string;
+      deal: components['schemas']['LocalizedText'];
+      option: components['schemas']['LocalizedText'];
+      buyer: string;
+      branch: string;
+      cashier: string;
+      reversed: boolean;
+    };
+    MerchantRedemptionPage: components['schemas']['PageMeta'] & {
+      items: components['schemas']['MerchantRedemption'][];
     };
     ReviewInput: {
       rating: number;
@@ -1582,6 +1842,18 @@ export interface components {
       address: string;
       lat: number;
       lng: number;
+      /** @description Taxpayer number (STIR) */
+      stir: string;
+      /** @enum {string} */
+      org_form: 'mchj' | 'yatt';
+      /** @enum {string} */
+      tax_regime: 'vat_payer' | 'turnover_tax';
+      bank_mfo: string;
+      bank_account: string;
+      responsible_name: string;
+      contract_version: string;
+      /** @description Must be true: the merchant accepts the offer */
+      contract_accepted: boolean;
     };
     MerchantInput: {
       display_name?: string;
@@ -1616,6 +1888,8 @@ export interface components {
       stock_total: number;
       sort_order: number;
       is_active: boolean;
+      /** @default 1 */
+      redemptions_allowed: number;
     };
     DealMediaInput: {
       id?: components['schemas']['Uuid'];
@@ -1627,12 +1901,59 @@ export interface components {
       height: number;
       blurhash: string;
     };
+    ReviewReport: {
+      id: components['schemas']['Uuid'];
+      reason: string;
+      /** @enum {string} */
+      status: 'pending' | 'resolved' | 'dismissed';
+      /** Format: date-time */
+      created_at: string;
+      review: components['schemas']['Review'];
+    };
+    ReviewReportPage: {
+      items: components['schemas']['ReviewReport'][];
+      page: number;
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    AuditLog: {
+      id: components['schemas']['Uuid'];
+      actor_user_id?: components['schemas']['Uuid'];
+      actor_role: string;
+      action: string;
+      entity_type: string;
+      entity_id?: components['schemas']['Uuid'];
+      after_data?: {
+        [key: string]: unknown;
+      };
+      /** Format: date-time */
+      created_at: string;
+    };
+    AuditLogPage: {
+      items: components['schemas']['AuditLog'][];
+      page: number;
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    ReverseRequest: {
+      reason: string;
+    };
+    ApprovePayoutRequest: {
+      bank_doc_ref?: string;
+    };
+    ResolveDisputeRequest: {
+      /** @enum {string} */
+      resolution: 'customer' | 'merchant';
+    };
+    RejectDealInput: {
+      reason: string;
+    };
     DealInput: {
       slug: string;
       category_id: components['schemas']['Uuid'];
       subcategory_id: components['schemas']['Uuid'];
-      /** @enum {string} */
-      kind: 'voucher' | 'product';
       title: components['schemas']['LocalizedText'];
       short_description: components['schemas']['LocalizedText'];
       description: components['schemas']['LocalizedText'];
@@ -1644,7 +1965,6 @@ export interface components {
       redemption_method: 'qr' | 'code' | 'qr_or_code';
       redemption_instructions: components['schemas']['LocalizedText'];
       booking_required: boolean;
-      is_giftable: boolean;
       /** Format: date-time */
       starts_at: string;
       /** Format: date-time */
@@ -1683,6 +2003,9 @@ export interface components {
     } & (unknown | unknown);
     RedeemRequest: {
       location_id: components['schemas']['Uuid'];
+      /** @description Staff device position, optional; used by the distance fraud rule. */
+      lat?: number;
+      lng?: number;
     };
     MerchantCustomer: {
       user_id: components['schemas']['Uuid'];
@@ -1728,6 +2051,8 @@ export interface components {
       content_type: string;
       /** Format: int64 */
       size: number;
+      width?: number;
+      height?: number;
       /** Format: date-time */
       created_at: string;
     };
@@ -1763,13 +2088,102 @@ export interface components {
       role: 'merchant_owner' | 'merchant_manager' | 'merchant_cashier';
     };
     StaffInput: {
-      /** Format: email */
-      email: string;
+      /** @description Phone of a registered user; they must sign in once first */
+      phone: string;
       /** @enum {string} */
       role: 'merchant_manager' | 'merchant_cashier';
     };
     StaffList: {
       items: components['schemas']['StaffMember'][];
+    };
+    DealIdRequest: {
+      deal_id: components['schemas']['Uuid'];
+    };
+    MerchantReview: {
+      id: components['schemas']['Uuid'];
+      legal_name: string;
+      display_name: string;
+      stir: string;
+      /** @enum {string} */
+      org_form: 'mchj' | 'yatt';
+      /** @enum {string} */
+      tax_regime: 'vat_payer' | 'turnover_tax';
+      bank_mfo: string;
+      bank_account: string;
+      responsible_name: string;
+      /** @enum {string} */
+      review_status: 'submitted' | 'in_review';
+      /** Format: date-time */
+      submitted_at: string;
+      /** @description Document kinds already uploaded */
+      documents?: ('certificate' | 'bank_letter' | 'price_proof')[];
+    };
+    MerchantReviewList: {
+      items: components['schemas']['MerchantReview'][];
+    };
+    RejectMerchantRequest: {
+      reason: string;
+    };
+    MerchantDocument: {
+      /** @enum {string} */
+      kind: 'certificate' | 'bank_letter' | 'price_proof';
+      /** @enum {string} */
+      content_type: 'application/pdf' | 'image/jpeg' | 'image/png';
+      size_bytes: number;
+      /** Format: date-time */
+      uploaded_at: string;
+    };
+    MerchantDocumentList: {
+      items: components['schemas']['MerchantDocument'][];
+    };
+    Notification: {
+      id: components['schemas']['Uuid'];
+      /** @enum {string} */
+      kind: 'voucher_redeemed';
+      voucher_id?: components['schemas']['Uuid'];
+      merchant_name: string;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      read_at?: string | null;
+    };
+    NotificationList: {
+      items: components['schemas']['Notification'][];
+    };
+    PayoutRunItem: {
+      id: components['schemas']['Uuid'];
+      merchant_name: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    RefundItem: {
+      id: components['schemas']['Uuid'];
+      voucher_code: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      reason: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    DisputeItem: {
+      id: components['schemas']['Uuid'];
+      voucher_code: string;
+      merchant_name: string;
+      /** Format: int64 */
+      amount: number;
+      status: string;
+      reason: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    FinanceQueue: {
+      payout_runs: components['schemas']['PayoutRunItem'][];
+      refunds: components['schemas']['RefundItem'][];
+      disputes: components['schemas']['DisputeItem'][];
     };
   };
   responses: {
@@ -2052,101 +2466,7 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
-  listPromoCodes: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-        category?: string;
-        page?: components['parameters']['Page'];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Promo codes */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PromoCodePage'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  trackPromoCodeClick: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: components['parameters']['Id'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Click tracked */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  listCollections: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Collections */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CollectionList'];
-        };
-      };
-    };
-  };
-  getCollection: {
-    parameters: {
-      query?: {
-        locale?: components['parameters']['Locale'];
-        page?: components['parameters']['Page'];
-      };
-      header?: never;
-      path: {
-        slug: components['parameters']['Slug'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Collection detail */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CollectionDetail'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  register: {
+  requestPhoneCode: {
     parameters: {
       query?: never;
       header?: never;
@@ -2155,23 +2475,23 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['RegisterRequest'];
+        'application/json': components['schemas']['PhoneCodeRequest'];
       };
     };
     responses: {
-      /** @description Registered session */
-      201: {
+      /** @description Code sent */
+      202: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['AuthSession'];
+          'application/json': components['schemas']['PhoneCodeSent'];
         };
       };
       default: components['responses']['Problem'];
     };
   };
-  login: {
+  verifyPhoneCode: {
     parameters: {
       query?: never;
       header?: never;
@@ -2180,36 +2500,11 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['LoginRequest'];
+        'application/json': components['schemas']['PhoneCodeVerify'];
       };
     };
     responses: {
-      /** @description Authenticated session */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AuthSession'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  exchangeGoogleCode: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GoogleCodeRequest'];
-      };
-    };
-    responses: {
-      /** @description Authenticated session */
+      /** @description Session */
       200: {
         headers: {
           [name: string]: unknown;
@@ -2252,75 +2547,6 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description Signed out */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  verifyEmail: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TokenRequest'];
-      };
-    };
-    responses: {
-      /** @description Email verified */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  forgotPassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailRequest'];
-      };
-    };
-    responses: {
-      /** @description Request accepted */
-      202: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  resetPassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ResetPasswordRequest'];
-      };
-    };
-    responses: {
-      /** @description Password reset */
       204: {
         headers: {
           [name: string]: unknown;
@@ -2391,29 +2617,6 @@ export interface operations {
         content: {
           'application/json': components['schemas']['User'];
         };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  changePassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChangePasswordRequest'];
-      };
-    };
-    responses: {
-      /** @description Password changed */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       default: components['responses']['Problem'];
     };
@@ -2508,70 +2711,6 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Voucher'];
         };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  listSavedDeals: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Saved deals */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DealList'];
-        };
-      };
-    };
-  };
-  saveDeal: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DealIdRequest'];
-      };
-    };
-    responses: {
-      /** @description Saved */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  unsaveDeal: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: components['parameters']['Id'];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Removed */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       default: components['responses']['Problem'];
     };
@@ -2737,52 +2876,6 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
-  getCart: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Cart */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Cart'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
-  replaceCart: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CartInput'];
-      };
-    };
-    responses: {
-      /** @description Cart */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Cart'];
-        };
-      };
-      default: components['responses']['Problem'];
-    };
-  };
   createOrder: {
     parameters: {
       query?: never;
@@ -2798,6 +2891,15 @@ export interface operations {
       };
     };
     responses: {
+      /** @description Replayed order for the same Idempotency-Key */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Order'];
+        };
+      };
       /** @description Order */
       201: {
         headers: {
@@ -3307,15 +3409,16 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Vouchers */
+      /** @description Redemption history */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['VoucherPage'];
+          'application/json': components['schemas']['MerchantRedemptionPage'];
         };
       };
+      default: components['responses']['Problem'];
     };
   };
   listMerchantCustomers: {
@@ -3501,6 +3604,31 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
+  uploadMerchantMediaContent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/octet-stream': string;
+      };
+    };
+    responses: {
+      /** @description Stored */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
   getMerchantSettings: {
     parameters: {
       query?: never;
@@ -3638,6 +3766,439 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
+  listModerationDeals: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DealPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  rejectDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectDealInput'];
+      };
+    };
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listReviewReports: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReviewReportPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  dismissReviewReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dismissed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  hideReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Hidden */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listAuditLogs: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Audit entries */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuditLogPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  reverseMerchantVoucher: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Reversed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  requestVoucherRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Refund recorded */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  openVoucherDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Dispute opened */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  preparePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Payout run prepared */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approvePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ApprovePayoutRequest'];
+      };
+    };
+    responses: {
+      /** @description Approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  markRefundPaid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recorded */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  reconcilePayout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reconciled */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  resolveDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ResolveDisputeRequest'];
+      };
+    };
+    responses: {
+      /** @description Resolved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  requestDisputeEvidence: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Awaiting evidence */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  startDisputeReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Under review */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  closeDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Closed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
   getAdminStatus: {
     parameters: {
       query?: never;
@@ -3657,6 +4218,256 @@ export interface operations {
             /** @constant */
             available: false;
           };
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  submitMerchantForReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Submitted */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Merchant'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMerchantReviewQueue: {
+    parameters: {
+      query?: {
+        status?: 'submitted' | 'in_review';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantReviewList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  startMerchantReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  approveMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  rejectMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectMerchantRequest'];
+      };
+    };
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMerchantDocuments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Documents */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantDocumentList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  uploadMerchantDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        kind: 'certificate' | 'bank_letter' | 'price_proof';
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/octet-stream': string;
+      };
+    };
+    responses: {
+      /** @description Stored */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  downloadMerchantDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+        kind: 'certificate' | 'bank_letter' | 'price_proof';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description File */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+          'image/jpeg': string;
+          'image/png': string;
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  supportReverseVoucher: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReverseRequest'];
+      };
+    };
+    responses: {
+      /** @description Reversed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listMyNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NotificationList'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  getFinanceQueue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Queue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FinanceQueue'];
         };
       };
       default: components['responses']['Problem'];

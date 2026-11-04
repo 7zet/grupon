@@ -12,6 +12,7 @@ import { SectionHeading } from '@/components/section-heading';
 import { StickyBuy } from '@/components/sticky-buy';
 import { Link } from '@/i18n/navigation';
 import { getCurrency } from '@/lib/preferences';
+import { ReviewReportButton } from '@/components/review-report-button';
 
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
 
@@ -46,7 +47,7 @@ export default async function DealPage({ params }: Props) {
   }
   const [reviews, related, currency, t] = await Promise.all([
     publicApi.reviews(slug),
-    publicApi.related(slug),
+    publicApi.related(slug, deal.locations[0]?.city.slug),
     getCurrency(),
     getTranslations('Deal'),
   ]);
@@ -77,8 +78,8 @@ export default async function DealPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replaceAll('<', '\\u003c') }}
       />
-      <div className="mx-auto max-w-layout px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
-        <nav className="mb-4 text-small text-ink-muted">
+      <div className="mx-auto max-w-layout px-4 py-3 sm:px-6 lg:px-8 lg:py-6">
+        <nav className="mb-3 text-small text-ink-muted lg:mb-4">
           <Link href={`/${deal.locations[0]?.city.slug ?? 'tashkent'}/${deal.category.slug}`}>
             {localized(deal.category.name, locale)}
           </Link>{' '}
@@ -175,9 +176,7 @@ export default async function DealPage({ params }: Props) {
                           <p className="mt-1">{review.reply.text}</p>
                         </div>
                       )}
-                      <button className="mt-3 text-label text-ink-muted" type="button">
-                        {t('report')}
-                      </button>
+                      <ReviewReportButton reviewId={review.id} />
                     </article>
                   ))}
                 </div>

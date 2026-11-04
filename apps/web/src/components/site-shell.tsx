@@ -1,15 +1,16 @@
 import type { PublicConfig } from '@grupon/api-client';
 import { brandConfig, localized, type Currency, type Locale } from '@grupon/config';
-import { Heart, Home, Menu, Search, ShoppingCart, Ticket, UserRound } from 'lucide-react';
+import { Home, Menu, Search, Ticket, UserRound } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { PropsWithChildren } from 'react';
 import { Link } from '@/i18n/navigation';
-import { CurrencySelect, LanguageSelect } from './preferences';
+import { BusinessNavLink } from './business-nav-link';
+import { LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
 
 type Props = PropsWithChildren<{ config: PublicConfig; locale: Locale; currency: Currency }>;
 
-export async function SiteShell({ children, config, locale, currency }: Props) {
+export async function SiteShell({ children, config, locale }: Props) {
   const t = await getTranslations('Navigation');
   const footer = await getTranslations('Footer');
   return (
@@ -54,22 +55,8 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
                 </option>
               ))}
             </select>
-            <CurrencySelect value={currency} />
             <LanguageSelect value={locale} />
-            <Link
-              className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
-              href="/account/saved"
-              aria-label={t('saved')}
-            >
-              <Heart />
-            </Link>
-            <Link
-              className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
-              href="/cart"
-              aria-label={t('cart')}
-            >
-              <ShoppingCart />
-            </Link>
+            <BusinessNavLink />
             <Link
               className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
               href="/login"
@@ -118,9 +105,7 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
           </div>
           <div>
             <h2 className="font-semibold">{footer('discover')}</h2>
-            <Link className="mt-3 block text-small text-ink-muted" href="/coupons">
-              {t('coupons')}
-            </Link>
+            <BusinessNavLink variant="text" />
             <Link className="mt-2 block text-small text-ink-muted" href="/merchant">
               {t('sell')}
             </Link>
@@ -148,9 +133,6 @@ export async function SiteShell({ children, config, locale, currency }: Props) {
         </MobileLink>
         <MobileLink href="/search" label={t('search')}>
           <Search />
-        </MobileLink>
-        <MobileLink href="/account/saved" label={t('saved')}>
-          <Heart />
         </MobileLink>
         <MobileLink href="/account/coupons" label={t('coupons')}>
           <Ticket />

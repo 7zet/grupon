@@ -2,7 +2,7 @@
 import type { components } from '@grupon/api-client';
 import { localized, type Currency, type Locale } from '@grupon/config';
 import { discountPercent, formatMoney } from '@grupon/ui';
-import { Heart, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
@@ -19,21 +19,25 @@ export function PurchasePanel({
   currency: Currency;
 }) {
   const t = useTranslations('Deal');
-  const common = useTranslations('Common');
   const router = useRouter();
   const add = useCart((state) => state.add);
   const [selected, setSelected] = useState(deal.options[0]!.id);
   const [quantity, setQuantity] = useState(1);
-  const [gift, setGift] = useState(false);
-  const [notice, setNotice] = useState(false);
   const option = deal.options.find((item) => item.id === selected)!;
   const remaining = option.stock_total - option.stock_sold - option.stock_reserved;
   const unavailable = deal.status !== 'active' || remaining < 1;
   const savings = (option.original_price.amount - option.deal_price.amount) * quantity;
-  const item = { optionId: option.id, quantity, isGift: gift };
+  const cartLine = () => ({
+    optionId: option.id,
+    quantity,
+    title: localized(option.title, locale),
+    dealSlug: deal.slug,
+    unitPrice: option.deal_price.amount,
+    originalPrice: option.original_price.amount,
+  });
   const buy = () => {
-    add(item);
-    router.push(`/login?returnTo=${encodeURIComponent(`/deal/${deal.slug}?option=${selected}`)}`);
+    add(cartLine());
+    router.push('/checkout');
   };
 
   return (
@@ -90,7 +94,7 @@ export function PurchasePanel({
         onClick={buy}
         type="button"
       >
-        {unavailable ? (deal.status === 'expired' ? t('ended') : t('soldOut')) : t('buyNow')}
+        {unavailable ? (deal.status === 'ended' ? t('ended') : t('soldOut')) : t('buyNow')}
       </button>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-small font-semibold">{t('quantity')}</span>
@@ -116,39 +120,6 @@ export function PurchasePanel({
           </button>
         </div>
       </div>
-      {deal.is_giftable && (
-        <label className="mt-3 flex items-center gap-2 text-small">
-          <input
-            type="checkbox"
-            checked={gift}
-            onChange={(event) => setGift(event.target.checked)}
-          />
-          {t('gift')}
-        </label>
-      )}
-      <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
-        <button
-          className="h-11 rounded-control-ui border border-brand bg-brand-tint px-3 text-small font-semibold text-brand"
-          disabled={unavailable}
-          onClick={() => {
-            add(item);
-            setNotice(true);
-          }}
-          type="button"
-        >
-          <ShoppingCart className="mr-2 inline size-4" />
-          {t('addToCart')}
-        </button>
-        <button className="rounded-control-ui border p-3" aria-label={common('save')} type="button">
-          <Heart className="size-5" />
-        </button>
-      </div>
-      {notice && (
-        <p className="mt-2 text-small text-save" role="status">
-          {t('addSuccess')}
-        </p>
-      )}
-      {currency === 'USD' && <p className="mt-3 text-label text-ink-muted">{t('paymentNote')}</p>}
     </aside>
   );
 }

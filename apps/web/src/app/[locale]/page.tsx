@@ -1,6 +1,6 @@
 import { publicApi } from '@grupon/api-client';
 import { localized, type Locale } from '@grupon/config';
-import { ArrowRight, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Search, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DealGrid } from '@/components/deal-grid';
@@ -15,13 +15,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('Home');
-  const common = await getTranslations('Common');
-  const [config, homepage, allDeals, promos, collections, currency] = await Promise.all([
+  const [config, homepage, allDeals, currency] = await Promise.all([
     publicApi.config(),
     publicApi.homepage('tashkent'),
     publicApi.deals(new URLSearchParams({ city: 'tashkent', sort: 'popular', page: '1' })),
-    publicApi.promoCodes(),
-    publicApi.collections(),
     getCurrency(),
   ]);
   const featured =
@@ -107,38 +104,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           <DealGrid deals={featured} locale={locale} currency={currency} />
         </section>
         <section>
-          <SectionHeading title={t('trending')} href="/coupons" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {promos.items.slice(0, 4).map((promo) => (
-              <Link
-                className="rounded-card-ui border bg-surface p-5 transition hover:shadow-floating-ui"
-                href="/coupons?tab=promo"
-                key={promo.id}
-              >
-                <div className="flex items-center gap-3">
-                  {promo.brand_logo_url && (
-                    <Image
-                      className="size-12 rounded-control-ui object-cover"
-                      src={promo.brand_logo_url}
-                      width={48}
-                      height={48}
-                      alt=""
-                    />
-                  )}
-                  <strong>{promo.brand_name}</strong>
-                </div>
-                <div className="mt-5 text-subtitle font-bold text-ink">
-                  {localized(promo.discount_label, locale)}
-                </div>
-                <div className="mt-2 flex items-center gap-1 text-small text-brand">
-                  <ShieldCheck className="size-4" />
-                  {common('verified')}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-        <section>
           <SectionHeading title={t('popular')} href="/tashkent?sort=popular" />
           <DealGrid deals={popular} locale={locale} currency={currency} />
         </section>
@@ -190,17 +155,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
               <ArrowRight className="size-4" />
             </Link>
           </div>
-          {collections.items[0] && (
-            <div className="relative min-h-64">
-              <Image
-                className="object-cover"
-                fill
-                src={collections.items[0].cover_url}
-                alt={localized(collections.items[0].title, locale)}
-                sizes="50vw"
-              />
-            </div>
-          )}
         </section>
       </div>
     </>

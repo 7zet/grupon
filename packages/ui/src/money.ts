@@ -2,26 +2,24 @@ import type { Currency, Locale } from '@grupon/config';
 
 const localeMap: Record<Locale, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
 
-export function convertUzsToUsdCents(amount: number, uzsPerUsd: number): number {
-  if (!Number.isSafeInteger(amount) || !Number.isSafeInteger(uzsPerUsd) || uzsPerUsd <= 0) {
-    throw new RangeError('Money values must be safe positive integers');
-  }
-  return Math.round((amount * 100) / uzsPerUsd);
+/** Money is stored and sent as tiyin (1 so'm = 100 tiyin), per ADR-0003. */
+export const TIYIN_PER_SOM = 100;
+
+/** Converts a so'm figure typed by a person into the tiyin amount the API expects. */
+export function tiyinFromSom(som: number): number {
+  return Math.round(som * TIYIN_PER_SOM);
 }
 
 export function formatMoney(
-  amount: number,
+  tiyin: number,
   locale: Locale,
   currency: Currency,
-  uzsPerUsd = 12650,
 ): string {
-  if (currency === 'USD') {
-    const cents = convertUzsToUsdCents(amount, uzsPerUsd);
-    return `≈ ${new Intl.NumberFormat(localeMap[locale], { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(cents / 100)}`;
-  }
+  const som = Math.round(tiyin / TIYIN_PER_SOM);
   const value = new Intl.NumberFormat(localeMap[locale])
-    .format(amount)
-    .replace(/[\u00a0\u202f]/g, ' ');
+    .format(som)
+    .replace(/[  ]/g, ' ');
+  if (currency !== 'UZS') throw new RangeError(`unsupported currency ${currency}`);
   if (locale === 'ru') return `${value} сум`;
   if (locale === 'en') return `${value} UZS`;
   return `${value} so'm`;

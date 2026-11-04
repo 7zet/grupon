@@ -48,16 +48,16 @@ func TestDatabaseConstraints(t *testing.T) {
 	}
 
 	fixture := `
-INSERT INTO users(id,email,password_hash,name) VALUES
- ('019a0000-0000-7000-8000-000000000001','one@test.local','hash','One'),
- ('019a0000-0000-7000-8000-000000000002','two@test.local','hash','Two');
+INSERT INTO users(id,email,name) VALUES
+ ('019a0000-0000-7000-8000-000000000001','one@test.local','One'),
+ ('019a0000-0000-7000-8000-000000000002','two@test.local','Two');
 INSERT INTO merchants(id,slug,legal_name,display_name,phone) VALUES ('019a0000-0000-7000-8000-000000000010','merchant','Merchant','Merchant','+998900000000');
 INSERT INTO cities(id,slug,name,lat,lng) VALUES ('019a0000-0000-7000-8000-000000000020','city','{"uz":"Shahar","ru":"Город","en":"City"}',0,0);
 INSERT INTO categories(id,slug,name,icon) VALUES ('019a0000-0000-7000-8000-000000000030','category','{"uz":"Tur","ru":"Тип","en":"Type"}','tag');
 INSERT INTO subcategories(id,category_id,slug,name) VALUES ('019a0000-0000-7000-8000-000000000031','019a0000-0000-7000-8000-000000000030','subcategory','{"uz":"Tur","ru":"Тип","en":"Type"}');
 INSERT INTO merchant_locations(id,merchant_id,city_id,address,lat,lng,opening_hours,phone) VALUES ('019a0000-0000-7000-8000-000000000040','019a0000-0000-7000-8000-000000000010','019a0000-0000-7000-8000-000000000020','Address',0,0,'{}','+998900000000');
-INSERT INTO deals(id,slug,merchant_id,category_id,subcategory_id,kind,title,short_description,description,highlights,terms,redemption_instructions,starts_at,ends_at,voucher_valid_days)
-VALUES ('019a0000-0000-7000-8000-000000000050','deal','019a0000-0000-7000-8000-000000000010','019a0000-0000-7000-8000-000000000030','019a0000-0000-7000-8000-000000000031','voucher','{"uz":"Taklif","ru":"Предложение","en":"Deal"}','{"uz":"Qisqa","ru":"Кратко","en":"Short"}','{"uz":"Batafsil","ru":"Подробно","en":"Detail"}','[{"uz":"1"},{"uz":"2"},{"uz":"3"}]','{"uz":"Shart","ru":"Условие","en":"Term"}','{"uz":"Korsat","ru":"Покажите","en":"Show"}',now(),now()+interval '1 day',30);
+INSERT INTO deals(id,slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,terms,redemption_instructions,starts_at,ends_at,voucher_valid_days)
+VALUES ('019a0000-0000-7000-8000-000000000050','deal','019a0000-0000-7000-8000-000000000010','019a0000-0000-7000-8000-000000000030','019a0000-0000-7000-8000-000000000031','{"uz":"Taklif","ru":"Предложение","en":"Deal"}','{"uz":"Qisqa","ru":"Кратко","en":"Short"}','{"uz":"Batafsil","ru":"Подробно","en":"Detail"}','[{"uz":"1"},{"uz":"2"},{"uz":"3"}]','{"uz":"Shart","ru":"Условие","en":"Term"}','{"uz":"Korsat","ru":"Покажите","en":"Show"}',now(),now()+interval '1 day',30);
 INSERT INTO deal_options(id,deal_id,title,original_price,deal_price,stock_total) VALUES ('019a0000-0000-7000-8000-000000000060','019a0000-0000-7000-8000-000000000050','{"uz":"Tanlov","ru":"Опция","en":"Option"}',200,100,10);
 INSERT INTO orders(id,number,user_id,subtotal,total,idempotency_key) VALUES
  ('019a0000-0000-7000-8000-000000000070','GR-1','019a0000-0000-7000-8000-000000000001',100,100,'key-1'),

@@ -24,6 +24,7 @@ playwright-report/
 # Runtime data
 tmp/
 *.log
+/.data/
 
 # Editor and operating system files
 .idea/
@@ -33,3 +34,12 @@ Thumbs.db
 
 # Local infrastructure data
 .docker-data/
+services/api/.data/
+
+# Dealo reference copy: a third-party repository, kept outside this repo (../dealo-docs)
+/dealo/
+/dealo.zip
+
+# Owner and generated browser-test artifacts live outside the repository.
+/Grupon_hisobot.pdf
+/docs/screenshots/*.png

@@ -97,3 +97,187 @@
    navigation. The sticky Buy control therefore appears whenever the original Buy button is not
    fully unobscured and invokes the same purchase action; this preserves both the first-screen law
    and the required bottom navigation.
+
+## 2026-10-31 — Phase 3 web switch to the real API
+
+1. **Real API by default.** `USE_MSW` and `NEXT_PUBLIC_USE_MSW` now default to `false`; MSW runs only when both are `true`.
+2. **Contract query names.** Listing URLs keep friendly keys (`rating`, `endingSoon`, `sort`, `page`); `apps/web/src/lib/deal-query.ts` maps them to the OpenAPI `/deals` parameters (`min_rating`, `ending_soon`, sort enum values) and drops invalid values.
+3. **Cache tag.** Every catalog fetch uses `next.tags: ['catalog']`. `POST /api/revalidate` (Route Handler) accepts `X-Revalidate-Secret` matching `WEB_REVALIDATE_SECRET` and revalidates the allowlisted tags.
+
+## 2026-10-31 — Phase 3 catalog API assumptions
+
+1. **Contract-first, no spec change.** Every endpoint implements the existing OpenAPI operation. The
+   Go handlers use the generated non-strict `ServerInterface`; operations outside Phase 3 keep the
+   generated 501 `Unimplemented` response.
+2. **Visibility rules.** Listings, search, collections, promo-related deals and merchant profiles
+   include only deals with status `active` or `sold_out`, `ends_at` in the future, and an active,
+   non-deleted merchant. Deal detail also serves `scheduled` and `expired` deals; drafts, pending and
+   rejected deals are never returned. Suspended merchants disappear from all public reads.
+3. **Discount rounding.** Discount percent (used for `min_discount` and `biggest_discount`) is
+   computed in SQL as round-half-up integer percent over active options.
+4. **Homepage sections are global in Phase 3.** The `city` parameter is accepted but does not filter
+   homepage sections; sections are curated by key. Banner sections are not rendered.
+5. **Related deals.** Same subcategory, same city (no city filter when `city` is empty), at most 8.
+6. **Caching.** Redis is optional (`REDIS_URL`). Entries are JSON under a namespace version; one
+   `INCR` on invalidation makes all of them stale. Cache errors fall back to PostgreSQL. Suggestions
+   are not cached.
+7. **Revalidation hook.** `POST /internal/cache/invalidate` (requires `X-Internal-Token`, disabled
+   when `INTERNAL_API_TOKEN` is empty) invalidates the Redis namespace and posts the `catalog` tag to
+   the web `/api/revalidate` route. It is operational, not part of the product contract.
+8. **Configuration.** `DATABASE_URL` defaults to the local compose database outside production and is
+   required in production. The API now needs PostgreSQL to start.
+9. **Seed reuse.** The seed loader moved to `internal/seed` so integration tests can seed the same
+   dataset; `cmd/seed` remains the entry point.
+
+
+## 2026-10-31 — Phase 4 Identity assumptions
+
+1. **Auth tokens table (migration 00002).** Adds `auth_tokens` (id, user_id, kind `verify_email|reset_password`, unique token_hash, expires_at, used_at, created_at) for single-use verification and reset tokens. This is an addition beyond Section 8, made only for Phase 4. No other Section 8 table changed.
+2. **Soft-delete tombstones.** Deleting an account rewrites `email` to `deleted+<id>@deleted.invalid` and `google_sub` to `deleted:<id>`, so both values can be reused. `password_hash` becomes the sentinel `deleted` for password accounts and NULL for Google-only accounts, which keeps `users_check` true. The sentinel is never verified, because deleted users are filtered out of every lookup.
+3. **Change-password operation.** The contract defines `PUT /api/v1/me/password` (`changePassword`). The Phase 4 brief said PATCH; the contract is the source of truth, so PUT is implemented and no spec change was made.
+4. **Refresh-token transport.** Web uses the httpOnly cookie `refresh_token` on path `/api/v1`, which also covers `/api/v1/me/password` so the current session can be kept. Native clients may send the refresh token as a Bearer value. The contract's `AuthSession` has no `refresh_token` field, so native clients have no delivery path yet (see PROGRESS known issues).
+5. **Access tokens.** HS256 JWT with `iss=grupon-api`, `sub`, `roles`, `iat`, `exp` (15 min), `jti`. Authentication re-reads the user status and roles from PostgreSQL on each protected request, so blocking or revoking a role takes effect at once. Refresh tokens are 256-bit random values stored as SHA-256 hashes, with a 30-day expiry.
+6. **Passwords.** argon2id with m=19 MiB, t=2, p=1 (OWASP minimum), parameters stored in the PHC string. Policy: 10 to 128 characters (runes). Unknown emails, password-less accounts and wrong passwords run the same hashing work and return the same `invalid_credentials` problem. A blocked account is reported only after its password has been verified.
+7. **Refresh rotation and reuse.** Rotation claims the current token with a conditional UPDATE inside a transaction, so concurrent refreshes yield one winner. Presenting a revoked token (rotated or logged out) revokes the whole family and returns 401 `refresh_token_reused`.
+8. **Password reset and change.** Reset revokes every session and marks the email verified, because the mailbox proved ownership. Change revokes every session except the one that presents the refresh cookie. Reset tokens expire after 1 hour and verification tokens after 24 hours; both are single-use and stored hashed.
+9. **Email verification is advisory.** Unverified accounts can sign in. Gating purchases on verification is left to Phase 4 checkout.
+10. **Rate-limiting trade-off.** Redis fixed window, 10 attempts per 15 minutes per key. Keys use the client IP and the SHA-256 of the email, so no raw personal data reaches Redis. Login, register and forgot-password check both keys; Google sign-in and reset check the IP; change-password checks the user id. When `REDIS_URL` is unset the limiter is disabled and the API logs a warning at startup. A Redis error during a check fails open and is logged, so a Redis outage cannot lock every user out. The cost is that brute-force protection disappears during such an outage.
+11. **Client address.** `RemoteAddr` is used unless `TRUST_PROXY_HEADERS=true`, in which case `X-Real-IP`, then the first `X-Forwarded-For` value, is used. Enable it only behind a proxy that overwrites those headers.
+12. **Mail.** `platform/mail.Sender` has two implementations. `SMTPSender` (net/smtp without authentication, for mailpit on port 1025) is used when `SMTP_HOST` is set. Otherwise `LogSender` logs the subject and a masked recipient, never the body, because bodies carry single-use tokens. Email copy (uz, ru, en) lives in Go (`domain/identity/emails.go`) rather than `packages/i18n`, because the API sends the mail and the web bundle is not available server-side. `BRAND_NAME` (default `Grupon`) supplies the brand in subjects and must be kept in step with `brand.config.ts` at rename time.
+13. **Links in email.** Links use `WEB_PUBLIC_URL/{locale}/verify-email?token=` and `WEB_PUBLIC_URL/{locale}/reset-password?token=`. Those web routes are not in the spec and must exist in `apps/web`.
+14. **Google sign-in.** Server-side PKCE exchange at `https://oauth2.googleapis.com/token` using `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI`, all three required together. The request's `redirect_uri` must equal the configured value. The ID token is read from the TLS response of the token endpoint and its `iss`, `aud`, `exp` and `email_verified` claims are checked. Its JWKS signature is not re-verified, which OpenID Connect Core 3.1.3.7 permits for tokens received directly from the token endpoint. Account matching: `google_sub` first; otherwise a verified email links an existing account with no Google subject; otherwise a new account is created with locale `uz` and currency `UZS`. Without configuration the endpoint returns 503 `google_not_configured`.
+15. **Register and forgot-password responses.** Registering an existing email returns 409 `email_already_registered`. This reveals account existence, which the registration response shape requires. Forgot-password returns 202 for every well-formed email. A malformed email fails the contract's `format: email` check and returns 400 `invalid_request`.
+16. **Error codes.** Validation failures return 422 `validation_failed` with field codes. A wrong current password returns 422 `current_password_incorrect`. Bodies over 64 KB return 413; unknown JSON fields return 400 `invalid_request`. Rate limits return 429 `rate_limited` with `Retry-After: 900`.
+17. **RBAC.** `AuthAPI.RequireRole(...)` is the middleware for future admin and merchant routes. It is tested but mounted on no route yet, because Phase 4 has none.
+18. **Not done in this slice.** The double-submit CSRF token from Section 14 is not implemented. The cookies use `SameSite=Lax` and every mutating endpoint takes a JSON body, which blocks the usual cross-site form attacks, but the double-submit token is still required before browser-driven mutations ship.
+- 2026-10-31: CLAUDE.md is now the working instruction source; the task list is mirrored in docs/TASKS.md. Subagents are not used. One task per turn.
+- 2026-10-31: Web auth uses a same-origin proxy (apps/web/src/app/api/auth/[action]) that forwards to the Go API and re-scopes Set-Cookie to Path=/, so the browser keeps the session on the web origin. Login/register pages built; redirect target is restricted to same-site paths.
+- 2026-10-31: Account pages read data via server-side accountGet (access_token cookie → Bearer). Profile is read-only for now; PATCH /me and PUT /me/password are not wired yet.
+- 2026-10-31: Checkout flow is guest cart (Zustand, persisted) → /checkout (requires session; login returns via next) → POST /api/bff/orders (Idempotency-Key) → /api/bff/orders/{id}/pay → /checkout/mock/{payment} → success (polls until paid) or failed (retry). Browser calls reach the Go API through the same-origin BFF proxy, which only allows the commerce operations it lists.
+- 2026-10-31: Worker runs reservation release, voucher expiry and deal lifecycle/counter sweeps (idempotent, verified by a second-run-no-change test). Concurrency test: 100 buyers for 10 units → exactly 10 orders. Playwright purchase test passes against the production build.
+- 2026-10-31: Purchase e2e waits up to 20s for the mock payment step; the default 5s was too short for the order + payment calls on a cold server.
+- 2026-10-31: Merchant registration is one transaction (merchant + first location + merchant_owner role). The category is validated but not stored: merchants have no category column, categories belong to deals. Switch-to-business shows for accounts with a merchant_* role.
+- 2026-10-31: Merchant context = first merchant_* role assignment of the signed-in account. Panel pages live under a route group with a role guard; the API re-checks every operation. Cashiers see read-only business data. Dashboard latest_orders is empty for now.
+- 2026-10-31 (assumption, pending user confirmation): media uploads use a storage interface with a local-disk adapter for development; the S3/MinIO presigned adapter is implemented later and must be tested before launch.
+- 2026-10-31: After re-running the seed the Redis catalog cache can serve stale city/category ids; bump catalog:version (or call the internal invalidation hook) after seeding. Seed should do this itself before launch.
+- 2026-10-31: Media library backend: merchant_media_assets table (migration 00004), local storage adapter (MEDIA_LOCAL_DIR, MEDIA_PUBLIC_BASE), presigned-style upload with image format check; PUT /merchant/media/{id}/content is a contract addition for the local adapter (single application/octet-stream body).
+
+## Phase B3 merchant deal workflow (backend)
+- Review fingerprint lives in `deals.review_fingerprint` (migration 00005). It covers title, descriptions, terms, redemption, highlights, included items, FAQ and option titles/prices/active flags. Stock is excluded so stock-only edits never trigger review.
+- Editing a live deal (scheduled, active, paused, sold_out) with a changed fingerprint sends it to `pending_review`. Editing a rejected deal returns it to `draft`. Submit is allowed only from `draft` or `rejected`, otherwise 409 `invalid_deal_state`.
+- Options are never deleted. Options missing from an update are deactivated, so stock history stays intact.
+- Gap: owned deal detail returns only active options (reuses the public summary read), so inactive options are hidden from the merchant.
+- Gap: an option id that belongs to another deal is silently skipped by the upsert. Fix by checking ownership in `References`.
+- Gap: media URLs are not yet checked against the merchant's ready media assets.
+- Qolgan ishlar (2026-10-31): B3 (web), B5, B7, C1, D1, D4, D5, E1.
+- B3 web gap: `MediaAsset` has no width/height/blurhash, but `DealMediaInput` requires them. The wizard sends 1x1 and an empty blurhash, so the stored dimensions are wrong. Fix by adding dimensions to the media asset contract or deriving them on the server.
+- B3 web gap: the preview is a simple summary card, not the real DealCard component.
+- D1 placement: `apps/admin` is not scaffolded yet. The moderation queue sits in apps/web at `/admin/moderation`, gated to superadmin/admin/moderator by the page and the API. Move it to apps/admin when that app exists.
+- D1 gap: the reject form checks the reason length only in the browser; the API enforces the same rule (3–500 characters).
+- B5 redemption: one conditional UPDATE (`status = active` and inside validity) with the audit row in one transaction, so two cashiers cannot redeem the same voucher. On failure the code reads the current state to return the exact reason.
+- B5 gap: `GET /merchant/redemptions` (recent redemptions) is not implemented yet and returns 501.
+- B5 gap: lookup shows only active options (reuses the public summary read), so a voucher bought on an option that was later deactivated shows a missing option name.
+- B5 gap: no live device test of the camera scanner (@zxing/browser 0.1.5); manual code entry is verified by typecheck and lint only.
+- B7 e2e: `e2e/merchant.spec.mjs` covers the owner flow through the API (create with media, submit, admin approve, buyer order and mock pay) and the redeem step in a 390px browser. Requires the API on 8080 with the dev seed.
+- E2E flakiness: `purchase.spec.mjs` failed once in a full run (success heading timeout) and passed on the next full run and when run alone. Webhook timing is the likely cause; not yet fixed.
+- C1 review: one review per redeemed voucher enforced by the unique voucher_id; repeat reports are idempotent (unique reporter per review). Report button on the deal page is now functional; the owner review list has no report button by design.
+- D4 reviews and reports: review reports close as `resolved` (hide) or `dismissed`. Hiding a review is audited each time, and a repeat hide is accepted and audited again, which is harmless.
+- D4 gap: support and disputes, roles management UI, and system settings are not built. There is no support/dispute table yet, and the role-assignment endpoint does not exist.
+- D4 gap: the reports and audit pages live in apps/web under /admin, as with the moderation queue, until apps/admin exists.
+- D5 tests: store-level tests (admin_audit_test.go) run against a reseeded dev database because the seed truncates tables; they need TEST_DATABASE_URL.
+- Fix: deal JSON arrays (faq, whats_included, highlights) are stored as [] instead of null when empty.
+- E1: production images are written but unbuilt (no Docker on this machine). Verify with docker build for services/api (targets api, worker, migrate) and apps/web before release.
+- BFF returned 204 with a body, which crashed approve/hide/dismiss and delete actions. Fixed: 204 is now returned with no body.
+- e2e purchase.spec flaked again (stays on /checkout after the pay click). Suspect repeated runs exhausting seed stock. Not fixed.
+- DEALO-ALIGN step 1 (2026-11-01): USD removed everywhere (contract currency enum is UZS only; Go constants, identity validation, web selector, money formatter). Exchange-rate endpoint and its data are still present and will be removed with the catalog cleanup. Money unit decision: tiyin (bigint) per Dealo ADR-0003; the conversion from so'm is a separate, larger step not yet done.
+- DEALO-ALIGN step 2 (money): amounts are stored and sent as tiyin (1 so'm = 100). Seed prices are scaled, the web formatter divides by 100 for display, and the merchant deal form converts typed so'm to tiyin. Hand-written e2e fixtures still use raw numbers, which the API accepts as tiyin.
+- Test database: the old scratch PostgreSQL on 5433 had stopped; a new PostgreSQL 16 was initialised at a temp path on 5433 with user app. The 5432 instance has a different app password and is not used by the tests.
+- DEALO-ALIGN step 3 (removals, web): cart page, saved page, collections, seasonal-deals and the promo tab are removed from the site. The home page no longer shows trending promo cards or the collection block. Checkout no longer asks for a shipping address. Secondary "add to cart" and heart buttons are removed; the main "buy now" button stays. API endpoints for cart, saved, collections, promo, and gifts still exist and are scheduled for removal with the contract cleanup.
+- DEALO-ALIGN step 4 (cities and categories): seed has the top five cities (Toshkent open, Namangan, Samarqand, Andijon, Farg'ona closed). Four pilot categories are open (Beauty & Spas, Food & Drink, Things to Do, Health & Fitness, the last one new). Other categories are closed. All seeded merchants sit in Toshkent. Gap: the public catalog does not yet filter deals by an active city, so a city closed later still shows its deals.
+- DEALO-ALIGN step 5 (phone OTP login) is NOT done yet. It replaces the auth model, the users table (email becomes optional), the web login pages and the seeded test accounts, so it needs its own step.
+- DEALO-ALIGN step 5 (phone sign-in): accounts sign in with a six-digit code sent to a +998 phone. Codes are stored as hashes, valid five minutes, five wrong tries use up a code, and the resend cooldown is one minute. The first successful code creates the account. Phone-only accounts get a placeholder email (`<digits>@phone.grupon.local`) until email login (R1b); the users table constraint now accepts phone accounts.
+- Development only: the code is logged and echoed in the response as `dev_code`, and the resend cooldown is zero, so automated tests can sign in. Other environments have no code sender yet, so codes cannot be issued until an SMS provider is wired in (fail closed, 503 otp_unavailable).
+- Gap: the old email/password and Google endpoints still exist in the API but the web app no longer uses them; they are scheduled for removal.
+- Gap: the dev database was patched by hand for the constraint change; a fresh database gets it from migration 00006.
+- DEALO-ALIGN step 6 (finance core, backend): migration 00007 adds an append-only double-entry ledger (accounts, entries, lines; UPDATE/DELETE blocked by triggers; balance checked at commit), redemptions with sequence and commission, multi-use counters on vouchers, payout runs with four-eyes (DB check + domain check), refunds, disputes, merchant payout holds, fraud signals, outbox and reconciliation findings. Money posts follow PRD §8.4 for Variant A: payment received (psp_receivable -> customer_prepaid), redemption (customer_prepaid -> merchant_payable + commission), reversal (exact storno), payout sent, refund approved and paid, breakage after 90 days (customer_prepaid -> customer_prepaid_expired), PSP settlement function ready.
+- Redemption split: a voucher's value is split across its allowed redemptions with Split (last share takes the remainder); commission is floor(amount * bps / 10000) with bps from the merchant.
+- Rules implemented: reversal by the cashier within 10 minutes, or by owner/manager any time; automatic refund of an unused voucher within 14 days of payment; payouts only for redemptions older than 3 days with no open dispute and no merchant hold; burst rule (more than 5 redemptions by one staff in a minute) raises a fraud signal and holds the merchant's payouts.
+- Worker: breakage and reconciliation run in every sweep.
+- Seed: seeded sales are posted to the ledger, and the seed clears ledger tables.
+- NOT YET DONE in step 6: QR rotation every 30 seconds and the zaxira code (column added, unused); multi-use set per deal option (every voucher is single-use today); outbox publisher (rows are written, nothing sends them); reconciled status after the bank confirms a payout; support approval endpoint for refunds older than 14 days; dispute resolution endpoint; off-hours and distance fraud rules; the legacy payouts table is unused.
+
+## Moliya yadrosi: ergashuv qismi (DEALO-FIN-2)
+- QR tokeni har 30 soniyada almashadi (`gv2:<id>:<oyna>`, HMAC). Oldingi oyna ham qabul qilinadi (soat farqi uchun); eski token `ErrQRExpired`. Voucher sahifasi har 30 soniyada qayta so'raydi (`qr_token_expires_at`). Web tomoni hali ulanmagan.
+- Zaxira kod: 8 belgi, `XXXX-XXXX`, voucher id va server kalitidan hosil bo'ladi; bazada faqat HMAC saqlanadi (`zaxira_code_hmac`). Merchant `code` yoki zaxira kod bilan topadi (`WithBackupCodes`).
+- Har bir deal variantida `redemptions_allowed` (1..50, default 1). Voucher sotib olinganda nusxa olinadi.
+- Outbox: worker har 30 soniyada 100 tadan qator oladi (`FOR UPDATE SKIP LOCKED`), yuboradi, belgilaydi; xato bo'lsa butun partiya qaytadi (at-least-once). Hozircha transport - log; broker keyin.
+- Payout `sent` -> `reconciled`: `POST /admin/payouts/{id}/reconcile` (finance/superadmin).
+- 14 kundan keyingi refund: `requested`; support (yoki finance) `POST /admin/refunds/{id}/approve` bilan tasdiqlaydi; so'rovchi tasdiqlay olmaydi. Vaucher faol bo'lsa prepaid dan chiqadi; ishlatilgan bo'lsa (nizo) merchant qaytaradi (`refund_from_merchant`).
+- Nizo: `POST /admin/disputes/{id}/resolve` `customer` (refund so'rovi ochiladi) yoki `merchant` (payout ozod).
+- Qo'shimcha fraud qoidalari (faqat signal, payout'ni o'zi to'xtatmaydi): `off_hours` - Toshkent vaqti bilan 07:00 dan oldin yoki 23:00 dan keyin; `distance` - xodim qurilmasi filialdan 500 m dan uzoq (ixtiyoriy `lat`/`lng` redeem so'rovida). Geo `redemptions.geo_lat/geo_lng` ga yoziladi.
+- Support roli endi `staffActor` orqali kiradi (faqat tasdiqlash endpointlari uchun).
+
+## DEALO-ALIGN step 2: API removals (2026-11-02)
+- Removed from the contract and the API: cart (`/cart`, `CartInput`), saved deals (`/me/saved-deals`), promo codes (`/promo-codes`), collections (`/collections`), exchange rate (`PublicConfig.exchange_rate`), gifts (`is_gift`, `gift_*`, `is_giftable`), goods (`deal kind`, `fulfillment_status`), shipping (`shipping_address`), email/password endpoints (`/auth/register`, `/auth/login`, `/auth/google`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password`, `/me/password`).
+- Kept: `/auth/phone/*`, `/auth/refresh`, `/auth/logout`, `/me`, `/homepage` (sections of type `deals` and `categories` only), `/me/recently-viewed`.
+- Migration `00009_dealo_removals.sql` drops the cart, saved, promo, collection, banner, exchange-rate and auth-token tables and the removed columns. Its down step is a no-op because data removal is not reversible.
+- Left in the database on purpose: `users.password_hash` and `users.google_sub`, the `currency_code` value `USD`, and the `payouts` table. They are unused by the API and can be dropped in a later migration once admin sign-in is settled.
+- The Google OAuth client, its config (`GOOGLE_*`) and its tests are removed. `identity.Mailer` is still wired but no flow sends mail now.
+- Web: gift checkbox, `is_gift` in the order body, goods kind, and the promo and collection mocks are removed. The `/coupons` page remains and lists deals in the `coupons` category.
+
+## Merchant onboarding (FR-01), 2026-11-02
+- Registration now requires STIR (9 digits), legal form (`mchj`/`yatt`), tax regime (`vat_payer`/`turnover_tax`), bank MFO (5 digits), bank account (20 digits), responsible person and acceptance of the offer (`contract_version`, time and IP stored). Stable error codes: `invalid_stir`, `stir_taken`, `invalid_org_form`, `invalid_tax_regime`, `invalid_mfo`, `invalid_bank_account`, `contract_not_accepted`.
+- A new business starts as `review_status = draft`. `POST /merchant/submit` (owner only) moves it to `submitted`; a second submit returns 409 `already_submitted`. Existing seeded merchants are `approved`.
+- Not built yet: admin approval and rejection of businesses (`in_review`, `approved`, `rejected`), deal creation gated on approval, bank-change hold (72 h), and staff invitations.
+- The web form submits both steps in one action. Coordinates still default to the city centre.
+- Merchant review (FR-01.3), 2026-11-02: platform reviewers (`superadmin`, `admin`, `moderator`) move a business `submitted` → `in_review` → `approved`, or reject it from `submitted`/`in_review` with a reason of 3–500 characters. Each decision writes an `audit_logs` row (entity `merchant`). Endpoints: `GET /admin/merchants`, `POST /admin/merchants/{id}/start-review|approve|reject`. Business creation of deals requires `approved` (409 `merchant_not_approved`).
+- The review queue lists full bank and tax identity for reviewers only. Owners cannot call it (403).
+- Not built yet: the admin web screen for the queue, the merchant-facing status page ("under review"), and document uploads (certificate, bank letter).
+- Business documents (FR-01.2), 2026-11-02: owners upload a certificate and a bank letter (PDF, JPG or PNG, up to 10 MB) while the business is draft or rejected. Files are stored privately under DOCUMENTS_LOCAL_DIR, never under the public media path, and are read only by reviewers through the API (403 for owners). Submission requires both kinds (422 documents_required). Re-uploading replaces the previous file.
+- Merchant status: GET /merchant/business returns review_status. The merchant status page at /merchant/review shows it and hosts the upload form. Admin queue page at /admin/merchants.
+- Not decided: whether rejected businesses can see the rejection reason on their status page (the reason is stored, but the merchant API does not return it yet).
+
+## Fixes after the Claude review, 2026-11-02
+- Redemption reversal (PRD FR-05.5): the cashier, owner and manager may reverse only within 10 minutes and only their own redemption for cashiers. After that only support or superadmin can reverse, through POST /admin/vouchers/{id}/reverse, with a reason in the audit trail. Ledger reversal and voucher rollback were already in place.
+- Redemption row numbers never repeat: the next number is the maximum plus one, including reversed rows. The share of the price still follows live uses (GAP-07 floor split, last share takes the remainder).
+- Stock hold is 15 minutes (PRD FR-03.4). Backup codes are 10 characters in two groups of five, Crockford base32 (PRD FR-04.2). The human code stays 8 characters.
+- Buyers get an in-app notification for every redemption (table notifications, GET /me/notifications). The coupons page shows them, with a "not me" button that opens a dispute; an open dispute holds the merchant payout (AT-16). SMS and email are not used for this yet.
+- Not done from the review: the cashier wrong-code rate limit (30/min, block after 10 failures), the expiry formula min(valid_until, purchase+N days) at Asia/Tashkent 23:59, admin finance pages (payouts, refunds, reconcile), staff invitation page, price proof upload, campaign calculator, merchant statements, category closed-flag gate (AT-10), and removal of the leftover columns (password_hash, payouts, USD).
+
+- Merchant panel API (payouts, customers, analytics, reviews and reply, orders, settings) is served by one handler set and the same workspace scope as the rest of the panel. Cashiers cannot reply to reviews or change settings. A reply can be edited for 24 hours after it was first written (PRD §5). Buyer names are shown as "Alisher U." (MaskName). Analytics takes an inclusive end date and queries up to the next midnight.
+- Staff endpoints (invite by phone, change role, remove) are owner-only and every change writes an audit row in the same transaction. The owner role cannot be handed out or removed by invitation.
+- Store test phone numbers are random and retry on a clash with an account left by an earlier run.
+- Still open from the review: merchant web pages for staff, payouts, reviews, orders, customers, analytics and settings; campaign calculator; price proof upload; merchant statements; removal of users.password_hash, google_sub and the USD enum value.
+
+- Price proof is an optional third document kind (`price_proof`); submit still needs the certificate and bank letter only. Migration 00017 adds the kind, and the count in submit now counts only the two required kinds.
+- Passwords and Google sign-in are removed from the schema (migration 00018): `users.password_hash` and `google_sub` are dropped, and the password reset code and hashing helpers are deleted. Login stays phone code only.
+- `currency_code` now holds UZS only. The migration rebuilds the type and refuses to run if any row still says USD, so no money is relabelled silently.
+- Merchant rows created by the seed are approved; otherwise the new deal gate (merchant_not_approved) blocks seeded merchants.
+- `writeJSON` encodes before it writes the status. An encoding failure now returns 500 instead of an empty 200 (this hid a staff list bug: a required email was missing).
+- Playwright runs with `workers: 1`. The specs share seeded accounts, and each phone sign-in replaces the previous code, so parallel runs fail randomly.
+
+- PRD alignment of states (migrations 00019, 00020). Deal: draft, in_review, approved, scheduled, active, paused, ended, archived, changes_requested. Order: created, awaiting_payment, paid, completed, expired, failed, cancelled, partially_refunded, refunded. Payment: created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost (the refund is its own object). Voucher: issued, active, partially_redeemed, redeemed, expired, refunded, voided, plus flags fraud_hold and dispute_open. Dispute: open, awaiting_evidence, under_review, resolved_customer, resolved_merchant, closed. Rows were mapped first (pending_review to in_review, rejected to changes_requested, expired to ended, sold_out to active, pending_payment to awaiting_payment, cancelled voucher to voided, refunded payment to succeeded).
+- Sold out is not a state. It is an active deal with no stock left (the catalog shows it from stock).
+- Approval is two audited steps: in_review to approved, then scheduled or active. The transition query also accepts approved for the second step.
+- Order states: the order is written as awaiting_payment; created is the transient state inside the create transaction. A paid order becomes completed when none of its vouchers can still be redeemed (issued, active or partially_redeemed). A hold that times out sets expired, not cancelled.
+- A multi-use voucher becomes partially_redeemed after each use until its last use, then redeemed.
+- An open dispute sets vouchers.dispute_open; resolving it clears the flag. fraud_hold exists as a column but no fraud rule sets it yet.
+- Merchant status is one value: review_status. The old status column (active/suspended) is removed. The public merchant status is derived from review_status (approved gives active).
+- homepage_section_type keeps deals and categories only.
+- Pilot categories (PRD 03): Beauty & Wellness, Food & Drink, Things to Do, Health & Fitness are open. Automotive, Education, Events, Home Services, Travel, Pickup Goods and Medical exist but are closed by their flags. Cities: the five seeded cities; only Toshkent is open in the pilot.
+- Not done in this step: dispute awaiting_evidence and under_review have no transitions in code; chargeback states have no flow; a late payment refund does not create a refund row yet.
+- Commit and push of the state, category and merchant-status changes were requested in the same session.
+
+- Burst fraud rule (PRD 12.1, AT-14): more than five redemptions by one staff member in a minute records a `redemption_burst` fraud signal, holds the merchant's payouts, and sets `fraud_hold` on the vouchers that staff scanned in that minute. A voucher with `fraud_hold` or an open dispute cannot be redeemed (409 `voucher_on_hold`). Gap: the payout hold covers the whole merchant, not only the burst amount.
+- A scan of a voucher that belongs to another business is refused with `ErrWrongMerchant` and writes an audit row (`voucher_scan_denied`) in the same request (AT-04). A lookup has only the staff id, so its audit row records the role as `merchant_cashier`.
+- AT-01 is tested on the webhook path with the mock provider; ledger lines per payment are not yet asserted.
+
+- AT-05: an expired, refunded or voided voucher is refused with 422 and its reason (was 409).
+- AT-09: a refused payout preparation writes a `payout_prepare_denied` audit row.
+- AT-13: a late payment's refund is a row in `refunds` tied to the payment (`payment_id`); `voucher_id` and `requested_by` became optional for system refunds (migration 00021).
+- Multi-use vouchers: a partially used voucher stays usable until its last visit. This was broken since partially_redeemed was introduced (the use query only accepted `active`); fixed with AT-15.
+- sqlc keeps the enum types from before migrations 00019 and 00020 (it does not follow DROP TYPE and CREATE TYPE). Code compares those statuses with string literals until the enum is regenerated.
+
+- AT-06 terms are copied to `order_items.terms_snapshot` at checkout and exposed by order and voucher responses, so later deal edits cannot change the buyer's agreed terms.
+
+- Stage 1 acceptance allows an AT to be green or explicitly deferred with a named stage. AT-08 is deferred as `needs PSP` to Stage 3; AT-17 bank-change protection is deferred to Stage 3.

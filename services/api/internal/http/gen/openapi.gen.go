@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -40,34 +41,13 @@ func (e AuthSessionExpiresIn) Valid() bool {
 
 // Defines values for Currency.
 const (
-	CurrencyUSD Currency = "USD"
 	CurrencyUZS Currency = "UZS"
 )
 
 // Valid indicates whether the value is a known member of the Currency enum.
 func (e Currency) Valid() bool {
 	switch e {
-	case CurrencyUSD:
-		return true
 	case CurrencyUZS:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DealKind.
-const (
-	DealKindProduct DealKind = "product"
-	DealKindVoucher DealKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealKind enum.
-func (e DealKind) Valid() bool {
-	switch e {
-	case DealKindProduct:
-		return true
-	case DealKindVoucher:
 		return true
 	default:
 		return false
@@ -89,24 +69,6 @@ func (e DealRedemptionMethod) Valid() bool {
 	case DealRedemptionMethodQr:
 		return true
 	case DealRedemptionMethodQrOrCode:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DealInputKind.
-const (
-	DealInputKindProduct DealInputKind = "product"
-	DealInputKindVoucher DealInputKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealInputKind enum.
-func (e DealInputKind) Valid() bool {
-	switch e {
-	case DealInputKindProduct:
-		return true
-	case DealInputKindVoucher:
 		return true
 	default:
 		return false
@@ -136,14 +98,15 @@ func (e DealInputRedemptionMethod) Valid() bool {
 
 // Defines values for DealStatus.
 const (
-	DealStatusActive        DealStatus = "active"
-	DealStatusDraft         DealStatus = "draft"
-	DealStatusExpired       DealStatus = "expired"
-	DealStatusPaused        DealStatus = "paused"
-	DealStatusPendingReview DealStatus = "pending_review"
-	DealStatusRejected      DealStatus = "rejected"
-	DealStatusScheduled     DealStatus = "scheduled"
-	DealStatusSoldOut       DealStatus = "sold_out"
+	DealStatusActive           DealStatus = "active"
+	DealStatusApproved         DealStatus = "approved"
+	DealStatusArchived         DealStatus = "archived"
+	DealStatusChangesRequested DealStatus = "changes_requested"
+	DealStatusDraft            DealStatus = "draft"
+	DealStatusEnded            DealStatus = "ended"
+	DealStatusInReview         DealStatus = "in_review"
+	DealStatusPaused           DealStatus = "paused"
+	DealStatusScheduled        DealStatus = "scheduled"
 )
 
 // Valid indicates whether the value is a known member of the DealStatus enum.
@@ -151,67 +114,21 @@ func (e DealStatus) Valid() bool {
 	switch e {
 	case DealStatusActive:
 		return true
+	case DealStatusApproved:
+		return true
+	case DealStatusArchived:
+		return true
+	case DealStatusChangesRequested:
+		return true
 	case DealStatusDraft:
 		return true
-	case DealStatusExpired:
+	case DealStatusEnded:
+		return true
+	case DealStatusInReview:
 		return true
 	case DealStatusPaused:
 		return true
-	case DealStatusPendingReview:
-		return true
-	case DealStatusRejected:
-		return true
 	case DealStatusScheduled:
-		return true
-	case DealStatusSoldOut:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DealSummaryKind.
-const (
-	DealSummaryKindProduct DealSummaryKind = "product"
-	DealSummaryKindVoucher DealSummaryKind = "voucher"
-)
-
-// Valid indicates whether the value is a known member of the DealSummaryKind enum.
-func (e DealSummaryKind) Valid() bool {
-	switch e {
-	case DealSummaryKindProduct:
-		return true
-	case DealSummaryKindVoucher:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ExchangeRateBase.
-const (
-	ExchangeRateBaseUZS ExchangeRateBase = "UZS"
-)
-
-// Valid indicates whether the value is a known member of the ExchangeRateBase enum.
-func (e ExchangeRateBase) Valid() bool {
-	switch e {
-	case ExchangeRateBaseUZS:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ExchangeRateQuote.
-const (
-	ExchangeRateQuoteUSD ExchangeRateQuote = "USD"
-)
-
-// Valid indicates whether the value is a known member of the ExchangeRateQuote enum.
-func (e ExchangeRateQuote) Valid() bool {
-	switch e {
-	case ExchangeRateQuoteUSD:
 		return true
 	default:
 		return false
@@ -220,22 +137,16 @@ func (e ExchangeRateQuote) Valid() bool {
 
 // Defines values for HomepageSectionType.
 const (
-	HomepageSectionTypeBanner     HomepageSectionType = "banner"
-	HomepageSectionTypeCategories HomepageSectionType = "categories"
-	HomepageSectionTypeCollection HomepageSectionType = "collection"
-	HomepageSectionTypeDeals      HomepageSectionType = "deals"
+	Categories HomepageSectionType = "categories"
+	Deals      HomepageSectionType = "deals"
 )
 
 // Valid indicates whether the value is a known member of the HomepageSectionType enum.
 func (e HomepageSectionType) Valid() bool {
 	switch e {
-	case HomepageSectionTypeBanner:
+	case Categories:
 		return true
-	case HomepageSectionTypeCategories:
-		return true
-	case HomepageSectionTypeCollection:
-		return true
-	case HomepageSectionTypeDeals:
+	case Deals:
 		return true
 	default:
 		return false
@@ -265,19 +176,52 @@ func (e Locale) Valid() bool {
 
 // Defines values for MediaUploadRequestContentType.
 const (
-	Imagejpeg MediaUploadRequestContentType = "image/jpeg"
-	Imagepng  MediaUploadRequestContentType = "image/png"
-	Imagewebp MediaUploadRequestContentType = "image/webp"
+	MediaUploadRequestContentTypeImagejpeg MediaUploadRequestContentType = "image/jpeg"
+	MediaUploadRequestContentTypeImagepng  MediaUploadRequestContentType = "image/png"
+	MediaUploadRequestContentTypeImagewebp MediaUploadRequestContentType = "image/webp"
 )
 
 // Valid indicates whether the value is a known member of the MediaUploadRequestContentType enum.
 func (e MediaUploadRequestContentType) Valid() bool {
 	switch e {
-	case Imagejpeg:
+	case MediaUploadRequestContentTypeImagejpeg:
 		return true
-	case Imagepng:
+	case MediaUploadRequestContentTypeImagepng:
 		return true
-	case Imagewebp:
+	case MediaUploadRequestContentTypeImagewebp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantReviewStatus.
+const (
+	MerchantReviewStatusApproved   MerchantReviewStatus = "approved"
+	MerchantReviewStatusDraft      MerchantReviewStatus = "draft"
+	MerchantReviewStatusInReview   MerchantReviewStatus = "in_review"
+	MerchantReviewStatusRejected   MerchantReviewStatus = "rejected"
+	MerchantReviewStatusSubmitted  MerchantReviewStatus = "submitted"
+	MerchantReviewStatusSuspended  MerchantReviewStatus = "suspended"
+	MerchantReviewStatusTerminated MerchantReviewStatus = "terminated"
+)
+
+// Valid indicates whether the value is a known member of the MerchantReviewStatus enum.
+func (e MerchantReviewStatus) Valid() bool {
+	switch e {
+	case MerchantReviewStatusApproved:
+		return true
+	case MerchantReviewStatusDraft:
+		return true
+	case MerchantReviewStatusInReview:
+		return true
+	case MerchantReviewStatusRejected:
+		return true
+	case MerchantReviewStatusSubmitted:
+		return true
+	case MerchantReviewStatusSuspended:
+		return true
+	case MerchantReviewStatusTerminated:
 		return true
 	default:
 		return false
@@ -302,6 +246,81 @@ func (e MerchantStatus) Valid() bool {
 	}
 }
 
+// Defines values for MerchantDocumentContentType.
+const (
+	MerchantDocumentContentTypeApplicationpdf MerchantDocumentContentType = "application/pdf"
+	MerchantDocumentContentTypeImagejpeg      MerchantDocumentContentType = "image/jpeg"
+	MerchantDocumentContentTypeImagepng       MerchantDocumentContentType = "image/png"
+)
+
+// Valid indicates whether the value is a known member of the MerchantDocumentContentType enum.
+func (e MerchantDocumentContentType) Valid() bool {
+	switch e {
+	case MerchantDocumentContentTypeApplicationpdf:
+		return true
+	case MerchantDocumentContentTypeImagejpeg:
+		return true
+	case MerchantDocumentContentTypeImagepng:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantDocumentKind.
+const (
+	MerchantDocumentKindBankLetter  MerchantDocumentKind = "bank_letter"
+	MerchantDocumentKindCertificate MerchantDocumentKind = "certificate"
+	MerchantDocumentKindPriceProof  MerchantDocumentKind = "price_proof"
+)
+
+// Valid indicates whether the value is a known member of the MerchantDocumentKind enum.
+func (e MerchantDocumentKind) Valid() bool {
+	switch e {
+	case MerchantDocumentKindBankLetter:
+		return true
+	case MerchantDocumentKindCertificate:
+		return true
+	case MerchantDocumentKindPriceProof:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantProfileReviewStatus.
+const (
+	MerchantProfileReviewStatusApproved   MerchantProfileReviewStatus = "approved"
+	MerchantProfileReviewStatusDraft      MerchantProfileReviewStatus = "draft"
+	MerchantProfileReviewStatusInReview   MerchantProfileReviewStatus = "in_review"
+	MerchantProfileReviewStatusRejected   MerchantProfileReviewStatus = "rejected"
+	MerchantProfileReviewStatusSubmitted  MerchantProfileReviewStatus = "submitted"
+	MerchantProfileReviewStatusSuspended  MerchantProfileReviewStatus = "suspended"
+	MerchantProfileReviewStatusTerminated MerchantProfileReviewStatus = "terminated"
+)
+
+// Valid indicates whether the value is a known member of the MerchantProfileReviewStatus enum.
+func (e MerchantProfileReviewStatus) Valid() bool {
+	switch e {
+	case MerchantProfileReviewStatusApproved:
+		return true
+	case MerchantProfileReviewStatusDraft:
+		return true
+	case MerchantProfileReviewStatusInReview:
+		return true
+	case MerchantProfileReviewStatusRejected:
+		return true
+	case MerchantProfileReviewStatusSubmitted:
+		return true
+	case MerchantProfileReviewStatusSuspended:
+		return true
+	case MerchantProfileReviewStatusTerminated:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MerchantProfileStatus.
 const (
 	MerchantProfileStatusActive    MerchantProfileStatus = "active"
@@ -314,6 +333,81 @@ func (e MerchantProfileStatus) Valid() bool {
 	case MerchantProfileStatusActive:
 		return true
 	case MerchantProfileStatusSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantReviewDocuments.
+const (
+	MerchantReviewDocumentsBankLetter  MerchantReviewDocuments = "bank_letter"
+	MerchantReviewDocumentsCertificate MerchantReviewDocuments = "certificate"
+	MerchantReviewDocumentsPriceProof  MerchantReviewDocuments = "price_proof"
+)
+
+// Valid indicates whether the value is a known member of the MerchantReviewDocuments enum.
+func (e MerchantReviewDocuments) Valid() bool {
+	switch e {
+	case MerchantReviewDocumentsBankLetter:
+		return true
+	case MerchantReviewDocumentsCertificate:
+		return true
+	case MerchantReviewDocumentsPriceProof:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantReviewOrgForm.
+const (
+	MerchantReviewOrgFormMchj MerchantReviewOrgForm = "mchj"
+	MerchantReviewOrgFormYatt MerchantReviewOrgForm = "yatt"
+)
+
+// Valid indicates whether the value is a known member of the MerchantReviewOrgForm enum.
+func (e MerchantReviewOrgForm) Valid() bool {
+	switch e {
+	case MerchantReviewOrgFormMchj:
+		return true
+	case MerchantReviewOrgFormYatt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantReviewReviewStatus.
+const (
+	MerchantReviewReviewStatusInReview  MerchantReviewReviewStatus = "in_review"
+	MerchantReviewReviewStatusSubmitted MerchantReviewReviewStatus = "submitted"
+)
+
+// Valid indicates whether the value is a known member of the MerchantReviewReviewStatus enum.
+func (e MerchantReviewReviewStatus) Valid() bool {
+	switch e {
+	case MerchantReviewReviewStatusInReview:
+		return true
+	case MerchantReviewReviewStatusSubmitted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MerchantReviewTaxRegime.
+const (
+	MerchantReviewTaxRegimeTurnoverTax MerchantReviewTaxRegime = "turnover_tax"
+	MerchantReviewTaxRegimeVatPayer    MerchantReviewTaxRegime = "vat_payer"
+)
+
+// Valid indicates whether the value is a known member of the MerchantReviewTaxRegime enum.
+func (e MerchantReviewTaxRegime) Valid() bool {
+	switch e {
+	case MerchantReviewTaxRegimeTurnoverTax:
+		return true
+	case MerchantReviewTaxRegimeVatPayer:
 		return true
 	default:
 		return false
@@ -353,27 +447,15 @@ func (e MoneyCurrency) Valid() bool {
 	}
 }
 
-// Defines values for OrderItemFulfillmentStatus.
+// Defines values for NotificationKind.
 const (
-	OrderItemFulfillmentStatusDelivered     OrderItemFulfillmentStatus = "delivered"
-	OrderItemFulfillmentStatusNotApplicable OrderItemFulfillmentStatus = "not_applicable"
-	OrderItemFulfillmentStatusProcessing    OrderItemFulfillmentStatus = "processing"
-	OrderItemFulfillmentStatusReturned      OrderItemFulfillmentStatus = "returned"
-	OrderItemFulfillmentStatusShipped       OrderItemFulfillmentStatus = "shipped"
+	VoucherRedeemed NotificationKind = "voucher_redeemed"
 )
 
-// Valid indicates whether the value is a known member of the OrderItemFulfillmentStatus enum.
-func (e OrderItemFulfillmentStatus) Valid() bool {
+// Valid indicates whether the value is a known member of the NotificationKind enum.
+func (e NotificationKind) Valid() bool {
 	switch e {
-	case OrderItemFulfillmentStatusDelivered:
-		return true
-	case OrderItemFulfillmentStatusNotApplicable:
-		return true
-	case OrderItemFulfillmentStatusProcessing:
-		return true
-	case OrderItemFulfillmentStatusReturned:
-		return true
-	case OrderItemFulfillmentStatusShipped:
+	case VoucherRedeemed:
 		return true
 	default:
 		return false
@@ -382,26 +464,35 @@ func (e OrderItemFulfillmentStatus) Valid() bool {
 
 // Defines values for OrderStatus.
 const (
+	OrderStatusAwaitingPayment   OrderStatus = "awaiting_payment"
 	OrderStatusCancelled         OrderStatus = "cancelled"
+	OrderStatusCompleted         OrderStatus = "completed"
+	OrderStatusCreated           OrderStatus = "created"
+	OrderStatusExpired           OrderStatus = "expired"
 	OrderStatusFailed            OrderStatus = "failed"
 	OrderStatusPaid              OrderStatus = "paid"
 	OrderStatusPartiallyRefunded OrderStatus = "partially_refunded"
-	OrderStatusPendingPayment    OrderStatus = "pending_payment"
 	OrderStatusRefunded          OrderStatus = "refunded"
 )
 
 // Valid indicates whether the value is a known member of the OrderStatus enum.
 func (e OrderStatus) Valid() bool {
 	switch e {
+	case OrderStatusAwaitingPayment:
+		return true
 	case OrderStatusCancelled:
+		return true
+	case OrderStatusCompleted:
+		return true
+	case OrderStatusCreated:
+		return true
+	case OrderStatusExpired:
 		return true
 	case OrderStatusFailed:
 		return true
 	case OrderStatusPaid:
 		return true
 	case OrderStatusPartiallyRefunded:
-		return true
-	case OrderStatusPendingPayment:
 		return true
 	case OrderStatusRefunded:
 		return true
@@ -466,23 +557,29 @@ func (e PaymentSessionProvider) Valid() bool {
 
 // Defines values for PaymentSessionStatus.
 const (
-	PaymentSessionStatusCreated   PaymentSessionStatus = "created"
-	PaymentSessionStatusFailed    PaymentSessionStatus = "failed"
-	PaymentSessionStatusPending   PaymentSessionStatus = "pending"
-	PaymentSessionStatusRefunded  PaymentSessionStatus = "refunded"
-	PaymentSessionStatusSucceeded PaymentSessionStatus = "succeeded"
+	PaymentSessionStatusChargebackLost PaymentSessionStatus = "chargeback_lost"
+	PaymentSessionStatusChargebackOpen PaymentSessionStatus = "chargeback_open"
+	PaymentSessionStatusChargebackWon  PaymentSessionStatus = "chargeback_won"
+	PaymentSessionStatusCreated        PaymentSessionStatus = "created"
+	PaymentSessionStatusFailed         PaymentSessionStatus = "failed"
+	PaymentSessionStatusPending        PaymentSessionStatus = "pending"
+	PaymentSessionStatusSucceeded      PaymentSessionStatus = "succeeded"
 )
 
 // Valid indicates whether the value is a known member of the PaymentSessionStatus enum.
 func (e PaymentSessionStatus) Valid() bool {
 	switch e {
+	case PaymentSessionStatusChargebackLost:
+		return true
+	case PaymentSessionStatusChargebackOpen:
+		return true
+	case PaymentSessionStatusChargebackWon:
+		return true
 	case PaymentSessionStatusCreated:
 		return true
 	case PaymentSessionStatusFailed:
 		return true
 	case PaymentSessionStatusPending:
-		return true
-	case PaymentSessionStatusRefunded:
 		return true
 	case PaymentSessionStatusSucceeded:
 		return true
@@ -512,6 +609,60 @@ func (e PayoutStatus) Valid() bool {
 	}
 }
 
+// Defines values for RegisterMerchantRequestOrgForm.
+const (
+	RegisterMerchantRequestOrgFormMchj RegisterMerchantRequestOrgForm = "mchj"
+	RegisterMerchantRequestOrgFormYatt RegisterMerchantRequestOrgForm = "yatt"
+)
+
+// Valid indicates whether the value is a known member of the RegisterMerchantRequestOrgForm enum.
+func (e RegisterMerchantRequestOrgForm) Valid() bool {
+	switch e {
+	case RegisterMerchantRequestOrgFormMchj:
+		return true
+	case RegisterMerchantRequestOrgFormYatt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RegisterMerchantRequestTaxRegime.
+const (
+	RegisterMerchantRequestTaxRegimeTurnoverTax RegisterMerchantRequestTaxRegime = "turnover_tax"
+	RegisterMerchantRequestTaxRegimeVatPayer    RegisterMerchantRequestTaxRegime = "vat_payer"
+)
+
+// Valid indicates whether the value is a known member of the RegisterMerchantRequestTaxRegime enum.
+func (e RegisterMerchantRequestTaxRegime) Valid() bool {
+	switch e {
+	case RegisterMerchantRequestTaxRegimeTurnoverTax:
+		return true
+	case RegisterMerchantRequestTaxRegimeVatPayer:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResolveDisputeRequestResolution.
+const (
+	ResolveDisputeRequestResolutionCustomer ResolveDisputeRequestResolution = "customer"
+	ResolveDisputeRequestResolutionMerchant ResolveDisputeRequestResolution = "merchant"
+)
+
+// Valid indicates whether the value is a known member of the ResolveDisputeRequestResolution enum.
+func (e ResolveDisputeRequestResolution) Valid() bool {
+	switch e {
+	case ResolveDisputeRequestResolutionCustomer:
+		return true
+	case ResolveDisputeRequestResolutionMerchant:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ReviewStatus.
 const (
 	ReviewStatusHidden    ReviewStatus = "hidden"
@@ -527,6 +678,27 @@ func (e ReviewStatus) Valid() bool {
 	case ReviewStatusPending:
 		return true
 	case ReviewStatusPublished:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ReviewReportStatus.
+const (
+	ReviewReportStatusDismissed ReviewReportStatus = "dismissed"
+	ReviewReportStatusPending   ReviewReportStatus = "pending"
+	ReviewReportStatusResolved  ReviewReportStatus = "resolved"
+)
+
+// Valid indicates whether the value is a known member of the ReviewReportStatus enum.
+func (e ReviewReportStatus) Valid() bool {
+	switch e {
+	case ReviewReportStatusDismissed:
+		return true
+	case ReviewReportStatusPending:
+		return true
+	case ReviewReportStatusResolved:
 		return true
 	default:
 		return false
@@ -677,6 +849,45 @@ func (e VoucherStatus) Valid() bool {
 	}
 }
 
+// Defines values for ListMerchantReviewQueueParamsStatus.
+const (
+	ListMerchantReviewQueueParamsStatusInReview  ListMerchantReviewQueueParamsStatus = "in_review"
+	ListMerchantReviewQueueParamsStatusSubmitted ListMerchantReviewQueueParamsStatus = "submitted"
+)
+
+// Valid indicates whether the value is a known member of the ListMerchantReviewQueueParamsStatus enum.
+func (e ListMerchantReviewQueueParamsStatus) Valid() bool {
+	switch e {
+	case ListMerchantReviewQueueParamsStatusInReview:
+		return true
+	case ListMerchantReviewQueueParamsStatusSubmitted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DownloadMerchantDocumentParamsKind.
+const (
+	DownloadMerchantDocumentParamsKindBankLetter  DownloadMerchantDocumentParamsKind = "bank_letter"
+	DownloadMerchantDocumentParamsKindCertificate DownloadMerchantDocumentParamsKind = "certificate"
+	DownloadMerchantDocumentParamsKindPriceProof  DownloadMerchantDocumentParamsKind = "price_proof"
+)
+
+// Valid indicates whether the value is a known member of the DownloadMerchantDocumentParamsKind enum.
+func (e DownloadMerchantDocumentParamsKind) Valid() bool {
+	switch e {
+	case DownloadMerchantDocumentParamsKindBankLetter:
+		return true
+	case DownloadMerchantDocumentParamsKindCertificate:
+		return true
+	case DownloadMerchantDocumentParamsKindPriceProof:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetAdminStatus200JSONResponseBodyAvailable.
 const (
 	False GetAdminStatus200JSONResponseBodyAvailable = false
@@ -746,6 +957,27 @@ func (e ListMyVouchersParamsStatus) Valid() bool {
 	}
 }
 
+// Defines values for UploadMerchantDocumentParamsKind.
+const (
+	UploadMerchantDocumentParamsKindBankLetter  UploadMerchantDocumentParamsKind = "bank_letter"
+	UploadMerchantDocumentParamsKindCertificate UploadMerchantDocumentParamsKind = "certificate"
+	UploadMerchantDocumentParamsKindPriceProof  UploadMerchantDocumentParamsKind = "price_proof"
+)
+
+// Valid indicates whether the value is a known member of the UploadMerchantDocumentParamsKind enum.
+func (e UploadMerchantDocumentParamsKind) Valid() bool {
+	switch e {
+	case UploadMerchantDocumentParamsKindBankLetter:
+		return true
+	case UploadMerchantDocumentParamsKindCertificate:
+		return true
+	case UploadMerchantDocumentParamsKindPriceProof:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ReceivePaymentWebhookParamsProvider.
 const (
 	ReceivePaymentWebhookParamsProviderClick ReceivePaymentWebhookParamsProvider = "click"
@@ -770,67 +1002,59 @@ func (e ReceivePaymentWebhookParamsProvider) Valid() bool {
 	}
 }
 
-// AuthSession defines model for AuthSession.
+// ApprovePayoutRequest defines model for ApprovePayoutRequest.
+type ApprovePayoutRequest struct {
+	BankDocRef *string `json:"bank_doc_ref,omitempty"`
+}
+
+// AuditLog defines model for AuditLog.
+type AuditLog struct {
+	Action      string                  `json:"action"`
+	ActorRole   string                  `json:"actor_role"`
+	ActorUserId *Uuid                   `json:"actor_user_id,omitempty"`
+	AfterData   *map[string]interface{} `json:"after_data,omitempty"`
+	CreatedAt   time.Time               `json:"created_at"`
+	EntityId    *Uuid                   `json:"entity_id,omitempty"`
+	EntityType  string                  `json:"entity_type"`
+	Id          Uuid                    `json:"id"`
+}
+
+// AuditLogPage defines model for AuditLogPage.
+type AuditLogPage struct {
+	Items    []AuditLog `json:"items"`
+	Page     int        `json:"page"`
+	PageSize int        `json:"page_size"`
+	Total    int64      `json:"total"`
+}
+
+// AuthSession Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients.
 type AuthSession struct {
-	AccessToken string               `json:"access_token"`
-	ExpiresIn   AuthSessionExpiresIn `json:"expires_in"`
-	User        User                 `json:"user"`
+	AccessToken  string               `json:"access_token"`
+	ExpiresIn    AuthSessionExpiresIn `json:"expires_in"`
+	RefreshToken string               `json:"refresh_token"`
+	User         User                 `json:"user"`
 }
 
 // AuthSessionExpiresIn defines model for AuthSession.ExpiresIn.
 type AuthSessionExpiresIn int
 
-// Cart defines model for Cart.
-type Cart struct {
-	Items []CartItem `json:"items"`
-
-	// Subtotal Integer minor units; never floating point.
-	Subtotal Money `json:"subtotal"`
-}
-
-// CartInput defines model for CartInput.
-type CartInput struct {
-	Items []CartItemInput `json:"items"`
-	Merge *bool           `json:"merge,omitempty"`
-}
-
-// CartItem defines model for CartItem.
-type CartItem struct {
-	Deal         DealSummary `json:"deal"`
-	DealOptionId Uuid        `json:"deal_option_id"`
-	IsGift       bool        `json:"is_gift"`
-
-	// LineTotal Integer minor units; never floating point.
-	LineTotal Money      `json:"line_total"`
-	Option    DealOption `json:"option"`
-	Quantity  int        `json:"quantity"`
-}
-
-// CartItemInput defines model for CartItemInput.
-type CartItemInput struct {
-	DealOptionId Uuid `json:"deal_option_id"`
-	IsGift       bool `json:"is_gift"`
-	Quantity     int  `json:"quantity"`
-}
-
 // Category defines model for Category.
 type Category struct {
-	Icon          string        `json:"icon"`
-	Id            Uuid          `json:"id"`
-	Name          LocalizedText `json:"name"`
-	Slug          string        `json:"slug"`
-	Subcategories []Subcategory `json:"subcategories"`
+	DealCreationEnabled bool          `json:"deal_creation_enabled"`
+	Icon                string        `json:"icon"`
+	Id                  Uuid          `json:"id"`
+	Name                LocalizedText `json:"name"`
+	PublishEnabled      bool          `json:"publish_enabled"`
+	Purchasable         bool          `json:"purchasable"`
+	Redeemable          bool          `json:"redeemable"`
+	Searchable          bool          `json:"searchable"`
+	Slug                string        `json:"slug"`
+	Subcategories       []Subcategory `json:"subcategories"`
 }
 
 // CategoryList defines model for CategoryList.
 type CategoryList struct {
 	Items []Category `json:"items"`
-}
-
-// ChangePasswordRequest defines model for ChangePasswordRequest.
-type ChangePasswordRequest struct {
-	CurrentPassword string `json:"current_password"`
-	NewPassword     string `json:"new_password"`
 }
 
 // ChartPoint defines model for ChartPoint.
@@ -853,48 +1077,15 @@ type CityList struct {
 	Items []City `json:"items"`
 }
 
-// Collection defines model for Collection.
-type Collection struct {
-	CoverUrl    string        `json:"cover_url"`
-	Description LocalizedText `json:"description"`
-	EndsAt      time.Time     `json:"ends_at"`
-	Id          Uuid          `json:"id"`
-	Slug        string        `json:"slug"`
-	StartsAt    time.Time     `json:"starts_at"`
-	Title       LocalizedText `json:"title"`
-}
-
-// CollectionDetail defines model for CollectionDetail.
-type CollectionDetail struct {
-	CoverUrl    string        `json:"cover_url"`
-	Deals       DealPage      `json:"deals"`
-	Description LocalizedText `json:"description"`
-	EndsAt      time.Time     `json:"ends_at"`
-	Id          Uuid          `json:"id"`
-	Slug        string        `json:"slug"`
-	StartsAt    time.Time     `json:"starts_at"`
-	Title       LocalizedText `json:"title"`
-}
-
-// CollectionList defines model for CollectionList.
-type CollectionList struct {
-	Items []Collection `json:"items"`
-}
-
 // CreateOrderItem defines model for CreateOrderItem.
 type CreateOrderItem struct {
-	DealOptionId       Uuid                 `json:"deal_option_id"`
-	GiftMessage        *string              `json:"gift_message,omitempty"`
-	GiftRecipientEmail *openapi_types.Email `json:"gift_recipient_email,omitempty"`
-	GiftRecipientName  *string              `json:"gift_recipient_name,omitempty"`
-	IsGift             bool                 `json:"is_gift"`
-	Quantity           int                  `json:"quantity"`
+	DealOptionId Uuid `json:"deal_option_id"`
+	Quantity     int  `json:"quantity"`
 }
 
 // CreateOrderRequest defines model for CreateOrderRequest.
 type CreateOrderRequest struct {
-	Items           []CreateOrderItem       `json:"items"`
-	ShippingAddress *map[string]interface{} `json:"shipping_address,omitempty"`
+	Items []CreateOrderItem `json:"items"`
 }
 
 // CreateReviewRequest defines model for CreateReviewRequest.
@@ -922,8 +1113,6 @@ type Deal struct {
 	Faq                    []FaqItem            `json:"faq"`
 	Highlights             []LocalizedText      `json:"highlights"`
 	Id                     Uuid                 `json:"id"`
-	IsGiftable             bool                 `json:"is_giftable"`
-	Kind                   DealKind             `json:"kind"`
 	Locations              []MerchantLocation   `json:"locations"`
 	MaxPerUser             int                  `json:"max_per_user"`
 	Media                  []DealMedia          `json:"media"`
@@ -946,9 +1135,6 @@ type Deal struct {
 	WhatsIncluded          []LocalizedText      `json:"whats_included"`
 }
 
-// DealKind defines model for Deal.Kind.
-type DealKind string
-
 // DealRedemptionMethod defines model for Deal.RedemptionMethod.
 type DealRedemptionMethod string
 
@@ -965,8 +1151,6 @@ type DealInput struct {
 	EndsAt                 time.Time                 `json:"ends_at"`
 	Faq                    []FaqItem                 `json:"faq"`
 	Highlights             []LocalizedText           `json:"highlights"`
-	IsGiftable             bool                      `json:"is_giftable"`
-	Kind                   DealInputKind             `json:"kind"`
 	LocationIds            []Uuid                    `json:"location_ids"`
 	MaxPerUser             int                       `json:"max_per_user"`
 	Media                  []DealMediaInput          `json:"media"`
@@ -983,9 +1167,6 @@ type DealInput struct {
 	VoucherValidUntil      *time.Time                `json:"voucher_valid_until,omitempty"`
 	WhatsIncluded          []LocalizedText           `json:"whats_included"`
 }
-
-// DealInputKind defines model for DealInput.Kind.
-type DealInputKind string
 
 // DealInputRedemptionMethod defines model for DealInput.RedemptionMethod.
 type DealInputRedemptionMethod string
@@ -1034,13 +1215,14 @@ type DealOption struct {
 
 // DealOptionInput defines model for DealOptionInput.
 type DealOptionInput struct {
-	DealPrice     int64         `json:"deal_price"`
-	Id            *Uuid         `json:"id,omitempty"`
-	IsActive      bool          `json:"is_active"`
-	OriginalPrice int64         `json:"original_price"`
-	SortOrder     int           `json:"sort_order"`
-	StockTotal    int           `json:"stock_total"`
-	Title         LocalizedText `json:"title"`
+	DealPrice          int64         `json:"deal_price"`
+	Id                 *Uuid         `json:"id,omitempty"`
+	IsActive           bool          `json:"is_active"`
+	OriginalPrice      int64         `json:"original_price"`
+	RedemptionsAllowed *int          `json:"redemptions_allowed,omitempty"`
+	SortOrder          int           `json:"sort_order"`
+	StockTotal         int           `json:"stock_total"`
+	Title              LocalizedText `json:"title"`
 }
 
 // DealPage defines model for DealPage.
@@ -1056,43 +1238,31 @@ type DealStatus string
 
 // DealSummary defines model for DealSummary.
 type DealSummary struct {
-	Category    Category        `json:"category"`
-	EndsAt      time.Time       `json:"ends_at"`
-	Id          Uuid            `json:"id"`
-	Kind        DealSummaryKind `json:"kind"`
-	Media       []DealMedia     `json:"media"`
-	Merchant    Merchant        `json:"merchant"`
-	Options     []DealOption    `json:"options"`
-	RatingAvg   float32         `json:"rating_avg"`
-	RatingCount int             `json:"rating_count"`
-	Slug        string          `json:"slug"`
-	SoldCount   int             `json:"sold_count"`
-	StartsAt    *time.Time      `json:"starts_at,omitempty"`
-	Status      DealStatus      `json:"status"`
-	Title       LocalizedText   `json:"title"`
+	Category    Category      `json:"category"`
+	EndsAt      time.Time     `json:"ends_at"`
+	Id          Uuid          `json:"id"`
+	Media       []DealMedia   `json:"media"`
+	Merchant    Merchant      `json:"merchant"`
+	Options     []DealOption  `json:"options"`
+	RatingAvg   float32       `json:"rating_avg"`
+	RatingCount int           `json:"rating_count"`
+	Slug        string        `json:"slug"`
+	SoldCount   int           `json:"sold_count"`
+	StartsAt    *time.Time    `json:"starts_at,omitempty"`
+	Status      DealStatus    `json:"status"`
+	Title       LocalizedText `json:"title"`
 }
 
-// DealSummaryKind defines model for DealSummary.Kind.
-type DealSummaryKind string
-
-// EmailRequest defines model for EmailRequest.
-type EmailRequest struct {
-	Email openapi_types.Email `json:"email"`
+// DisputeItem defines model for DisputeItem.
+type DisputeItem struct {
+	Amount       int64     `json:"amount"`
+	CreatedAt    time.Time `json:"created_at"`
+	Id           Uuid      `json:"id"`
+	MerchantName string    `json:"merchant_name"`
+	Reason       string    `json:"reason"`
+	Status       string    `json:"status"`
+	VoucherCode  string    `json:"voucher_code"`
 }
-
-// ExchangeRate defines model for ExchangeRate.
-type ExchangeRate struct {
-	Base        ExchangeRateBase  `json:"base"`
-	EffectiveAt time.Time         `json:"effective_at"`
-	Quote       ExchangeRateQuote `json:"quote"`
-	Rate        string            `json:"rate"`
-}
-
-// ExchangeRateBase defines model for ExchangeRate.Base.
-type ExchangeRateBase string
-
-// ExchangeRateQuote defines model for ExchangeRate.Quote.
-type ExchangeRateQuote string
 
 // FaqItem defines model for FaqItem.
 type FaqItem struct {
@@ -1100,11 +1270,11 @@ type FaqItem struct {
 	Q LocalizedText `json:"q"`
 }
 
-// GoogleCodeRequest defines model for GoogleCodeRequest.
-type GoogleCodeRequest struct {
-	Code         string `json:"code"`
-	CodeVerifier string `json:"code_verifier"`
-	RedirectUri  string `json:"redirect_uri"`
+// FinanceQueue defines model for FinanceQueue.
+type FinanceQueue struct {
+	Disputes   []DisputeItem   `json:"disputes"`
+	PayoutRuns []PayoutRunItem `json:"payout_runs"`
+	Refunds    []RefundItem    `json:"refunds"`
 }
 
 // Homepage defines model for Homepage.
@@ -1115,7 +1285,6 @@ type Homepage struct {
 // HomepageSection defines model for HomepageSection.
 type HomepageSection struct {
 	Categories *[]Category         `json:"categories,omitempty"`
-	Collection *Collection         `json:"collection,omitempty"`
 	Deals      *[]DealSummary      `json:"deals,omitempty"`
 	Id         Uuid                `json:"id"`
 	Key        string              `json:"key"`
@@ -1152,19 +1321,15 @@ type LocationList struct {
 	Items []MerchantLocation `json:"items"`
 }
 
-// LoginRequest defines model for LoginRequest.
-type LoginRequest struct {
-	Email    openapi_types.Email `json:"email"`
-	Password string              `json:"password"`
-}
-
 // MediaAsset defines model for MediaAsset.
 type MediaAsset struct {
 	ContentType string    `json:"content_type"`
 	CreatedAt   time.Time `json:"created_at"`
+	Height      *int      `json:"height,omitempty"`
 	Id          Uuid      `json:"id"`
 	Size        int64     `json:"size"`
 	Url         string    `json:"url"`
+	Width       *int      `json:"width,omitempty"`
 }
 
 // MediaList defines model for MediaList.
@@ -1191,23 +1356,27 @@ type MediaUploadRequestContentType string
 
 // Merchant defines model for Merchant.
 type Merchant struct {
-	CommissionBps int                 `json:"commission_bps"`
-	CoverUrl      *string             `json:"cover_url,omitempty"`
-	Description   LocalizedText       `json:"description"`
-	DisplayName   string              `json:"display_name"`
-	Id            Uuid                `json:"id"`
-	Instagram     *string             `json:"instagram,omitempty"`
-	LegalName     string              `json:"legal_name"`
-	Locations     *[]MerchantLocation `json:"locations,omitempty"`
-	LogoUrl       *string             `json:"logo_url,omitempty"`
-	Phone         string              `json:"phone"`
-	RatingAvg     float32             `json:"rating_avg"`
-	RatingCount   int                 `json:"rating_count"`
-	Slug          string              `json:"slug"`
-	Status        MerchantStatus      `json:"status"`
-	Telegram      *string             `json:"telegram,omitempty"`
-	Website       *string             `json:"website,omitempty"`
+	CommissionBps int                   `json:"commission_bps"`
+	CoverUrl      *string               `json:"cover_url,omitempty"`
+	Description   LocalizedText         `json:"description"`
+	DisplayName   string                `json:"display_name"`
+	Id            Uuid                  `json:"id"`
+	Instagram     *string               `json:"instagram,omitempty"`
+	LegalName     string                `json:"legal_name"`
+	Locations     *[]MerchantLocation   `json:"locations,omitempty"`
+	LogoUrl       *string               `json:"logo_url,omitempty"`
+	Phone         string                `json:"phone"`
+	RatingAvg     float32               `json:"rating_avg"`
+	RatingCount   int                   `json:"rating_count"`
+	ReviewStatus  *MerchantReviewStatus `json:"review_status,omitempty"`
+	Slug          string                `json:"slug"`
+	Status        MerchantStatus        `json:"status"`
+	Telegram      *string               `json:"telegram,omitempty"`
+	Website       *string               `json:"website,omitempty"`
 }
+
+// MerchantReviewStatus defines model for Merchant.ReviewStatus.
+type MerchantReviewStatus string
 
 // MerchantStatus defines model for Merchant.Status.
 type MerchantStatus string
@@ -1246,6 +1415,25 @@ type MerchantDashboard struct {
 	VouchersSold     Metric        `json:"vouchers_sold"`
 }
 
+// MerchantDocument defines model for MerchantDocument.
+type MerchantDocument struct {
+	ContentType MerchantDocumentContentType `json:"content_type"`
+	Kind        MerchantDocumentKind        `json:"kind"`
+	SizeBytes   int                         `json:"size_bytes"`
+	UploadedAt  time.Time                   `json:"uploaded_at"`
+}
+
+// MerchantDocumentContentType defines model for MerchantDocument.ContentType.
+type MerchantDocumentContentType string
+
+// MerchantDocumentKind defines model for MerchantDocument.Kind.
+type MerchantDocumentKind string
+
+// MerchantDocumentList defines model for MerchantDocumentList.
+type MerchantDocumentList struct {
+	Items []MerchantDocument `json:"items"`
+}
+
 // MerchantInput defines model for MerchantInput.
 type MerchantInput struct {
 	CoverUrl    *string        `json:"cover_url,omitempty"`
@@ -1271,28 +1459,87 @@ type MerchantLocation struct {
 
 // MerchantProfile defines model for MerchantProfile.
 type MerchantProfile struct {
-	CommissionBps int                   `json:"commission_bps"`
-	CoverUrl      *string               `json:"cover_url,omitempty"`
-	Deals         []DealSummary         `json:"deals"`
-	Description   LocalizedText         `json:"description"`
-	DisplayName   string                `json:"display_name"`
-	Id            Uuid                  `json:"id"`
-	Instagram     *string               `json:"instagram,omitempty"`
-	LegalName     string                `json:"legal_name"`
-	Locations     *[]MerchantLocation   `json:"locations,omitempty"`
-	LogoUrl       *string               `json:"logo_url,omitempty"`
-	Phone         string                `json:"phone"`
-	RatingAvg     float32               `json:"rating_avg"`
-	RatingCount   int                   `json:"rating_count"`
-	Reviews       []Review              `json:"reviews"`
-	Slug          string                `json:"slug"`
-	Status        MerchantProfileStatus `json:"status"`
-	Telegram      *string               `json:"telegram,omitempty"`
-	Website       *string               `json:"website,omitempty"`
+	CommissionBps int                          `json:"commission_bps"`
+	CoverUrl      *string                      `json:"cover_url,omitempty"`
+	Deals         []DealSummary                `json:"deals"`
+	Description   LocalizedText                `json:"description"`
+	DisplayName   string                       `json:"display_name"`
+	Id            Uuid                         `json:"id"`
+	Instagram     *string                      `json:"instagram,omitempty"`
+	LegalName     string                       `json:"legal_name"`
+	Locations     *[]MerchantLocation          `json:"locations,omitempty"`
+	LogoUrl       *string                      `json:"logo_url,omitempty"`
+	Phone         string                       `json:"phone"`
+	RatingAvg     float32                      `json:"rating_avg"`
+	RatingCount   int                          `json:"rating_count"`
+	ReviewStatus  *MerchantProfileReviewStatus `json:"review_status,omitempty"`
+	Reviews       []Review                     `json:"reviews"`
+	Slug          string                       `json:"slug"`
+	Status        MerchantProfileStatus        `json:"status"`
+	Telegram      *string                      `json:"telegram,omitempty"`
+	Website       *string                      `json:"website,omitempty"`
 }
+
+// MerchantProfileReviewStatus defines model for MerchantProfile.ReviewStatus.
+type MerchantProfileReviewStatus string
 
 // MerchantProfileStatus defines model for MerchantProfile.Status.
 type MerchantProfileStatus string
+
+// MerchantRedemption defines model for MerchantRedemption.
+type MerchantRedemption struct {
+	Branch   string        `json:"branch"`
+	Buyer    string        `json:"buyer"`
+	Cashier  string        `json:"cashier"`
+	Deal     LocalizedText `json:"deal"`
+	Id       Uuid          `json:"id"`
+	Option   LocalizedText `json:"option"`
+	Reversed bool          `json:"reversed"`
+	Time     time.Time     `json:"time"`
+}
+
+// MerchantRedemptionPage defines model for MerchantRedemptionPage.
+type MerchantRedemptionPage struct {
+	Items    []MerchantRedemption `json:"items"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"page_size"`
+	Total    int64                `json:"total"`
+}
+
+// MerchantReview defines model for MerchantReview.
+type MerchantReview struct {
+	BankAccount string `json:"bank_account"`
+	BankMfo     string `json:"bank_mfo"`
+	DisplayName string `json:"display_name"`
+
+	// Documents Document kinds already uploaded
+	Documents       *[]MerchantReviewDocuments `json:"documents,omitempty"`
+	Id              Uuid                       `json:"id"`
+	LegalName       string                     `json:"legal_name"`
+	OrgForm         MerchantReviewOrgForm      `json:"org_form"`
+	ResponsibleName string                     `json:"responsible_name"`
+	ReviewStatus    MerchantReviewReviewStatus `json:"review_status"`
+	Stir            string                     `json:"stir"`
+	SubmittedAt     time.Time                  `json:"submitted_at"`
+	TaxRegime       MerchantReviewTaxRegime    `json:"tax_regime"`
+}
+
+// MerchantReviewDocuments defines model for MerchantReview.Documents.
+type MerchantReviewDocuments string
+
+// MerchantReviewOrgForm defines model for MerchantReview.OrgForm.
+type MerchantReviewOrgForm string
+
+// MerchantReviewReviewStatus defines model for MerchantReview.ReviewStatus.
+type MerchantReviewReviewStatus string
+
+// MerchantReviewTaxRegime defines model for MerchantReview.TaxRegime.
+type MerchantReviewTaxRegime string
+
+// MerchantReviewList defines model for MerchantReviewList.
+type MerchantReviewList struct {
+	Items []MerchantReview `json:"items"`
+}
 
 // MerchantSettings defines model for MerchantSettings.
 type MerchantSettings struct {
@@ -1325,16 +1572,33 @@ type Money struct {
 // MoneyCurrency defines model for Money.Currency.
 type MoneyCurrency string
 
+// Notification defines model for Notification.
+type Notification struct {
+	CreatedAt    time.Time        `json:"created_at"`
+	Id           Uuid             `json:"id"`
+	Kind         NotificationKind `json:"kind"`
+	MerchantName string           `json:"merchant_name"`
+	ReadAt       *time.Time       `json:"read_at,omitempty"`
+	VoucherId    *Uuid            `json:"voucher_id,omitempty"`
+}
+
+// NotificationKind defines model for Notification.Kind.
+type NotificationKind string
+
+// NotificationList defines model for NotificationList.
+type NotificationList struct {
+	Items []Notification `json:"items"`
+}
+
 // Order defines model for Order.
 type Order struct {
-	CreatedAt            time.Time               `json:"created_at"`
-	Id                   Uuid                    `json:"id"`
-	Items                []OrderItem             `json:"items"`
-	Number               string                  `json:"number"`
-	PaidAt               *time.Time              `json:"paid_at,omitempty"`
-	ReservationExpiresAt *time.Time              `json:"reservation_expires_at,omitempty"`
-	ShippingAddress      *map[string]interface{} `json:"shipping_address,omitempty"`
-	Status               OrderStatus             `json:"status"`
+	CreatedAt            time.Time   `json:"created_at"`
+	Id                   Uuid        `json:"id"`
+	Items                []OrderItem `json:"items"`
+	Number               string      `json:"number"`
+	PaidAt               *time.Time  `json:"paid_at,omitempty"`
+	ReservationExpiresAt *time.Time  `json:"reservation_expires_at,omitempty"`
+	Status               OrderStatus `json:"status"`
 
 	// Subtotal Integer minor units; never floating point.
 	Subtotal Money `json:"subtotal"`
@@ -1345,26 +1609,19 @@ type Order struct {
 
 // OrderItem defines model for OrderItem.
 type OrderItem struct {
-	DealId             Uuid                       `json:"deal_id"`
-	DealOptionId       Uuid                       `json:"deal_option_id"`
-	FulfillmentStatus  OrderItemFulfillmentStatus `json:"fulfillment_status"`
-	GiftMessage        *string                    `json:"gift_message,omitempty"`
-	GiftRecipientEmail *openapi_types.Email       `json:"gift_recipient_email,omitempty"`
-	GiftRecipientName  *string                    `json:"gift_recipient_name,omitempty"`
-	Id                 Uuid                       `json:"id"`
-	IsGift             *bool                      `json:"is_gift,omitempty"`
+	DealId       Uuid `json:"deal_id"`
+	DealOptionId Uuid `json:"deal_option_id"`
+	Id           Uuid `json:"id"`
 
 	// OriginalPrice Integer minor units; never floating point.
 	OriginalPrice Money         `json:"original_price"`
 	Quantity      int           `json:"quantity"`
+	TermsSnapshot LocalizedText `json:"terms_snapshot"`
 	TitleSnapshot LocalizedText `json:"title_snapshot"`
 
 	// UnitPrice Integer minor units; never floating point.
 	UnitPrice Money `json:"unit_price"`
 }
-
-// OrderItemFulfillmentStatus defines model for OrderItem.FulfillmentStatus.
-type OrderItemFulfillmentStatus string
 
 // OrderPage defines model for OrderPage.
 type OrderPage struct {
@@ -1435,6 +1692,34 @@ type PayoutPage struct {
 	Items []Payout `json:"items"`
 }
 
+// PayoutRunItem defines model for PayoutRunItem.
+type PayoutRunItem struct {
+	Amount       int64     `json:"amount"`
+	CreatedAt    time.Time `json:"created_at"`
+	Id           Uuid      `json:"id"`
+	MerchantName string    `json:"merchant_name"`
+	Status       string    `json:"status"`
+}
+
+// PhoneCodeRequest defines model for PhoneCodeRequest.
+type PhoneCodeRequest struct {
+	Phone string `json:"phone"`
+}
+
+// PhoneCodeSent defines model for PhoneCodeSent.
+type PhoneCodeSent struct {
+	CooldownSeconds int `json:"cooldown_seconds"`
+
+	// DevCode Development only. Absent in every other environment.
+	DevCode *string `json:"dev_code,omitempty"`
+}
+
+// PhoneCodeVerify defines model for PhoneCodeVerify.
+type PhoneCodeVerify struct {
+	Code  string `json:"code"`
+	Phone string `json:"phone"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	Code     string               `json:"code"`
@@ -1446,61 +1731,70 @@ type Problem struct {
 	Type     string               `json:"type"`
 }
 
-// PromoCode defines model for PromoCode.
-type PromoCode struct {
-	BrandLogoUrl  *string       `json:"brand_logo_url,omitempty"`
-	BrandName     string        `json:"brand_name"`
-	Code          *string       `json:"code,omitempty"`
-	DiscountLabel LocalizedText `json:"discount_label"`
-	EndsAt        time.Time     `json:"ends_at"`
-	Id            Uuid          `json:"id"`
-	IsVerified    bool          `json:"is_verified"`
-	StartsAt      time.Time     `json:"starts_at"`
-	Title         LocalizedText `json:"title"`
-	Url           string        `json:"url"`
-}
-
-// PromoCodePage defines model for PromoCodePage.
-type PromoCodePage struct {
-	Items    []PromoCode `json:"items"`
-	Page     int         `json:"page"`
-	PageSize int         `json:"page_size"`
-	Total    int64       `json:"total"`
-}
-
 // PublicConfig defines model for PublicConfig.
 type PublicConfig struct {
-	Categories   []Category   `json:"categories"`
-	Cities       []City       `json:"cities"`
-	Currencies   []Currency   `json:"currencies"`
-	ExchangeRate ExchangeRate `json:"exchange_rate"`
-	Locales      []Locale     `json:"locales"`
+	Categories []Category `json:"categories"`
+	Cities     []City     `json:"cities"`
+	Currencies []Currency `json:"currencies"`
+	Locales    []Locale   `json:"locales"`
 }
 
 // RedeemRequest defines model for RedeemRequest.
 type RedeemRequest struct {
-	LocationId Uuid `json:"location_id"`
+	// Lat Staff device position, optional; used by the distance fraud rule.
+	Lat        *float32 `json:"lat,omitempty"`
+	Lng        *float32 `json:"lng,omitempty"`
+	LocationId Uuid     `json:"location_id"`
+}
+
+// RefundItem defines model for RefundItem.
+type RefundItem struct {
+	Amount      int64     `json:"amount"`
+	CreatedAt   time.Time `json:"created_at"`
+	Id          Uuid      `json:"id"`
+	Reason      string    `json:"reason"`
+	Status      string    `json:"status"`
+	VoucherCode string    `json:"voucher_code"`
 }
 
 // RegisterMerchantRequest defines model for RegisterMerchantRequest.
 type RegisterMerchantRequest struct {
-	Address     string  `json:"address"`
-	CategoryId  Uuid    `json:"category_id"`
-	CityId      Uuid    `json:"city_id"`
-	DisplayName string  `json:"display_name"`
-	Lat         float32 `json:"lat"`
-	LegalName   string  `json:"legal_name"`
-	Lng         float32 `json:"lng"`
-	Phone       string  `json:"phone"`
+	Address     string `json:"address"`
+	BankAccount string `json:"bank_account"`
+	BankMfo     string `json:"bank_mfo"`
+	CategoryId  Uuid   `json:"category_id"`
+	CityId      Uuid   `json:"city_id"`
+
+	// ContractAccepted Must be true: the merchant accepts the offer
+	ContractAccepted bool                           `json:"contract_accepted"`
+	ContractVersion  string                         `json:"contract_version"`
+	DisplayName      string                         `json:"display_name"`
+	Lat              float32                        `json:"lat"`
+	LegalName        string                         `json:"legal_name"`
+	Lng              float32                        `json:"lng"`
+	OrgForm          RegisterMerchantRequestOrgForm `json:"org_form"`
+	Phone            string                         `json:"phone"`
+	ResponsibleName  string                         `json:"responsible_name"`
+
+	// Stir Taxpayer number (STIR)
+	Stir      string                           `json:"stir"`
+	TaxRegime RegisterMerchantRequestTaxRegime `json:"tax_regime"`
 }
 
-// RegisterRequest defines model for RegisterRequest.
-type RegisterRequest struct {
-	Currency Currency            `json:"currency"`
-	Email    openapi_types.Email `json:"email"`
-	Locale   Locale              `json:"locale"`
-	Name     string              `json:"name"`
-	Password string              `json:"password"`
+// RegisterMerchantRequestOrgForm defines model for RegisterMerchantRequest.OrgForm.
+type RegisterMerchantRequestOrgForm string
+
+// RegisterMerchantRequestTaxRegime defines model for RegisterMerchantRequest.TaxRegime.
+type RegisterMerchantRequestTaxRegime string
+
+// RejectDealInput defines model for RejectDealInput.
+type RejectDealInput struct {
+	Reason string `json:"reason"`
+}
+
+// RejectMerchantRequest defines model for RejectMerchantRequest.
+type RejectMerchantRequest struct {
+	Reason string `json:"reason"`
 }
 
 // ReplyRequest defines model for ReplyRequest.
@@ -1513,10 +1807,17 @@ type ReportRequest struct {
 	Reason string `json:"reason"`
 }
 
-// ResetPasswordRequest defines model for ResetPasswordRequest.
-type ResetPasswordRequest struct {
-	Password string `json:"password"`
-	Token    string `json:"token"`
+// ResolveDisputeRequest defines model for ResolveDisputeRequest.
+type ResolveDisputeRequest struct {
+	Resolution ResolveDisputeRequestResolution `json:"resolution"`
+}
+
+// ResolveDisputeRequestResolution defines model for ResolveDisputeRequest.Resolution.
+type ResolveDisputeRequestResolution string
+
+// ReverseRequest defines model for ReverseRequest.
+type ReverseRequest struct {
+	Reason string `json:"reason"`
 }
 
 // Review defines model for Review.
@@ -1556,13 +1857,34 @@ type ReviewReply struct {
 	Text      string    `json:"text"`
 }
 
+// ReviewReport defines model for ReviewReport.
+type ReviewReport struct {
+	CreatedAt time.Time          `json:"created_at"`
+	Id        Uuid               `json:"id"`
+	Reason    string             `json:"reason"`
+	Review    Review             `json:"review"`
+	Status    ReviewReportStatus `json:"status"`
+}
+
+// ReviewReportStatus defines model for ReviewReport.Status.
+type ReviewReportStatus string
+
+// ReviewReportPage defines model for ReviewReportPage.
+type ReviewReportPage struct {
+	Items    []ReviewReport `json:"items"`
+	Page     int            `json:"page"`
+	PageSize int            `json:"page_size"`
+	Total    int64          `json:"total"`
+}
+
 // Role defines model for Role.
 type Role string
 
 // StaffInput defines model for StaffInput.
 type StaffInput struct {
-	Email openapi_types.Email `json:"email"`
-	Role  StaffInputRole      `json:"role"`
+	// Phone Phone of a registered user; they must sign in once first
+	Phone string         `json:"phone"`
+	Role  StaffInputRole `json:"role"`
 }
 
 // StaffInputRole defines model for StaffInput.Role.
@@ -1605,11 +1927,6 @@ type SuggestionList struct {
 	Items []Suggestion `json:"items"`
 }
 
-// TokenRequest defines model for TokenRequest.
-type TokenRequest struct {
-	Token string `json:"token"`
-}
-
 // UpdateProfileRequest defines model for UpdateProfileRequest.
 type UpdateProfileRequest struct {
 	Currency *Currency `json:"currency,omitempty"`
@@ -1640,6 +1957,7 @@ type Uuid = openapi_types.UUID
 
 // Voucher defines model for Voucher.
 type Voucher struct {
+	BackupCode     *string           `json:"backup_code,omitempty"`
 	BuyerFirstName *string           `json:"buyer_first_name,omitempty"`
 	Code           string            `json:"code"`
 	Deal           DealSummary       `json:"deal"`
@@ -1647,11 +1965,15 @@ type Voucher struct {
 	Location       *MerchantLocation `json:"location,omitempty"`
 	Merchant       Merchant          `json:"merchant"`
 	Option         DealOption        `json:"option"`
-	QrToken        string            `json:"qr_token"`
-	RedeemedAt     *time.Time        `json:"redeemed_at,omitempty"`
-	Status         VoucherStatus     `json:"status"`
-	ValidFrom      time.Time         `json:"valid_from"`
-	ValidUntil     time.Time         `json:"valid_until"`
+
+	// QrToken Rotates every 30 seconds; the voucher page must refetch.
+	QrToken          string        `json:"qr_token"`
+	QrTokenExpiresAt *time.Time    `json:"qr_token_expires_at,omitempty"`
+	RedeemedAt       *time.Time    `json:"redeemed_at,omitempty"`
+	Status           VoucherStatus `json:"status"`
+	TermsSnapshot    LocalizedText `json:"terms_snapshot"`
+	ValidFrom        time.Time     `json:"valid_from"`
+	ValidUntil       time.Time     `json:"valid_until"`
 }
 
 // VoucherStatus defines model for Voucher.Status.
@@ -1693,23 +2015,38 @@ type PageSize = int
 // Slug defines model for Slug.
 type Slug = string
 
+// ListAuditLogsParams defines parameters for ListAuditLogs.
+type ListAuditLogsParams struct {
+	Page *Page `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// ListMerchantReviewQueueParams defines parameters for ListMerchantReviewQueue.
+type ListMerchantReviewQueueParams struct {
+	Status *ListMerchantReviewQueueParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// ListMerchantReviewQueueParamsStatus defines parameters for ListMerchantReviewQueue.
+type ListMerchantReviewQueueParamsStatus string
+
+// DownloadMerchantDocumentParamsKind defines parameters for DownloadMerchantDocument.
+type DownloadMerchantDocumentParamsKind string
+
+// ListModerationDealsParams defines parameters for ListModerationDeals.
+type ListModerationDealsParams struct {
+	Page *Page `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// ListReviewReportsParams defines parameters for ListReviewReports.
+type ListReviewReportsParams struct {
+	Page *Page `form:"page,omitempty" json:"page,omitempty"`
+}
+
 // GetAdminStatus200JSONResponseBodyAvailable defines parameters for GetAdminStatus.
 type GetAdminStatus200JSONResponseBodyAvailable bool
 
 // GetBusinessParams defines parameters for GetBusiness.
 type GetBusinessParams struct {
 	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-}
-
-// ListCollectionsParams defines parameters for ListCollections.
-type ListCollectionsParams struct {
-	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-}
-
-// GetCollectionParams defines parameters for GetCollection.
-type GetCollectionParams struct {
-	Locale *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-	Page   *Page   `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // ListDealsParams defines parameters for ListDeals.
@@ -1795,6 +2132,9 @@ type ListMerchantDealsParams struct {
 	Page   *Page       `form:"page,omitempty" json:"page,omitempty"`
 }
 
+// UploadMerchantDocumentParamsKind defines parameters for UploadMerchantDocument.
+type UploadMerchantDocumentParamsKind string
+
 // ListMerchantOrdersParams defines parameters for ListMerchantOrders.
 type ListMerchantOrdersParams struct {
 	Status *OrderStatus `form:"status,omitempty" json:"status,omitempty"`
@@ -1832,13 +2172,6 @@ type ReceivePaymentWebhookParams struct {
 // ReceivePaymentWebhookParamsProvider defines parameters for ReceivePaymentWebhook.
 type ReceivePaymentWebhookParamsProvider string
 
-// ListPromoCodesParams defines parameters for ListPromoCodes.
-type ListPromoCodesParams struct {
-	Locale   *Locale `form:"locale,omitempty" json:"locale,omitempty"`
-	Category *string `form:"category,omitempty" json:"category,omitempty"`
-	Page     *Page   `form:"page,omitempty" json:"page,omitempty"`
-}
-
 // GetSearchSuggestionsParams defines parameters for GetSearchSuggestions.
 type GetSearchSuggestionsParams struct {
 	Q      string    `form:"q" json:"q"`
@@ -1846,38 +2179,38 @@ type GetSearchSuggestionsParams struct {
 	City   *CitySlug `form:"city,omitempty" json:"city,omitempty"`
 }
 
-// ForgotPasswordJSONRequestBody defines body for ForgotPassword for application/json ContentType.
-type ForgotPasswordJSONRequestBody = EmailRequest
+// RejectDealJSONRequestBody defines body for RejectDeal for application/json ContentType.
+type RejectDealJSONRequestBody = RejectDealInput
 
-// ExchangeGoogleCodeJSONRequestBody defines body for ExchangeGoogleCode for application/json ContentType.
-type ExchangeGoogleCodeJSONRequestBody = GoogleCodeRequest
+// ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
+type ResolveDisputeJSONRequestBody = ResolveDisputeRequest
 
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody = LoginRequest
+// RejectMerchantJSONRequestBody defines body for RejectMerchant for application/json ContentType.
+type RejectMerchantJSONRequestBody = RejectMerchantRequest
 
-// RegisterJSONRequestBody defines body for Register for application/json ContentType.
-type RegisterJSONRequestBody = RegisterRequest
+// ApprovePayoutJSONRequestBody defines body for ApprovePayout for application/json ContentType.
+type ApprovePayoutJSONRequestBody = ApprovePayoutRequest
 
-// ResetPasswordJSONRequestBody defines body for ResetPassword for application/json ContentType.
-type ResetPasswordJSONRequestBody = ResetPasswordRequest
+// SupportReverseVoucherJSONRequestBody defines body for SupportReverseVoucher for application/json ContentType.
+type SupportReverseVoucherJSONRequestBody = ReverseRequest
 
-// VerifyEmailJSONRequestBody defines body for VerifyEmail for application/json ContentType.
-type VerifyEmailJSONRequestBody = TokenRequest
+// RequestPhoneCodeJSONRequestBody defines body for RequestPhoneCode for application/json ContentType.
+type RequestPhoneCodeJSONRequestBody = PhoneCodeRequest
 
-// ReplaceCartJSONRequestBody defines body for ReplaceCart for application/json ContentType.
-type ReplaceCartJSONRequestBody = CartInput
+// VerifyPhoneCodeJSONRequestBody defines body for VerifyPhoneCode for application/json ContentType.
+type VerifyPhoneCodeJSONRequestBody = PhoneCodeVerify
 
 // UpdateMeJSONRequestBody defines body for UpdateMe for application/json ContentType.
 type UpdateMeJSONRequestBody = UpdateProfileRequest
 
-// ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
-type ChangePasswordJSONRequestBody = ChangePasswordRequest
-
 // RecordRecentlyViewedJSONRequestBody defines body for RecordRecentlyViewed for application/json ContentType.
 type RecordRecentlyViewedJSONRequestBody = DealIdRequest
 
-// SaveDealJSONRequestBody defines body for SaveDeal for application/json ContentType.
-type SaveDealJSONRequestBody = DealIdRequest
+// OpenVoucherDisputeJSONRequestBody defines body for OpenVoucherDispute for application/json ContentType.
+type OpenVoucherDisputeJSONRequestBody = ReverseRequest
+
+// RequestVoucherRefundJSONRequestBody defines body for RequestVoucherRefund for application/json ContentType.
+type RequestVoucherRefundJSONRequestBody = ReverseRequest
 
 // UpdateMerchantBusinessJSONRequestBody defines body for UpdateMerchantBusiness for application/json ContentType.
 type UpdateMerchantBusinessJSONRequestBody = MerchantInput
@@ -1914,6 +2247,9 @@ type LookupMerchantVoucherJSONRequestBody = VoucherLookupRequest
 
 // RedeemMerchantVoucherJSONRequestBody defines body for RedeemMerchantVoucher for application/json ContentType.
 type RedeemMerchantVoucherJSONRequestBody = RedeemRequest
+
+// ReverseMerchantVoucherJSONRequestBody defines body for ReverseMerchantVoucher for application/json ContentType.
+type ReverseMerchantVoucherJSONRequestBody = ReverseRequest
 
 // RegisterMerchantJSONRequestBody defines body for RegisterMerchant for application/json ContentType.
 type RegisterMerchantJSONRequestBody = RegisterMerchantRequest
@@ -2051,54 +2387,99 @@ func (t *VoucherLookupRequest) UnmarshalJSON(b []byte) error {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListAuditLogs Audit trail of admin and sensitive merchant actions
+	// (GET /api/v1/admin/audit-logs)
+	ListAuditLogs(w http.ResponseWriter, r *http.Request, params ListAuditLogsParams)
+	// ApproveDeal Approve a deal under review
+	// (POST /api/v1/admin/deals/{id}/approve)
+	ApproveDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// RejectDeal Reject a deal under review with a reason
+	// (POST /api/v1/admin/deals/{id}/reject)
+	RejectDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// CloseDispute Close a resolved dispute (support or system)
+	// (POST /api/v1/admin/disputes/{id}/close)
+	CloseDispute(w http.ResponseWriter, r *http.Request, id Id)
+	// RequestDisputeEvidence Ask the parties for evidence on an open dispute (support)
+	// (POST /api/v1/admin/disputes/{id}/request-evidence)
+	RequestDisputeEvidence(w http.ResponseWriter, r *http.Request, id Id)
+	// ResolveDispute Resolve a dispute in favour of the customer (refund) or the merchant (payout)
+	// (POST /api/v1/admin/disputes/{id}/resolve)
+	ResolveDispute(w http.ResponseWriter, r *http.Request, id Id)
+	// StartDisputeReview Move a dispute with evidence into review (support)
+	// (POST /api/v1/admin/disputes/{id}/start-review)
+	StartDisputeReview(w http.ResponseWriter, r *http.Request, id Id)
+	// GetFinanceQueue Open payouts, refunds and disputes for the finance desk
+	// (GET /api/v1/admin/finance/queue)
+	GetFinanceQueue(w http.ResponseWriter, r *http.Request)
+	// ListMerchantReviewQueue List businesses waiting for review
+	// (GET /api/v1/admin/merchants)
+	ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams)
+	// ApproveMerchant Approve a business that is in review
+	// (POST /api/v1/admin/merchants/{id}/approve)
+	ApproveMerchant(w http.ResponseWriter, r *http.Request, id Id)
+	// DownloadMerchantDocument Download a business document for review (reviewers only)
+	// (GET /api/v1/admin/merchants/{id}/documents/{kind})
+	DownloadMerchantDocument(w http.ResponseWriter, r *http.Request, id Id, kind DownloadMerchantDocumentParamsKind)
+	// PreparePayout Prepare a payout run for a merchant (finance operator)
+	// (POST /api/v1/admin/merchants/{id}/payouts)
+	PreparePayout(w http.ResponseWriter, r *http.Request, id Id)
+	// RejectMerchant Reject a submitted or in-review business with a reason
+	// (POST /api/v1/admin/merchants/{id}/reject)
+	RejectMerchant(w http.ResponseWriter, r *http.Request, id Id)
+	// StartMerchantReview Move a submitted business to in_review
+	// (POST /api/v1/admin/merchants/{id}/start-review)
+	StartMerchantReview(w http.ResponseWriter, r *http.Request, id Id)
+	// ListModerationDeals Deals waiting for review
+	// (GET /api/v1/admin/moderation/deals)
+	ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams)
+	// ApprovePayout Approve and send a payout run (four-eyes)
+	// (POST /api/v1/admin/payouts/{id}/approve)
+	ApprovePayout(w http.ResponseWriter, r *http.Request, id Id)
+	// ReconcilePayout Record that the bank confirmed a sent payout run
+	// (POST /api/v1/admin/payouts/{id}/reconcile)
+	ReconcilePayout(w http.ResponseWriter, r *http.Request, id Id)
+	// ApproveRefund Support approves a refund request (over 14 days or from a dispute)
+	// (POST /api/v1/admin/refunds/{id}/approve)
+	ApproveRefund(w http.ResponseWriter, r *http.Request, id Id)
+	// MarkRefundPaid Mark an approved refund as sent to the bank
+	// (POST /api/v1/admin/refunds/{id}/paid)
+	MarkRefundPaid(w http.ResponseWriter, r *http.Request, id Id)
+	// ListReviewReports Open review reports
+	// (GET /api/v1/admin/review-reports)
+	ListReviewReports(w http.ResponseWriter, r *http.Request, params ListReviewReportsParams)
+	// DismissReviewReport Close a report without changing the review
+	// (POST /api/v1/admin/review-reports/{id}/dismiss)
+	DismissReviewReport(w http.ResponseWriter, r *http.Request, id Id)
+	// HideReview Hide a review and close its open reports
+	// (POST /api/v1/admin/reviews/{id}/hide)
+	HideReview(w http.ResponseWriter, r *http.Request, id Id)
 	// GetAdminStatus Phase 1 admin API stub
 	// (GET /api/v1/admin/status)
 	GetAdminStatus(w http.ResponseWriter, r *http.Request)
-	// ForgotPassword Request password-reset email
-	// (POST /api/v1/auth/forgot-password)
-	ForgotPassword(w http.ResponseWriter, r *http.Request)
-	// ExchangeGoogleCode Exchange Google authorization code with PKCE
-	// (POST /api/v1/auth/google)
-	ExchangeGoogleCode(w http.ResponseWriter, r *http.Request)
-	// Login Sign in with email and password
-	// (POST /api/v1/auth/login)
-	Login(w http.ResponseWriter, r *http.Request)
-	// Logout Revoke current refresh token
+	// SupportReverseVoucher Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5)
+	// (POST /api/v1/admin/vouchers/{id}/reverse)
+	SupportReverseVoucher(w http.ResponseWriter, r *http.Request, id Id)
+	// Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 	// (POST /api/v1/auth/logout)
 	Logout(w http.ResponseWriter, r *http.Request)
+	// RequestPhoneCode Send a one-time sign-in code to a phone number
+	// (POST /api/v1/auth/phone/code)
+	RequestPhoneCode(w http.ResponseWriter, r *http.Request)
+	// VerifyPhoneCode Sign in with the code; creates the account on first use
+	// (POST /api/v1/auth/phone/verify)
+	VerifyPhoneCode(w http.ResponseWriter, r *http.Request)
 	// RefreshSession Rotate refresh token and detect reuse
 	// (POST /api/v1/auth/refresh)
 	RefreshSession(w http.ResponseWriter, r *http.Request)
-	// Register Register with email and password
-	// (POST /api/v1/auth/register)
-	Register(w http.ResponseWriter, r *http.Request)
-	// ResetPassword Reset password with token
-	// (POST /api/v1/auth/reset-password)
-	ResetPassword(w http.ResponseWriter, r *http.Request)
-	// VerifyEmail Verify email token
-	// (POST /api/v1/auth/verify-email)
-	VerifyEmail(w http.ResponseWriter, r *http.Request)
 	// GetBusiness Get merchant profile, locations, deals, and reviews
 	// (GET /api/v1/businesses/{slug})
 	GetBusiness(w http.ResponseWriter, r *http.Request, slug Slug, params GetBusinessParams)
-	// GetCart Get server-side cart
-	// (GET /api/v1/cart)
-	GetCart(w http.ResponseWriter, r *http.Request)
-	// ReplaceCart Replace or merge guest cart
-	// (PUT /api/v1/cart)
-	ReplaceCart(w http.ResponseWriter, r *http.Request)
 	// ListCategories List active categories and subcategories
 	// (GET /api/v1/categories)
 	ListCategories(w http.ResponseWriter, r *http.Request)
 	// ListCities List active cities
 	// (GET /api/v1/cities)
 	ListCities(w http.ResponseWriter, r *http.Request)
-	// ListCollections List active seasonal collections
-	// (GET /api/v1/collections)
-	ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams)
-	// GetCollection Get collection and deals
-	// (GET /api/v1/collections/{slug})
-	GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams)
 	// GetPublicConfig Get locales, currencies, cities, categories, and exchange rate
 	// (GET /api/v1/config)
 	GetPublicConfig(w http.ResponseWriter, r *http.Request)
@@ -2126,15 +2507,15 @@ type ServerInterface interface {
 	// UpdateMe Update profile preferences
 	// (PATCH /api/v1/me)
 	UpdateMe(w http.ResponseWriter, r *http.Request)
+	// ListMyNotifications List my notifications, newest first
+	// (GET /api/v1/me/notifications)
+	ListMyNotifications(w http.ResponseWriter, r *http.Request)
 	// ListMyOrders List current-user orders
 	// (GET /api/v1/me/orders)
 	ListMyOrders(w http.ResponseWriter, r *http.Request, params ListMyOrdersParams)
 	// GetMyOrder Get current-user order
 	// (GET /api/v1/me/orders/{id})
 	GetMyOrder(w http.ResponseWriter, r *http.Request, id Id)
-	// ChangePassword Change current password
-	// (PUT /api/v1/me/password)
-	ChangePassword(w http.ResponseWriter, r *http.Request)
 	// ListRecentlyViewed List deals viewed in last 30 days
 	// (GET /api/v1/me/recently-viewed)
 	ListRecentlyViewed(w http.ResponseWriter, r *http.Request)
@@ -2144,21 +2525,18 @@ type ServerInterface interface {
 	// ListMyReviews List current-user reviews
 	// (GET /api/v1/me/reviews)
 	ListMyReviews(w http.ResponseWriter, r *http.Request)
-	// ListSavedDeals List saved deals
-	// (GET /api/v1/me/saved-deals)
-	ListSavedDeals(w http.ResponseWriter, r *http.Request)
-	// SaveDeal Save a deal or merge a guest save
-	// (POST /api/v1/me/saved-deals)
-	SaveDeal(w http.ResponseWriter, r *http.Request)
-	// UnsaveDeal Remove saved deal
-	// (DELETE /api/v1/me/saved-deals/{id})
-	UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id)
 	// ListMyVouchers List active, used, or expired vouchers
 	// (GET /api/v1/me/vouchers)
 	ListMyVouchers(w http.ResponseWriter, r *http.Request, params ListMyVouchersParams)
 	// GetMyVoucher Get offline-cacheable voucher detail
 	// (GET /api/v1/me/vouchers/{id})
 	GetMyVoucher(w http.ResponseWriter, r *http.Request, id Id)
+	// OpenVoucherDispute Dispute a redemption (this was not me)
+	// (POST /api/v1/me/vouchers/{id}/dispute)
+	OpenVoucherDispute(w http.ResponseWriter, r *http.Request, id Id)
+	// RequestVoucherRefund Ask for a refund of an unused voucher
+	// (POST /api/v1/me/vouchers/{id}/refund)
+	RequestVoucherRefund(w http.ResponseWriter, r *http.Request, id Id)
 	// GetMerchantAnalytics Get sales and redemption analytics
 	// (GET /api/v1/merchant/analytics)
 	GetMerchantAnalytics(w http.ResponseWriter, r *http.Request, params GetMerchantAnalyticsParams)
@@ -2192,6 +2570,12 @@ type ServerInterface interface {
 	// SubmitMerchantDeal Submit complete deal for moderation
 	// (POST /api/v1/merchant/deals/{id}/submit)
 	SubmitMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// ListMerchantDocuments List uploaded business documents (certificate, bank letter)
+	// (GET /api/v1/merchant/documents)
+	ListMerchantDocuments(w http.ResponseWriter, r *http.Request)
+	// UploadMerchantDocument Upload a business document (owner only). Replaces the previous file of the same kind
+	// (PUT /api/v1/merchant/documents/{kind})
+	UploadMerchantDocument(w http.ResponseWriter, r *http.Request, kind UploadMerchantDocumentParamsKind)
 	// ListMerchantLocations List branches
 	// (GET /api/v1/merchant/locations)
 	ListMerchantLocations(w http.ResponseWriter, r *http.Request)
@@ -2213,6 +2597,9 @@ type ServerInterface interface {
 	// DeleteMerchantMedia Delete unused media
 	// (DELETE /api/v1/merchant/media/{id})
 	DeleteMerchantMedia(w http.ResponseWriter, r *http.Request, id Id)
+	// UploadMerchantMediaContent Store image bytes for a pending asset (local storage adapter only)
+	// (PUT /api/v1/merchant/media/{id}/content)
+	UploadMerchantMediaContent(w http.ResponseWriter, r *http.Request, id Id)
 	// ListMerchantOrders List orders containing merchant deals
 	// (GET /api/v1/merchant/orders)
 	ListMerchantOrders(w http.ResponseWriter, r *http.Request, params ListMerchantOrdersParams)
@@ -2237,7 +2624,7 @@ type ServerInterface interface {
 	// ListMerchantStaff List staff
 	// (GET /api/v1/merchant/staff)
 	ListMerchantStaff(w http.ResponseWriter, r *http.Request)
-	// InviteMerchantStaff Invite manager or cashier by email
+	// InviteMerchantStaff Invite a manager or cashier by phone (owner only)
 	// (POST /api/v1/merchant/staff)
 	InviteMerchantStaff(w http.ResponseWriter, r *http.Request)
 	// RemoveMerchantStaff Remove staff assignment
@@ -2246,12 +2633,18 @@ type ServerInterface interface {
 	// UpdateMerchantStaff Change staff role
 	// (PATCH /api/v1/merchant/staff/{id})
 	UpdateMerchantStaff(w http.ResponseWriter, r *http.Request, id Id)
+	// SubmitMerchantForReview Send the business to platform review (owner only)
+	// (POST /api/v1/merchant/submit)
+	SubmitMerchantForReview(w http.ResponseWriter, r *http.Request)
 	// LookupMerchantVoucher Resolve signed QR token or human code
 	// (POST /api/v1/merchant/vouchers/lookup)
 	LookupMerchantVoucher(w http.ResponseWriter, r *http.Request)
 	// RedeemMerchantVoucher Redeem voucher idempotently and audit the action
 	// (POST /api/v1/merchant/vouchers/{id}/redeem)
 	RedeemMerchantVoucher(w http.ResponseWriter, r *http.Request, id Id)
+	// ReverseMerchantVoucher Undo the latest redemption (cashier: within 10 minutes)
+	// (POST /api/v1/merchant/vouchers/{id}/reverse)
+	ReverseMerchantVoucher(w http.ResponseWriter, r *http.Request, id Id)
 	// RegisterMerchant Register business and assign owner role
 	// (POST /api/v1/merchants)
 	RegisterMerchant(w http.ResponseWriter, r *http.Request)
@@ -2267,12 +2660,6 @@ type ServerInterface interface {
 	// ReceivePaymentWebhook Receive signed provider webhook idempotently
 	// (POST /api/v1/payments/webhooks/{provider})
 	ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider ReceivePaymentWebhookParamsProvider, params ReceivePaymentWebhookParams)
-	// ListPromoCodes List active promo codes
-	// (GET /api/v1/promo-codes)
-	ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams)
-	// TrackPromoCodeClick Track promo-code outbound click
-	// (POST /api/v1/promo-codes/{id}/click)
-	TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id)
 	// CreateReview Review one redeemed voucher once
 	// (POST /api/v1/reviews)
 	CreateReview(w http.ResponseWriter, r *http.Request)
@@ -2294,33 +2681,165 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
+// ListAuditLogs Audit trail of admin and sensitive merchant actions
+// (GET /api/v1/admin/audit-logs)
+func (_ Unimplemented) ListAuditLogs(w http.ResponseWriter, r *http.Request, params ListAuditLogsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApproveDeal Approve a deal under review
+// (POST /api/v1/admin/deals/{id}/approve)
+func (_ Unimplemented) ApproveDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RejectDeal Reject a deal under review with a reason
+// (POST /api/v1/admin/deals/{id}/reject)
+func (_ Unimplemented) RejectDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CloseDispute Close a resolved dispute (support or system)
+// (POST /api/v1/admin/disputes/{id}/close)
+func (_ Unimplemented) CloseDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RequestDisputeEvidence Ask the parties for evidence on an open dispute (support)
+// (POST /api/v1/admin/disputes/{id}/request-evidence)
+func (_ Unimplemented) RequestDisputeEvidence(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ResolveDispute Resolve a dispute in favour of the customer (refund) or the merchant (payout)
+// (POST /api/v1/admin/disputes/{id}/resolve)
+func (_ Unimplemented) ResolveDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// StartDisputeReview Move a dispute with evidence into review (support)
+// (POST /api/v1/admin/disputes/{id}/start-review)
+func (_ Unimplemented) StartDisputeReview(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetFinanceQueue Open payouts, refunds and disputes for the finance desk
+// (GET /api/v1/admin/finance/queue)
+func (_ Unimplemented) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListMerchantReviewQueue List businesses waiting for review
+// (GET /api/v1/admin/merchants)
+func (_ Unimplemented) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApproveMerchant Approve a business that is in review
+// (POST /api/v1/admin/merchants/{id}/approve)
+func (_ Unimplemented) ApproveMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DownloadMerchantDocument Download a business document for review (reviewers only)
+// (GET /api/v1/admin/merchants/{id}/documents/{kind})
+func (_ Unimplemented) DownloadMerchantDocument(w http.ResponseWriter, r *http.Request, id Id, kind DownloadMerchantDocumentParamsKind) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PreparePayout Prepare a payout run for a merchant (finance operator)
+// (POST /api/v1/admin/merchants/{id}/payouts)
+func (_ Unimplemented) PreparePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RejectMerchant Reject a submitted or in-review business with a reason
+// (POST /api/v1/admin/merchants/{id}/reject)
+func (_ Unimplemented) RejectMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// StartMerchantReview Move a submitted business to in_review
+// (POST /api/v1/admin/merchants/{id}/start-review)
+func (_ Unimplemented) StartMerchantReview(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListModerationDeals Deals waiting for review
+// (GET /api/v1/admin/moderation/deals)
+func (_ Unimplemented) ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApprovePayout Approve and send a payout run (four-eyes)
+// (POST /api/v1/admin/payouts/{id}/approve)
+func (_ Unimplemented) ApprovePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReconcilePayout Record that the bank confirmed a sent payout run
+// (POST /api/v1/admin/payouts/{id}/reconcile)
+func (_ Unimplemented) ReconcilePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApproveRefund Support approves a refund request (over 14 days or from a dispute)
+// (POST /api/v1/admin/refunds/{id}/approve)
+func (_ Unimplemented) ApproveRefund(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MarkRefundPaid Mark an approved refund as sent to the bank
+// (POST /api/v1/admin/refunds/{id}/paid)
+func (_ Unimplemented) MarkRefundPaid(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListReviewReports Open review reports
+// (GET /api/v1/admin/review-reports)
+func (_ Unimplemented) ListReviewReports(w http.ResponseWriter, r *http.Request, params ListReviewReportsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DismissReviewReport Close a report without changing the review
+// (POST /api/v1/admin/review-reports/{id}/dismiss)
+func (_ Unimplemented) DismissReviewReport(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// HideReview Hide a review and close its open reports
+// (POST /api/v1/admin/reviews/{id}/hide)
+func (_ Unimplemented) HideReview(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // GetAdminStatus Phase 1 admin API stub
 // (GET /api/v1/admin/status)
 func (_ Unimplemented) GetAdminStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ForgotPassword Request password-reset email
-// (POST /api/v1/auth/forgot-password)
-func (_ Unimplemented) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+// SupportReverseVoucher Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5)
+// (POST /api/v1/admin/vouchers/{id}/reverse)
+func (_ Unimplemented) SupportReverseVoucher(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ExchangeGoogleCode Exchange Google authorization code with PKCE
-// (POST /api/v1/auth/google)
-func (_ Unimplemented) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Login Sign in with email and password
-// (POST /api/v1/auth/login)
-func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Logout Revoke current refresh token
+// Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 // (POST /api/v1/auth/logout)
 func (_ Unimplemented) Logout(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RequestPhoneCode Send a one-time sign-in code to a phone number
+// (POST /api/v1/auth/phone/code)
+func (_ Unimplemented) RequestPhoneCode(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifyPhoneCode Sign in with the code; creates the account on first use
+// (POST /api/v1/auth/phone/verify)
+func (_ Unimplemented) VerifyPhoneCode(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2330,39 +2849,9 @@ func (_ Unimplemented) RefreshSession(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Register Register with email and password
-// (POST /api/v1/auth/register)
-func (_ Unimplemented) Register(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ResetPassword Reset password with token
-// (POST /api/v1/auth/reset-password)
-func (_ Unimplemented) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// VerifyEmail Verify email token
-// (POST /api/v1/auth/verify-email)
-func (_ Unimplemented) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // GetBusiness Get merchant profile, locations, deals, and reviews
 // (GET /api/v1/businesses/{slug})
 func (_ Unimplemented) GetBusiness(w http.ResponseWriter, r *http.Request, slug Slug, params GetBusinessParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// GetCart Get server-side cart
-// (GET /api/v1/cart)
-func (_ Unimplemented) GetCart(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ReplaceCart Replace or merge guest cart
-// (PUT /api/v1/cart)
-func (_ Unimplemented) ReplaceCart(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2375,18 +2864,6 @@ func (_ Unimplemented) ListCategories(w http.ResponseWriter, r *http.Request) {
 // ListCities List active cities
 // (GET /api/v1/cities)
 func (_ Unimplemented) ListCities(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListCollections List active seasonal collections
-// (GET /api/v1/collections)
-func (_ Unimplemented) ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// GetCollection Get collection and deals
-// (GET /api/v1/collections/{slug})
-func (_ Unimplemented) GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2444,6 +2921,12 @@ func (_ Unimplemented) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListMyNotifications List my notifications, newest first
+// (GET /api/v1/me/notifications)
+func (_ Unimplemented) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMyOrders List current-user orders
 // (GET /api/v1/me/orders)
 func (_ Unimplemented) ListMyOrders(w http.ResponseWriter, r *http.Request, params ListMyOrdersParams) {
@@ -2453,12 +2936,6 @@ func (_ Unimplemented) ListMyOrders(w http.ResponseWriter, r *http.Request, para
 // GetMyOrder Get current-user order
 // (GET /api/v1/me/orders/{id})
 func (_ Unimplemented) GetMyOrder(w http.ResponseWriter, r *http.Request, id Id) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ChangePassword Change current password
-// (PUT /api/v1/me/password)
-func (_ Unimplemented) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2480,24 +2957,6 @@ func (_ Unimplemented) ListMyReviews(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListSavedDeals List saved deals
-// (GET /api/v1/me/saved-deals)
-func (_ Unimplemented) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// SaveDeal Save a deal or merge a guest save
-// (POST /api/v1/me/saved-deals)
-func (_ Unimplemented) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// UnsaveDeal Remove saved deal
-// (DELETE /api/v1/me/saved-deals/{id})
-func (_ Unimplemented) UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ListMyVouchers List active, used, or expired vouchers
 // (GET /api/v1/me/vouchers)
 func (_ Unimplemented) ListMyVouchers(w http.ResponseWriter, r *http.Request, params ListMyVouchersParams) {
@@ -2507,6 +2966,18 @@ func (_ Unimplemented) ListMyVouchers(w http.ResponseWriter, r *http.Request, pa
 // GetMyVoucher Get offline-cacheable voucher detail
 // (GET /api/v1/me/vouchers/{id})
 func (_ Unimplemented) GetMyVoucher(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// OpenVoucherDispute Dispute a redemption (this was not me)
+// (POST /api/v1/me/vouchers/{id}/dispute)
+func (_ Unimplemented) OpenVoucherDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RequestVoucherRefund Ask for a refund of an unused voucher
+// (POST /api/v1/me/vouchers/{id}/refund)
+func (_ Unimplemented) RequestVoucherRefund(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2576,6 +3047,18 @@ func (_ Unimplemented) SubmitMerchantDeal(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListMerchantDocuments List uploaded business documents (certificate, bank letter)
+// (GET /api/v1/merchant/documents)
+func (_ Unimplemented) ListMerchantDocuments(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadMerchantDocument Upload a business document (owner only). Replaces the previous file of the same kind
+// (PUT /api/v1/merchant/documents/{kind})
+func (_ Unimplemented) UploadMerchantDocument(w http.ResponseWriter, r *http.Request, kind UploadMerchantDocumentParamsKind) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMerchantLocations List branches
 // (GET /api/v1/merchant/locations)
 func (_ Unimplemented) ListMerchantLocations(w http.ResponseWriter, r *http.Request) {
@@ -2615,6 +3098,12 @@ func (_ Unimplemented) CreateMerchantMediaUpload(w http.ResponseWriter, r *http.
 // DeleteMerchantMedia Delete unused media
 // (DELETE /api/v1/merchant/media/{id})
 func (_ Unimplemented) DeleteMerchantMedia(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadMerchantMediaContent Store image bytes for a pending asset (local storage adapter only)
+// (PUT /api/v1/merchant/media/{id}/content)
+func (_ Unimplemented) UploadMerchantMediaContent(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2666,7 +3155,7 @@ func (_ Unimplemented) ListMerchantStaff(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// InviteMerchantStaff Invite manager or cashier by email
+// InviteMerchantStaff Invite a manager or cashier by phone (owner only)
 // (POST /api/v1/merchant/staff)
 func (_ Unimplemented) InviteMerchantStaff(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -2684,6 +3173,12 @@ func (_ Unimplemented) UpdateMerchantStaff(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SubmitMerchantForReview Send the business to platform review (owner only)
+// (POST /api/v1/merchant/submit)
+func (_ Unimplemented) SubmitMerchantForReview(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // LookupMerchantVoucher Resolve signed QR token or human code
 // (POST /api/v1/merchant/vouchers/lookup)
 func (_ Unimplemented) LookupMerchantVoucher(w http.ResponseWriter, r *http.Request) {
@@ -2693,6 +3188,12 @@ func (_ Unimplemented) LookupMerchantVoucher(w http.ResponseWriter, r *http.Requ
 // RedeemMerchantVoucher Redeem voucher idempotently and audit the action
 // (POST /api/v1/merchant/vouchers/{id}/redeem)
 func (_ Unimplemented) RedeemMerchantVoucher(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReverseMerchantVoucher Undo the latest redemption (cashier: within 10 minutes)
+// (POST /api/v1/merchant/vouchers/{id}/reverse)
+func (_ Unimplemented) ReverseMerchantVoucher(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2723,18 +3224,6 @@ func (_ Unimplemented) CompleteMockPayment(w http.ResponseWriter, r *http.Reques
 // ReceivePaymentWebhook Receive signed provider webhook idempotently
 // (POST /api/v1/payments/webhooks/{provider})
 func (_ Unimplemented) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Request, provider ReceivePaymentWebhookParamsProvider, params ReceivePaymentWebhookParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListPromoCodes List active promo codes
-// (GET /api/v1/promo-codes)
-func (_ Unimplemented) ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// TrackPromoCodeClick Track promo-code outbound click
-// (POST /api/v1/promo-codes/{id}/click)
-func (_ Unimplemented) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2777,6 +3266,603 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// ListAuditLogs operation middleware
+func (siw *ServerInterfaceWrapper) ListAuditLogs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAuditLogsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAuditLogs(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveDeal operation middleware
+func (siw *ServerInterfaceWrapper) ApproveDeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveDeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectDeal operation middleware
+func (siw *ServerInterfaceWrapper) RejectDeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectDeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CloseDispute operation middleware
+func (siw *ServerInterfaceWrapper) CloseDispute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CloseDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestDisputeEvidence operation middleware
+func (siw *ServerInterfaceWrapper) RequestDisputeEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestDisputeEvidence(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveDispute operation middleware
+func (siw *ServerInterfaceWrapper) ResolveDispute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StartDisputeReview operation middleware
+func (siw *ServerInterfaceWrapper) StartDisputeReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartDisputeReview(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetFinanceQueue operation middleware
+func (siw *ServerInterfaceWrapper) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetFinanceQueue(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMerchantReviewQueue operation middleware
+func (siw *ServerInterfaceWrapper) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMerchantReviewQueueParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMerchantReviewQueue(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveMerchant operation middleware
+func (siw *ServerInterfaceWrapper) ApproveMerchant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveMerchant(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadMerchantDocument operation middleware
+func (siw *ServerInterfaceWrapper) DownloadMerchantDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "kind" -------------
+	var kind DownloadMerchantDocumentParamsKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "kind", chi.URLParam(r, "kind"), &kind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadMerchantDocument(w, r, id, kind)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreparePayout operation middleware
+func (siw *ServerInterfaceWrapper) PreparePayout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreparePayout(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectMerchant operation middleware
+func (siw *ServerInterfaceWrapper) RejectMerchant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectMerchant(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StartMerchantReview operation middleware
+func (siw *ServerInterfaceWrapper) StartMerchantReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartMerchantReview(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListModerationDeals operation middleware
+func (siw *ServerInterfaceWrapper) ListModerationDeals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListModerationDealsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListModerationDeals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApprovePayout operation middleware
+func (siw *ServerInterfaceWrapper) ApprovePayout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApprovePayout(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReconcilePayout operation middleware
+func (siw *ServerInterfaceWrapper) ReconcilePayout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReconcilePayout(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveRefund operation middleware
+func (siw *ServerInterfaceWrapper) ApproveRefund(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveRefund(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkRefundPaid operation middleware
+func (siw *ServerInterfaceWrapper) MarkRefundPaid(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkRefundPaid(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListReviewReports operation middleware
+func (siw *ServerInterfaceWrapper) ListReviewReports(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListReviewReportsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListReviewReports(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DismissReviewReport operation middleware
+func (siw *ServerInterfaceWrapper) DismissReviewReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DismissReviewReport(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// HideReview operation middleware
+func (siw *ServerInterfaceWrapper) HideReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HideReview(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetAdminStatus operation middleware
 func (siw *ServerInterfaceWrapper) GetAdminStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -2791,39 +3877,23 @@ func (siw *ServerInterfaceWrapper) GetAdminStatus(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
-// ForgotPassword operation middleware
-func (siw *ServerInterfaceWrapper) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+// SupportReverseVoucher operation middleware
+func (siw *ServerInterfaceWrapper) SupportReverseVoucher(w http.ResponseWriter, r *http.Request) {
 
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ForgotPassword(w, r)
-	}))
+	var err error
+	_ = err
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
 	}
 
-	handler.ServeHTTP(w, r)
-}
-
-// ExchangeGoogleCode operation middleware
-func (siw *ServerInterfaceWrapper) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ExchangeGoogleCode(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(w, r)
+		siw.Handler.SupportReverseVoucher(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2847,53 +3917,39 @@ func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r)
 }
 
+// RequestPhoneCode operation middleware
+func (siw *ServerInterfaceWrapper) RequestPhoneCode(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestPhoneCode(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyPhoneCode operation middleware
+func (siw *ServerInterfaceWrapper) VerifyPhoneCode(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyPhoneCode(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RefreshSession operation middleware
 func (siw *ServerInterfaceWrapper) RefreshSession(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RefreshSession(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// Register operation middleware
-func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Register(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ResetPassword operation middleware
-func (siw *ServerInterfaceWrapper) ResetPassword(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResetPassword(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// VerifyEmail operation middleware
-func (siw *ServerInterfaceWrapper) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VerifyEmail(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2945,34 +4001,6 @@ func (siw *ServerInterfaceWrapper) GetBusiness(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// GetCart operation middleware
-func (siw *ServerInterfaceWrapper) GetCart(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCart(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ReplaceCart operation middleware
-func (siw *ServerInterfaceWrapper) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ReplaceCart(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListCategories operation middleware
 func (siw *ServerInterfaceWrapper) ListCategories(w http.ResponseWriter, r *http.Request) {
 
@@ -2992,94 +4020,6 @@ func (siw *ServerInterfaceWrapper) ListCities(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCities(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListCollections operation middleware
-func (siw *ServerInterfaceWrapper) ListCollections(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListCollectionsParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListCollections(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetCollection operation middleware
-func (siw *ServerInterfaceWrapper) GetCollection(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "slug" -------------
-	var slug Slug
-
-	err = runtime.BindStyledParameterWithOptions("simple", "slug", chi.URLParam(r, "slug"), &slug, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "slug", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCollectionParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCollection(w, r, slug, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3558,6 +4498,20 @@ func (siw *ServerInterfaceWrapper) UpdateMe(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// ListMyNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMyNotifications(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMyOrders operation middleware
 func (siw *ServerInterfaceWrapper) ListMyOrders(w http.ResponseWriter, r *http.Request) {
 
@@ -3630,20 +4584,6 @@ func (siw *ServerInterfaceWrapper) GetMyOrder(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// ChangePassword operation middleware
-func (siw *ServerInterfaceWrapper) ChangePassword(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ChangePassword(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListRecentlyViewed operation middleware
 func (siw *ServerInterfaceWrapper) ListRecentlyViewed(w http.ResponseWriter, r *http.Request) {
 
@@ -3677,60 +4617,6 @@ func (siw *ServerInterfaceWrapper) ListMyReviews(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListMyReviews(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListSavedDeals operation middleware
-func (siw *ServerInterfaceWrapper) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListSavedDeals(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SaveDeal operation middleware
-func (siw *ServerInterfaceWrapper) SaveDeal(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SaveDeal(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnsaveDeal operation middleware
-func (siw *ServerInterfaceWrapper) UnsaveDeal(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Id
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnsaveDeal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3803,6 +4689,58 @@ func (siw *ServerInterfaceWrapper) GetMyVoucher(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMyVoucher(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// OpenVoucherDispute operation middleware
+func (siw *ServerInterfaceWrapper) OpenVoucherDispute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OpenVoucherDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestVoucherRefund operation middleware
+func (siw *ServerInterfaceWrapper) RequestVoucherRefund(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestVoucherRefund(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4129,6 +5067,46 @@ func (siw *ServerInterfaceWrapper) SubmitMerchantDeal(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListMerchantDocuments operation middleware
+func (siw *ServerInterfaceWrapper) ListMerchantDocuments(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMerchantDocuments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadMerchantDocument operation middleware
+func (siw *ServerInterfaceWrapper) UploadMerchantDocument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "kind" -------------
+	var kind UploadMerchantDocumentParamsKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "kind", chi.URLParam(r, "kind"), &kind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadMerchantDocument(w, r, kind)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMerchantLocations operation middleware
 func (siw *ServerInterfaceWrapper) ListMerchantLocations(w http.ResponseWriter, r *http.Request) {
 
@@ -4254,6 +5232,32 @@ func (siw *ServerInterfaceWrapper) DeleteMerchantMedia(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteMerchantMedia(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadMerchantMediaContent operation middleware
+func (siw *ServerInterfaceWrapper) UploadMerchantMediaContent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadMerchantMediaContent(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4542,6 +5546,20 @@ func (siw *ServerInterfaceWrapper) UpdateMerchantStaff(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// SubmitMerchantForReview operation middleware
+func (siw *ServerInterfaceWrapper) SubmitMerchantForReview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubmitMerchantForReview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // LookupMerchantVoucher operation middleware
 func (siw *ServerInterfaceWrapper) LookupMerchantVoucher(w http.ResponseWriter, r *http.Request) {
 
@@ -4573,6 +5591,32 @@ func (siw *ServerInterfaceWrapper) RedeemMerchantVoucher(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RedeemMerchantVoucher(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReverseMerchantVoucher operation middleware
+func (siw *ServerInterfaceWrapper) ReverseMerchantVoucher(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReverseMerchantVoucher(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4738,91 +5782,6 @@ func (siw *ServerInterfaceWrapper) ReceivePaymentWebhook(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReceivePaymentWebhook(w, r, provider, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListPromoCodes operation middleware
-func (siw *ServerInterfaceWrapper) ListPromoCodes(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListPromoCodesParams
-
-	// ------------- Optional query parameter "locale" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "locale", r.URL.Query(), &params.Locale, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "locale"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "category" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "page" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPromoCodes(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// TrackPromoCodeClick operation middleware
-func (siw *ServerInterfaceWrapper) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id Id
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TrackPromoCodeClick(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5127,40 +6086,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/v1/search/suggestions", wrapper.GetSearchSuggestions)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/promo-codes", wrapper.ListPromoCodes)
+		r.Post(options.BaseURL+"/api/v1/auth/phone/code", wrapper.RequestPhoneCode)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/promo-codes/{id}/click", wrapper.TrackPromoCodeClick)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/collections", wrapper.ListCollections)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/collections/{slug}", wrapper.GetCollection)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/register", wrapper.Register)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/login", wrapper.Login)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/google", wrapper.ExchangeGoogleCode)
+		r.Post(options.BaseURL+"/api/v1/auth/phone/verify", wrapper.VerifyPhoneCode)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/auth/logout", wrapper.Logout)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/verify-email", wrapper.VerifyEmail)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/forgot-password", wrapper.ForgotPassword)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/auth/reset-password", wrapper.ResetPassword)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/api/v1/me", wrapper.DeleteMe)
@@ -5170,9 +6105,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/api/v1/me", wrapper.UpdateMe)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/api/v1/me/password", wrapper.ChangePassword)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/orders", wrapper.ListMyOrders)
@@ -5185,15 +6117,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/vouchers/{id}", wrapper.GetMyVoucher)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/me/saved-deals", wrapper.ListSavedDeals)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/me/saved-deals", wrapper.SaveDeal)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/api/v1/me/saved-deals/{id}", wrapper.UnsaveDeal)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/me/recently-viewed", wrapper.ListRecentlyViewed)
@@ -5215,12 +6138,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/reviews/{id}/report", wrapper.ReportReview)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/cart", wrapper.GetCart)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/api/v1/cart", wrapper.ReplaceCart)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/orders", wrapper.CreateOrder)
@@ -5313,6 +6230,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/api/v1/merchant/media/{id}", wrapper.DeleteMerchantMedia)
 	})
 	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/api/v1/merchant/media/{id}/content", wrapper.UploadMerchantMediaContent)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/merchant/settings", wrapper.GetMerchantSettings)
 	})
 	r.Group(func(r chi.Router) {
@@ -5331,13 +6251,927 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/api/v1/merchant/staff/{id}", wrapper.UpdateMerchantStaff)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/moderation/deals", wrapper.ListModerationDeals)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/deals/{id}/approve", wrapper.ApproveDeal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/deals/{id}/reject", wrapper.RejectDeal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/review-reports", wrapper.ListReviewReports)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/review-reports/{id}/dismiss", wrapper.DismissReviewReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/reviews/{id}/hide", wrapper.HideReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/audit-logs", wrapper.ListAuditLogs)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/merchant/vouchers/{id}/reverse", wrapper.ReverseMerchantVoucher)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/me/vouchers/{id}/refund", wrapper.RequestVoucherRefund)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/me/vouchers/{id}/dispute", wrapper.OpenVoucherDispute)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/payouts", wrapper.PreparePayout)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/payouts/{id}/approve", wrapper.ApprovePayout)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/refunds/{id}/paid", wrapper.MarkRefundPaid)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/payouts/{id}/reconcile", wrapper.ReconcilePayout)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/refunds/{id}/approve", wrapper.ApproveRefund)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/disputes/{id}/resolve", wrapper.ResolveDispute)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/disputes/{id}/request-evidence", wrapper.RequestDisputeEvidence)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/disputes/{id}/start-review", wrapper.StartDisputeReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/disputes/{id}/close", wrapper.CloseDispute)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/admin/status", wrapper.GetAdminStatus)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/merchant/submit", wrapper.SubmitMerchantForReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/merchants", wrapper.ListMerchantReviewQueue)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/start-review", wrapper.StartMerchantReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/approve", wrapper.ApproveMerchant)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/reject", wrapper.RejectMerchant)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/merchant/documents", wrapper.ListMerchantDocuments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/api/v1/merchant/documents/{kind}", wrapper.UploadMerchantDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/merchants/{id}/documents/{kind}", wrapper.DownloadMerchantDocument)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/vouchers/{id}/reverse", wrapper.SupportReverseVoucher)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/me/notifications", wrapper.ListMyNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/finance/queue", wrapper.GetFinanceQueue)
 	})
 
 	return r
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type ListAuditLogsRequestObject struct {
+	Params ListAuditLogsParams
+}
+
+type ListAuditLogsResponseObject interface {
+	VisitListAuditLogsResponse(w http.ResponseWriter) error
+}
+
+type ListAuditLogs200JSONResponse AuditLogPage
+
+func (response ListAuditLogs200JSONResponse) VisitListAuditLogsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAuditLogsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListAuditLogsdefaultApplicationProblemPlusJSONResponse) VisitListAuditLogsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveDealRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ApproveDealResponseObject interface {
+	VisitApproveDealResponse(w http.ResponseWriter) error
+}
+
+type ApproveDeal200JSONResponse Deal
+
+func (response ApproveDeal200JSONResponse) VisitApproveDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveDealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ApproveDealdefaultApplicationProblemPlusJSONResponse) VisitApproveDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectDealRequestObject struct {
+	Id   Id `json:"id"`
+	Body *RejectDealJSONRequestBody
+}
+
+type RejectDealResponseObject interface {
+	VisitRejectDealResponse(w http.ResponseWriter) error
+}
+
+type RejectDeal200JSONResponse Deal
+
+func (response RejectDeal200JSONResponse) VisitRejectDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectDealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RejectDealdefaultApplicationProblemPlusJSONResponse) VisitRejectDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CloseDisputeRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type CloseDisputeResponseObject interface {
+	VisitCloseDisputeResponse(w http.ResponseWriter) error
+}
+
+type CloseDispute204Response struct {
+}
+
+func (response CloseDispute204Response) VisitCloseDisputeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type CloseDisputedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response CloseDisputedefaultApplicationProblemPlusJSONResponse) VisitCloseDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestDisputeEvidenceRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type RequestDisputeEvidenceResponseObject interface {
+	VisitRequestDisputeEvidenceResponse(w http.ResponseWriter) error
+}
+
+type RequestDisputeEvidence204Response struct {
+}
+
+func (response RequestDisputeEvidence204Response) VisitRequestDisputeEvidenceResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RequestDisputeEvidencedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RequestDisputeEvidencedefaultApplicationProblemPlusJSONResponse) VisitRequestDisputeEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDisputeRequestObject struct {
+	Id   Id `json:"id"`
+	Body *ResolveDisputeJSONRequestBody
+}
+
+type ResolveDisputeResponseObject interface {
+	VisitResolveDisputeResponse(w http.ResponseWriter) error
+}
+
+type ResolveDispute204Response struct {
+}
+
+func (response ResolveDispute204Response) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ResolveDisputedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ResolveDisputedefaultApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartDisputeReviewRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type StartDisputeReviewResponseObject interface {
+	VisitStartDisputeReviewResponse(w http.ResponseWriter) error
+}
+
+type StartDisputeReview204Response struct {
+}
+
+func (response StartDisputeReview204Response) VisitStartDisputeReviewResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type StartDisputeReviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response StartDisputeReviewdefaultApplicationProblemPlusJSONResponse) VisitStartDisputeReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetFinanceQueueRequestObject struct {
+}
+
+type GetFinanceQueueResponseObject interface {
+	VisitGetFinanceQueueResponse(w http.ResponseWriter) error
+}
+
+type GetFinanceQueue200JSONResponse FinanceQueue
+
+func (response GetFinanceQueue200JSONResponse) VisitGetFinanceQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetFinanceQueuedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetFinanceQueuedefaultApplicationProblemPlusJSONResponse) VisitGetFinanceQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMerchantReviewQueueRequestObject struct {
+	Params ListMerchantReviewQueueParams
+}
+
+type ListMerchantReviewQueueResponseObject interface {
+	VisitListMerchantReviewQueueResponse(w http.ResponseWriter) error
+}
+
+type ListMerchantReviewQueue200JSONResponse MerchantReviewList
+
+func (response ListMerchantReviewQueue200JSONResponse) VisitListMerchantReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMerchantReviewQueuedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListMerchantReviewQueuedefaultApplicationProblemPlusJSONResponse) VisitListMerchantReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveMerchantRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ApproveMerchantResponseObject interface {
+	VisitApproveMerchantResponse(w http.ResponseWriter) error
+}
+
+type ApproveMerchant204Response struct {
+}
+
+func (response ApproveMerchant204Response) VisitApproveMerchantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ApproveMerchantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ApproveMerchantdefaultApplicationProblemPlusJSONResponse) VisitApproveMerchantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadMerchantDocumentRequestObject struct {
+	Id   Id                                 `json:"id"`
+	Kind DownloadMerchantDocumentParamsKind `json:"kind"`
+}
+
+type DownloadMerchantDocumentResponseObject interface {
+	VisitDownloadMerchantDocumentResponse(w http.ResponseWriter) error
+}
+
+type DownloadMerchantDocument200ApplicationpdfResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response DownloadMerchantDocument200ApplicationpdfResponse) VisitDownloadMerchantDocumentResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "application/pdf")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type DownloadMerchantDocument200ImagejpegResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response DownloadMerchantDocument200ImagejpegResponse) VisitDownloadMerchantDocumentResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type DownloadMerchantDocument200ImagepngResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response DownloadMerchantDocument200ImagepngResponse) VisitDownloadMerchantDocumentResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "image/png")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type DownloadMerchantDocumentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DownloadMerchantDocumentdefaultApplicationProblemPlusJSONResponse) VisitDownloadMerchantDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreparePayoutRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type PreparePayoutResponseObject interface {
+	VisitPreparePayoutResponse(w http.ResponseWriter) error
+}
+
+type PreparePayout201Response struct {
+}
+
+func (response PreparePayout201Response) VisitPreparePayoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type PreparePayoutdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PreparePayoutdefaultApplicationProblemPlusJSONResponse) VisitPreparePayoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectMerchantRequestObject struct {
+	Id   Id `json:"id"`
+	Body *RejectMerchantJSONRequestBody
+}
+
+type RejectMerchantResponseObject interface {
+	VisitRejectMerchantResponse(w http.ResponseWriter) error
+}
+
+type RejectMerchant204Response struct {
+}
+
+func (response RejectMerchant204Response) VisitRejectMerchantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RejectMerchantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RejectMerchantdefaultApplicationProblemPlusJSONResponse) VisitRejectMerchantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartMerchantReviewRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type StartMerchantReviewResponseObject interface {
+	VisitStartMerchantReviewResponse(w http.ResponseWriter) error
+}
+
+type StartMerchantReview204Response struct {
+}
+
+func (response StartMerchantReview204Response) VisitStartMerchantReviewResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type StartMerchantReviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response StartMerchantReviewdefaultApplicationProblemPlusJSONResponse) VisitStartMerchantReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListModerationDealsRequestObject struct {
+	Params ListModerationDealsParams
+}
+
+type ListModerationDealsResponseObject interface {
+	VisitListModerationDealsResponse(w http.ResponseWriter) error
+}
+
+type ListModerationDeals200JSONResponse DealPage
+
+func (response ListModerationDeals200JSONResponse) VisitListModerationDealsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListModerationDealsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListModerationDealsdefaultApplicationProblemPlusJSONResponse) VisitListModerationDealsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApprovePayoutRequestObject struct {
+	Id   Id `json:"id"`
+	Body *ApprovePayoutJSONRequestBody
+}
+
+type ApprovePayoutResponseObject interface {
+	VisitApprovePayoutResponse(w http.ResponseWriter) error
+}
+
+type ApprovePayout204Response struct {
+}
+
+func (response ApprovePayout204Response) VisitApprovePayoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ApprovePayoutdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ApprovePayoutdefaultApplicationProblemPlusJSONResponse) VisitApprovePayoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcilePayoutRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ReconcilePayoutResponseObject interface {
+	VisitReconcilePayoutResponse(w http.ResponseWriter) error
+}
+
+type ReconcilePayout204Response struct {
+}
+
+func (response ReconcilePayout204Response) VisitReconcilePayoutResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReconcilePayoutdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ReconcilePayoutdefaultApplicationProblemPlusJSONResponse) VisitReconcilePayoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveRefundRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ApproveRefundResponseObject interface {
+	VisitApproveRefundResponse(w http.ResponseWriter) error
+}
+
+type ApproveRefund204Response struct {
+}
+
+func (response ApproveRefund204Response) VisitApproveRefundResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ApproveRefunddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ApproveRefunddefaultApplicationProblemPlusJSONResponse) VisitApproveRefundResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkRefundPaidRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type MarkRefundPaidResponseObject interface {
+	VisitMarkRefundPaidResponse(w http.ResponseWriter) error
+}
+
+type MarkRefundPaid204Response struct {
+}
+
+func (response MarkRefundPaid204Response) VisitMarkRefundPaidResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MarkRefundPaiddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response MarkRefundPaiddefaultApplicationProblemPlusJSONResponse) VisitMarkRefundPaidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReviewReportsRequestObject struct {
+	Params ListReviewReportsParams
+}
+
+type ListReviewReportsResponseObject interface {
+	VisitListReviewReportsResponse(w http.ResponseWriter) error
+}
+
+type ListReviewReports200JSONResponse ReviewReportPage
+
+func (response ListReviewReports200JSONResponse) VisitListReviewReportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReviewReportsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListReviewReportsdefaultApplicationProblemPlusJSONResponse) VisitListReviewReportsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissReviewReportRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type DismissReviewReportResponseObject interface {
+	VisitDismissReviewReportResponse(w http.ResponseWriter) error
+}
+
+type DismissReviewReport204Response struct {
+}
+
+func (response DismissReviewReport204Response) VisitDismissReviewReportResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DismissReviewReportdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DismissReviewReportdefaultApplicationProblemPlusJSONResponse) VisitDismissReviewReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type HideReviewRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type HideReviewResponseObject interface {
+	VisitHideReviewResponse(w http.ResponseWriter) error
+}
+
+type HideReview204Response struct {
+}
+
+func (response HideReview204Response) VisitHideReviewResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type HideReviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response HideReviewdefaultApplicationProblemPlusJSONResponse) VisitHideReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type GetAdminStatusRequestObject struct {
 }
@@ -5379,106 +7213,29 @@ func (response GetAdminStatusdefaultApplicationProblemPlusJSONResponse) VisitGet
 	return err
 }
 
-type ForgotPasswordRequestObject struct {
-	Body *ForgotPasswordJSONRequestBody
+type SupportReverseVoucherRequestObject struct {
+	Id   Id `json:"id"`
+	Body *SupportReverseVoucherJSONRequestBody
 }
 
-type ForgotPasswordResponseObject interface {
-	VisitForgotPasswordResponse(w http.ResponseWriter) error
+type SupportReverseVoucherResponseObject interface {
+	VisitSupportReverseVoucherResponse(w http.ResponseWriter) error
 }
 
-type ForgotPassword202Response struct {
+type SupportReverseVoucher204Response struct {
 }
 
-func (response ForgotPassword202Response) VisitForgotPasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(202)
+func (response SupportReverseVoucher204Response) VisitSupportReverseVoucherResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
 	return nil
 }
 
-type ForgotPassworddefaultApplicationProblemPlusJSONResponse struct {
+type SupportReverseVoucherdefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	StatusCode int
 }
 
-func (response ForgotPassworddefaultApplicationProblemPlusJSONResponse) VisitForgotPasswordResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ExchangeGoogleCodeRequestObject struct {
-	Body *ExchangeGoogleCodeJSONRequestBody
-}
-
-type ExchangeGoogleCodeResponseObject interface {
-	VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error
-}
-
-type ExchangeGoogleCode200JSONResponse AuthSession
-
-func (response ExchangeGoogleCode200JSONResponse) VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ExchangeGoogleCodedefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ExchangeGoogleCodedefaultApplicationProblemPlusJSONResponse) VisitExchangeGoogleCodeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type LoginRequestObject struct {
-	Body *LoginJSONRequestBody
-}
-
-type LoginResponseObject interface {
-	VisitLoginResponse(w http.ResponseWriter) error
-}
-
-type Login200JSONResponse AuthSession
-
-func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type LogindefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response LogindefaultApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response SupportReverseVoucherdefaultApplicationProblemPlusJSONResponse) VisitSupportReverseVoucherResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -5522,6 +7279,84 @@ func (response LogoutdefaultApplicationProblemPlusJSONResponse) VisitLogoutRespo
 	return err
 }
 
+type RequestPhoneCodeRequestObject struct {
+	Body *RequestPhoneCodeJSONRequestBody
+}
+
+type RequestPhoneCodeResponseObject interface {
+	VisitRequestPhoneCodeResponse(w http.ResponseWriter) error
+}
+
+type RequestPhoneCode202JSONResponse PhoneCodeSent
+
+func (response RequestPhoneCode202JSONResponse) VisitRequestPhoneCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestPhoneCodedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RequestPhoneCodedefaultApplicationProblemPlusJSONResponse) VisitRequestPhoneCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyPhoneCodeRequestObject struct {
+	Body *VerifyPhoneCodeJSONRequestBody
+}
+
+type VerifyPhoneCodeResponseObject interface {
+	VisitVerifyPhoneCodeResponse(w http.ResponseWriter) error
+}
+
+type VerifyPhoneCode200JSONResponse AuthSession
+
+func (response VerifyPhoneCode200JSONResponse) VisitVerifyPhoneCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyPhoneCodedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response VerifyPhoneCodedefaultApplicationProblemPlusJSONResponse) VisitVerifyPhoneCodeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RefreshSessionRequestObject struct {
 }
 
@@ -5549,111 +7384,6 @@ type RefreshSessiondefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RefreshSessiondefaultApplicationProblemPlusJSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterRequestObject struct {
-	Body *RegisterJSONRequestBody
-}
-
-type RegisterResponseObject interface {
-	VisitRegisterResponse(w http.ResponseWriter) error
-}
-
-type Register201JSONResponse AuthSession
-
-func (response Register201JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response RegisterdefaultApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResetPasswordRequestObject struct {
-	Body *ResetPasswordJSONRequestBody
-}
-
-type ResetPasswordResponseObject interface {
-	VisitResetPasswordResponse(w http.ResponseWriter) error
-}
-
-type ResetPassword204Response struct {
-}
-
-func (response ResetPassword204Response) VisitResetPasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type ResetPassworddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ResetPassworddefaultApplicationProblemPlusJSONResponse) VisitResetPasswordResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type VerifyEmailRequestObject struct {
-	Body *VerifyEmailJSONRequestBody
-}
-
-type VerifyEmailResponseObject interface {
-	VisitVerifyEmailResponse(w http.ResponseWriter) error
-}
-
-type VerifyEmail204Response struct {
-}
-
-func (response VerifyEmail204Response) VisitVerifyEmailResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type VerifyEmaildefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response VerifyEmaildefaultApplicationProblemPlusJSONResponse) VisitVerifyEmailResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -5705,83 +7435,6 @@ func (response GetBusinessdefaultApplicationProblemPlusJSONResponse) VisitGetBus
 	return err
 }
 
-type GetCartRequestObject struct {
-}
-
-type GetCartResponseObject interface {
-	VisitGetCartResponse(w http.ResponseWriter) error
-}
-
-type GetCart200JSONResponse Cart
-
-func (response GetCart200JSONResponse) VisitGetCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCartdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response GetCartdefaultApplicationProblemPlusJSONResponse) VisitGetCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ReplaceCartRequestObject struct {
-	Body *ReplaceCartJSONRequestBody
-}
-
-type ReplaceCartResponseObject interface {
-	VisitReplaceCartResponse(w http.ResponseWriter) error
-}
-
-type ReplaceCart200JSONResponse Cart
-
-func (response ReplaceCart200JSONResponse) VisitReplaceCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ReplaceCartdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ReplaceCartdefaultApplicationProblemPlusJSONResponse) VisitReplaceCartResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListCategoriesRequestObject struct {
 }
 
@@ -5820,68 +7473,6 @@ func (response ListCities200JSONResponse) VisitListCitiesResponse(w http.Respons
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListCollectionsRequestObject struct {
-	Params ListCollectionsParams
-}
-
-type ListCollectionsResponseObject interface {
-	VisitListCollectionsResponse(w http.ResponseWriter) error
-}
-
-type ListCollections200JSONResponse CollectionList
-
-func (response ListCollections200JSONResponse) VisitListCollectionsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCollectionRequestObject struct {
-	Slug   Slug `json:"slug"`
-	Params GetCollectionParams
-}
-
-type GetCollectionResponseObject interface {
-	VisitGetCollectionResponse(w http.ResponseWriter) error
-}
-
-type GetCollection200JSONResponse CollectionDetail
-
-func (response GetCollection200JSONResponse) VisitGetCollectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetCollectiondefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response GetCollectiondefaultApplicationProblemPlusJSONResponse) VisitGetCollectionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -6214,6 +7805,44 @@ func (response UpdateMedefaultApplicationProblemPlusJSONResponse) VisitUpdateMeR
 	return err
 }
 
+type ListMyNotificationsRequestObject struct {
+}
+
+type ListMyNotificationsResponseObject interface {
+	VisitListMyNotificationsResponse(w http.ResponseWriter) error
+}
+
+type ListMyNotifications200JSONResponse NotificationList
+
+func (response ListMyNotifications200JSONResponse) VisitListMyNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMyNotificationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListMyNotificationsdefaultApplicationProblemPlusJSONResponse) VisitListMyNotificationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMyOrdersRequestObject struct {
 	Params ListMyOrdersParams
 }
@@ -6281,39 +7910,6 @@ type GetMyOrderdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetMyOrderdefaultApplicationProblemPlusJSONResponse) VisitGetMyOrderResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ChangePasswordRequestObject struct {
-	Body *ChangePasswordJSONRequestBody
-}
-
-type ChangePasswordResponseObject interface {
-	VisitChangePasswordResponse(w http.ResponseWriter) error
-}
-
-type ChangePassword204Response struct {
-}
-
-func (response ChangePassword204Response) VisitChangePasswordResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type ChangePassworddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ChangePassworddefaultApplicationProblemPlusJSONResponse) VisitChangePasswordResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -6400,93 +7996,6 @@ func (response ListMyReviews200JSONResponse) VisitListMyReviewsResponse(w http.R
 	return err
 }
 
-type ListSavedDealsRequestObject struct {
-}
-
-type ListSavedDealsResponseObject interface {
-	VisitListSavedDealsResponse(w http.ResponseWriter) error
-}
-
-type ListSavedDeals200JSONResponse DealList
-
-func (response ListSavedDeals200JSONResponse) VisitListSavedDealsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SaveDealRequestObject struct {
-	Body *SaveDealJSONRequestBody
-}
-
-type SaveDealResponseObject interface {
-	VisitSaveDealResponse(w http.ResponseWriter) error
-}
-
-type SaveDeal204Response struct {
-}
-
-func (response SaveDeal204Response) VisitSaveDealResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type SaveDealdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response SaveDealdefaultApplicationProblemPlusJSONResponse) VisitSaveDealResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnsaveDealRequestObject struct {
-	Id Id `json:"id"`
-}
-
-type UnsaveDealResponseObject interface {
-	VisitUnsaveDealResponse(w http.ResponseWriter) error
-}
-
-type UnsaveDeal204Response struct {
-}
-
-func (response UnsaveDeal204Response) VisitUnsaveDealResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type UnsaveDealdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response UnsaveDealdefaultApplicationProblemPlusJSONResponse) VisitUnsaveDealResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListMyVouchersRequestObject struct {
 	Params ListMyVouchersParams
 }
@@ -6554,6 +8063,74 @@ type GetMyVoucherdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetMyVoucherdefaultApplicationProblemPlusJSONResponse) VisitGetMyVoucherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenVoucherDisputeRequestObject struct {
+	Id   Id `json:"id"`
+	Body *OpenVoucherDisputeJSONRequestBody
+}
+
+type OpenVoucherDisputeResponseObject interface {
+	VisitOpenVoucherDisputeResponse(w http.ResponseWriter) error
+}
+
+type OpenVoucherDispute202Response struct {
+}
+
+func (response OpenVoucherDispute202Response) VisitOpenVoucherDisputeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type OpenVoucherDisputedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response OpenVoucherDisputedefaultApplicationProblemPlusJSONResponse) VisitOpenVoucherDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestVoucherRefundRequestObject struct {
+	Id   Id `json:"id"`
+	Body *RequestVoucherRefundJSONRequestBody
+}
+
+type RequestVoucherRefundResponseObject interface {
+	VisitRequestVoucherRefundResponse(w http.ResponseWriter) error
+}
+
+type RequestVoucherRefund202Response struct {
+}
+
+func (response RequestVoucherRefund202Response) VisitRequestVoucherRefundResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type RequestVoucherRefunddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response RequestVoucherRefunddefaultApplicationProblemPlusJSONResponse) VisitRequestVoucherRefundResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -6954,6 +8531,78 @@ func (response SubmitMerchantDealdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListMerchantDocumentsRequestObject struct {
+}
+
+type ListMerchantDocumentsResponseObject interface {
+	VisitListMerchantDocumentsResponse(w http.ResponseWriter) error
+}
+
+type ListMerchantDocuments200JSONResponse MerchantDocumentList
+
+func (response ListMerchantDocuments200JSONResponse) VisitListMerchantDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMerchantDocumentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListMerchantDocumentsdefaultApplicationProblemPlusJSONResponse) VisitListMerchantDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadMerchantDocumentRequestObject struct {
+	Kind UploadMerchantDocumentParamsKind `json:"kind"`
+	Body io.Reader
+}
+
+type UploadMerchantDocumentResponseObject interface {
+	VisitUploadMerchantDocumentResponse(w http.ResponseWriter) error
+}
+
+type UploadMerchantDocument204Response struct {
+}
+
+func (response UploadMerchantDocument204Response) VisitUploadMerchantDocumentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UploadMerchantDocumentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UploadMerchantDocumentdefaultApplicationProblemPlusJSONResponse) VisitUploadMerchantDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMerchantLocationsRequestObject struct {
 }
 
@@ -7180,6 +8829,40 @@ func (response DeleteMerchantMediadefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type UploadMerchantMediaContentRequestObject struct {
+	Id   Id `json:"id"`
+	Body io.Reader
+}
+
+type UploadMerchantMediaContentResponseObject interface {
+	VisitUploadMerchantMediaContentResponse(w http.ResponseWriter) error
+}
+
+type UploadMerchantMediaContent204Response struct {
+}
+
+func (response UploadMerchantMediaContent204Response) VisitUploadMerchantMediaContentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UploadMerchantMediaContentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response UploadMerchantMediaContentdefaultApplicationProblemPlusJSONResponse) VisitUploadMerchantMediaContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMerchantOrdersRequestObject struct {
 	Params ListMerchantOrdersParams
 }
@@ -7232,7 +8915,7 @@ type ListMerchantRedemptionsResponseObject interface {
 	VisitListMerchantRedemptionsResponse(w http.ResponseWriter) error
 }
 
-type ListMerchantRedemptions200JSONResponse VoucherPage
+type ListMerchantRedemptions200JSONResponse MerchantRedemptionPage
 
 func (response ListMerchantRedemptions200JSONResponse) VisitListMerchantRedemptionsResponse(w http.ResponseWriter) error {
 
@@ -7242,6 +8925,23 @@ func (response ListMerchantRedemptions200JSONResponse) VisitListMerchantRedempti
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMerchantRedemptionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListMerchantRedemptionsdefaultApplicationProblemPlusJSONResponse) VisitListMerchantRedemptionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7512,6 +9212,44 @@ func (response UpdateMerchantStaffdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type SubmitMerchantForReviewRequestObject struct {
+}
+
+type SubmitMerchantForReviewResponseObject interface {
+	VisitSubmitMerchantForReviewResponse(w http.ResponseWriter) error
+}
+
+type SubmitMerchantForReview202JSONResponse Merchant
+
+func (response SubmitMerchantForReview202JSONResponse) VisitSubmitMerchantForReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitMerchantForReviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response SubmitMerchantForReviewdefaultApplicationProblemPlusJSONResponse) VisitSubmitMerchantForReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LookupMerchantVoucherRequestObject struct {
 	Body *LookupMerchantVoucherJSONRequestBody
 }
@@ -7591,6 +9329,40 @@ func (response RedeemMerchantVoucherdefaultApplicationProblemPlusJSONResponse) V
 	return err
 }
 
+type ReverseMerchantVoucherRequestObject struct {
+	Id   Id `json:"id"`
+	Body *ReverseMerchantVoucherJSONRequestBody
+}
+
+type ReverseMerchantVoucherResponseObject interface {
+	VisitReverseMerchantVoucherResponse(w http.ResponseWriter) error
+}
+
+type ReverseMerchantVoucher204Response struct {
+}
+
+func (response ReverseMerchantVoucher204Response) VisitReverseMerchantVoucherResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReverseMerchantVoucherdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ReverseMerchantVoucherdefaultApplicationProblemPlusJSONResponse) VisitReverseMerchantVoucherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RegisterMerchantRequestObject struct {
 	Body *RegisterMerchantJSONRequestBody
 }
@@ -7637,6 +9409,20 @@ type CreateOrderRequestObject struct {
 
 type CreateOrderResponseObject interface {
 	VisitCreateOrderResponse(w http.ResponseWriter) error
+}
+
+type CreateOrder200JSONResponse Order
+
+func (response CreateOrder200JSONResponse) VisitCreateOrderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CreateOrder201JSONResponse Order
@@ -7768,78 +9554,6 @@ type ReceivePaymentWebhookdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ReceivePaymentWebhookdefaultApplicationProblemPlusJSONResponse) VisitReceivePaymentWebhookResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPromoCodesRequestObject struct {
-	Params ListPromoCodesParams
-}
-
-type ListPromoCodesResponseObject interface {
-	VisitListPromoCodesResponse(w http.ResponseWriter) error
-}
-
-type ListPromoCodes200JSONResponse PromoCodePage
-
-func (response ListPromoCodes200JSONResponse) VisitListPromoCodesResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListPromoCodesdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response ListPromoCodesdefaultApplicationProblemPlusJSONResponse) VisitListPromoCodesResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type TrackPromoCodeClickRequestObject struct {
-	Id Id `json:"id"`
-}
-
-type TrackPromoCodeClickResponseObject interface {
-	VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error
-}
-
-type TrackPromoCodeClick204Response struct {
-}
-
-func (response TrackPromoCodeClick204Response) VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type TrackPromoCodeClickdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	StatusCode int
-}
-
-func (response TrackPromoCodeClickdefaultApplicationProblemPlusJSONResponse) VisitTrackPromoCodeClickResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -8038,54 +9752,99 @@ func (response GetSearchSuggestionsdefaultApplicationProblemPlusJSONResponse) Vi
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListAuditLogs Audit trail of admin and sensitive merchant actions
+	// (GET /api/v1/admin/audit-logs)
+	ListAuditLogs(ctx context.Context, request ListAuditLogsRequestObject) (ListAuditLogsResponseObject, error)
+	// ApproveDeal Approve a deal under review
+	// (POST /api/v1/admin/deals/{id}/approve)
+	ApproveDeal(ctx context.Context, request ApproveDealRequestObject) (ApproveDealResponseObject, error)
+	// RejectDeal Reject a deal under review with a reason
+	// (POST /api/v1/admin/deals/{id}/reject)
+	RejectDeal(ctx context.Context, request RejectDealRequestObject) (RejectDealResponseObject, error)
+	// CloseDispute Close a resolved dispute (support or system)
+	// (POST /api/v1/admin/disputes/{id}/close)
+	CloseDispute(ctx context.Context, request CloseDisputeRequestObject) (CloseDisputeResponseObject, error)
+	// RequestDisputeEvidence Ask the parties for evidence on an open dispute (support)
+	// (POST /api/v1/admin/disputes/{id}/request-evidence)
+	RequestDisputeEvidence(ctx context.Context, request RequestDisputeEvidenceRequestObject) (RequestDisputeEvidenceResponseObject, error)
+	// ResolveDispute Resolve a dispute in favour of the customer (refund) or the merchant (payout)
+	// (POST /api/v1/admin/disputes/{id}/resolve)
+	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
+	// StartDisputeReview Move a dispute with evidence into review (support)
+	// (POST /api/v1/admin/disputes/{id}/start-review)
+	StartDisputeReview(ctx context.Context, request StartDisputeReviewRequestObject) (StartDisputeReviewResponseObject, error)
+	// GetFinanceQueue Open payouts, refunds and disputes for the finance desk
+	// (GET /api/v1/admin/finance/queue)
+	GetFinanceQueue(ctx context.Context, request GetFinanceQueueRequestObject) (GetFinanceQueueResponseObject, error)
+	// ListMerchantReviewQueue List businesses waiting for review
+	// (GET /api/v1/admin/merchants)
+	ListMerchantReviewQueue(ctx context.Context, request ListMerchantReviewQueueRequestObject) (ListMerchantReviewQueueResponseObject, error)
+	// ApproveMerchant Approve a business that is in review
+	// (POST /api/v1/admin/merchants/{id}/approve)
+	ApproveMerchant(ctx context.Context, request ApproveMerchantRequestObject) (ApproveMerchantResponseObject, error)
+	// DownloadMerchantDocument Download a business document for review (reviewers only)
+	// (GET /api/v1/admin/merchants/{id}/documents/{kind})
+	DownloadMerchantDocument(ctx context.Context, request DownloadMerchantDocumentRequestObject) (DownloadMerchantDocumentResponseObject, error)
+	// PreparePayout Prepare a payout run for a merchant (finance operator)
+	// (POST /api/v1/admin/merchants/{id}/payouts)
+	PreparePayout(ctx context.Context, request PreparePayoutRequestObject) (PreparePayoutResponseObject, error)
+	// RejectMerchant Reject a submitted or in-review business with a reason
+	// (POST /api/v1/admin/merchants/{id}/reject)
+	RejectMerchant(ctx context.Context, request RejectMerchantRequestObject) (RejectMerchantResponseObject, error)
+	// StartMerchantReview Move a submitted business to in_review
+	// (POST /api/v1/admin/merchants/{id}/start-review)
+	StartMerchantReview(ctx context.Context, request StartMerchantReviewRequestObject) (StartMerchantReviewResponseObject, error)
+	// ListModerationDeals Deals waiting for review
+	// (GET /api/v1/admin/moderation/deals)
+	ListModerationDeals(ctx context.Context, request ListModerationDealsRequestObject) (ListModerationDealsResponseObject, error)
+	// ApprovePayout Approve and send a payout run (four-eyes)
+	// (POST /api/v1/admin/payouts/{id}/approve)
+	ApprovePayout(ctx context.Context, request ApprovePayoutRequestObject) (ApprovePayoutResponseObject, error)
+	// ReconcilePayout Record that the bank confirmed a sent payout run
+	// (POST /api/v1/admin/payouts/{id}/reconcile)
+	ReconcilePayout(ctx context.Context, request ReconcilePayoutRequestObject) (ReconcilePayoutResponseObject, error)
+	// ApproveRefund Support approves a refund request (over 14 days or from a dispute)
+	// (POST /api/v1/admin/refunds/{id}/approve)
+	ApproveRefund(ctx context.Context, request ApproveRefundRequestObject) (ApproveRefundResponseObject, error)
+	// MarkRefundPaid Mark an approved refund as sent to the bank
+	// (POST /api/v1/admin/refunds/{id}/paid)
+	MarkRefundPaid(ctx context.Context, request MarkRefundPaidRequestObject) (MarkRefundPaidResponseObject, error)
+	// ListReviewReports Open review reports
+	// (GET /api/v1/admin/review-reports)
+	ListReviewReports(ctx context.Context, request ListReviewReportsRequestObject) (ListReviewReportsResponseObject, error)
+	// DismissReviewReport Close a report without changing the review
+	// (POST /api/v1/admin/review-reports/{id}/dismiss)
+	DismissReviewReport(ctx context.Context, request DismissReviewReportRequestObject) (DismissReviewReportResponseObject, error)
+	// HideReview Hide a review and close its open reports
+	// (POST /api/v1/admin/reviews/{id}/hide)
+	HideReview(ctx context.Context, request HideReviewRequestObject) (HideReviewResponseObject, error)
 	// GetAdminStatus Phase 1 admin API stub
 	// (GET /api/v1/admin/status)
 	GetAdminStatus(ctx context.Context, request GetAdminStatusRequestObject) (GetAdminStatusResponseObject, error)
-	// ForgotPassword Request password-reset email
-	// (POST /api/v1/auth/forgot-password)
-	ForgotPassword(ctx context.Context, request ForgotPasswordRequestObject) (ForgotPasswordResponseObject, error)
-	// ExchangeGoogleCode Exchange Google authorization code with PKCE
-	// (POST /api/v1/auth/google)
-	ExchangeGoogleCode(ctx context.Context, request ExchangeGoogleCodeRequestObject) (ExchangeGoogleCodeResponseObject, error)
-	// Login Sign in with email and password
-	// (POST /api/v1/auth/login)
-	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
-	// Logout Revoke current refresh token
+	// SupportReverseVoucher Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5)
+	// (POST /api/v1/admin/vouchers/{id}/reverse)
+	SupportReverseVoucher(ctx context.Context, request SupportReverseVoucherRequestObject) (SupportReverseVoucherResponseObject, error)
+	// Logout Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
 	// (POST /api/v1/auth/logout)
 	Logout(ctx context.Context, request LogoutRequestObject) (LogoutResponseObject, error)
+	// RequestPhoneCode Send a one-time sign-in code to a phone number
+	// (POST /api/v1/auth/phone/code)
+	RequestPhoneCode(ctx context.Context, request RequestPhoneCodeRequestObject) (RequestPhoneCodeResponseObject, error)
+	// VerifyPhoneCode Sign in with the code; creates the account on first use
+	// (POST /api/v1/auth/phone/verify)
+	VerifyPhoneCode(ctx context.Context, request VerifyPhoneCodeRequestObject) (VerifyPhoneCodeResponseObject, error)
 	// RefreshSession Rotate refresh token and detect reuse
 	// (POST /api/v1/auth/refresh)
 	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
-	// Register Register with email and password
-	// (POST /api/v1/auth/register)
-	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
-	// ResetPassword Reset password with token
-	// (POST /api/v1/auth/reset-password)
-	ResetPassword(ctx context.Context, request ResetPasswordRequestObject) (ResetPasswordResponseObject, error)
-	// VerifyEmail Verify email token
-	// (POST /api/v1/auth/verify-email)
-	VerifyEmail(ctx context.Context, request VerifyEmailRequestObject) (VerifyEmailResponseObject, error)
 	// GetBusiness Get merchant profile, locations, deals, and reviews
 	// (GET /api/v1/businesses/{slug})
 	GetBusiness(ctx context.Context, request GetBusinessRequestObject) (GetBusinessResponseObject, error)
-	// GetCart Get server-side cart
-	// (GET /api/v1/cart)
-	GetCart(ctx context.Context, request GetCartRequestObject) (GetCartResponseObject, error)
-	// ReplaceCart Replace or merge guest cart
-	// (PUT /api/v1/cart)
-	ReplaceCart(ctx context.Context, request ReplaceCartRequestObject) (ReplaceCartResponseObject, error)
 	// ListCategories List active categories and subcategories
 	// (GET /api/v1/categories)
 	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
 	// ListCities List active cities
 	// (GET /api/v1/cities)
 	ListCities(ctx context.Context, request ListCitiesRequestObject) (ListCitiesResponseObject, error)
-	// ListCollections List active seasonal collections
-	// (GET /api/v1/collections)
-	ListCollections(ctx context.Context, request ListCollectionsRequestObject) (ListCollectionsResponseObject, error)
-	// GetCollection Get collection and deals
-	// (GET /api/v1/collections/{slug})
-	GetCollection(ctx context.Context, request GetCollectionRequestObject) (GetCollectionResponseObject, error)
 	// GetPublicConfig Get locales, currencies, cities, categories, and exchange rate
 	// (GET /api/v1/config)
 	GetPublicConfig(ctx context.Context, request GetPublicConfigRequestObject) (GetPublicConfigResponseObject, error)
@@ -8113,15 +9872,15 @@ type StrictServerInterface interface {
 	// UpdateMe Update profile preferences
 	// (PATCH /api/v1/me)
 	UpdateMe(ctx context.Context, request UpdateMeRequestObject) (UpdateMeResponseObject, error)
+	// ListMyNotifications List my notifications, newest first
+	// (GET /api/v1/me/notifications)
+	ListMyNotifications(ctx context.Context, request ListMyNotificationsRequestObject) (ListMyNotificationsResponseObject, error)
 	// ListMyOrders List current-user orders
 	// (GET /api/v1/me/orders)
 	ListMyOrders(ctx context.Context, request ListMyOrdersRequestObject) (ListMyOrdersResponseObject, error)
 	// GetMyOrder Get current-user order
 	// (GET /api/v1/me/orders/{id})
 	GetMyOrder(ctx context.Context, request GetMyOrderRequestObject) (GetMyOrderResponseObject, error)
-	// ChangePassword Change current password
-	// (PUT /api/v1/me/password)
-	ChangePassword(ctx context.Context, request ChangePasswordRequestObject) (ChangePasswordResponseObject, error)
 	// ListRecentlyViewed List deals viewed in last 30 days
 	// (GET /api/v1/me/recently-viewed)
 	ListRecentlyViewed(ctx context.Context, request ListRecentlyViewedRequestObject) (ListRecentlyViewedResponseObject, error)
@@ -8131,21 +9890,18 @@ type StrictServerInterface interface {
 	// ListMyReviews List current-user reviews
 	// (GET /api/v1/me/reviews)
 	ListMyReviews(ctx context.Context, request ListMyReviewsRequestObject) (ListMyReviewsResponseObject, error)
-	// ListSavedDeals List saved deals
-	// (GET /api/v1/me/saved-deals)
-	ListSavedDeals(ctx context.Context, request ListSavedDealsRequestObject) (ListSavedDealsResponseObject, error)
-	// SaveDeal Save a deal or merge a guest save
-	// (POST /api/v1/me/saved-deals)
-	SaveDeal(ctx context.Context, request SaveDealRequestObject) (SaveDealResponseObject, error)
-	// UnsaveDeal Remove saved deal
-	// (DELETE /api/v1/me/saved-deals/{id})
-	UnsaveDeal(ctx context.Context, request UnsaveDealRequestObject) (UnsaveDealResponseObject, error)
 	// ListMyVouchers List active, used, or expired vouchers
 	// (GET /api/v1/me/vouchers)
 	ListMyVouchers(ctx context.Context, request ListMyVouchersRequestObject) (ListMyVouchersResponseObject, error)
 	// GetMyVoucher Get offline-cacheable voucher detail
 	// (GET /api/v1/me/vouchers/{id})
 	GetMyVoucher(ctx context.Context, request GetMyVoucherRequestObject) (GetMyVoucherResponseObject, error)
+	// OpenVoucherDispute Dispute a redemption (this was not me)
+	// (POST /api/v1/me/vouchers/{id}/dispute)
+	OpenVoucherDispute(ctx context.Context, request OpenVoucherDisputeRequestObject) (OpenVoucherDisputeResponseObject, error)
+	// RequestVoucherRefund Ask for a refund of an unused voucher
+	// (POST /api/v1/me/vouchers/{id}/refund)
+	RequestVoucherRefund(ctx context.Context, request RequestVoucherRefundRequestObject) (RequestVoucherRefundResponseObject, error)
 	// GetMerchantAnalytics Get sales and redemption analytics
 	// (GET /api/v1/merchant/analytics)
 	GetMerchantAnalytics(ctx context.Context, request GetMerchantAnalyticsRequestObject) (GetMerchantAnalyticsResponseObject, error)
@@ -8179,6 +9935,12 @@ type StrictServerInterface interface {
 	// SubmitMerchantDeal Submit complete deal for moderation
 	// (POST /api/v1/merchant/deals/{id}/submit)
 	SubmitMerchantDeal(ctx context.Context, request SubmitMerchantDealRequestObject) (SubmitMerchantDealResponseObject, error)
+	// ListMerchantDocuments List uploaded business documents (certificate, bank letter)
+	// (GET /api/v1/merchant/documents)
+	ListMerchantDocuments(ctx context.Context, request ListMerchantDocumentsRequestObject) (ListMerchantDocumentsResponseObject, error)
+	// UploadMerchantDocument Upload a business document (owner only). Replaces the previous file of the same kind
+	// (PUT /api/v1/merchant/documents/{kind})
+	UploadMerchantDocument(ctx context.Context, request UploadMerchantDocumentRequestObject) (UploadMerchantDocumentResponseObject, error)
 	// ListMerchantLocations List branches
 	// (GET /api/v1/merchant/locations)
 	ListMerchantLocations(ctx context.Context, request ListMerchantLocationsRequestObject) (ListMerchantLocationsResponseObject, error)
@@ -8200,6 +9962,9 @@ type StrictServerInterface interface {
 	// DeleteMerchantMedia Delete unused media
 	// (DELETE /api/v1/merchant/media/{id})
 	DeleteMerchantMedia(ctx context.Context, request DeleteMerchantMediaRequestObject) (DeleteMerchantMediaResponseObject, error)
+	// UploadMerchantMediaContent Store image bytes for a pending asset (local storage adapter only)
+	// (PUT /api/v1/merchant/media/{id}/content)
+	UploadMerchantMediaContent(ctx context.Context, request UploadMerchantMediaContentRequestObject) (UploadMerchantMediaContentResponseObject, error)
 	// ListMerchantOrders List orders containing merchant deals
 	// (GET /api/v1/merchant/orders)
 	ListMerchantOrders(ctx context.Context, request ListMerchantOrdersRequestObject) (ListMerchantOrdersResponseObject, error)
@@ -8224,7 +9989,7 @@ type StrictServerInterface interface {
 	// ListMerchantStaff List staff
 	// (GET /api/v1/merchant/staff)
 	ListMerchantStaff(ctx context.Context, request ListMerchantStaffRequestObject) (ListMerchantStaffResponseObject, error)
-	// InviteMerchantStaff Invite manager or cashier by email
+	// InviteMerchantStaff Invite a manager or cashier by phone (owner only)
 	// (POST /api/v1/merchant/staff)
 	InviteMerchantStaff(ctx context.Context, request InviteMerchantStaffRequestObject) (InviteMerchantStaffResponseObject, error)
 	// RemoveMerchantStaff Remove staff assignment
@@ -8233,12 +9998,18 @@ type StrictServerInterface interface {
 	// UpdateMerchantStaff Change staff role
 	// (PATCH /api/v1/merchant/staff/{id})
 	UpdateMerchantStaff(ctx context.Context, request UpdateMerchantStaffRequestObject) (UpdateMerchantStaffResponseObject, error)
+	// SubmitMerchantForReview Send the business to platform review (owner only)
+	// (POST /api/v1/merchant/submit)
+	SubmitMerchantForReview(ctx context.Context, request SubmitMerchantForReviewRequestObject) (SubmitMerchantForReviewResponseObject, error)
 	// LookupMerchantVoucher Resolve signed QR token or human code
 	// (POST /api/v1/merchant/vouchers/lookup)
 	LookupMerchantVoucher(ctx context.Context, request LookupMerchantVoucherRequestObject) (LookupMerchantVoucherResponseObject, error)
 	// RedeemMerchantVoucher Redeem voucher idempotently and audit the action
 	// (POST /api/v1/merchant/vouchers/{id}/redeem)
 	RedeemMerchantVoucher(ctx context.Context, request RedeemMerchantVoucherRequestObject) (RedeemMerchantVoucherResponseObject, error)
+	// ReverseMerchantVoucher Undo the latest redemption (cashier: within 10 minutes)
+	// (POST /api/v1/merchant/vouchers/{id}/reverse)
+	ReverseMerchantVoucher(ctx context.Context, request ReverseMerchantVoucherRequestObject) (ReverseMerchantVoucherResponseObject, error)
 	// RegisterMerchant Register business and assign owner role
 	// (POST /api/v1/merchants)
 	RegisterMerchant(ctx context.Context, request RegisterMerchantRequestObject) (RegisterMerchantResponseObject, error)
@@ -8254,12 +10025,6 @@ type StrictServerInterface interface {
 	// ReceivePaymentWebhook Receive signed provider webhook idempotently
 	// (POST /api/v1/payments/webhooks/{provider})
 	ReceivePaymentWebhook(ctx context.Context, request ReceivePaymentWebhookRequestObject) (ReceivePaymentWebhookResponseObject, error)
-	// ListPromoCodes List active promo codes
-	// (GET /api/v1/promo-codes)
-	ListPromoCodes(ctx context.Context, request ListPromoCodesRequestObject) (ListPromoCodesResponseObject, error)
-	// TrackPromoCodeClick Track promo-code outbound click
-	// (POST /api/v1/promo-codes/{id}/click)
-	TrackPromoCodeClick(ctx context.Context, request TrackPromoCodeClickRequestObject) (TrackPromoCodeClickResponseObject, error)
 	// CreateReview Review one redeemed voucher once
 	// (POST /api/v1/reviews)
 	CreateReview(ctx context.Context, request CreateReviewRequestObject) (CreateReviewResponseObject, error)
@@ -8316,6 +10081,605 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
+// ListAuditLogs operation middleware
+func (sh *strictHandler) ListAuditLogs(w http.ResponseWriter, r *http.Request, params ListAuditLogsParams) {
+	var request ListAuditLogsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAuditLogs(ctx, request.(ListAuditLogsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAuditLogs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAuditLogsResponseObject); ok {
+		if err := validResponse.VisitListAuditLogsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveDeal operation middleware
+func (sh *strictHandler) ApproveDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ApproveDealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveDeal(ctx, request.(ApproveDealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveDeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveDealResponseObject); ok {
+		if err := validResponse.VisitApproveDealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectDeal operation middleware
+func (sh *strictHandler) RejectDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RejectDealRequestObject
+
+	request.Id = id
+
+	var body RejectDealJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectDeal(ctx, request.(RejectDealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectDeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectDealResponseObject); ok {
+		if err := validResponse.VisitRejectDealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CloseDispute operation middleware
+func (sh *strictHandler) CloseDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	var request CloseDisputeRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CloseDispute(ctx, request.(CloseDisputeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CloseDispute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CloseDisputeResponseObject); ok {
+		if err := validResponse.VisitCloseDisputeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestDisputeEvidence operation middleware
+func (sh *strictHandler) RequestDisputeEvidence(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RequestDisputeEvidenceRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestDisputeEvidence(ctx, request.(RequestDisputeEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestDisputeEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestDisputeEvidenceResponseObject); ok {
+		if err := validResponse.VisitRequestDisputeEvidenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveDispute operation middleware
+func (sh *strictHandler) ResolveDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ResolveDisputeRequestObject
+
+	request.Id = id
+
+	var body ResolveDisputeJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveDispute(ctx, request.(ResolveDisputeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveDispute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveDisputeResponseObject); ok {
+		if err := validResponse.VisitResolveDisputeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StartDisputeReview operation middleware
+func (sh *strictHandler) StartDisputeReview(w http.ResponseWriter, r *http.Request, id Id) {
+	var request StartDisputeReviewRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StartDisputeReview(ctx, request.(StartDisputeReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartDisputeReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StartDisputeReviewResponseObject); ok {
+		if err := validResponse.VisitStartDisputeReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetFinanceQueue operation middleware
+func (sh *strictHandler) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
+	var request GetFinanceQueueRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetFinanceQueue(ctx, request.(GetFinanceQueueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetFinanceQueue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetFinanceQueueResponseObject); ok {
+		if err := validResponse.VisitGetFinanceQueueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMerchantReviewQueue operation middleware
+func (sh *strictHandler) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams) {
+	var request ListMerchantReviewQueueRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMerchantReviewQueue(ctx, request.(ListMerchantReviewQueueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMerchantReviewQueue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMerchantReviewQueueResponseObject); ok {
+		if err := validResponse.VisitListMerchantReviewQueueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveMerchant operation middleware
+func (sh *strictHandler) ApproveMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ApproveMerchantRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveMerchant(ctx, request.(ApproveMerchantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveMerchant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveMerchantResponseObject); ok {
+		if err := validResponse.VisitApproveMerchantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DownloadMerchantDocument operation middleware
+func (sh *strictHandler) DownloadMerchantDocument(w http.ResponseWriter, r *http.Request, id Id, kind DownloadMerchantDocumentParamsKind) {
+	var request DownloadMerchantDocumentRequestObject
+
+	request.Id = id
+	request.Kind = kind
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DownloadMerchantDocument(ctx, request.(DownloadMerchantDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DownloadMerchantDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DownloadMerchantDocumentResponseObject); ok {
+		if err := validResponse.VisitDownloadMerchantDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreparePayout operation middleware
+func (sh *strictHandler) PreparePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	var request PreparePayoutRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreparePayout(ctx, request.(PreparePayoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreparePayout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreparePayoutResponseObject); ok {
+		if err := validResponse.VisitPreparePayoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectMerchant operation middleware
+func (sh *strictHandler) RejectMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RejectMerchantRequestObject
+
+	request.Id = id
+
+	var body RejectMerchantJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectMerchant(ctx, request.(RejectMerchantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectMerchant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectMerchantResponseObject); ok {
+		if err := validResponse.VisitRejectMerchantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StartMerchantReview operation middleware
+func (sh *strictHandler) StartMerchantReview(w http.ResponseWriter, r *http.Request, id Id) {
+	var request StartMerchantReviewRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StartMerchantReview(ctx, request.(StartMerchantReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartMerchantReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StartMerchantReviewResponseObject); ok {
+		if err := validResponse.VisitStartMerchantReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListModerationDeals operation middleware
+func (sh *strictHandler) ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams) {
+	var request ListModerationDealsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListModerationDeals(ctx, request.(ListModerationDealsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListModerationDeals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListModerationDealsResponseObject); ok {
+		if err := validResponse.VisitListModerationDealsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApprovePayout operation middleware
+func (sh *strictHandler) ApprovePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ApprovePayoutRequestObject
+
+	request.Id = id
+
+	var body ApprovePayoutJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApprovePayout(ctx, request.(ApprovePayoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApprovePayout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApprovePayoutResponseObject); ok {
+		if err := validResponse.VisitApprovePayoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReconcilePayout operation middleware
+func (sh *strictHandler) ReconcilePayout(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ReconcilePayoutRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReconcilePayout(ctx, request.(ReconcilePayoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReconcilePayout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReconcilePayoutResponseObject); ok {
+		if err := validResponse.VisitReconcilePayoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveRefund operation middleware
+func (sh *strictHandler) ApproveRefund(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ApproveRefundRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveRefund(ctx, request.(ApproveRefundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveRefund")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveRefundResponseObject); ok {
+		if err := validResponse.VisitApproveRefundResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkRefundPaid operation middleware
+func (sh *strictHandler) MarkRefundPaid(w http.ResponseWriter, r *http.Request, id Id) {
+	var request MarkRefundPaidRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkRefundPaid(ctx, request.(MarkRefundPaidRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkRefundPaid")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkRefundPaidResponseObject); ok {
+		if err := validResponse.VisitMarkRefundPaidResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListReviewReports operation middleware
+func (sh *strictHandler) ListReviewReports(w http.ResponseWriter, r *http.Request, params ListReviewReportsParams) {
+	var request ListReviewReportsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListReviewReports(ctx, request.(ListReviewReportsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListReviewReports")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListReviewReportsResponseObject); ok {
+		if err := validResponse.VisitListReviewReportsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DismissReviewReport operation middleware
+func (sh *strictHandler) DismissReviewReport(w http.ResponseWriter, r *http.Request, id Id) {
+	var request DismissReviewReportRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DismissReviewReport(ctx, request.(DismissReviewReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DismissReviewReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DismissReviewReportResponseObject); ok {
+		if err := validResponse.VisitDismissReviewReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// HideReview operation middleware
+func (sh *strictHandler) HideReview(w http.ResponseWriter, r *http.Request, id Id) {
+	var request HideReviewRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.HideReview(ctx, request.(HideReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "HideReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(HideReviewResponseObject); ok {
+		if err := validResponse.VisitHideReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetAdminStatus operation middleware
 func (sh *strictHandler) GetAdminStatus(w http.ResponseWriter, r *http.Request) {
 	var request GetAdminStatusRequestObject
@@ -8340,11 +10704,13 @@ func (sh *strictHandler) GetAdminStatus(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// ForgotPassword operation middleware
-func (sh *strictHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var request ForgotPasswordRequestObject
+// SupportReverseVoucher operation middleware
+func (sh *strictHandler) SupportReverseVoucher(w http.ResponseWriter, r *http.Request, id Id) {
+	var request SupportReverseVoucherRequestObject
 
-	var body ForgotPasswordJSONRequestBody
+	request.Id = id
+
+	var body SupportReverseVoucherJSONRequestBody
 	if err := runtime.BindJSONBody(r, &body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -8352,80 +10718,18 @@ func (sh *strictHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) 
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ForgotPassword(ctx, request.(ForgotPasswordRequestObject))
+		return sh.ssi.SupportReverseVoucher(ctx, request.(SupportReverseVoucherRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ForgotPassword")
+		handler = middleware(handler, "SupportReverseVoucher")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ForgotPasswordResponseObject); ok {
-		if err := validResponse.VisitForgotPasswordResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ExchangeGoogleCode operation middleware
-func (sh *strictHandler) ExchangeGoogleCode(w http.ResponseWriter, r *http.Request) {
-	var request ExchangeGoogleCodeRequestObject
-
-	var body ExchangeGoogleCodeJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ExchangeGoogleCode(ctx, request.(ExchangeGoogleCodeRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ExchangeGoogleCode")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ExchangeGoogleCodeResponseObject); ok {
-		if err := validResponse.VisitExchangeGoogleCodeResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// Login operation middleware
-func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var request LoginRequestObject
-
-	var body LoginJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Login(ctx, request.(LoginRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Login")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(LoginResponseObject); ok {
-		if err := validResponse.VisitLoginResponse(w); err != nil {
+	} else if validResponse, ok := response.(SupportReverseVoucherResponseObject); ok {
+		if err := validResponse.VisitSupportReverseVoucherResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8457,6 +10761,68 @@ func (sh *strictHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RequestPhoneCode operation middleware
+func (sh *strictHandler) RequestPhoneCode(w http.ResponseWriter, r *http.Request) {
+	var request RequestPhoneCodeRequestObject
+
+	var body RequestPhoneCodeJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestPhoneCode(ctx, request.(RequestPhoneCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestPhoneCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestPhoneCodeResponseObject); ok {
+		if err := validResponse.VisitRequestPhoneCodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyPhoneCode operation middleware
+func (sh *strictHandler) VerifyPhoneCode(w http.ResponseWriter, r *http.Request) {
+	var request VerifyPhoneCodeRequestObject
+
+	var body VerifyPhoneCodeJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyPhoneCode(ctx, request.(VerifyPhoneCodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyPhoneCode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyPhoneCodeResponseObject); ok {
+		if err := validResponse.VisitVerifyPhoneCodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RefreshSession operation middleware
 func (sh *strictHandler) RefreshSession(w http.ResponseWriter, r *http.Request) {
 	var request RefreshSessionRequestObject
@@ -8474,99 +10840,6 @@ func (sh *strictHandler) RefreshSession(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RefreshSessionResponseObject); ok {
 		if err := validResponse.VisitRefreshSessionResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// Register operation middleware
-func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var request RegisterRequestObject
-
-	var body RegisterJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Register(ctx, request.(RegisterRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Register")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterResponseObject); ok {
-		if err := validResponse.VisitRegisterResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ResetPassword operation middleware
-func (sh *strictHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var request ResetPasswordRequestObject
-
-	var body ResetPasswordJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ResetPassword(ctx, request.(ResetPasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ResetPassword")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ResetPasswordResponseObject); ok {
-		if err := validResponse.VisitResetPasswordResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// VerifyEmail operation middleware
-func (sh *strictHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	var request VerifyEmailRequestObject
-
-	var body VerifyEmailJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.VerifyEmail(ctx, request.(VerifyEmailRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "VerifyEmail")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(VerifyEmailResponseObject); ok {
-		if err := validResponse.VisitVerifyEmailResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8594,61 +10867,6 @@ func (sh *strictHandler) GetBusiness(w http.ResponseWriter, r *http.Request, slu
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBusinessResponseObject); ok {
 		if err := validResponse.VisitGetBusinessResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetCart operation middleware
-func (sh *strictHandler) GetCart(w http.ResponseWriter, r *http.Request) {
-	var request GetCartRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCart(ctx, request.(GetCartRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCart")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetCartResponseObject); ok {
-		if err := validResponse.VisitGetCartResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ReplaceCart operation middleware
-func (sh *strictHandler) ReplaceCart(w http.ResponseWriter, r *http.Request) {
-	var request ReplaceCartRequestObject
-
-	var body ReplaceCartJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ReplaceCart(ctx, request.(ReplaceCartRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ReplaceCart")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ReplaceCartResponseObject); ok {
-		if err := validResponse.VisitReplaceCartResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8697,59 +10915,6 @@ func (sh *strictHandler) ListCities(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListCitiesResponseObject); ok {
 		if err := validResponse.VisitListCitiesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListCollections operation middleware
-func (sh *strictHandler) ListCollections(w http.ResponseWriter, r *http.Request, params ListCollectionsParams) {
-	var request ListCollectionsRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListCollections(ctx, request.(ListCollectionsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListCollections")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListCollectionsResponseObject); ok {
-		if err := validResponse.VisitListCollectionsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetCollection operation middleware
-func (sh *strictHandler) GetCollection(w http.ResponseWriter, r *http.Request, slug Slug, params GetCollectionParams) {
-	var request GetCollectionRequestObject
-
-	request.Slug = slug
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCollection(ctx, request.(GetCollectionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCollection")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetCollectionResponseObject); ok {
-		if err := validResponse.VisitGetCollectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8993,6 +11158,30 @@ func (sh *strictHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListMyNotifications operation middleware
+func (sh *strictHandler) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
+	var request ListMyNotificationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMyNotifications(ctx, request.(ListMyNotificationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMyNotifications")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMyNotificationsResponseObject); ok {
+		if err := validResponse.VisitListMyNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMyOrders operation middleware
 func (sh *strictHandler) ListMyOrders(w http.ResponseWriter, r *http.Request, params ListMyOrdersParams) {
 	var request ListMyOrdersRequestObject
@@ -9038,37 +11227,6 @@ func (sh *strictHandler) GetMyOrder(w http.ResponseWriter, r *http.Request, id I
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMyOrderResponseObject); ok {
 		if err := validResponse.VisitGetMyOrderResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ChangePassword operation middleware
-func (sh *strictHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var request ChangePasswordRequestObject
-
-	var body ChangePasswordJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ChangePassword(ctx, request.(ChangePasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ChangePassword")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ChangePasswordResponseObject); ok {
-		if err := validResponse.VisitChangePasswordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -9155,87 +11313,6 @@ func (sh *strictHandler) ListMyReviews(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListSavedDeals operation middleware
-func (sh *strictHandler) ListSavedDeals(w http.ResponseWriter, r *http.Request) {
-	var request ListSavedDealsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListSavedDeals(ctx, request.(ListSavedDealsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListSavedDeals")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListSavedDealsResponseObject); ok {
-		if err := validResponse.VisitListSavedDealsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// SaveDeal operation middleware
-func (sh *strictHandler) SaveDeal(w http.ResponseWriter, r *http.Request) {
-	var request SaveDealRequestObject
-
-	var body SaveDealJSONRequestBody
-	if err := runtime.BindJSONBody(r, &body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SaveDeal(ctx, request.(SaveDealRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SaveDeal")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SaveDealResponseObject); ok {
-		if err := validResponse.VisitSaveDealResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnsaveDeal operation middleware
-func (sh *strictHandler) UnsaveDeal(w http.ResponseWriter, r *http.Request, id Id) {
-	var request UnsaveDealRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnsaveDeal(ctx, request.(UnsaveDealRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnsaveDeal")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnsaveDealResponseObject); ok {
-		if err := validResponse.VisitUnsaveDealResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // ListMyVouchers operation middleware
 func (sh *strictHandler) ListMyVouchers(w http.ResponseWriter, r *http.Request, params ListMyVouchersParams) {
 	var request ListMyVouchersRequestObject
@@ -9281,6 +11358,72 @@ func (sh *strictHandler) GetMyVoucher(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMyVoucherResponseObject); ok {
 		if err := validResponse.VisitGetMyVoucherResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OpenVoucherDispute operation middleware
+func (sh *strictHandler) OpenVoucherDispute(w http.ResponseWriter, r *http.Request, id Id) {
+	var request OpenVoucherDisputeRequestObject
+
+	request.Id = id
+
+	var body OpenVoucherDisputeJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OpenVoucherDispute(ctx, request.(OpenVoucherDisputeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OpenVoucherDispute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OpenVoucherDisputeResponseObject); ok {
+		if err := validResponse.VisitOpenVoucherDisputeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestVoucherRefund operation middleware
+func (sh *strictHandler) RequestVoucherRefund(w http.ResponseWriter, r *http.Request, id Id) {
+	var request RequestVoucherRefundRequestObject
+
+	request.Id = id
+
+	var body RequestVoucherRefundJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestVoucherRefund(ctx, request.(RequestVoucherRefundRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestVoucherRefund")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestVoucherRefundResponseObject); ok {
+		if err := validResponse.VisitRequestVoucherRefundResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -9589,6 +11732,58 @@ func (sh *strictHandler) SubmitMerchantDeal(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ListMerchantDocuments operation middleware
+func (sh *strictHandler) ListMerchantDocuments(w http.ResponseWriter, r *http.Request) {
+	var request ListMerchantDocumentsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMerchantDocuments(ctx, request.(ListMerchantDocumentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMerchantDocuments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMerchantDocumentsResponseObject); ok {
+		if err := validResponse.VisitListMerchantDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadMerchantDocument operation middleware
+func (sh *strictHandler) UploadMerchantDocument(w http.ResponseWriter, r *http.Request, kind UploadMerchantDocumentParamsKind) {
+	var request UploadMerchantDocumentRequestObject
+
+	request.Kind = kind
+
+	request.Body = r.Body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadMerchantDocument(ctx, request.(UploadMerchantDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadMerchantDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadMerchantDocumentResponseObject); ok {
+		if err := validResponse.VisitUploadMerchantDocumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMerchantLocations operation middleware
 func (sh *strictHandler) ListMerchantLocations(w http.ResponseWriter, r *http.Request) {
 	var request ListMerchantLocationsRequestObject
@@ -9777,6 +11972,34 @@ func (sh *strictHandler) DeleteMerchantMedia(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteMerchantMediaResponseObject); ok {
 		if err := validResponse.VisitDeleteMerchantMediaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadMerchantMediaContent operation middleware
+func (sh *strictHandler) UploadMerchantMediaContent(w http.ResponseWriter, r *http.Request, id Id) {
+	var request UploadMerchantMediaContentRequestObject
+
+	request.Id = id
+
+	request.Body = r.Body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadMerchantMediaContent(ctx, request.(UploadMerchantMediaContentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadMerchantMediaContent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadMerchantMediaContentResponseObject); ok {
+		if err := validResponse.VisitUploadMerchantMediaContentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -10090,6 +12313,30 @@ func (sh *strictHandler) UpdateMerchantStaff(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// SubmitMerchantForReview operation middleware
+func (sh *strictHandler) SubmitMerchantForReview(w http.ResponseWriter, r *http.Request) {
+	var request SubmitMerchantForReviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubmitMerchantForReview(ctx, request.(SubmitMerchantForReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubmitMerchantForReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubmitMerchantForReviewResponseObject); ok {
+		if err := validResponse.VisitSubmitMerchantForReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // LookupMerchantVoucher operation middleware
 func (sh *strictHandler) LookupMerchantVoucher(w http.ResponseWriter, r *http.Request) {
 	var request LookupMerchantVoucherRequestObject
@@ -10147,6 +12394,39 @@ func (sh *strictHandler) RedeemMerchantVoucher(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RedeemMerchantVoucherResponseObject); ok {
 		if err := validResponse.VisitRedeemMerchantVoucherResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReverseMerchantVoucher operation middleware
+func (sh *strictHandler) ReverseMerchantVoucher(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ReverseMerchantVoucherRequestObject
+
+	request.Id = id
+
+	var body ReverseMerchantVoucherJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReverseMerchantVoucher(ctx, request.(ReverseMerchantVoucherRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReverseMerchantVoucher")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReverseMerchantVoucherResponseObject); ok {
+		if err := validResponse.VisitReverseMerchantVoucherResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -10318,58 +12598,6 @@ func (sh *strictHandler) ReceivePaymentWebhook(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// ListPromoCodes operation middleware
-func (sh *strictHandler) ListPromoCodes(w http.ResponseWriter, r *http.Request, params ListPromoCodesParams) {
-	var request ListPromoCodesRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListPromoCodes(ctx, request.(ListPromoCodesRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListPromoCodes")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListPromoCodesResponseObject); ok {
-		if err := validResponse.VisitListPromoCodesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// TrackPromoCodeClick operation middleware
-func (sh *strictHandler) TrackPromoCodeClick(w http.ResponseWriter, r *http.Request, id Id) {
-	var request TrackPromoCodeClickRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.TrackPromoCodeClick(ctx, request.(TrackPromoCodeClickRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TrackPromoCodeClick")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(TrackPromoCodeClickResponseObject); ok {
-		if err := validResponse.VisitTrackPromoCodeClickResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // CreateReview operation middleware
 func (sh *strictHandler) CreateReview(w http.ResponseWriter, r *http.Request) {
 	var request CreateReviewRequestObject
@@ -10524,142 +12752,173 @@ func (sh *strictHandler) GetSearchSuggestions(w http.ResponseWriter, r *http.Req
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7H1rd9y2mfBf4eGbD+0bKpIdp421H3pcucl6a59opTjdU0c7B0NiZlCRBA2Aksc++u97cCVIAiQ4w9Go",
-	"ab/NhcTlueG540uc4qLCJSwZjc+/xBUgoIAMEvHtArHtdV6v+WdUxufxxxqSbZzEJShgfB6niPFvNN3A",
-	"AvCH2Lbiv1NGULmOHx6S+E1mXq4A2zTvoixOYgI/1ojALD5npIb2SF8RuIrP4/932qzvVP5LT9/XKBOD",
-	"v8UpyKFvdbn8N3RUNRgf9xKsvaNW/D97zAyuQJ2z+PxZEheoREVdiM8KFqhkcA2JGfcafR4ce0H5A84J",
-	"nr9I4gJ8UjOcnY3O18JdG/yU/zWEgAowBgl/8X8/gJPPZycvb77+3Z/OT8yX3///r+Kkh/EHPiatcEmh",
-	"IKFLgpc5LPjHFJcMlox/BFWVoxQwhMvTSj7x9T8oLvl/YdjS44oZM0hTgio+XHweX/1wEb188d0fIzVy",
-	"dI/YJqIMLHMYMQJKmouZoxRnEt9qUD7nq5ptriGlSC6mIriChCG5GZCmkNIFw7ewdJB7EsNPFSKQLlCp",
-	"NkxZfP6SY6qLnSSuKSSjlE4VJhs8fZAvJu3FtKa+MdPh5T9gyvhsF4Cw/oYQg0X7w9Bq+BhvGAe6mQAQ",
-	"Arb8O62XDDOQj43xDpdw29uSnN4axbeFN2VVz7YPOdiDYKo38sVnFq7M3gpIpDwwnLgCOYXmwSXGOQSl",
-	"Z1ferTDJFiDPf1rF5x+mrbkLgQyOw/41BPl1XRSAiG3lqISLKUhLYqx4bHyen+STXZCoARK53tYa+nC6",
-	"sSDlQTwfZiEHXaAs7OBIYkQXa7RiFgsbFCbxxxqUjB9s51+mSVt7n511WaM2s7sJg8E1JlsHiafYLXPC",
-	"ty1Ff8ApiD7D7Gf4SayIqjOkNy+tl6lcbZcJh8a/Nm9t+2Kkyz8ccOqgEmtPJBS6cw8B8i2iM8iL0AX7",
-	"GX4DyjW8BJTeY5JdwY81dK0rrQmBJVtU6kEn4Et433qgAJ/ewnLNNvH5s+ffCzI1388Sh05mL7k3Y2d8",
-	"z2YIu8SodDEkYILGVpgUgMXn8oekv4s7kNftJ1HJ/vAiHmctOaB837k8xbwdlAezSQ5syVDWxVIe2Hm5",
-	"dv4+J1uNcwBfnVyLb++zkDyH4R7kjvMcpsypRKX4DpJFTfIW8muCXFTS0uwmghiWGV1IXLao8YShwkmS",
-	"4STiF4oMEDZtVoZYPpV+BshEDteGXGIB3V5jA6NhJL6GDKB8grLSoN+tqdAQFUJYYa6Dlfp0BTPtLCxg",
-	"b2JnRiAQMPgTySCZV9/jGsSigJQqU9U6BL47O3OQmXiBwBRViMt7WCiMGiKVv4y/qcWdNePzM+c540JR",
-	"Aw/vITgRTR0I99X5ApX6q8Nu2aCqQuV6AbKMQCrNvCxDHO8gv7QWJg3kzp4mEsIVvEPw3tp5GDHI13yk",
-	"cIfrdANJsP7bWbP1uoethIqQijMVllz//RC///t1nMTvr19b7zQUc1FThgtItB9lH/y+gyTdgJLpMfdg",
-	"xtfKRgoDetta6m5iifEtJ5tmZpctsc/xtQIfg4H0A/joM8w3aL3J0XrDwkHeW0rDUN/Z7PRtfzZl24Cl",
-	"PNL6EMmxdPtMJ4C36k3XJgvwaVHxA075VIYsNU4tGSyUbVZSRurUrGgSWKxxCsg2OLM55CMRx27Gz+KP",
-	"ZIHJQnxxsQvdYMIW+9AKtayqiQYYJDsQhJYZdyBH2SIDW+qG+gcD9iQu6zyPb3ov1yXrHER9bemDBpY1",
-	"yv0GMLpAZZrXmWS/3Wh7UJbYcHXhqatmWczWW6GGteRsF/UkfanS5qgOodvc5BbdXIa98Zubwkux47Gh",
-	"3/UJWo/DJkxuaqBP8Ok8qqXw25TNt6hsiTDFqHHCcZjVKXNKL02DC5SFb0NjbVA3mybVC5ghELwATqLv",
-	"+BsOJ/D3I4CUfj06aS7pD20mG9r3b/B8UvbybkGlncxqS3RPkCK7HYe7mPD/QoeodEzY2OihRwmfxn1x",
-	"+LPWx2UBp7DLg+I9m4VcbISGFlS+c3MO10Un0LOHufROC9VOIDRnk2lkmddkA+jG6TfbQI7JcSE/wUXH",
-	"6QeTrHN0uEOxYc7Ie5SxzdgaXa456XfjQGutS49otm8BaRAhHt3q31gJxcqMCPmpcru5hX5cEZTC4Ojq",
-	"pAAmSBm68yhymKA1KifPTxlObxcEUkju5GkwjCD5PMV58LMm2jz88FwucX2YdOCR2MhpL621qR5EbMAP",
-	"08NQuNogpRf5movLJpPHxJVM4eLHRvxOOLdFwDiKtVszzI/In34HGRBOxLFTW5z+xnS/ZoDV1NbaMwJW",
-	"XCxVsMykinKH4L3QZvgKBY3y8bI6F5/VTpK4AjWV/+I8W+CamZShzKnz2ypEP4QX6GuyA+cHjMbtZrfu",
-	"aC863Y/KRRnqytzPiBy3HwETEY27dSuH5bvExX1NHFu9luK6ZAF87Q2BcgILHSTQrnPZLtQwx6gqLJ+c",
-	"P9Zq8N5YNw5LRs7etwBaoGphrYOL4TDtXwqAcq+LLzjO19mmfMo536dUJLNcqUyPjn8PUGjlPqpAUT9R",
-	"crWCQjRNEgkfa8zao1+/dj1H9NIad8Ovv2Zf/+5P57/++g3/9Ps/fTUKAbETPacas7NwF3i0u6+vnU/W",
-	"zT/uR6nc8HXbmT9ivM7hBc6gPxMJZ9DJ3vyPxR0kaIXU8e9PP3rxrQs5MEMEpmzB9flR/b6briQdVu1F",
-	"dMZ07fg/cQErZzSSwnSaINZDXQcmB5gJhtZ17c2WmZ5i509X44CzE3PC0x9M0sb+/odJJzvces4YWwGd",
-	"R4/U67SULbHpFtASGyFJvARlCYlDvXAdGnwzzbEgXmjtxEUfTYWDXlT9mdN7LQ4Fp17T3pY3nUGlMHdO",
-	"C3eKKamdP9efxzPYPMtt73DAYrLSMkZTXFLEpvh6VZ6f0Y9e2im+Jy9dKpJKAWzSgr9vvSO+9l7CFSz5",
-	"Yb7BNZmaX5LE1QaXcBzOeu+JgZidKthdhB52CCFzOCLHY/fB3si3eI3K/dUcbgl5c2udOpD1hmtdwih4",
-	"RSl0HqKi4mWhBUufYkVWUHaoLEVVajSaYRvoa/O7NlsbVRO3dueF3DxUZlCwO32JQd5XOQaZQwpp/IYv",
-	"YwNBBof43UEOvUXVYj2LXbAjl9waolnUCAAGtMI2QetDCRVgDU//UUEuauSXqmw+38Nl5TyrViiHrnzC",
-	"775zRfR85GxVabz4/rs//mFaqYZZg5uM3aBq7P0ugIoCieqxxbKi3RKSVhGJ0yAeT452mcL7hGYzRKsc",
-	"bE1a5x7yBpWUgTUBRTOOa7U5XIPcP99hMsRyvMaT4eo7e4/uYun5BY2fj9a0gmXm8eoxmMNxBN3DJUWd",
-	"Mo5hUA34SCxsd4itG9CV0LYcJkMekQ6jDXHpqxLkW4ZS2mfXNcGULijIIQ2OklhxY+1naHh8BP9mpjBD",
-	"rqmzcVA0w9ViVrNMuU3pgu8QFiERIPNKSBCoQyQ27LsjuRbTh7yGpw2LIUIwKcQ9OsgBVVbYJFXMK8PE",
-	"UDSUz0UYYsH5lgVTYU0nZHxb4AxakqPgWNoWim9b2+sN3t5Q0gHuEIJeA7pZYkBcGph0ugUVj7yDjKBU",
-	"mXhQTx7OJ6KYwMUhOuoyK9sJGl6kG1WgPYtkEOAPkmoGVE7un/iqlgIhr3XDdtaaw6RBiyLaYOwivou5",
-	"IRo0fogClba6/iyZXMd2aFVtpAInXCGbVzc6oJLhxZpR/YYcSE6HUWgl5OHqRx/FPyTEt+rXsq+HSAP9",
-	"kmBuPIWHwq34p7cqcA6RKqPi4cPJ+qpR54EWNXp4d8693uQ1ZFxjpa4sENFGYmFlCLbZoJbZK17ekYep",
-	"cE9Rd4pHBba4ZoOPyF0MPNJt3WBP2n29O2Pi3KSbmMR50LekRZBxUUGSKr2oxzg7l5DLF5PuHM7l4fT2",
-	"p5qluPDHyrD837bHaJ2mEMpU1BVAudMe6wJYDeNeRilDIe1WN2/kBqMClZhEdYkY/Y+ohHeQRKscC4sp",
-	"qria8E3cPb5AoTXBAPdg6ikBHN2TmsUawbW7n3Qkp0MCB/WOTvMxtgpMu/JGkaTriKkAynbLb5BZZ5J3",
-	"dHOf3RIldipx/aDxMznlQoCqybmY2BlIqa879hESRorEhuVIMEvQgyem49CIj7pVub1H8VSyY6eaVZ2v",
-	"UJ4XsGSLvtenxGyhWmnJxPSK4BRSKglA4F1IoAzm6A4SZUSzmpQe/1C3qtxPVBPLyQOGaBvTrhdmavCz",
-	"Y3Zsqy/QYHqkCPEuaAkqusHTU7K5GJ+0NhcTaOpM+q2IOstrTejIm7Q6Fzmo0cs0eyRJ7hML8tjugWGg",
-	"G736fualtiArsC2kX4OL9uZ4T+IUlCnMc8Vlq7qUx38FCEMgz7cL86OL9QwEeoJG560ME13TO3CcPrWA",
-	"9af9jjuFVB9Eu2Whv3XbJdgO93yoCL5DSgnQEC9weuvxYpOCLkCawopJP4XKB2uZSD491kzVG8izco5u",
-	"b0tARQ4TRLp3q4kcjFNSjsT3+nNdOCFg5Tv1rPYTAleQ61rQU0nXIWx1AjZOEnFg9tRXi6ZHtT4LKIkN",
-	"78azb6/fA3ZcD8bXguW28DMfoAajhOHe2t21wAoShLMFLLOgrlrqcZFXG/QC9Qm6rjYhpF1YolNrEa0t",
-	"aGzY8ZtYgtIsxU8Oc7QTUYS1e56A1dDUnTHZr3Fd3Hz9lbu5lW6r1M+PJQQPJw+Y3fqyCBp3cHcLwi1Y",
-	"pnBXydGEO1++tM6MF2fDNR2ehYavoesyllH6Xp51p465hboCX2g0tdOWCSizxU6OUPmqNxTUTqR1uoQR",
-	"FYGTRQ6WMH9Kbc4Q1Um2nj4Nj9TubI/8JAs7Vm+0NsR1FpO7rNcGwiBVHUnjbah6H633sl7mKL3A5Qqt",
-	"D5+FjNikoZzNCI1PadJQ2g3lGA6qwgYT1h8aqFUFobJWpsT2dbfxEZTpYVubNQDsZCO3N+Ci1SsRPvNq",
-	"4R2H9OSeMGO+3iu4RpRBol3k3oUMBm2md3WYmBg8FmezKhyeuxqi+OI/rbwna9BvQwb1BI8Cwz9DWTjt",
-	"PgxNIrHOx3GFi4awO9LdNt1OYdIJib25yZUPY7wA9D4byR/eq/VuL7246fGqby4Y9JpfwSrfeoHNVPZ/",
-	"e3dj2+uqWHwQz9yY+PmXQKC6+XeT9idBSA3jXgCFbLSf8u64SmJfl/9e4oLsvz+YJK4CjLNEOCb6nSfE",
-	"rSfyj65+nLAYmcTnTZn0dOur8m1YBFdwhMeq5foN3QhHxgZlmcSZMnXdTqZPzF31slPm1a5HaseZa8M8",
-	"sRKzrFkMlNUeLHHSmEjDUQ+736hTSZhCJrvgPER4PR8XH244+Hc8RzFCYC6B38Fgk/Ijh0Q9NO9srSFB",
-	"OkZIuFO8JlsjGSrG92X7hwKUYN3+KQV0I6s8QVYgzrYFziABDAuXYl3xkyhO4hUqgXQb0LqCRD7s4uxr",
-	"BlYrD3FPUDdIZ28he7gJ1QnE4C6IisXPQadioHdQ65E7Eqs9yh4t972wnEIgLlzvfMmOka+DyGi3Xd11",
-	"9495gYB7G+s1pO70uY1Yk6tMQzurvG49u4zW0yzhJtDHp/00YjXDW5iFNxqAdNqJ78woP3M10a+sT9E1",
-	"XcO/r/gRoBLyrGlGk1h3MMkey85qW7Zh+aDvqUsQgTvAwPRc3QPbq+IP41vcLTx0OO3e69AexYsUmBM0",
-	"JuxyhA1WOS1znN7C0HiUxoDXurYjk2LpTharh9I0LQD9otoP9YMM9RaSxQoRysbjBXYY6dXJ389OXt58",
-	"efFwYn3+ymcdTsyenUZDIZnrroK83XskTeuM9JEM3M+nywf27TjUI0irLkF31WolgTS5ITfuu5BQtlgR",
-	"XIRr9eGNXwd5Qx3O5l42+5Q2zYG1j8NwibXg9kpcjKP44S3Gt3VlnU24hCpO0upao6e7eUi+9Hu/3Dzc",
-	"JAGB1wkcM0AwD/7dHCnYo2XL7qEeTscwrQli22s+qBJNEBBIXtWyk6b89oMmqf/628/6QlIR/xP/NqDc",
-	"MFZJyYVvEdRjiDtH5U/NraOdOyv1Fir0V11buSKQbi7ka75R1FO+YR5EiHuF++nSry7fnAjxG6W4ZASk",
-	"LFphEhWA3EJW5SCFSZSqIsEkSjcwvcU1SyJQZpFmjAh+qiBBsEwh/UbcYJjCUva8QhksmeqLFL+Vv1/B",
-	"1QnXwAiCDNh3vdo/NmFR2b0l4iKNRq8u33D2gkTmu8TPvjn75kxXjIAKxefxt988++ZMeB/ZRiDyFFTo",
-	"9O7ZqTB/TxuJtZbZKpzyZLuVLD6Pf4TsFX/uusnLsa5ufX52NnBta/+61p7OhXLda17lZ4Vdm9m82aff",
-	"/m2v16xeRtRkG5srOt18ZDZoXSDbMITgY5uMPwghZDPHByGAqO6MGF9uAIXRs0jAm2MsoqxecqIEa8p3",
-	"80r6Ifg0Bjc125yuMFljdmJ7qCtMHUj6QTx42QQJiBShf8bZdhJ+BsOZdhO5hzZGGKnhQ482nvfZS70f",
-	"mYS6nfFhwKuH1GA6IZBCFhmdWgO5ZhvOe0rd6EN7LTqe+YGsw7lNZ7QDAbrfei0I2mezLcC+4NjBThYk",
-	"YRZR/eDeiNQAjiQAIo4VTNDn5iZmeU3z5V8v/jIFsTley8uW3XgVXYMOhMpWR6J/DSxeo3UZoVKiSjCh",
-	"OButCOYUxOkMTx/mZJfaDgxf9OUOXxXMIpXX99gnwBW8w7cwUhepRko5iYxyEgoQ9aIfIlfyAY3241HX",
-	"FWbz0JUN9I7qFwB3sYo2vAU1ZpDBlCOiFg08JyBA5i8MYUA9cRiB0k2gCJIpzx4N62p1swoUPegcEkWo",
-	"BgEKVSt14GCodKQnBOHTId/0OJHY4SxQ50qUhpSE/WR5JRyX2xPj8HQD+xfx1F90WOsAoG551ncFsVhg",
-	"ZPI89wex3Lei6CmwXdYUlZDykb/QvF4/DFlvf1YPyzIjUEAm+px4vBHNI6fXeb32NqS3ntP+4JsDnjbd",
-	"dgIO2aMfiSr9zN4I+hGyxqZXwyaRaT6WRKLaX9r+uuC/weAFYCDH6zbqUlV04cPWhayHOBggxfgO6Mnf",
-	"H18z4iAWN2eQE4oyGKVy/w0MCZM1LrVTSguHjIHZ/IJDXLEsL2R7XOX9qeFJgTrChHPEGkZrYXO70dWi",
-	"dzsr3En1bxFlF3aO8gGBKmPK8gYNF3DNKtqCgL8QSUd+1OxI8H1zSZlc/DD3m6R2PyR02vbhoKDv/3dB",
-	"QM4+sHu9vOF9mm7YI5u1npt6PD3GsdO5Ld4FMGsHfqhRkaQK8ihtbTgUhgGn/IXdf/yw5/z4k/JW/sdB",
-	"zGtZIDeImkhV0c2jETSIUaak7PgzgkxdNONDYKu45oCQa83jgJr8P5ILromKzfaAoIpOkqipOUmUcEgs",
-	"ESl1I110EqmWjAZUrUlaADO9nryy47WC+25SY5yIuZg0rCFiTB9raEdn7FufDeh70UH3u51Lo6e+/rH1",
-	"0kiPN98gBSqbu67MYBPr/T1Dg08HGxqJzp6qBt2GwVDesC6GGRpVV/y5x3021pjZN7TqCUGxEM09VFsR",
-	"Lg+pyNTV5kWdWEBgiosC6hYSuKpzIO5/hffczE1igYEFoKn5zFk9TuIlErlr9o7tVd44SShI5oc9d40+",
-	"H/h8MFewuSQcWKNSOCelkJnB5Q0BSTdC1K1QziCJTClB2PEgHgo45V/LTIxjn++NaDw0Dl34k7/PcpRz",
-	"uGvlYAKKTgnMgWor4j2fruQzux1T/8w486nKCiCzcZ1QsIk9aITKiG1gREEBLcNsKzhTNbacgmTTIXJQ",
-	"Cbkynp+noXc/FRls1cs4qUFCbSY6aASudtCeVDVJReaFQqTI4wGRymYbpIONdRWYTxab68IeQwU9JJ7M",
-	"RhxY0v9F5oayeQSvsos33eEVjkJ4VebGZjCHshK/jaDX4vd3MCg4/CoValAkB8uO4V+7xit2Iuc3YWKQ",
-	"mmbpOiigfhGt8Tx06drzfMSiCmF6hCJ/P47/WMNLO/7d8KoASzd9iMmqiHeHyuVxFl08si/ZizOxtiyq",
-	"j4Q7Ob9GW1SZtj7UicIW7582/fq9h/M72VBu+sn8tM7RplWiA4dqh0fAnjh2FeudcBKKTCf9MNydfkHZ",
-	"oLWj8DcZfW+yR0CIFxlHloIWKgIw0cqEcIXYLoTj7sCZEO1JZkuFkE7HoxznckfNyeRIVfFghMAUlizf",
-	"nnCdddTElM/+Ih89kl0nLdw5pIk04uTGuS2XA8qib8+iDGyp71T3pO+kgpB64Jmfdvnu3+xNs3LBx6FV",
-	"OXcT2QWRpkGNio7J5CfdcYP53bYxl49tec59/vVTQHyQouAOZifjMY5r/txrc6XEEZhbrEC7bGYAGLXG",
-	"m8LRfB3K+/l0uVgA6yjWI7iDyrVh87HM0eAgn0aTRjPzWdfvS9rgYw7lzCkSC3x3LInIp7ZoNQB8+vqp",
-	"Een3i36sBzdn7MfcTtCL/gyVle4RwDmk3myXRTpEjQHNsYwZCdKE28NZwvlIwTO6a5AWSgYBxo2u03xq",
-	"5o2pH/Wi6FgmDl6tclTCkxSkGwiWOdSY6cdwPPiRuZynwL7u0+9I694NGsSzquK5fXw4w+Duftu+ODDD",
-	"e436GNm5DaRc9UbNn0dKMwW5ytlrLgmNgIVcTTumvYCbeHT2dQjtWMnXB4f+UFL0sV2zJot62QDEAe5R",
-	"L60DqvMrg+1rHh/ZWftUsamctRp/Dmf7CNvoovkRDalzD++uztuDJh+qtfkUmWbt85iYcrQIrNcErgGD",
-	"E2RVZt+WOyasmqt1pxx08xxsT+sgayDh8nc1fx5JDbqD5A7B+6gQ9yLSRB1t4mLbJJL32ipvvEzAVE1M",
-	"e3b3GPWMOigMwNxZLoE2zWgjItW64UlYMUOpZfO5QvF96fCTtI9Kp6PkQnTbtPFySJdJ+An57Innhe3h",
-	"6xcQjzICVkzWScpOSTSJCpghIFnQVI1NZL9RX4zOdGgh/EA+mddPI0FCMQcHuI85Rs+6+eB09pulbHHY",
-	"GEEkcnNghnTDZKdMcsUQ28r7fpA/uhz77WLblPg1GB9gsWGBdUrrZYEGWndci///KbnxUipTJzLcI/3D",
-	"xxCIAoIRn0IIRcOiqvW1LAULxFxzOoVoe2+ts+xg4NeT+CJTzSLm0LeWBJTpBu6lbJlWlofqJSRfO4rS",
-	"1W/X6cfIEZUwicYd6H6immWh+renasmpB2EZ6KjbH0xPgo3O/mXYSHv5JrKRsHOCjo534smDQjhDwHdm",
-	"yNnnOC/EjqMcLYns2LnzoSGW9L7KMcgO5s42Mxypa5S9R2cesvznaKdGRSCV/eFQAdYwqjU6ppD/xBNE",
-	"M8Jv9vioy5rCTDJKOChD0rrVs77k7hmcjvb97k/D6xiUBD6H31EMJXofA1Sict2E7iY6jytxi3IYKi/V",
-	"s08v1mPdKu0sJZbrngPyEl6RvAl7ApybYHYYrK+s558evINzhGaAuExzjUgLIMFQD8h1NRDfrUD08NB+",
-	"vERZXYMJUoIp3VmoqGGkj8nc+udtDrb9GbeR8JQMkdbdnI9sh+gb6HxIP6IyppzMEUXlOoeRQLIIq6Ay",
-	"ev4i2uCaTCAYChlD5TooWedaP/sIBqCZa6iToVn8kXz/hksNyIBsvVpihlYKAM0q9/EUtGB/uJSeNtgf",
-	"3+5/8mhXDoA5MO9kRwZWq6BDU9waeEhObG5JdN4YwWefpeBB7WOCg+BNeYcszjCAmJ8trGsud73QQSxW",
-	"k8NxUtMkvCJ17SM/QNR1j9Fy27sGIoRAR015WSDQxdBvtxCCbzAClKJ1WcCS7Sfp94PW8ZlgZhGk71f1",
-	"CKGoMPevHqmIVWJfXHAazEamDCIXN3oNXeHA/9ejNSURh0C085KxR0b50yyuuIIU55zRpRf0v6/UVQmY",
-	"RJu6APLylR2wr8y0DMJiqNc+/79PAk/IUOML/DfBtAiGg8SU36AMFhVmsmiYq4mg5iYc20BRVDUhE4GO",
-	"36zxrrl+8JA3bDSOgyPFTJ5mHYC5jcNUAgh8C91ApA6RsKOicfQPRck8DUCEi38DgfxT+fjfaCJMtyd/",
-	"hdvBaqmhe4b/4Mk5P0Dfi2aPR6Kyp9fK5BXDBUpBnm+jVDuEMkgElTFYnhSorBlXSnB6Ky47IXe9vFoV",
-	"D3HQmzyRKrD1E94l2LftzPyEotd0pDPoEmy52j9w8Y96Yt7rnnaL5XZWMkwV6ml6WuD0VhKHTqgbEE3q",
-	"iXc4vVUbf0rEwpf1U81SXMB9b2vkQ0X3cLnB+Dbi42d1PsvVN9eoqHPhaOIzaJxhuepQnKmF0dMvFcF3",
-	"KIPkYUh7SCG6gwpff5Ovek6WCrBNc67owQcPFF2Wz/cjRt2KfaQ5Et/rz3XhKct3nmX/c6JWeHKN1iVg",
-	"NYGD0894YIEsQ9Lhd2ld1iondNy0ukObjFdz3v0psKoNF40qQ7O2YjpGVgQX+IQbOsNRvUv+3IV4bI/O",
-	"n/s0lD9+UFyDwBsX5w9EEpYzNXhVHUMra+SRBqEWQpVkF8zolRA/E5Demq1dKM49kFNPDB8xPuUsjCAW",
-	"HzVb5rJ0iesyi7QIGoSVFc4eUsdNEPVw2rCc4kjq8FMMi8qZI1zCSLd6MXY3LtPR1j52yHw8PW3fMPk/",
-	"VQUZ0Zud3C/2KWYT8BUdxY39FLlGxTFH8exhlFMCK0zYkDrJ/3+SSSViXfve0s5HmeGS9r2q0cQSljXl",
-	"534YCqm4iOOU1uJ+k8GUuB8hk9d2XFsPB+WSfgz1LD3reJae79KW66l1i2/A5Y2dWwCdwVKUo+mrNo2f",
-	"WFZVj129J2iQ3Gl09gst8iiDdzDHlbLia5Jzc4yx6vxUVAflG0zZ+fdn358JuKo5vmhiaF9hxbGk/1CL",
-	"sH7qXOlq/6OIufU+aX03jZ7NL5YXuBkoK1AZP9w8/F8AAAD//w==",
+	"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",
+	"6f7/BwAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

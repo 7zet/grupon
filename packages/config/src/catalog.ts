@@ -2,24 +2,26 @@ import type { Locale } from './locales';
 
 export type LocalizedText = Record<Locale, string>;
 
-export const currencies = ['UZS', 'USD'] as const;
+export const currencies = ['UZS'] as const;
 export type Currency = (typeof currencies)[number];
 export const currencyCookieName = 'currency';
 export const cityCookieName = 'city';
 export const defaultCity = 'tashkent';
 
-export const citySlugs = ['tashkent', 'samarkand', 'bukhara'] as const;
+export const citySlugs = ['tashkent', 'namangan', 'samarkand', 'andijan', 'fergana'] as const;
+// PRD 03: four pilot categories are open; the rest exist behind their feature flags.
 export const categorySlugs = [
-  'coupons',
   'beauty-and-spas',
-  'things-to-do',
-  'gifts',
-  'auto-and-home',
   'food-and-drink',
-  'local',
+  'things-to-do',
+  'health-and-fitness',
+  'automotive',
+  'education',
+  'events',
+  'home-services',
   'travel',
-  'goods',
-  'seasonal-deals',
+  'pickup-goods',
+  'medical',
 ] as const;
 
 export function isCurrency(value: string | undefined): value is Currency {

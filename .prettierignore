@@ -1,5 +1,4 @@
 .next
-AGENTS.md
 coverage
 **/test-results
 playwright-report

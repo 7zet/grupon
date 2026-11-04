@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"testing"
 	"time"
+
+	"github.com/grupon/grupon/services/api/internal/platform/config"
 )
 
 func TestRunStopsWhenContextIsCanceled(t *testing.T) {
@@ -17,7 +19,7 @@ func TestRunStopsWhenContextIsCanceled(t *testing.T) {
 	done := make(chan error, 1)
 	go func() {
 		logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		done <- Run(ctx, logger)
+		done <- Run(ctx, config.Config{}, logger)
 	}()
 
 	select {

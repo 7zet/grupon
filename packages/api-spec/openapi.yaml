@@ -3,18 +3,20 @@ info:
   title: Local Deals API
   version: 1.0.0
   description: API-first contract for marketplace, customer, checkout, and merchant experiences.
-  license: { name: Proprietary, identifier: LicenseRef-Proprietary }
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
 servers:
-  - { url: 'http://localhost:8080', description: Local development }
+  - url: http://localhost:8080
+    description: Local development
 tags:
-  - { name: Configuration }
-  - { name: Catalog }
-  - { name: Authentication }
-  - { name: Account }
-  - { name: Cart }
-  - { name: Orders }
-  - { name: Merchant }
-  - { name: Admin }
+  - name: Configuration
+  - name: Catalog
+  - name: Authentication
+  - name: Account
+  - name: Orders
+  - name: Merchant
+  - name: Admin
 security: []
 paths:
   /api/v1/config:
@@ -22,2348 +24,1171 @@ paths:
       tags: [Configuration]
       operationId: getPublicConfig
       summary: Get locales, currencies, cities, categories, and exchange rate
-      responses:
-        '200':
-          {
-            description: Public configuration,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/PublicConfig' } } },
-          }
+      responses: {'200': {description: Public configuration, content: {application/json: {schema: {$ref: '#/components/schemas/PublicConfig'}}}}}
   /api/v1/homepage:
     get:
       tags: [Catalog]
       operationId: getHomepage
       summary: Get active homepage sections for a city
-      parameters:
-        [{ $ref: '#/components/parameters/Locale' }, { $ref: '#/components/parameters/CitySlug' }]
-      responses:
-        '200':
-          {
-            description: Homepage sections,
-            content: { application/json: { schema: { $ref: '#/components/schemas/Homepage' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/CitySlug'}]
+      responses: {'200': {description: Homepage sections, content: {application/json: {schema: {$ref: '#/components/schemas/Homepage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/cities:
     get:
       tags: [Catalog]
       operationId: listCities
       summary: List active cities
-      responses:
-        '200':
-          {
-            description: Cities,
-            content: { application/json: { schema: { $ref: '#/components/schemas/CityList' } } },
-          }
+      responses: {'200': {description: Cities, content: {application/json: {schema: {$ref: '#/components/schemas/CityList'}}}}}
   /api/v1/categories:
     get:
       tags: [Catalog]
       operationId: listCategories
       summary: List active categories and subcategories
-      responses:
-        '200':
-          {
-            description: Categories,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/CategoryList' } } },
-          }
+      responses: {'200': {description: Categories, content: {application/json: {schema: {$ref: '#/components/schemas/CategoryList'}}}}}
   /api/v1/deals:
     get:
       tags: [Catalog]
       operationId: listDeals
       summary: Search and filter published deals
-      parameters:
-        - { $ref: '#/components/parameters/Locale' }
-        - { $ref: '#/components/parameters/CitySlug' }
-        - { name: category, in: query, schema: { type: string } }
-        - { name: subcategory, in: query, schema: { type: string } }
-        - { name: q, in: query, schema: { type: string, maxLength: 200 } }
-        - { name: min_price, in: query, schema: { type: integer, format: int64, minimum: 0 } }
-        - { name: max_price, in: query, schema: { type: integer, format: int64, minimum: 0 } }
-        - { name: min_rating, in: query, schema: { type: number, minimum: 1, maximum: 5 } }
-        - { name: min_discount, in: query, schema: { type: integer, minimum: 0, maximum: 100 } }
-        - { name: ending_soon, in: query, schema: { type: boolean } }
-        - {
-            name: sort,
-            in: query,
-            schema:
-              {
-                type: string,
-                enum:
-                  [
-                    recommended,
-                    popular,
-                    newest,
-                    price_asc,
-                    price_desc,
-                    biggest_discount,
-                    ending_soon,
-                  ],
-              },
-          }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-      responses:
-        '200':
-          {
-            description: Paginated deals,
-            content: { application/json: { schema: { $ref: '#/components/schemas/DealPage' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/CitySlug'}, {name: category, in: query, schema: {type: string}}, {name: subcategory, in: query, schema: {type: string}}, {name: q, in: query, schema: {type: string, maxLength: 200}}, {name: min_price, in: query, schema: {type: integer, format: int64, minimum: 0}}, {name: max_price, in: query, schema: {type: integer, format: int64, minimum: 0}}, {name: min_rating, in: query, schema: {type: number, minimum: 1, maximum: 5}}, {name: min_discount, in: query, schema: {type: integer, minimum: 0, maximum: 100}}, {name: ending_soon, in: query, schema: {type: boolean}}, {name: sort, in: query, schema: {type: string, enum: [recommended, popular, newest, price_asc, price_desc, biggest_discount, ending_soon]}}, {$ref: '#/components/parameters/Page'}, {$ref: '#/components/parameters/PageSize'}]
+      responses: {'200': {description: Paginated deals, content: {application/json: {schema: {$ref: '#/components/schemas/DealPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/deals/{slug}:
     get:
       tags: [Catalog]
       operationId: getDeal
       summary: Get deal detail
-      parameters:
-        [
-          { $ref: '#/components/parameters/Slug' },
-          { $ref: '#/components/parameters/Locale' },
-          { $ref: '#/components/parameters/CitySlug' },
-        ]
-      responses:
-        '200':
-          {
-            description: Deal,
-            content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Slug'}, {$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/CitySlug'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/deals/{slug}/reviews:
     get:
       tags: [Catalog]
       operationId: listDealReviews
       summary: List published verified-purchase reviews for a deal
-      parameters:
-        - { $ref: '#/components/parameters/Slug' }
-        - { $ref: '#/components/parameters/Locale' }
-        - { $ref: '#/components/parameters/Page' }
-        - { $ref: '#/components/parameters/PageSize' }
-      responses:
-        '200':
-          description: Reviews
-          content: { application/json: { schema: { $ref: '#/components/schemas/ReviewList' } } }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Slug'}, {$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/Page'}, {$ref: '#/components/parameters/PageSize'}]
+      responses: {'200': {description: Reviews, content: {application/json: {schema: {$ref: '#/components/schemas/ReviewList'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/deals/{slug}/related:
     get:
       tags: [Catalog]
       operationId: listRelatedDeals
       summary: List related deals in the same subcategory and city
-      parameters:
-        - { $ref: '#/components/parameters/Slug' }
-        - { $ref: '#/components/parameters/Locale' }
-        - { $ref: '#/components/parameters/CitySlug' }
-      responses:
-        '200':
-          description: Related deals
-          content: { application/json: { schema: { $ref: '#/components/schemas/DealList' } } }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Slug'}, {$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/CitySlug'}]
+      responses: {'200': {description: Related deals, content: {application/json: {schema: {$ref: '#/components/schemas/DealList'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/businesses/{slug}:
     get:
       tags: [Catalog]
       operationId: getBusiness
       summary: Get merchant profile, locations, deals, and reviews
-      parameters:
-        [{ $ref: '#/components/parameters/Slug' }, { $ref: '#/components/parameters/Locale' }]
-      responses:
-        '200':
-          {
-            description: Merchant profile,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/MerchantProfile' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      parameters: [{$ref: '#/components/parameters/Slug'}, {$ref: '#/components/parameters/Locale'}]
+      responses: {'200': {description: Merchant profile, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantProfile'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/search/suggestions:
     get:
       tags: [Catalog]
       operationId: getSearchSuggestions
       summary: Suggest deals, merchants, and categories
-      parameters:
-        - {
-            name: q,
-            in: query,
-            required: true,
-            schema: { type: string, minLength: 2, maxLength: 100 },
-          }
-        - { $ref: '#/components/parameters/Locale' }
-        - { $ref: '#/components/parameters/CitySlug' }
-      responses:
-        '200':
-          {
-            description: Suggestions,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/SuggestionList' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/promo-codes:
-    get:
-      tags: [Catalog]
-      operationId: listPromoCodes
-      summary: List active promo codes
-      parameters:
-        [
-          { $ref: '#/components/parameters/Locale' },
-          { name: category, in: query, schema: { type: string } },
-          { $ref: '#/components/parameters/Page' },
-        ]
-      responses:
-        '200':
-          {
-            description: Promo codes,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/PromoCodePage' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/promo-codes/{id}/click:
+      parameters: [{name: q, in: query, required: true, schema: {type: string, minLength: 2, maxLength: 100}}, {$ref: '#/components/parameters/Locale'}, {$ref: '#/components/parameters/CitySlug'}]
+      responses: {'200': {description: Suggestions, content: {application/json: {schema: {$ref: '#/components/schemas/SuggestionList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/auth/phone/code:
     post:
-      tags: [Catalog]
-      operationId: trackPromoCodeClick
-      summary: Track promo-code outbound click
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        '204': { description: Click tracked }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/collections:
-    get:
-      tags: [Catalog]
-      operationId: listCollections
-      summary: List active seasonal collections
-      parameters: [{ $ref: '#/components/parameters/Locale' }]
-      responses:
-        '200':
-          {
-            description: Collections,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/CollectionList' } } },
-          }
-  /api/v1/collections/{slug}:
-    get:
-      tags: [Catalog]
-      operationId: getCollection
-      summary: Get collection and deals
-      parameters:
-        [
-          { $ref: '#/components/parameters/Slug' },
-          { $ref: '#/components/parameters/Locale' },
-          { $ref: '#/components/parameters/Page' },
-        ]
-      responses:
-        '200':
-          {
-            description: Collection detail,
-            content:
-              { application/json: { schema: { $ref: '#/components/schemas/CollectionDetail' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/auth/register:
+      tags: [Account]
+      operationId: requestPhoneCode
+      summary: Send a one-time sign-in code to a phone number
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PhoneCodeRequest'}}}}
+      responses: {'202': {description: Code sent, content: {application/json: {schema: {$ref: '#/components/schemas/PhoneCodeSent'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/auth/phone/verify:
     post:
-      tags: [Authentication]
-      operationId: register
-      summary: Register with email and password
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } },
-        }
-      responses:
-        '201':
-          {
-            description: Registered session,
-            content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/auth/login:
-    post:
-      tags: [Authentication]
-      operationId: login
-      summary: Sign in with email and password
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } },
-        }
-      responses:
-        '200':
-          {
-            description: Authenticated session,
-            content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
-  /api/v1/auth/google:
-    post:
-      tags: [Authentication]
-      operationId: exchangeGoogleCode
-      summary: Exchange Google authorization code with PKCE
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/GoogleCodeRequest' } } },
-        }
-      responses:
-        '200':
-          {
-            description: Authenticated session,
-            content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      tags: [Account]
+      operationId: verifyPhoneCode
+      summary: Sign in with the code; creates the account on first use
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PhoneCodeVerify'}}}}
+      responses: {'200': {description: Session, content: {application/json: {schema: {$ref: '#/components/schemas/AuthSession'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/auth/refresh:
     post:
       tags: [Authentication]
       operationId: refreshSession
       summary: Rotate refresh token and detect reuse
-      security: [{ refreshCookie: [] }, { bearerAuth: [] }]
-      responses:
-        '200':
-          {
-            description: Rotated session,
-            content: { application/json: { schema: { $ref: '#/components/schemas/AuthSession' } } },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      security: [{refreshCookie: []}, {bearerAuth: []}]
+      responses: {'200': {description: Rotated session, content: {application/json: {schema: {$ref: '#/components/schemas/AuthSession'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/auth/logout:
     post:
       tags: [Authentication]
       operationId: logout
-      summary: Revoke current refresh token
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        { '204': { description: Signed out }, default: { $ref: '#/components/responses/Problem' } }
-  /api/v1/auth/verify-email:
-    post:
-      tags: [Authentication]
-      operationId: verifyEmail
-      summary: Verify email token
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/TokenRequest' } } },
-        }
-      responses:
-        {
-          '204': { description: Email verified },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-  /api/v1/auth/forgot-password:
-    post:
-      tags: [Authentication]
-      operationId: forgotPassword
-      summary: Request password-reset email
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/EmailRequest' } } },
-        }
-      responses:
-        {
-          '202': { description: Request accepted },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-  /api/v1/auth/reset-password:
-    post:
-      tags: [Authentication]
-      operationId: resetPassword
-      summary: Reset password with token
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/ResetPasswordRequest' } } },
-        }
-      responses:
-        {
-          '204': { description: Password reset },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      summary: Revoke current refresh token. Works with the refresh cookie or body alone when the access token has expired
+      security: [{refreshCookie: []}, {cookieAuth: []}, {bearerAuth: []}]
+      responses: {'204': {description: Signed out}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me:
     get:
       tags: [Account]
       operationId: getMe
       summary: Get current profile
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: User,
-              content: { application/json: { schema: { $ref: '#/components/schemas/User' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: User, content: {application/json: {schema: {$ref: '#/components/schemas/User'}}}}, default: {$ref: '#/components/responses/Problem'}}
     patch:
       tags: [Account]
       operationId: updateMe
       summary: Update profile preferences
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/UpdateProfileRequest' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Updated user,
-              content: { application/json: { schema: { $ref: '#/components/schemas/User' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateProfileRequest'}}}}
+      responses: {'200': {description: Updated user, content: {application/json: {schema: {$ref: '#/components/schemas/User'}}}}, default: {$ref: '#/components/responses/Problem'}}
     delete:
       tags: [Account]
       operationId: deleteMe
       summary: Soft-delete current account
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '204': { description: Account deleted },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-  /api/v1/me/password:
-    put:
-      tags: [Account]
-      operationId: changePassword
-      summary: Change current password
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            {
-              application/json: { schema: { $ref: '#/components/schemas/ChangePasswordRequest' } },
-            },
-        }
-      responses:
-        {
-          '204': { description: Password changed },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'204': {description: Account deleted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/orders:
     get:
       tags: [Account]
       operationId: listMyOrders
       summary: List current-user orders
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/PageSize' }]
-      responses:
-        {
-          '200':
-            {
-              description: Orders,
-              content: { application/json: { schema: { $ref: '#/components/schemas/OrderPage' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}, {$ref: '#/components/parameters/PageSize'}]
+      responses: {'200': {description: Orders, content: {application/json: {schema: {$ref: '#/components/schemas/OrderPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/orders/{id}:
     get:
       tags: [Account]
       operationId: getMyOrder
       summary: Get current-user order
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        {
-          '200':
-            {
-              description: Order,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Order, content: {application/json: {schema: {$ref: '#/components/schemas/Order'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/vouchers:
     get:
       tags: [Account]
       operationId: listMyVouchers
       summary: List active, used, or expired vouchers
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          { name: status, in: query, schema: { type: string, enum: [active, redeemed, expired] } },
-          { $ref: '#/components/parameters/Page' },
-        ]
-      responses:
-        {
-          '200':
-            {
-              description: Vouchers,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/VoucherPage' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: status, in: query, schema: {type: string, enum: [active, redeemed, expired]}}, {$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Vouchers, content: {application/json: {schema: {$ref: '#/components/schemas/VoucherPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/vouchers/{id}:
     get:
       tags: [Account]
       operationId: getMyVoucher
       summary: Get offline-cacheable voucher detail
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        {
-          '200':
-            {
-              description: Voucher,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-  /api/v1/me/saved-deals:
-    get:
-      tags: [Account]
-      operationId: listSavedDeals
-      summary: List saved deals
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Saved deals,
-              content: { application/json: { schema: { $ref: '#/components/schemas/DealList' } } },
-            },
-        }
-    post:
-      tags: [Account]
-      operationId: saveDeal
-      summary: Save a deal or merge a guest save
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/DealIdRequest' } } },
-        }
-      responses:
-        { '204': { description: Saved }, default: { $ref: '#/components/responses/Problem' } }
-  /api/v1/me/saved-deals/{id}:
-    delete:
-      tags: [Account]
-      operationId: unsaveDeal
-      summary: Remove saved deal
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Removed }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Voucher, content: {application/json: {schema: {$ref: '#/components/schemas/Voucher'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/recently-viewed:
     get:
       tags: [Account]
       operationId: listRecentlyViewed
       summary: List deals viewed in last 30 days
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Deals,
-              content: { application/json: { schema: { $ref: '#/components/schemas/DealList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Deals, content: {application/json: {schema: {$ref: '#/components/schemas/DealList'}}}}}
     post:
       tags: [Account]
       operationId: recordRecentlyViewed
       summary: Record or merge a recently viewed deal
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/DealIdRequest' } } },
-        }
-      responses:
-        { '204': { description: Recorded }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DealIdRequest'}}}}
+      responses: {'204': {description: Recorded}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/me/reviews:
     get:
       tags: [Account]
       operationId: listMyReviews
       summary: List current-user reviews
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Reviews,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/ReviewList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Reviews, content: {application/json: {schema: {$ref: '#/components/schemas/ReviewList'}}}}}
   /api/v1/reviews:
     post:
       tags: [Account]
       operationId: createReview
       summary: Review one redeemed voucher once
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/CreateReviewRequest' } } },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Review,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Review' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateReviewRequest'}}}}
+      responses: {'201': {description: Review, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/reviews/{id}:
     patch:
       tags: [Account]
       operationId: updateReview
       summary: Update owned review
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/ReviewInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Review,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Review' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReviewInput'}}}}
+      responses: {'200': {description: Review, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}, default: {$ref: '#/components/responses/Problem'}}
     delete:
       tags: [Account]
       operationId: deleteReview
       summary: Soft-delete owned review
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Deleted }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Deleted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/reviews/{id}/report:
     post:
       tags: [Account]
       operationId: reportReview
       summary: Report abusive review
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/ReportRequest' } } },
-        }
-      responses:
-        {
-          '202': { description: Report accepted },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-  /api/v1/cart:
-    get:
-      tags: [Cart]
-      operationId: getCart
-      summary: Get server-side cart
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Cart,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Cart' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
-    put:
-      tags: [Cart]
-      operationId: replaceCart
-      summary: Replace or merge guest cart
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/CartInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Cart,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Cart' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReportRequest'}}}}
+      responses: {'202': {description: Report accepted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/orders:
     post:
       tags: [Orders]
       operationId: createOrder
       summary: Atomically create order and ten-minute stock reservations
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          {
-            name: Idempotency-Key,
-            in: header,
-            required: true,
-            schema: { type: string, minLength: 16, maxLength: 200 },
-          },
-        ]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/CreateOrderRequest' } } },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Order,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      description: Same Idempotency-Key and body replays the order with 200. Same key with a different body is 422 idempotency_conflict.
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 16, maxLength: 200}}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateOrderRequest'}}}}
+      responses: {'200': {description: Replayed order for the same Idempotency-Key, content: {application/json: {schema: {$ref: '#/components/schemas/Order'}}}}, '201': {description: Order, content: {application/json: {schema: {$ref: '#/components/schemas/Order'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/orders/{id}/pay:
     post:
       tags: [Orders]
       operationId: payOrder
       summary: Create payment session
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/PayOrderRequest' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Payment session,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/PaymentSession' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PayOrderRequest'}}}}
+      responses: {'200': {description: Payment session, content: {application/json: {schema: {$ref: '#/components/schemas/PaymentSession'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/payments/mock/{id}/complete:
     post:
       tags: [Orders]
       operationId: completeMockPayment
       summary: Simulate mock payment outcome
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/MockOutcomeRequest' } } },
-        }
-      responses:
-        {
-          '202': { description: Mock webhook scheduled },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MockOutcomeRequest'}}}}
+      responses: {'202': {description: Mock webhook scheduled}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/payments/webhooks/{provider}:
     post:
       tags: [Orders]
       operationId: receivePaymentWebhook
       summary: Receive signed provider webhook idempotently
-      parameters:
-        - {
-            name: provider,
-            in: path,
-            required: true,
-            schema: { type: string, enum: [mock, payme, click, uzum] },
-          }
-        - { name: X-Webhook-Signature, in: header, required: true, schema: { type: string } }
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { type: object, additionalProperties: true } } },
-        }
-      responses:
-        { '204': { description: Accepted }, default: { $ref: '#/components/responses/Problem' } }
+      parameters: [{name: provider, in: path, required: true, schema: {type: string, enum: [mock, payme, click, uzum]}}, {name: X-Webhook-Signature, in: header, required: true, schema: {type: string}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+      responses: {'204': {description: Accepted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchants:
     post:
       tags: [Merchant]
       operationId: registerMerchant
       summary: Register business and assign owner role
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            {
-              application/json:
-                { schema: { $ref: '#/components/schemas/RegisterMerchantRequest' } },
-            },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Merchant,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RegisterMerchantRequest'}}}}
+      responses: {'201': {description: Merchant, content: {application/json: {schema: {$ref: '#/components/schemas/Merchant'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/dashboard:
     get:
       tags: [Merchant]
       operationId: getMerchantDashboard
       summary: Get overview metrics, sales chart, latest orders, and pending deals
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          { name: from, in: query, schema: { type: string, format: date } },
-          { name: to, in: query, schema: { type: string, format: date } },
-        ]
-      responses:
-        {
-          '200':
-            {
-              description: Dashboard,
-              content:
-                {
-                  application/json: { schema: { $ref: '#/components/schemas/MerchantDashboard' } },
-                },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: from, in: query, schema: {type: string, format: date}}, {name: to, in: query, schema: {type: string, format: date}}]
+      responses: {'200': {description: Dashboard, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantDashboard'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/business:
     get:
       tags: [Merchant]
       operationId: getMerchantBusiness
       summary: Get current merchant business
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Merchant,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Merchant, content: {application/json: {schema: {$ref: '#/components/schemas/Merchant'}}}}, default: {$ref: '#/components/responses/Problem'}}
     patch:
       tags: [Merchant]
       operationId: updateMerchantBusiness
       summary: Update business profile
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/MerchantInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Merchant,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantInput'}}}}
+      responses: {'200': {description: Merchant, content: {application/json: {schema: {$ref: '#/components/schemas/Merchant'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/locations:
     get:
       tags: [Merchant]
       operationId: listMerchantLocations
       summary: List branches
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Locations,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/LocationList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Locations, content: {application/json: {schema: {$ref: '#/components/schemas/LocationList'}}}}}
     post:
       tags: [Merchant]
       operationId: createMerchantLocation
       summary: Create branch
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/LocationInput' } } },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Location,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/MerchantLocation' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/LocationInput'}}}}
+      responses: {'201': {description: Location, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantLocation'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/locations/{id}:
     patch:
       tags: [Merchant]
       operationId: updateMerchantLocation
       summary: Update branch
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/LocationInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Location,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/MerchantLocation' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/LocationInput'}}}}
+      responses: {'200': {description: Location, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantLocation'}}}}, default: {$ref: '#/components/responses/Problem'}}
     delete:
       tags: [Merchant]
       operationId: deleteMerchantLocation
       summary: Delete branch
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Deleted }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Deleted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/deals:
     get:
       tags: [Merchant]
       operationId: listMerchantDeals
       summary: List owned deals
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          { name: status, in: query, schema: { $ref: '#/components/schemas/DealStatus' } },
-          { $ref: '#/components/parameters/Page' },
-        ]
-      responses:
-        {
-          '200':
-            {
-              description: Deals,
-              content: { application/json: { schema: { $ref: '#/components/schemas/DealPage' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: status, in: query, schema: {$ref: '#/components/schemas/DealStatus'}}, {$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Deals, content: {application/json: {schema: {$ref: '#/components/schemas/DealPage'}}}}}
     post:
       tags: [Merchant]
       operationId: createMerchantDeal
       summary: Create draft with options, media, and locations
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/DealInput' } } },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Deal,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DealInput'}}}}
+      responses: {'201': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/deals/{id}:
     get:
       tags: [Merchant]
       operationId: getMerchantDeal
       summary: Get owned deal for editing
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        {
-          '200':
-            {
-              description: Deal,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
     put:
       tags: [Merchant]
       operationId: updateMerchantDeal
       summary: Replace owned deal draft
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/DealInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Deal,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/DealInput'}}}}
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
     delete:
       tags: [Merchant]
       operationId: deleteMerchantDeal
       summary: Soft-delete owned draft
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Deleted }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Deleted}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/deals/{id}/submit:
     post:
       tags: [Merchant]
       operationId: submitMerchantDeal
       summary: Submit complete deal for moderation
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        {
-          '200':
-            {
-              description: Pending-review deal,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Deal' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Pending-review deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/orders:
     get:
       tags: [Merchant]
       operationId: listMerchantOrders
       summary: List orders containing merchant deals
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } },
-          { $ref: '#/components/parameters/Page' },
-        ]
-      responses:
-        {
-          '200':
-            {
-              description: Orders,
-              content: { application/json: { schema: { $ref: '#/components/schemas/OrderPage' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: status, in: query, schema: {$ref: '#/components/schemas/OrderStatus'}}, {$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Orders, content: {application/json: {schema: {$ref: '#/components/schemas/OrderPage'}}}}}
   /api/v1/merchant/vouchers/lookup:
     post:
       tags: [Merchant]
       operationId: lookupMerchantVoucher
       summary: Resolve signed QR token or human code
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/VoucherLookupRequest' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Voucher,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VoucherLookupRequest'}}}}
+      responses: {'200': {description: Voucher, content: {application/json: {schema: {$ref: '#/components/schemas/Voucher'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/vouchers/{id}/redeem:
     post:
       tags: [Merchant]
       operationId: redeemMerchantVoucher
       summary: Redeem voucher idempotently and audit the action
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/RedeemRequest' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Voucher,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Voucher' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RedeemRequest'}}}}
+      responses: {'200': {description: Voucher, content: {application/json: {schema: {$ref: '#/components/schemas/Voucher'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/redemptions:
     get:
       tags: [Merchant]
       operationId: listMerchantRedemptions
       summary: List recent redemptions
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Page' }]
-      responses:
-        {
-          '200':
-            {
-              description: Vouchers,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/VoucherPage' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Redemption history, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantRedemptionPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/customers:
     get:
       tags: [Merchant]
       operationId: listMerchantCustomers
       summary: List customer aggregates
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Page' }]
-      responses:
-        {
-          '200':
-            {
-              description: Customers,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/CustomerPage' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Customers, content: {application/json: {schema: {$ref: '#/components/schemas/CustomerPage'}}}}}
   /api/v1/merchant/analytics:
     get:
       tags: [Merchant]
       operationId: getMerchantAnalytics
       summary: Get sales and redemption analytics
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters:
-        [
-          { name: from, in: query, required: true, schema: { type: string, format: date } },
-          { name: to, in: query, required: true, schema: { type: string, format: date } },
-        ]
-      responses:
-        {
-          '200':
-            {
-              description: Analytics,
-              content:
-                {
-                  application/json: { schema: { $ref: '#/components/schemas/MerchantAnalytics' } },
-                },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: from, in: query, required: true, schema: {type: string, format: date}}, {name: to, in: query, required: true, schema: {type: string, format: date}}]
+      responses: {'200': {description: Analytics, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantAnalytics'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/payouts:
     get:
       tags: [Merchant]
       operationId: listMerchantPayouts
       summary: List payout periods
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Page' }]
-      responses:
-        {
-          '200':
-            {
-              description: Payouts,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/PayoutPage' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Payouts, content: {application/json: {schema: {$ref: '#/components/schemas/PayoutPage'}}}}}
   /api/v1/merchant/reviews:
     get:
       tags: [Merchant]
       operationId: listMerchantReviews
       summary: List reviews across merchant deals
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Page' }]
-      responses:
-        {
-          '200':
-            {
-              description: Reviews,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/ReviewList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Reviews, content: {application/json: {schema: {$ref: '#/components/schemas/ReviewList'}}}}}
   /api/v1/merchant/reviews/{id}/reply:
     put:
       tags: [Merchant]
       operationId: replyToMerchantReview
       summary: Create or edit single reply within 24 hours
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/ReplyRequest' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Review,
-              content: { application/json: { schema: { $ref: '#/components/schemas/Review' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReplyRequest'}}}}
+      responses: {'200': {description: Review, content: {application/json: {schema: {$ref: '#/components/schemas/Review'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/media:
     get:
       tags: [Merchant]
       operationId: listMerchantMedia
       summary: List media library
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Media,
-              content: { application/json: { schema: { $ref: '#/components/schemas/MediaList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Media, content: {application/json: {schema: {$ref: '#/components/schemas/MediaList'}}}}}
     post:
       tags: [Merchant]
       operationId: createMerchantMediaUpload
       summary: Create presigned image upload
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/MediaUploadRequest' } } },
-        }
-      responses:
-        {
-          '201':
-            {
-              description: Upload,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/MediaUpload' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MediaUploadRequest'}}}}
+      responses: {'201': {description: Upload, content: {application/json: {schema: {$ref: '#/components/schemas/MediaUpload'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/media/{id}:
     delete:
       tags: [Merchant]
       operationId: deleteMerchantMedia
       summary: Delete unused media
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Deleted }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Deleted}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/media/{id}/content:
+    put:
+      tags: [Merchant]
+      operationId: uploadMerchantMediaContent
+      summary: Store image bytes for a pending asset (local storage adapter only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+      responses: {'204': {description: Stored}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/settings:
     get:
       tags: [Merchant]
       operationId: getMerchantSettings
       summary: Get merchant operational and notification settings
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        '200':
-          description: Merchant settings
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/MerchantSettings' } } }
-        default: { $ref: '#/components/responses/Problem' }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Merchant settings, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantSettings'}}}}, default: {$ref: '#/components/responses/Problem'}}
     patch:
       tags: [Merchant]
       operationId: updateMerchantSettings
       summary: Update merchant operational and notification settings
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/MerchantSettings' } } }
-      responses:
-        '200':
-          description: Merchant settings
-          content:
-            { application/json: { schema: { $ref: '#/components/schemas/MerchantSettings' } } }
-        default: { $ref: '#/components/responses/Problem' }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantSettings'}}}}
+      responses: {'200': {description: Merchant settings, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantSettings'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/staff:
     get:
       tags: [Merchant]
       operationId: listMerchantStaff
       summary: List staff
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        {
-          '200':
-            {
-              description: Staff,
-              content: { application/json: { schema: { $ref: '#/components/schemas/StaffList' } } },
-            },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Staff, content: {application/json: {schema: {$ref: '#/components/schemas/StaffList'}}}}}
     post:
       tags: [Merchant]
       operationId: inviteMerchantStaff
-      summary: Invite manager or cashier by email
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/StaffInput' } } },
-        }
-      responses:
-        {
-          '202': { description: Invitation sent },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      summary: Invite a manager or cashier by phone (owner only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StaffInput'}}}}
+      responses: {'202': {description: Invitation sent}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/staff/{id}:
     patch:
       tags: [Merchant]
       operationId: updateMerchantStaff
       summary: Change staff role
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody:
-        {
-          required: true,
-          content: { application/json: { schema: { $ref: '#/components/schemas/StaffInput' } } },
-        }
-      responses:
-        {
-          '200':
-            {
-              description: Staff member,
-              content:
-                { application/json: { schema: { $ref: '#/components/schemas/StaffMember' } } },
-            },
-          default: { $ref: '#/components/responses/Problem' },
-        }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StaffInput'}}}}
+      responses: {'200': {description: Staff member, content: {application/json: {schema: {$ref: '#/components/schemas/StaffMember'}}}}, default: {$ref: '#/components/responses/Problem'}}
     delete:
       tags: [Merchant]
       operationId: removeMerchantStaff
       summary: Remove staff assignment
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/Id' }]
-      responses:
-        { '204': { description: Removed }, default: { $ref: '#/components/responses/Problem' } }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Removed}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/moderation/deals:
+    get:
+      tags: [Admin]
+      operationId: listModerationDeals
+      summary: Deals waiting for review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Deals, content: {application/json: {schema: {$ref: '#/components/schemas/DealPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/deals/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveDeal
+      summary: Approve a deal under review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/deals/{id}/reject:
+    post:
+      tags: [Admin]
+      operationId: rejectDeal
+      summary: Reject a deal under review with a reason
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectDealInput'}}}}
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/review-reports:
+    get:
+      tags: [Admin]
+      operationId: listReviewReports
+      summary: Open review reports
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Reports, content: {application/json: {schema: {$ref: '#/components/schemas/ReviewReportPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/review-reports/{id}/dismiss:
+    post:
+      tags: [Admin]
+      operationId: dismissReviewReport
+      summary: Close a report without changing the review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Dismissed}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/reviews/{id}/hide:
+    post:
+      tags: [Admin]
+      operationId: hideReview
+      summary: Hide a review and close its open reports
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Hidden}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/audit-logs:
+    get:
+      tags: [Admin]
+      operationId: listAuditLogs
+      summary: Audit trail of admin and sensitive merchant actions
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Audit entries, content: {application/json: {schema: {$ref: '#/components/schemas/AuditLogPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/vouchers/{id}/reverse:
+    post:
+      tags: [Merchant]
+      operationId: reverseMerchantVoucher
+      summary: 'Undo the latest redemption (cashier: within 10 minutes)'
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReverseRequest'}}}}
+      responses: {'204': {description: Reversed}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/me/vouchers/{id}/refund:
+    post:
+      tags: [Account]
+      operationId: requestVoucherRefund
+      summary: Ask for a refund of an unused voucher
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReverseRequest'}}}}
+      responses: {'202': {description: Refund recorded}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/me/vouchers/{id}/dispute:
+    post:
+      tags: [Account]
+      operationId: openVoucherDispute
+      summary: Dispute a redemption (this was not me)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReverseRequest'}}}}
+      responses: {'202': {description: Dispute opened}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/payouts:
+    post:
+      tags: [Admin]
+      operationId: preparePayout
+      summary: Prepare a payout run for a merchant (finance operator)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'201': {description: Payout run prepared}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/payouts/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approvePayout
+      summary: Approve and send a payout run (four-eyes)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ApprovePayoutRequest'}}}}
+      responses: {'204': {description: Approved}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/refunds/{id}/paid:
+    post:
+      tags: [Admin]
+      operationId: markRefundPaid
+      summary: Mark an approved refund as sent to the bank
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Recorded}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/payouts/{id}/reconcile:
+    post:
+      tags: [Admin]
+      operationId: reconcilePayout
+      summary: Record that the bank confirmed a sent payout run
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Reconciled}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/refunds/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveRefund
+      summary: Support approves a refund request (over 14 days or from a dispute)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Approved}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/resolve:
+    post:
+      tags: [Admin]
+      operationId: resolveDispute
+      summary: Resolve a dispute in favour of the customer (refund) or the merchant (payout)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ResolveDisputeRequest'}}}}
+      responses: {'204': {description: Resolved}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/request-evidence:
+    post:
+      tags: [Admin]
+      operationId: requestDisputeEvidence
+      summary: Ask the parties for evidence on an open dispute (support)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Awaiting evidence}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/start-review:
+    post:
+      tags: [Admin]
+      operationId: startDisputeReview
+      summary: Move a dispute with evidence into review (support)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Under review}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/disputes/{id}/close:
+    post:
+      tags: [Admin]
+      operationId: closeDispute
+      summary: Close a resolved dispute (support or system)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Closed}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/admin/status:
     get:
       tags: [Admin]
       operationId: getAdminStatus
       summary: Phase 1 admin API stub
-      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
-      responses:
-        '200':
-          {
-            description: Stub status,
-            content:
-              {
-                application/json:
-                  {
-                    schema:
-                      {
-                        type: object,
-                        required: [available],
-                        properties: { available: { type: boolean, const: false } },
-                      },
-                  },
-              },
-          }
-        default: { $ref: '#/components/responses/Problem' }
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Stub status, content: {application/json: {schema: {type: object, required: [available], properties: {available: {type: boolean, const: false}}}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/submit:
+    post:
+      tags: [Merchant]
+      operationId: submitMerchantForReview
+      summary: Send the business to platform review (owner only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'202': {description: Submitted, content: {application/json: {schema: {$ref: '#/components/schemas/Merchant'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants:
+    get:
+      tags: [Admin]
+      operationId: listMerchantReviewQueue
+      summary: List businesses waiting for review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: status, in: query, schema: {type: string, enum: [submitted, in_review]}}]
+      responses: {'200': {description: Queue, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantReviewList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/start-review:
+    post:
+      tags: [Admin]
+      operationId: startMerchantReview
+      summary: Move a submitted business to in_review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/approve:
+    post:
+      tags: [Admin]
+      operationId: approveMerchant
+      summary: Approve a business that is in review
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/reject:
+    post:
+      tags: [Admin]
+      operationId: rejectMerchant
+      summary: Reject a submitted or in-review business with a reason
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectMerchantRequest'}}}}
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/documents:
+    get:
+      tags: [Merchant]
+      operationId: listMerchantDocuments
+      summary: List uploaded business documents (certificate, bank letter)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Documents, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantDocumentList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/documents/{kind}:
+    put:
+      tags: [Merchant]
+      operationId: uploadMerchantDocument
+      summary: Upload a business document (owner only). Replaces the previous file of the same kind
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter, price_proof]}}]
+      requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+      responses: {'204': {description: Stored}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/documents/{kind}:
+    get:
+      tags: [Admin]
+      operationId: downloadMerchantDocument
+      summary: Download a business document for review (reviewers only)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}, {name: kind, in: path, required: true, schema: {type: string, enum: [certificate, bank_letter, price_proof]}}]
+      responses: {'200': {description: File, content: {application/pdf: {schema: {type: string, format: binary}}, image/jpeg: {schema: {type: string, format: binary}}, image/png: {schema: {type: string, format: binary}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/vouchers/{id}/reverse:
+    post:
+      tags: [Admin]
+      operationId: supportReverseVoucher
+      summary: Support reverses a redemption after the 10-minute merchant window (PRD FR-05.5)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReverseRequest'}}}}
+      responses: {'204': {description: Reversed}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/me/notifications:
+    get:
+      tags: [Account]
+      operationId: listMyNotifications
+      summary: List my notifications, newest first
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Notifications, content: {application/json: {schema: {$ref: '#/components/schemas/NotificationList'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/finance/queue:
+    get:
+      tags: [Admin]
+      operationId: getFinanceQueue
+      summary: Open payouts, refunds and disputes for the finance desk
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Queue, content: {application/json: {schema: {$ref: '#/components/schemas/FinanceQueue'}}}}, default: {$ref: '#/components/responses/Problem'}}
 components:
   securitySchemes:
-    cookieAuth: { type: apiKey, in: cookie, name: access_token }
-    refreshCookie: { type: apiKey, in: cookie, name: refresh_token }
-    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
-    Id: { name: id, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/Uuid'}
     Slug:
-      {
-        name: slug,
-        in: path,
-        required: true,
-        schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' },
-      }
-    Locale: { name: locale, in: query, schema: { $ref: '#/components/schemas/Locale' } }
-    CitySlug: { name: city, in: query, schema: { type: string } }
-    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      name: slug
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+    Locale:
+      name: locale
+      in: query
+      schema: {$ref: '#/components/schemas/Locale'}
+    CitySlug:
+      name: city
+      in: query
+      schema: {type: string}
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 1, default: 1}
     PageSize:
-      {
-        name: page_size,
-        in: query,
-        schema: { type: integer, minimum: 1, maximum: 100, default: 24 },
-      }
+      name: page_size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 24}
   responses:
     Problem:
       description: RFC 9457 problem with stable translation code
-      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
   schemas:
-    Uuid: { type: string, format: uuid }
-    Locale: { type: string, enum: [uz, ru, en] }
-    Currency: { type: string, enum: [UZS, USD] }
+    Uuid:
+      type: string
+      format: uuid
+    Locale:
+      type: string
+      enum: [uz, ru, en]
+    Currency:
+      type: string
+      enum: [UZS]
     Role:
-      {
-        type: string,
-        enum:
-          [
-            user,
-            merchant_owner,
-            merchant_manager,
-            merchant_cashier,
-            admin,
-            moderator,
-            support,
-            finance,
-            superadmin,
-          ],
-      }
+      type: string
+      enum: [user, merchant_owner, merchant_manager, merchant_cashier, admin, moderator, support, finance, superadmin]
     LocalizedText:
       type: object
       required: [uz, ru, en]
-      properties: { uz: { type: string }, ru: { type: string }, en: { type: string } }
+      properties: {uz: {type: string}, ru: {type: string}, en: {type: string}}
       additionalProperties: false
     Problem:
       type: object
       required: [type, title, status, code]
-      properties:
-        type: { type: string, format: uri-reference }
-        title: { type: string }
-        status: { type: integer, minimum: 400, maximum: 599 }
-        detail: { type: string }
-        instance: { type: string, format: uri-reference }
-        code: { type: string, pattern: '^[a-z0-9_]+$' }
-        errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+      properties: {type: {type: string, format: uri-reference}, title: {type: string}, status: {type: integer, minimum: 400, maximum: 599}, detail: {type: string}, instance: {type: string, format: uri-reference}, code: {type: string, pattern: '^[a-z0-9_]+$'}, errors: {type: object, additionalProperties: {type: array, items: {type: string}}}}
     PageMeta:
       type: object
       required: [page, page_size, total]
-      properties:
-        {
-          page: { type: integer, minimum: 1 },
-          page_size: { type: integer, minimum: 1 },
-          total: { type: integer, format: int64, minimum: 0 },
-        }
+      properties: {page: {type: integer, minimum: 1}, page_size: {type: integer, minimum: 1}, total: {type: integer, format: int64, minimum: 0}}
     Money:
       type: object
       description: Integer minor units; never floating point.
       required: [amount, currency]
-      properties:
-        { amount: { type: integer, format: int64 }, currency: { type: string, enum: [UZS] } }
+      properties: {amount: {type: integer, format: int64}, currency: {type: string, enum: [UZS]}}
     City:
       type: object
       required: [id, slug, name, lat, lng]
-      properties:
-        {
-          id: { $ref: '#/components/schemas/Uuid' },
-          slug: { type: string },
-          name: { $ref: '#/components/schemas/LocalizedText' },
-          lat: { type: number },
-          lng: { type: number },
-        }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}, lat: {type: number}, lng: {type: number}}
     CityList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/City' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/City'}}}
     Subcategory:
       type: object
       required: [id, slug, name]
-      properties:
-        {
-          id: { $ref: '#/components/schemas/Uuid' },
-          slug: { type: string },
-          name: { $ref: '#/components/schemas/LocalizedText' },
-        }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}}
     Category:
       type: object
-      required: [id, slug, name, icon, subcategories]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        slug: { type: string }
-        name: { $ref: '#/components/schemas/LocalizedText' }
-        icon: { type: string }
-        subcategories: { type: array, items: { $ref: '#/components/schemas/Subcategory' } }
+      required: [id, slug, name, icon, searchable, deal_creation_enabled, publish_enabled, purchasable, redeemable, subcategories]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, name: {$ref: '#/components/schemas/LocalizedText'}, icon: {type: string}, searchable: {type: boolean}, deal_creation_enabled: {type: boolean}, publish_enabled: {type: boolean}, purchasable: {type: boolean}, redeemable: {type: boolean}, subcategories: {type: array, items: {$ref: '#/components/schemas/Subcategory'}}}
     CategoryList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/Category' } } },
-      }
-    ExchangeRate:
       type: object
-      required: [base, quote, rate, effective_at]
-      properties:
-        {
-          base: { type: string, const: UZS },
-          quote: { type: string, const: USD },
-          rate: { type: string, pattern: '^\d+(?:\.\d+)?$' },
-          effective_at: { type: string, format: date-time },
-        }
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/Category'}}}
     PublicConfig:
       type: object
-      required: [locales, currencies, cities, categories, exchange_rate]
-      properties:
-        locales: { type: array, items: { $ref: '#/components/schemas/Locale' } }
-        currencies: { type: array, items: { $ref: '#/components/schemas/Currency' } }
-        cities: { type: array, items: { $ref: '#/components/schemas/City' } }
-        categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
-        exchange_rate: { $ref: '#/components/schemas/ExchangeRate' }
+      required: [locales, currencies, cities, categories]
+      properties: {locales: {type: array, items: {$ref: '#/components/schemas/Locale'}}, currencies: {type: array, items: {$ref: '#/components/schemas/Currency'}}, cities: {type: array, items: {$ref: '#/components/schemas/City'}}, categories: {type: array, items: {$ref: '#/components/schemas/Category'}}}
     DealStatus:
-      {
-        type: string,
-        enum: [draft, pending_review, rejected, scheduled, active, paused, sold_out, expired],
-      }
+      type: string
+      enum: [draft, in_review, approved, scheduled, active, paused, ended, archived, changes_requested]
     OrderStatus:
-      {
-        type: string,
-        enum: [pending_payment, paid, failed, cancelled, refunded, partially_refunded],
-      }
+      type: string
+      enum: [created, awaiting_payment, paid, completed, expired, failed, cancelled, partially_refunded, refunded]
     DealOption:
       type: object
-      required:
-        [id, title, original_price, deal_price, stock_total, stock_sold, stock_reserved, is_active]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        original_price: { $ref: '#/components/schemas/Money' }
-        deal_price: { $ref: '#/components/schemas/Money' }
-        stock_total: { type: integer, minimum: 0 }
-        stock_sold: { type: integer, minimum: 0 }
-        stock_reserved: { type: integer, minimum: 0 }
-        is_active: { type: boolean }
+      required: [id, title, original_price, deal_price, stock_total, stock_sold, stock_reserved, is_active]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, title: {$ref: '#/components/schemas/LocalizedText'}, original_price: {$ref: '#/components/schemas/Money'}, deal_price: {$ref: '#/components/schemas/Money'}, stock_total: {type: integer, minimum: 0}, stock_sold: {type: integer, minimum: 0}, stock_reserved: {type: integer, minimum: 0}, is_active: {type: boolean}}
     DealMedia:
       type: object
       required: [id, url, alt, sort_order, width, height, blurhash]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        url: { type: string, format: uri }
-        alt: { $ref: '#/components/schemas/LocalizedText' }
-        sort_order: { type: integer, minimum: 0 }
-        width: { type: integer, minimum: 1 }
-        height: { type: integer, minimum: 1 }
-        blurhash: { type: string }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, url: {type: string, format: uri}, alt: {$ref: '#/components/schemas/LocalizedText'}, sort_order: {type: integer, minimum: 0}, width: {type: integer, minimum: 1}, height: {type: integer, minimum: 1}, blurhash: {type: string}}
     MerchantLocation:
       type: object
       required: [id, city, address, lat, lng, opening_hours, phone]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        city: { $ref: '#/components/schemas/City' }
-        address: { type: string }
-        lat: { type: number }
-        lng: { type: number }
-        opening_hours: { type: object, additionalProperties: true }
-        phone: { type: string }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, city: {$ref: '#/components/schemas/City'}, address: {type: string}, lat: {type: number}, lng: {type: number}, opening_hours: {type: object, additionalProperties: true}, phone: {type: string}}
     LocationList:
-      {
-        type: object,
-        required: [items],
-        properties:
-          { items: { type: array, items: { $ref: '#/components/schemas/MerchantLocation' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}}
     Merchant:
       type: object
-      required:
-        [
-          id,
-          slug,
-          legal_name,
-          display_name,
-          description,
-          phone,
-          status,
-          rating_avg,
-          rating_count,
-          commission_bps,
-        ]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        slug: { type: string }
-        legal_name: { type: string }
-        display_name: { type: string }
-        description: { $ref: '#/components/schemas/LocalizedText' }
-        logo_url: { type: [string, 'null'], format: uri }
-        cover_url: { type: [string, 'null'], format: uri }
-        phone: { type: string }
-        website: { type: [string, 'null'], format: uri }
-        instagram: { type: [string, 'null'] }
-        telegram: { type: [string, 'null'] }
-        status: { type: string, enum: [active, suspended] }
-        rating_avg: { type: number, minimum: 0, maximum: 5 }
-        rating_count: { type: integer, minimum: 0 }
-        commission_bps: { type: integer, minimum: 0, maximum: 10000 }
-        locations: { type: array, items: { $ref: '#/components/schemas/MerchantLocation' } }
+      required: [id, slug, legal_name, display_name, description, phone, status, rating_avg, rating_count, commission_bps]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, legal_name: {type: string}, display_name: {type: string}, description: {$ref: '#/components/schemas/LocalizedText'}, logo_url: {type: [string, 'null'], format: uri}, cover_url: {type: [string, 'null'], format: uri}, phone: {type: string}, website: {type: [string, 'null'], format: uri}, instagram: {type: [string, 'null']}, telegram: {type: [string, 'null']}, status: {type: string, enum: [active, suspended]}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, commission_bps: {type: integer, minimum: 0, maximum: 10000}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}, review_status: {type: string, enum: [draft, submitted, in_review, approved, rejected, suspended, terminated]}}
     DealSummary:
       type: object
-      required:
-        [
-          id,
-          slug,
-          merchant,
-          category,
-          kind,
-          title,
-          status,
-          options,
-          media,
-          sold_count,
-          rating_avg,
-          rating_count,
-          ends_at,
-        ]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        slug: { type: string }
-        merchant: { $ref: '#/components/schemas/Merchant' }
-        category: { $ref: '#/components/schemas/Category' }
-        kind: { type: string, enum: [voucher, product] }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        status: { $ref: '#/components/schemas/DealStatus' }
-        options: { type: array, minItems: 1, items: { $ref: '#/components/schemas/DealOption' } }
-        media: { type: array, items: { $ref: '#/components/schemas/DealMedia' } }
-        sold_count: { type: integer, minimum: 0 }
-        rating_avg: { type: number, minimum: 0, maximum: 5 }
-        rating_count: { type: integer, minimum: 0 }
-        starts_at: { type: [string, 'null'], format: date-time }
-        ends_at: { type: string, format: date-time }
+      required: [id, slug, merchant, category, title, status, options, media, sold_count, rating_avg, rating_count, ends_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, merchant: {$ref: '#/components/schemas/Merchant'}, category: {$ref: '#/components/schemas/Category'}, title: {$ref: '#/components/schemas/LocalizedText'}, status: {$ref: '#/components/schemas/DealStatus'}, options: {type: array, minItems: 1, items: {$ref: '#/components/schemas/DealOption'}}, media: {type: array, items: {$ref: '#/components/schemas/DealMedia'}}, sold_count: {type: integer, minimum: 0}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, starts_at: {type: [string, 'null'], format: date-time}, ends_at: {type: string, format: date-time}}
     FaqItem:
       type: object
       required: [q, a]
-      properties:
-        {
-          q: { $ref: '#/components/schemas/LocalizedText' },
-          a: { $ref: '#/components/schemas/LocalizedText' },
-        }
+      properties: {q: {$ref: '#/components/schemas/LocalizedText'}, a: {$ref: '#/components/schemas/LocalizedText'}}
     Deal:
-      allOf:
-        - { $ref: '#/components/schemas/DealSummary' }
-        - type: object
-          required:
-            [
-              subcategory,
-              short_description,
-              description,
-              highlights,
-              whats_included,
-              terms,
-              faq,
-              redemption_method,
-              booking_required,
-              is_giftable,
-              max_per_user,
-              locations,
-            ]
-          properties:
-            subcategory: { $ref: '#/components/schemas/Subcategory' }
-            short_description: { $ref: '#/components/schemas/LocalizedText' }
-            description: { $ref: '#/components/schemas/LocalizedText' }
-            highlights:
-              {
-                type: array,
-                minItems: 3,
-                maxItems: 5,
-                items: { $ref: '#/components/schemas/LocalizedText' },
-              }
-            whats_included: { type: array, items: { $ref: '#/components/schemas/LocalizedText' } }
-            terms: { $ref: '#/components/schemas/LocalizedText' }
-            faq: { type: array, items: { $ref: '#/components/schemas/FaqItem' } }
-            redemption_method: { type: string, enum: [qr, code, qr_or_code] }
-            redemption_instructions: { $ref: '#/components/schemas/LocalizedText' }
-            booking_required: { type: boolean }
-            is_giftable: { type: boolean }
-            voucher_valid_days: { type: [integer, 'null'], minimum: 1 }
-            voucher_valid_until: { type: [string, 'null'], format: date-time }
-            max_per_user: { type: integer, minimum: 1 }
-            locations: { type: array, items: { $ref: '#/components/schemas/MerchantLocation' } }
+      allOf: [{$ref: '#/components/schemas/DealSummary'}, {type: object, required: [subcategory, short_description, description, highlights, whats_included, terms, faq, redemption_method, booking_required, max_per_user, locations], properties: {subcategory: {$ref: '#/components/schemas/Subcategory'}, short_description: {$ref: '#/components/schemas/LocalizedText'}, description: {$ref: '#/components/schemas/LocalizedText'}, highlights: {type: array, minItems: 3, maxItems: 5, items: {$ref: '#/components/schemas/LocalizedText'}}, whats_included: {type: array, items: {$ref: '#/components/schemas/LocalizedText'}}, terms: {$ref: '#/components/schemas/LocalizedText'}, faq: {type: array, items: {$ref: '#/components/schemas/FaqItem'}}, redemption_method: {type: string, enum: [qr, code, qr_or_code]}, redemption_instructions: {$ref: '#/components/schemas/LocalizedText'}, booking_required: {type: boolean}, voucher_valid_days: {type: [integer, 'null'], minimum: 1}, voucher_valid_until: {type: [string, 'null'], format: date-time}, max_per_user: {type: integer, minimum: 1}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}}}]
     DealList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/DealSummary' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/DealSummary'}}}
     DealPage:
-      allOf:
-        - { $ref: '#/components/schemas/PageMeta' }
-        - { $ref: '#/components/schemas/DealList' }
+      allOf: [{$ref: '#/components/schemas/PageMeta'}, {$ref: '#/components/schemas/DealList'}]
     ReviewReply:
       type: object
       required: [id, text, created_at]
-      properties:
-        {
-          id: { $ref: '#/components/schemas/Uuid' },
-          text: { type: string },
-          created_at: { type: string, format: date-time },
-        }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, text: {type: string}, created_at: {type: string, format: date-time}}
     Review:
       type: object
-      required:
-        [id, deal_id, merchant_id, user_id, voucher_id, rating, text, locale, status, created_at]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        deal_id: { $ref: '#/components/schemas/Uuid' }
-        merchant_id: { $ref: '#/components/schemas/Uuid' }
-        user_id: { $ref: '#/components/schemas/Uuid' }
-        voucher_id: { $ref: '#/components/schemas/Uuid' }
-        rating: { type: integer, minimum: 1, maximum: 5 }
-        text: { type: string }
-        locale: { $ref: '#/components/schemas/Locale' }
-        status: { type: string, enum: [published, hidden, pending] }
-        reply: { $ref: '#/components/schemas/ReviewReply' }
-        created_at: { type: string, format: date-time }
+      required: [id, deal_id, merchant_id, user_id, voucher_id, rating, text, locale, status, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, deal_id: {$ref: '#/components/schemas/Uuid'}, merchant_id: {$ref: '#/components/schemas/Uuid'}, user_id: {$ref: '#/components/schemas/Uuid'}, voucher_id: {$ref: '#/components/schemas/Uuid'}, rating: {type: integer, minimum: 1, maximum: 5}, text: {type: string}, locale: {$ref: '#/components/schemas/Locale'}, status: {type: string, enum: [published, hidden, pending]}, reply: {$ref: '#/components/schemas/ReviewReply'}, created_at: {type: string, format: date-time}}
     ReviewList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/Review' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/Review'}}}
     MerchantProfile:
-      allOf:
-        - { $ref: '#/components/schemas/Merchant' }
-        - type: object
-          required: [deals, reviews]
-          properties:
-            deals: { type: array, items: { $ref: '#/components/schemas/DealSummary' } }
-            reviews: { type: array, items: { $ref: '#/components/schemas/Review' } }
+      allOf: [{$ref: '#/components/schemas/Merchant'}, {type: object, required: [deals, reviews], properties: {deals: {type: array, items: {$ref: '#/components/schemas/DealSummary'}}, reviews: {type: array, items: {$ref: '#/components/schemas/Review'}}}}]
     Suggestion:
       type: object
       required: [type, label, href]
-      properties:
-        {
-          type: { type: string, enum: [deal, merchant, category] },
-          label: { type: string },
-          href: { type: string },
-        }
+      properties: {type: {type: string, enum: [deal, merchant, category]}, label: {type: string}, href: {type: string}}
     SuggestionList:
-      {
-        type: object,
-        required: [items],
-        properties:
-          {
-            items:
-              { type: array, maxItems: 10, items: { $ref: '#/components/schemas/Suggestion' } },
-          },
-      }
-    PromoCode:
       type: object
-      required: [id, brand_name, title, discount_label, url, starts_at, ends_at, is_verified]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        brand_name: { type: string }
-        brand_logo_url: { type: [string, 'null'], format: uri }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        code: { type: [string, 'null'] }
-        discount_label: { $ref: '#/components/schemas/LocalizedText' }
-        url: { type: string, format: uri }
-        starts_at: { type: string, format: date-time }
-        ends_at: { type: string, format: date-time }
-        is_verified: { type: boolean }
-    PromoCodePage:
-      allOf:
-        - { $ref: '#/components/schemas/PageMeta' }
-        - type: object
-          required: [items]
-          properties: { items: { type: array, items: { $ref: '#/components/schemas/PromoCode' } } }
-    Collection:
-      type: object
-      required: [id, slug, title, description, cover_url, starts_at, ends_at]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        slug: { type: string }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        description: { $ref: '#/components/schemas/LocalizedText' }
-        cover_url: { type: string, format: uri }
-        starts_at: { type: string, format: date-time }
-        ends_at: { type: string, format: date-time }
-    CollectionList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/Collection' } } },
-      }
-    CollectionDetail:
-      allOf:
-        - { $ref: '#/components/schemas/Collection' }
-        - type: object
-          required: [deals]
-          properties: { deals: { $ref: '#/components/schemas/DealPage' } }
+      required: [items]
+      properties: {items: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/Suggestion'}}}
     HomepageSection:
       type: object
       required: [id, key, title, type, sort_order]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        key: { type: string }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        type: { type: string, enum: [deals, collection, categories, banner] }
-        sort_order: { type: integer }
-        deals: { type: array, items: { $ref: '#/components/schemas/DealSummary' } }
-        collection: { $ref: '#/components/schemas/Collection' }
-        categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, key: {type: string}, title: {$ref: '#/components/schemas/LocalizedText'}, type: {type: string, enum: [deals, categories]}, sort_order: {type: integer}, deals: {type: array, items: {$ref: '#/components/schemas/DealSummary'}}, categories: {type: array, items: {$ref: '#/components/schemas/Category'}}}
     Homepage:
-      {
-        type: object,
-        required: [sections],
-        properties:
-          { sections: { type: array, items: { $ref: '#/components/schemas/HomepageSection' } } },
-      }
+      type: object
+      required: [sections]
+      properties: {sections: {type: array, items: {$ref: '#/components/schemas/HomepageSection'}}}
     User:
       type: object
       required: [id, email, name, locale, currency, status, roles]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        email: { type: string, format: email }
-        name: { type: string }
-        phone: { type: [string, 'null'] }
-        avatar_url: { type: [string, 'null'], format: uri }
-        locale: { $ref: '#/components/schemas/Locale' }
-        currency: { $ref: '#/components/schemas/Currency' }
-        email_verified_at: { type: [string, 'null'], format: date-time }
-        status: { type: string, enum: [active, blocked] }
-        roles: { type: array, items: { $ref: '#/components/schemas/Role' } }
-    RegisterRequest:
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, email: {type: string, format: email}, name: {type: string}, phone: {type: [string, 'null']}, avatar_url: {type: [string, 'null'], format: uri}, locale: {$ref: '#/components/schemas/Locale'}, currency: {$ref: '#/components/schemas/Currency'}, email_verified_at: {type: [string, 'null'], format: date-time}, status: {type: string, enum: [active, blocked]}, roles: {type: array, items: {$ref: '#/components/schemas/Role'}}}
+    PhoneCodeRequest:
       type: object
-      required: [email, password, name, locale, currency]
-      properties:
-        {
-          email: { type: string, format: email },
-          password: { type: string, minLength: 10, maxLength: 128 },
-          name: { type: string, minLength: 1, maxLength: 200 },
-          locale: { $ref: '#/components/schemas/Locale' },
-          currency: { $ref: '#/components/schemas/Currency' },
-        }
-    LoginRequest:
-      {
-        type: object,
-        required: [email, password],
-        properties: { email: { type: string, format: email }, password: { type: string } },
-      }
-    GoogleCodeRequest:
-      {
-        type: object,
-        required: [code, code_verifier, redirect_uri],
-        properties:
-          {
-            code: { type: string },
-            code_verifier: { type: string, minLength: 43, maxLength: 128 },
-            redirect_uri: { type: string, format: uri },
-          },
-      }
-    TokenRequest: { type: object, required: [token], properties: { token: { type: string } } }
-    EmailRequest:
-      { type: object, required: [email], properties: { email: { type: string, format: email } } }
-    ResetPasswordRequest:
-      {
-        type: object,
-        required: [token, password],
-        properties:
-          { token: { type: string }, password: { type: string, minLength: 10, maxLength: 128 } },
-      }
+      required: [phone]
+      properties: {phone: {type: string, pattern: '^\+998[0-9]{9}$'}}
+    PhoneCodeVerify:
+      type: object
+      required: [phone, code]
+      properties: {phone: {type: string, pattern: '^\+998[0-9]{9}$'}, code: {type: string, pattern: '^[0-9]{6}$'}}
+    PhoneCodeSent:
+      type: object
+      required: [cooldown_seconds]
+      properties: {cooldown_seconds: {type: integer, minimum: 0}, dev_code: {type: string, description: Development only. Absent in every other environment.}}
     AuthSession:
-      {
-        type: object,
-        required: [user, access_token, expires_in],
-        properties:
-          {
-            user: { $ref: '#/components/schemas/User' },
-            access_token: { type: string },
-            expires_in: { type: integer, const: 900 },
-          },
-      }
+      type: object
+      required: [user, access_token, refresh_token, expires_in]
+      description: Tokens are also set as httpOnly cookies. refresh_token is returned in the body for native clients.
+      properties: {user: {$ref: '#/components/schemas/User'}, access_token: {type: string}, refresh_token: {type: string}, expires_in: {type: integer, const: 900}}
     UpdateProfileRequest:
-      {
-        type: object,
-        minProperties: 1,
-        properties:
-          {
-            name: { type: string, minLength: 1, maxLength: 200 },
-            phone: { type: [string, 'null'] },
-            locale: { $ref: '#/components/schemas/Locale' },
-            currency: { $ref: '#/components/schemas/Currency' },
-          },
-      }
-    ChangePasswordRequest:
-      {
-        type: object,
-        required: [current_password, new_password],
-        properties:
-          {
-            current_password: { type: string },
-            new_password: { type: string, minLength: 10, maxLength: 128 },
-          },
-      }
-    DealIdRequest:
-      {
-        type: object,
-        required: [deal_id],
-        properties: { deal_id: { $ref: '#/components/schemas/Uuid' } },
-      }
-    CartItemInput:
-      {
-        type: object,
-        required: [deal_option_id, quantity, is_gift],
-        properties:
-          {
-            deal_option_id: { $ref: '#/components/schemas/Uuid' },
-            quantity: { type: integer, minimum: 1, maximum: 100 },
-            is_gift: { type: boolean },
-          },
-      }
-    CartInput:
-      {
-        type: object,
-        required: [items],
-        properties:
-          {
-            items:
-              { type: array, maxItems: 100, items: { $ref: '#/components/schemas/CartItemInput' } },
-            merge: { type: boolean, default: false },
-          },
-      }
-    CartItem:
-      allOf:
-        - { $ref: '#/components/schemas/CartItemInput' }
-        - type: object
-          required: [option, deal, line_total]
-          properties:
-            {
-              option: { $ref: '#/components/schemas/DealOption' },
-              deal: { $ref: '#/components/schemas/DealSummary' },
-              line_total: { $ref: '#/components/schemas/Money' },
-            }
-    Cart:
-      {
-        type: object,
-        required: [items, subtotal],
-        properties:
-          {
-            items: { type: array, items: { $ref: '#/components/schemas/CartItem' } },
-            subtotal: { $ref: '#/components/schemas/Money' },
-          },
-      }
+      type: object
+      minProperties: 1
+      properties: {name: {type: string, minLength: 1, maxLength: 200}, phone: {type: [string, 'null']}, locale: {$ref: '#/components/schemas/Locale'}, currency: {$ref: '#/components/schemas/Currency'}}
     CreateOrderItem:
-      allOf:
-        - { $ref: '#/components/schemas/CartItemInput' }
-        - type: object
-          properties:
-            {
-              gift_recipient_name: { type: string, maxLength: 200 },
-              gift_recipient_email: { type: string, format: email },
-              gift_message: { type: string, maxLength: 500 },
-            }
+      type: object
+      required: [deal_option_id, quantity]
+      properties: {deal_option_id: {$ref: '#/components/schemas/Uuid'}, quantity: {type: integer, minimum: 1, maximum: 10}}
     CreateOrderRequest:
-      {
-        type: object,
-        required: [items],
-        properties:
-          {
-            items:
-              {
-                type: array,
-                minItems: 1,
-                maxItems: 100,
-                items: { $ref: '#/components/schemas/CreateOrderItem' },
-              },
-            shipping_address: { type: object, additionalProperties: true },
-          },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, minItems: 1, maxItems: 100, items: {$ref: '#/components/schemas/CreateOrderItem'}}}
     OrderItem:
       type: object
-      required:
-        [
-          id,
-          deal_id,
-          deal_option_id,
-          title_snapshot,
-          unit_price,
-          original_price,
-          quantity,
-          fulfillment_status,
-        ]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        deal_id: { $ref: '#/components/schemas/Uuid' }
-        deal_option_id: { $ref: '#/components/schemas/Uuid' }
-        title_snapshot: { $ref: '#/components/schemas/LocalizedText' }
-        unit_price: { $ref: '#/components/schemas/Money' }
-        original_price: { $ref: '#/components/schemas/Money' }
-        quantity: { type: integer, minimum: 1 }
-        is_gift: { type: boolean }
-        gift_recipient_name: { type: [string, 'null'] }
-        gift_recipient_email: { type: [string, 'null'], format: email }
-        gift_message: { type: [string, 'null'] }
-        fulfillment_status:
-          { type: string, enum: [not_applicable, processing, shipped, delivered, returned] }
+      required: [id, deal_id, deal_option_id, title_snapshot, terms_snapshot, unit_price, original_price, quantity]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, deal_id: {$ref: '#/components/schemas/Uuid'}, deal_option_id: {$ref: '#/components/schemas/Uuid'}, title_snapshot: {$ref: '#/components/schemas/LocalizedText'}, terms_snapshot: {$ref: '#/components/schemas/LocalizedText'}, unit_price: {$ref: '#/components/schemas/Money'}, original_price: {$ref: '#/components/schemas/Money'}, quantity: {type: integer, minimum: 1}}
     Order:
       type: object
       required: [id, number, status, subtotal, total, items, created_at]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        number: { type: string }
-        status: { $ref: '#/components/schemas/OrderStatus' }
-        subtotal: { $ref: '#/components/schemas/Money' }
-        total: { $ref: '#/components/schemas/Money' }
-        shipping_address: { type: [object, 'null'], additionalProperties: true }
-        items: { type: array, items: { $ref: '#/components/schemas/OrderItem' } }
-        reservation_expires_at: { type: [string, 'null'], format: date-time }
-        paid_at: { type: [string, 'null'], format: date-time }
-        created_at: { type: string, format: date-time }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, number: {type: string}, status: {$ref: '#/components/schemas/OrderStatus'}, subtotal: {$ref: '#/components/schemas/Money'}, total: {$ref: '#/components/schemas/Money'}, items: {type: array, items: {$ref: '#/components/schemas/OrderItem'}}, reservation_expires_at: {type: [string, 'null'], format: date-time}, paid_at: {type: [string, 'null'], format: date-time}, created_at: {type: string, format: date-time}}
     OrderPage:
-      allOf:
-        - { $ref: '#/components/schemas/PageMeta' }
-        - type: object
-          required: [items]
-          properties: { items: { type: array, items: { $ref: '#/components/schemas/Order' } } }
+      allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Order'}}}}]
     PayOrderRequest:
-      {
-        type: object,
-        required: [provider, terms_accepted],
-        properties:
-          {
-            provider: { type: string, enum: [mock] },
-            terms_accepted: { type: boolean, const: true },
-          },
-      }
+      type: object
+      required: [provider, terms_accepted]
+      properties: {provider: {type: string, enum: [mock]}, terms_accepted: {type: boolean, const: true}}
     PaymentSession:
-      {
-        type: object,
-        required: [payment_id, provider, status, redirect_url],
-        properties:
-          {
-            payment_id: { $ref: '#/components/schemas/Uuid' },
-            provider: { type: string, enum: [mock, payme, click, uzum] },
-            status: { type: string, enum: [created, pending, succeeded, failed, refunded] },
-            redirect_url: { type: string, format: uri-reference },
-          },
-      }
+      type: object
+      required: [payment_id, provider, status, redirect_url]
+      properties: {payment_id: {$ref: '#/components/schemas/Uuid'}, provider: {type: string, enum: [mock, payme, click, uzum]}, status: {type: string, enum: [created, pending, succeeded, failed, chargeback_open, chargeback_won, chargeback_lost]}, redirect_url: {type: string, format: uri-reference}}
     MockOutcomeRequest:
-      {
-        type: object,
-        required: [outcome],
-        properties: { outcome: { type: string, enum: [succeeded, failed] } },
-      }
+      type: object
+      required: [outcome]
+      properties: {outcome: {type: string, enum: [succeeded, failed]}}
     Voucher:
       type: object
-      required: [id, deal, option, merchant, code, qr_token, status, valid_from, valid_until]
-      properties:
-        id: { $ref: '#/components/schemas/Uuid' }
-        deal: { $ref: '#/components/schemas/DealSummary' }
-        option: { $ref: '#/components/schemas/DealOption' }
-        merchant: { $ref: '#/components/schemas/Merchant' }
-        buyer_first_name: { type: string }
-        code: { type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$' }
-        qr_token: { type: string }
-        status: { type: string, enum: [active, redeemed, expired, refunded, cancelled] }
-        valid_from: { type: string, format: date-time }
-        valid_until: { type: string, format: date-time }
-        redeemed_at: { type: [string, 'null'], format: date-time }
-        location: { $ref: '#/components/schemas/MerchantLocation' }
+      required: [id, deal, option, merchant, terms_snapshot, code, qr_token, status, valid_from, valid_until]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, deal: {$ref: '#/components/schemas/DealSummary'}, option: {$ref: '#/components/schemas/DealOption'}, merchant: {$ref: '#/components/schemas/Merchant'}, terms_snapshot: {$ref: '#/components/schemas/LocalizedText'}, buyer_first_name: {type: string}, code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, qr_token: {type: string, description: Rotates every 30 seconds; the voucher page must refetch.}, qr_token_expires_at: {type: string, format: date-time}, backup_code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}, status: {type: string, enum: [active, redeemed, expired, refunded, cancelled]}, valid_from: {type: string, format: date-time}, valid_until: {type: string, format: date-time}, redeemed_at: {type: [string, 'null'], format: date-time}, location: {$ref: '#/components/schemas/MerchantLocation'}}
     VoucherPage:
-      allOf:
-        - { $ref: '#/components/schemas/PageMeta' }
-        - type: object
-          required: [items]
-          properties: { items: { type: array, items: { $ref: '#/components/schemas/Voucher' } } }
+      allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Voucher'}}}}]
+    MerchantRedemption:
+      type: object
+      required: [id, time, deal, option, buyer, branch, cashier, reversed]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
+    MerchantRedemptionPage:
+      allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantRedemption'}}}}]
     ReviewInput:
-      {
-        type: object,
-        required: [rating, text, locale],
-        properties:
-          {
-            rating: { type: integer, minimum: 1, maximum: 5 },
-            text: { type: string, minLength: 20, maxLength: 2000 },
-            locale: { $ref: '#/components/schemas/Locale' },
-          },
-      }
+      type: object
+      required: [rating, text, locale]
+      properties: {rating: {type: integer, minimum: 1, maximum: 5}, text: {type: string, minLength: 20, maxLength: 2000}, locale: {$ref: '#/components/schemas/Locale'}}
     CreateReviewRequest:
-      allOf:
-        - { $ref: '#/components/schemas/ReviewInput' }
-        - type: object
-          required: [voucher_id]
-          properties: { voucher_id: { $ref: '#/components/schemas/Uuid' } }
+      allOf: [{$ref: '#/components/schemas/ReviewInput'}, {type: object, required: [voucher_id], properties: {voucher_id: {$ref: '#/components/schemas/Uuid'}}}]
     ReportRequest:
-      {
-        type: object,
-        required: [reason],
-        properties: { reason: { type: string, minLength: 10, maxLength: 500 } },
-      }
+      type: object
+      required: [reason]
+      properties: {reason: {type: string, minLength: 10, maxLength: 500}}
     ReplyRequest:
-      {
-        type: object,
-        required: [text],
-        properties: { text: { type: string, minLength: 1, maxLength: 2000 } },
-      }
+      type: object
+      required: [text]
+      properties: {text: {type: string, minLength: 1, maxLength: 2000}}
     RegisterMerchantRequest:
       type: object
-      required: [legal_name, display_name, category_id, city_id, phone, address, lat, lng]
-      properties:
-        {
-          legal_name: { type: string, minLength: 2, maxLength: 300 },
-          display_name: { type: string, minLength: 2, maxLength: 200 },
-          category_id: { $ref: '#/components/schemas/Uuid' },
-          city_id: { $ref: '#/components/schemas/Uuid' },
-          phone: { type: string },
-          address: { type: string },
-          lat: { type: number },
-          lng: { type: number },
-        }
+      required: [legal_name, display_name, category_id, city_id, phone, address, lat, lng, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, contract_version, contract_accepted]
+      properties: {legal_name: {type: string, minLength: 2, maxLength: 300}, display_name: {type: string, minLength: 2, maxLength: 200}, category_id: {$ref: '#/components/schemas/Uuid'}, city_id: {$ref: '#/components/schemas/Uuid'}, phone: {type: string}, address: {type: string}, lat: {type: number}, lng: {type: number}, stir: {type: string, pattern: '^[0-9]{9}$', description: Taxpayer number (STIR)}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string, pattern: '^[0-9]{5}$'}, bank_account: {type: string, pattern: '^[0-9]{20}$'}, responsible_name: {type: string, minLength: 2, maxLength: 200}, contract_version: {type: string, maxLength: 20}, contract_accepted: {type: boolean, description: 'Must be true: the merchant accepts the offer'}}
     MerchantInput:
       type: object
       minProperties: 1
-      properties:
-        {
-          display_name: { type: string, maxLength: 200 },
-          description: { $ref: '#/components/schemas/LocalizedText' },
-          logo_url: { type: [string, 'null'], format: uri },
-          cover_url: { type: [string, 'null'], format: uri },
-          phone: { type: string },
-          website: { type: [string, 'null'], format: uri },
-          instagram: { type: [string, 'null'] },
-          telegram: { type: [string, 'null'] },
-        }
+      properties: {display_name: {type: string, maxLength: 200}, description: {$ref: '#/components/schemas/LocalizedText'}, logo_url: {type: [string, 'null'], format: uri}, cover_url: {type: [string, 'null'], format: uri}, phone: {type: string}, website: {type: [string, 'null'], format: uri}, instagram: {type: [string, 'null']}, telegram: {type: [string, 'null']}}
     LocationInput:
       type: object
       required: [city_id, address, lat, lng, opening_hours, phone]
-      properties:
-        {
-          city_id: { $ref: '#/components/schemas/Uuid' },
-          address: { type: string, maxLength: 500 },
-          lat: { type: number, minimum: -90, maximum: 90 },
-          lng: { type: number, minimum: -180, maximum: 180 },
-          opening_hours: { type: object, additionalProperties: true },
-          phone: { type: string },
-        }
+      properties: {city_id: {$ref: '#/components/schemas/Uuid'}, address: {type: string, maxLength: 500}, lat: {type: number, minimum: -90, maximum: 90}, lng: {type: number, minimum: -180, maximum: 180}, opening_hours: {type: object, additionalProperties: true}, phone: {type: string}}
     DealOptionInput:
       type: object
       required: [title, original_price, deal_price, stock_total, sort_order, is_active]
-      properties:
-        {
-          id: { $ref: '#/components/schemas/Uuid' },
-          title: { $ref: '#/components/schemas/LocalizedText' },
-          original_price: { type: integer, format: int64, minimum: 1 },
-          deal_price: { type: integer, format: int64, minimum: 1 },
-          stock_total: { type: integer, minimum: 0 },
-          sort_order: { type: integer, minimum: 0 },
-          is_active: { type: boolean },
-        }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, title: {$ref: '#/components/schemas/LocalizedText'}, original_price: {type: integer, format: int64, minimum: 1}, deal_price: {type: integer, format: int64, minimum: 1}, stock_total: {type: integer, minimum: 0}, sort_order: {type: integer, minimum: 0}, is_active: {type: boolean}, redemptions_allowed: {type: integer, minimum: 1, maximum: 50, default: 1}}
     DealMediaInput:
       type: object
       required: [url, alt, sort_order, width, height, blurhash]
-      properties:
-        {
-          id: { $ref: '#/components/schemas/Uuid' },
-          url: { type: string, format: uri },
-          alt: { $ref: '#/components/schemas/LocalizedText' },
-          sort_order: { type: integer, minimum: 0 },
-          width: { type: integer, minimum: 1 },
-          height: { type: integer, minimum: 1 },
-          blurhash: { type: string },
-        }
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, url: {type: string, format: uri}, alt: {$ref: '#/components/schemas/LocalizedText'}, sort_order: {type: integer, minimum: 0}, width: {type: integer, minimum: 1}, height: {type: integer, minimum: 1}, blurhash: {type: string}}
+    ReviewReport:
+      type: object
+      required: [id, reason, status, created_at, review]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, reason: {type: string}, status: {type: string, enum: [pending, resolved, dismissed]}, created_at: {type: string, format: date-time}, review: {$ref: '#/components/schemas/Review'}}
+    ReviewReportPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/ReviewReport'}}, page: {type: integer, minimum: 1}, page_size: {type: integer, minimum: 1}, total: {type: integer, format: int64}}
+    AuditLog:
+      type: object
+      required: [id, actor_role, action, entity_type, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, actor_user_id: {$ref: '#/components/schemas/Uuid'}, actor_role: {type: string}, action: {type: string}, entity_type: {type: string}, entity_id: {$ref: '#/components/schemas/Uuid'}, after_data: {type: object, additionalProperties: true}, created_at: {type: string, format: date-time}}
+    AuditLogPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/AuditLog'}}, page: {type: integer, minimum: 1}, page_size: {type: integer, minimum: 1}, total: {type: integer, format: int64}}
+    ReverseRequest:
+      type: object
+      required: [reason]
+      properties: {reason: {type: string, minLength: 3, maxLength: 500}}
+    ApprovePayoutRequest:
+      type: object
+      properties: {bank_doc_ref: {type: string, maxLength: 100}}
+    ResolveDisputeRequest:
+      type: object
+      required: [resolution]
+      properties: {resolution: {type: string, enum: [customer, merchant]}}
+    RejectDealInput:
+      type: object
+      required: [reason]
+      properties: {reason: {type: string, minLength: 3, maxLength: 500}}
     DealInput:
       type: object
-      required:
-        [
-          slug,
-          category_id,
-          subcategory_id,
-          kind,
-          title,
-          short_description,
-          description,
-          highlights,
-          whats_included,
-          terms,
-          faq,
-          redemption_method,
-          redemption_instructions,
-          booking_required,
-          is_giftable,
-          starts_at,
-          ends_at,
-          max_per_user,
-          location_ids,
-          options,
-          media,
-        ]
-      properties:
-        slug: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
-        category_id: { $ref: '#/components/schemas/Uuid' }
-        subcategory_id: { $ref: '#/components/schemas/Uuid' }
-        kind: { type: string, enum: [voucher, product] }
-        title: { $ref: '#/components/schemas/LocalizedText' }
-        short_description: { $ref: '#/components/schemas/LocalizedText' }
-        description: { $ref: '#/components/schemas/LocalizedText' }
-        highlights:
-          {
-            type: array,
-            minItems: 3,
-            maxItems: 5,
-            items: { $ref: '#/components/schemas/LocalizedText' },
-          }
-        whats_included: { type: array, items: { $ref: '#/components/schemas/LocalizedText' } }
-        terms: { $ref: '#/components/schemas/LocalizedText' }
-        faq: { type: array, items: { $ref: '#/components/schemas/FaqItem' } }
-        redemption_method: { type: string, enum: [qr, code, qr_or_code] }
-        redemption_instructions: { $ref: '#/components/schemas/LocalizedText' }
-        booking_required: { type: boolean }
-        is_giftable: { type: boolean }
-        starts_at: { type: string, format: date-time }
-        ends_at: { type: string, format: date-time }
-        voucher_valid_days: { type: [integer, 'null'], minimum: 1 }
-        voucher_valid_until: { type: [string, 'null'], format: date-time }
-        max_per_user: { type: integer, minimum: 1 }
-        location_ids: { type: array, minItems: 1, items: { $ref: '#/components/schemas/Uuid' } }
-        options:
-          { type: array, minItems: 1, items: { $ref: '#/components/schemas/DealOptionInput' } }
-        media:
-          {
-            type: array,
-            minItems: 3,
-            maxItems: 8,
-            items: { $ref: '#/components/schemas/DealMediaInput' },
-          }
+      required: [slug, category_id, subcategory_id, title, short_description, description, highlights, whats_included, terms, faq, redemption_method, redemption_instructions, booking_required, starts_at, ends_at, max_per_user, location_ids, options, media]
+      properties: {slug: {type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}, category_id: {$ref: '#/components/schemas/Uuid'}, subcategory_id: {$ref: '#/components/schemas/Uuid'}, title: {$ref: '#/components/schemas/LocalizedText'}, short_description: {$ref: '#/components/schemas/LocalizedText'}, description: {$ref: '#/components/schemas/LocalizedText'}, highlights: {type: array, minItems: 3, maxItems: 5, items: {$ref: '#/components/schemas/LocalizedText'}}, whats_included: {type: array, items: {$ref: '#/components/schemas/LocalizedText'}}, terms: {$ref: '#/components/schemas/LocalizedText'}, faq: {type: array, items: {$ref: '#/components/schemas/FaqItem'}}, redemption_method: {type: string, enum: [qr, code, qr_or_code]}, redemption_instructions: {$ref: '#/components/schemas/LocalizedText'}, booking_required: {type: boolean}, starts_at: {type: string, format: date-time}, ends_at: {type: string, format: date-time}, voucher_valid_days: {type: [integer, 'null'], minimum: 1}, voucher_valid_until: {type: [string, 'null'], format: date-time}, max_per_user: {type: integer, minimum: 1}, location_ids: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Uuid'}}, options: {type: array, minItems: 1, items: {$ref: '#/components/schemas/DealOptionInput'}}, media: {type: array, minItems: 3, maxItems: 8, items: {$ref: '#/components/schemas/DealMediaInput'}}}
     Metric:
-      {
-        type: object,
-        required: [value, change_percent],
-        properties: { value: { type: integer, format: int64 }, change_percent: { type: number } },
-      }
+      type: object
+      required: [value, change_percent]
+      properties: {value: {type: integer, format: int64}, change_percent: {type: number}}
     ChartPoint:
-      {
-        type: object,
-        required: [date, value],
-        properties:
-          { date: { type: string, format: date }, value: { type: integer, format: int64 } },
-      }
+      type: object
+      required: [date, value]
+      properties: {date: {type: string, format: date}, value: {type: integer, format: int64}}
     MerchantDashboard:
       type: object
-      required:
-        [
-          total_sales,
-          vouchers_sold,
-          vouchers_redeemed,
-          active_deals,
-          sales_chart,
-          latest_orders,
-          pending_deals,
-        ]
-      properties:
-        total_sales: { $ref: '#/components/schemas/Metric' }
-        vouchers_sold: { $ref: '#/components/schemas/Metric' }
-        vouchers_redeemed: { $ref: '#/components/schemas/Metric' }
-        active_deals: { $ref: '#/components/schemas/Metric' }
-        sales_chart: { type: array, items: { $ref: '#/components/schemas/ChartPoint' } }
-        latest_orders: { type: array, items: { $ref: '#/components/schemas/Order' } }
-        pending_deals: { type: array, items: { $ref: '#/components/schemas/DealSummary' } }
+      required: [total_sales, vouchers_sold, vouchers_redeemed, active_deals, sales_chart, latest_orders, pending_deals]
+      properties: {total_sales: {$ref: '#/components/schemas/Metric'}, vouchers_sold: {$ref: '#/components/schemas/Metric'}, vouchers_redeemed: {$ref: '#/components/schemas/Metric'}, active_deals: {$ref: '#/components/schemas/Metric'}, sales_chart: {type: array, items: {$ref: '#/components/schemas/ChartPoint'}}, latest_orders: {type: array, items: {$ref: '#/components/schemas/Order'}}, pending_deals: {type: array, items: {$ref: '#/components/schemas/DealSummary'}}}
     VoucherLookupRequest:
       type: object
-      oneOf: [{ required: [qr_token] }, { required: [code] }]
-      properties:
-        { qr_token: { type: string }, code: { type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$' } }
+      oneOf: [{required: [qr_token]}, {required: [code]}]
+      properties: {qr_token: {type: string}, code: {type: string, pattern: '^([A-Z0-9]{4}-[A-Z0-9]{4}|[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5})$'}}
     RedeemRequest:
-      {
-        type: object,
-        required: [location_id],
-        properties: { location_id: { $ref: '#/components/schemas/Uuid' } },
-      }
+      type: object
+      required: [location_id]
+      properties: {location_id: {$ref: '#/components/schemas/Uuid'}, lat: {type: number, minimum: -90, maximum: 90, description: 'Staff device position, optional; used by the distance fraud rule.'}, lng: {type: number, minimum: -180, maximum: 180}}
     MerchantCustomer:
-      {
-        type: object,
-        required: [user_id, name, orders_count, vouchers_count, total_spent, last_order_at],
-        properties:
-          {
-            user_id: { $ref: '#/components/schemas/Uuid' },
-            name: { type: string },
-            orders_count: { type: integer, minimum: 0 },
-            vouchers_count: { type: integer, minimum: 0 },
-            total_spent: { $ref: '#/components/schemas/Money' },
-            last_order_at: { type: string, format: date-time },
-          },
-      }
+      type: object
+      required: [user_id, name, orders_count, vouchers_count, total_spent, last_order_at]
+      properties: {user_id: {$ref: '#/components/schemas/Uuid'}, name: {type: string}, orders_count: {type: integer, minimum: 0}, vouchers_count: {type: integer, minimum: 0}, total_spent: {$ref: '#/components/schemas/Money'}, last_order_at: {type: string, format: date-time}}
     CustomerPage:
-      {
-        type: object,
-        required: [items],
-        properties:
-          { items: { type: array, items: { $ref: '#/components/schemas/MerchantCustomer' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantCustomer'}}}
     MerchantAnalytics:
-      {
-        type: object,
-        required:
-          [gross_sales, vouchers_sold, vouchers_redeemed, redemption_rate, sales, top_deals],
-        properties:
-          {
-            gross_sales: { $ref: '#/components/schemas/Money' },
-            vouchers_sold: { type: integer, minimum: 0 },
-            vouchers_redeemed: { type: integer, minimum: 0 },
-            redemption_rate: { type: number, minimum: 0, maximum: 1 },
-            sales: { type: array, items: { $ref: '#/components/schemas/ChartPoint' } },
-            top_deals: { type: array, items: { $ref: '#/components/schemas/DealSummary' } },
-          },
-      }
+      type: object
+      required: [gross_sales, vouchers_sold, vouchers_redeemed, redemption_rate, sales, top_deals]
+      properties: {gross_sales: {$ref: '#/components/schemas/Money'}, vouchers_sold: {type: integer, minimum: 0}, vouchers_redeemed: {type: integer, minimum: 0}, redemption_rate: {type: number, minimum: 0, maximum: 1}, sales: {type: array, items: {$ref: '#/components/schemas/ChartPoint'}}, top_deals: {type: array, items: {$ref: '#/components/schemas/DealSummary'}}}
     Payout:
-      {
-        type: object,
-        required: [id, period_start, period_end, gross, commission, net, status],
-        properties:
-          {
-            id: { $ref: '#/components/schemas/Uuid' },
-            period_start: { type: string, format: date },
-            period_end: { type: string, format: date },
-            gross: { $ref: '#/components/schemas/Money' },
-            commission: { $ref: '#/components/schemas/Money' },
-            net: { $ref: '#/components/schemas/Money' },
-            status: { type: string, enum: [pending, processing, paid] },
-            paid_at: { type: [string, 'null'], format: date-time },
-          },
-      }
+      type: object
+      required: [id, period_start, period_end, gross, commission, net, status]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, period_start: {type: string, format: date}, period_end: {type: string, format: date}, gross: {$ref: '#/components/schemas/Money'}, commission: {$ref: '#/components/schemas/Money'}, net: {$ref: '#/components/schemas/Money'}, status: {type: string, enum: [pending, processing, paid]}, paid_at: {type: [string, 'null'], format: date-time}}
     PayoutPage:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/Payout' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/Payout'}}}
     MediaAsset:
-      {
-        type: object,
-        required: [id, url, content_type, size, created_at],
-        properties:
-          {
-            id: { $ref: '#/components/schemas/Uuid' },
-            url: { type: string, format: uri },
-            content_type: { type: string },
-            size: { type: integer, format: int64 },
-            created_at: { type: string, format: date-time },
-          },
-      }
+      type: object
+      required: [id, url, content_type, size, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, url: {type: string, format: uri}, content_type: {type: string}, size: {type: integer, format: int64}, width: {type: integer, minimum: 1}, height: {type: integer, minimum: 1}, created_at: {type: string, format: date-time}}
     MediaList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/MediaAsset' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MediaAsset'}}}
     MediaUploadRequest:
-      {
-        type: object,
-        required: [filename, content_type, size],
-        properties:
-          {
-            filename: { type: string, maxLength: 255 },
-            content_type: { type: string, enum: [image/jpeg, image/png, image/webp] },
-            size: { type: integer, format: int64, minimum: 1, maximum: 10485760 },
-          },
-      }
+      type: object
+      required: [filename, content_type, size]
+      properties: {filename: {type: string, maxLength: 255}, content_type: {type: string, enum: [image/jpeg, image/png, image/webp]}, size: {type: integer, format: int64, minimum: 1, maximum: 10485760}}
     MediaUpload:
-      {
-        type: object,
-        required: [asset, upload_url, headers],
-        properties:
-          {
-            asset: { $ref: '#/components/schemas/MediaAsset' },
-            upload_url: { type: string, format: uri },
-            headers: { type: object, additionalProperties: { type: string } },
-          },
-      }
+      type: object
+      required: [asset, upload_url, headers]
+      properties: {asset: {$ref: '#/components/schemas/MediaAsset'}, upload_url: {type: string, format: uri}, headers: {type: object, additionalProperties: {type: string}}}
     MerchantSettings:
       type: object
       required: [order_emails, review_emails, payout_emails, default_location_id]
-      properties:
-        order_emails: { type: boolean }
-        review_emails: { type: boolean }
-        payout_emails: { type: boolean }
-        default_location_id: { type: [string, 'null'], format: uuid }
+      properties: {order_emails: {type: boolean}, review_emails: {type: boolean}, payout_emails: {type: boolean}, default_location_id: {type: [string, 'null'], format: uuid}}
     StaffMember:
-      {
-        type: object,
-        required: [id, user, role],
-        properties:
-          {
-            id: { $ref: '#/components/schemas/Uuid' },
-            user: { $ref: '#/components/schemas/User' },
-            role: { type: string, enum: [merchant_owner, merchant_manager, merchant_cashier] },
-          },
-      }
+      type: object
+      required: [id, user, role]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, user: {$ref: '#/components/schemas/User'}, role: {type: string, enum: [merchant_owner, merchant_manager, merchant_cashier]}}
     StaffInput:
-      {
-        type: object,
-        required: [email, role],
-        properties:
-          {
-            email: { type: string, format: email },
-            role: { type: string, enum: [merchant_manager, merchant_cashier] },
-          },
-      }
+      type: object
+      required: [phone, role]
+      properties: {phone: {type: string, pattern: '^\+998[0-9]{9}$', description: Phone of a registered user; they must sign in once first}, role: {type: string, enum: [merchant_manager, merchant_cashier]}}
     StaffList:
-      {
-        type: object,
-        required: [items],
-        properties: { items: { type: array, items: { $ref: '#/components/schemas/StaffMember' } } },
-      }
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/StaffMember'}}}
+    DealIdRequest:
+      type: object
+      required: [deal_id]
+      properties: {deal_id: {$ref: '#/components/schemas/Uuid'}}
+    MerchantReview:
+      type: object
+      required: [id, legal_name, display_name, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, review_status, submitted_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter, price_proof]}, description: Document kinds already uploaded}}
+    MerchantReviewList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantReview'}}}
+    RejectMerchantRequest:
+      type: object
+      required: [reason]
+      properties: {reason: {type: string, minLength: 3, maxLength: 500}}
+    MerchantDocument:
+      type: object
+      required: [kind, content_type, size_bytes, uploaded_at]
+      properties: {kind: {type: string, enum: [certificate, bank_letter, price_proof]}, content_type: {type: string, enum: [application/pdf, image/jpeg, image/png]}, size_bytes: {type: integer, minimum: 1}, uploaded_at: {type: string, format: date-time}}
+    MerchantDocumentList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantDocument'}}}
+    Notification:
+      type: object
+      required: [id, kind, merchant_name, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, kind: {type: string, enum: [voucher_redeemed]}, voucher_id: {$ref: '#/components/schemas/Uuid'}, merchant_name: {type: string}, created_at: {type: string, format: date-time}, read_at: {type: [string, 'null'], format: date-time}}
+    NotificationList:
+      type: object
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/Notification'}}}
+    PayoutRunItem:
+      type: object
+      required: [id, merchant_name, amount, status, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, merchant_name: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, created_at: {type: string, format: date-time}}
+    RefundItem:
+      type: object
+      required: [id, voucher_code, amount, status, reason, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_code: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, reason: {type: string}, created_at: {type: string, format: date-time}}
+    DisputeItem:
+      type: object
+      required: [id, voucher_code, merchant_name, amount, status, reason, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_code: {type: string}, merchant_name: {type: string}, amount: {type: integer, format: int64}, status: {type: string}, reason: {type: string}, created_at: {type: string, format: date-time}}
+    FinanceQueue:
+      type: object
+      required: [payout_runs, refunds, disputes]
+      properties: {payout_runs: {type: array, items: {$ref: '#/components/schemas/PayoutRunItem'}}, refunds: {type: array, items: {$ref: '#/components/schemas/RefundItem'}}, disputes: {type: array, items: {$ref: '#/components/schemas/DisputeItem'}}}

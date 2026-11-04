@@ -6,10 +6,7 @@ for (const locale of ['uz', 'ru', 'en']) {
       '',
       '/tashkent',
       '/tashkent/beauty-and-spas',
-      '/coupons',
-      '/business/atlas-wellness',
-      '/seasonal-deals',
-      '/collections/navruz',
+      '/business/seed-merchant-08',
       '/merchant',
       '/help',
       '/terms',
@@ -29,7 +26,7 @@ for (const viewport of [
 ]) {
   test(`deal first screen ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/uz/deal/beauty-and-spas-special-2', { waitUntil: 'domcontentloaded' });
+    await page.goto('/uz/deal/seed-deal-096', { waitUntil: 'domcontentloaded' });
     const buy =
       viewport.height === 640
         ? page.getByTestId('sticky-buy')
@@ -40,7 +37,7 @@ for (const viewport of [
     const unobscuredBottom = viewport.width < 1024 ? viewport.height - 64 : viewport.height;
     expect(box.y + box.height).toBeLessThanOrEqual(unobscuredBottom);
     await page.screenshot({
-      path: `docs/phase-2/screenshots/deal-${viewport.width}x${viewport.height}.png`,
+      path: `docs/screenshots/deal-${viewport.width}x${viewport.height}.png`,
       fullPage: false,
     });
   });
@@ -50,6 +47,6 @@ test('listing filters remain in the URL', async ({ page }) => {
   await page.goto('/en/tashkent/beauty-and-spas');
   await page.getByLabel('Minimum rating').selectOption('4.5');
   await expect(page).toHaveURL(/rating=4.5/);
-  await page.getByLabel('Sort').selectOption('price-asc');
-  await expect(page).toHaveURL(/sort=price-asc/);
+  await page.getByLabel('Sort').selectOption('price_asc');
+  await expect(page).toHaveURL(/sort=price_asc/);
 });
