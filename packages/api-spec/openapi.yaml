@@ -899,8 +899,8 @@ components:
       properties: {items: {type: array, items: {$ref: '#/components/schemas/Category'}}}
     PublicConfig:
       type: object
-      required: [locales, currencies, cities, categories]
-      properties: {locales: {type: array, items: {$ref: '#/components/schemas/Locale'}}, currencies: {type: array, items: {$ref: '#/components/schemas/Currency'}}, cities: {type: array, items: {$ref: '#/components/schemas/City'}}, categories: {type: array, items: {$ref: '#/components/schemas/Category'}}}
+      required: [locales, currencies, cities, categories, demo_mode]
+      properties: {locales: {type: array, items: {$ref: '#/components/schemas/Locale'}}, currencies: {type: array, items: {$ref: '#/components/schemas/Currency'}}, cities: {type: array, items: {$ref: '#/components/schemas/City'}}, categories: {type: array, items: {$ref: '#/components/schemas/Category'}}, demo_mode: {type: boolean}}
     DealStatus:
       type: string
       enum: [draft, in_review, approved, scheduled, active, paused, ended, archived, changes_requested]

@@ -80,7 +80,7 @@ func newTestRouter(t *testing.T, token string, invalidations *int) http.Handler 
 	service := catalog.NewService(&stubRepository{deal: deal}, nil, time.Now)
 	return NewRouter(RouterOptions{
 		Logger:  logger,
-		Catalog: NewCatalogAPI(service, logger),
+		Catalog: NewCatalogAPI(service, logger, false),
 		Internal: NewInternalAPI(token, func(context.Context) error {
 			*invalidations++
 			return nil

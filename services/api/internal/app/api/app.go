@@ -110,7 +110,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	router := httpapi.NewRouter(httpapi.RouterOptions{
 		Logger:         logger,
 		ReadinessCheck: allReady(readiness),
-		Catalog:        httpapi.NewCatalogAPI(catalogService, logger),
+		Catalog:        httpapi.NewCatalogAPI(catalogService, logger, cfg.DemoMode),
 		Internal:       httpapi.NewInternalAPI(cfg.InternalToken, invalidateCatalog),
 		Auth:           authAPI,
 		Commerce:       httpapi.NewCommerceAPI(commerceService, authAPI, logger),
@@ -180,7 +180,7 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		Now:        time.Now,
 		CodeSender: codeSender,
 	}, identity.Config{
-		OTPEcho:         cfg.Environment == "development",
+		OTPEcho:         cfg.DemoMode,
 		OTPCooldown:     otpCooldown(cfg.Environment),
 		AccessTokenTTL:  cfg.Auth.AccessTokenTTL,
 		RefreshTokenTTL: cfg.Auth.RefreshTokenTTL,

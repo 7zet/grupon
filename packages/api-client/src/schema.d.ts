@@ -1583,6 +1583,7 @@ export interface components {
       currencies: components['schemas']['Currency'][];
       cities: components['schemas']['City'][];
       categories: components['schemas']['Category'][];
+      demo_mode: boolean;
     };
     /** @enum {string} */
     DealStatus:

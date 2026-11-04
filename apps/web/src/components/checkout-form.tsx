@@ -34,7 +34,7 @@ function problemKey(code: string | undefined) {
 
 const subscribeNothing = () => () => {};
 
-export function CheckoutForm() {
+export function CheckoutForm({ demoMode }: { demoMode: boolean }) {
   const t = useTranslations('Checkout');
   const locale = useLocale();
   const router = useRouter();
@@ -156,13 +156,13 @@ export function CheckoutForm() {
           </p>
         )}
 
-        <button
+        {demoMode && <button
           type="submit"
           disabled={form.formState.isSubmitting}
           className="rounded-control-ui bg-deal px-5 py-3 font-semibold text-surface disabled:opacity-60"
         >
           {form.formState.isSubmitting ? t('placing') : t('placeOrder')}
-        </button>
+        </button>}
       </form>
     </div>
   );

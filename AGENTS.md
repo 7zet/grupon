@@ -1,74 +1,36 @@
 # Grupon agent instructions
 
-Grupon is a Go + Next.js local-deals marketplace for Uzbekistan. Buyers purchase vouchers,
-merchants redeem them at branches, and admins moderate deals and finance operations. The code is
-the source of truth for schemas, routes, generated types, and UI behavior.
+Grupon is a Go + Next.js local-deals **demo** for Uzbekistan. It will be polished and handed over; it has no real users, real money, or legal/compliance scope. The code is the source of truth for routes, schemas, generated types, and UI behavior.
 
 ## Read first
 
-1. `docs/ROADMAP.md` — current stage, completed work, and ordered open work.
-2. `docs/ACCEPTANCE.md` — AT-01…AT-18 evidence.
-3. `docs/DECISIONS.md` — chronological decisions; history may describe superseded states.
-4. `docs/ARCHITECTURE.md` and `docs/ENVIRONMENT.md` — structure and local configuration.
+1. `docs/ROADMAP.md`
+2. `docs/ACCEPTANCE.md`
+3. `docs/DECISIONS.md`
+4. `docs/ARCHITECTURE.md` and `docs/ENVIRONMENT.md`
 
-Do not use archived documents as current instructions. The Dealo reference copy is outside this
-repository at `../dealo-docs`; read it only when a task needs the original product requirement.
+Do not treat archived files as active instructions. Read `../dealo-docs` only when the original requirement is needed.
 
-## Token and working rules
+## Working rules
 
-- Do not spawn subagents. Work in the current agent only.
-- Keep responses and context compact. Use `rg` and read only relevant ranges after the initial audit.
-- Do not rescan the repository when `docs/ROADMAP.md` and the touched area are enough.
-- Make reasonable, reversible assumptions; record a new product decision in `docs/DECISIONS.md`.
-- Preserve unrelated working-tree changes. Never commit `Grupon_hisobot.pdf` or generated E2E screenshots.
-- Do not push unless the owner explicitly asks. Push only `feat/merchant-and-admin-flows`.
-- Commits use: `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`.
-- Keep `docs/ROADMAP.md` current when stage work changes. Keep evidence in `docs/ACCEPTANCE.md`.
-
-## Hard engineering rules
-
-1. Contract first: edit `packages/api-spec/openapi.yaml`, regenerate the TypeScript client with
-   `corepack pnpm --filter @grupon/api-client run gen`, and run `go generate ./...` in `services/api`.
-   Never hand-edit generated API types.
-2. Go layers are HTTP handler → domain → store/sqlc. HTTP maps requests and errors; domain owns rules
-   and authorization; store owns persistence.
-3. Money is `int64` tiyin, UZS only. No floats. Display through `formatMoney`.
-4. Ledger entries are append-only and double-entry. Corrections are reversals, never updates.
-5. Admin actions and sensitive merchant actions must write an audit row in the same transaction.
-6. Stock reservation is one conditional update inside a transaction. Overselling must remain impossible.
-7. Errors use problem+json and stable machine-readable codes.
-8. UI text is localized in Uzbek, Russian, and English. No hard-coded UI strings; use design tokens and
-   `brand.config.ts`. No motion in checkout, payment, redemption, merchant forms, or admin flows.
-9. Urgency copy must come from real data only.
-10. On Next.js work, also follow the generated rules in `apps/web/AGENTS.md`.
-
-## Business rules
-
-- Pilot scope: Toshkent; Beauty & Wellness, Food & Drink, Things to Do, Health & Fitness.
-- No cart, goods, gifts, shipping, USD, password login, or Google login. Authentication is phone OTP.
-- A purchased order item snapshots title, price, and terms; later deal edits cannot alter the agreement.
-- Voucher expiry uses Asia/Tashkent; multi-use vouchers remain usable until the final visit.
-- Redemption is merchant-scoped, concurrency-safe, audited, and blocked for invalid status or holds.
-- Existing voucher redemption rights survive later category closure.
-- Payouts use redemption-based payable amounts, disputes hold the affected redemption, and approval
-  follows four-eyes separation.
-- Real PSP, fiscalization, MXIK/VAT, and bank-account-change protection belong to Stage 3.
+- Do not spawn subagents. Keep context compact and use `rg` before broad scans.
+- Preserve unrelated changes. Never commit `Grupon_hisobot.pdf` or generated E2E screenshots.
+- Record durable product decisions in `docs/DECISIONS.md`; update `docs/ROADMAP.md` when stage work changes.
+- Do not push unless the owner explicitly asks. Commits include `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`.
+- Contract first: update `packages/api-spec/openapi.yaml`, regenerate with `corepack pnpm --filter @grupon/api-client run gen`, then run `go generate ./...` in `services/api`. Never hand-edit generated types.
+- Go layers are handler → domain → store/sqlc. Money is `int64` tiyin, UZS only. Ledger entries are append-only and double-entry.
+- Sensitive merchant/admin actions must audit in the same transaction. Stock reservation is transactional and conditional. Errors use `problem+json` with stable codes.
+- Localize UI in Uzbek, Russian, and English; use design tokens and `brand.config.ts`; do not add motion to checkout, payment, redemption, merchant forms, or admin flows. Follow `apps/web/AGENTS.md` for web work.
+- Authentication remains phone OTP. Voucher rights, redemption safety, and payout/dispute holds remain intact. Do not add real payment, fiscal, tax, bank-protection, legal, or launch work.
 
 ## Verification
 
-- Database: PostgreSQL on port 5433; helper `scripts/dev-db.sh start|stop|status` via Git Bash.
-- Go integration tests require
-  `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable`.
-- Focused tests first; at the end of a task group run `go test ./... -count=1`, `go vet ./...`, web
-  typecheck, and web unit tests. Run Playwright when browser flows change.
-- E2E rewrites `docs/screenshots/*.png`; do not commit those incidental changes.
+- Local PostgreSQL uses port 5433: `scripts/dev-db.sh start|stop|status` through Git Bash.
+- Go integration tests need `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable`.
+- Run focused tests for each change. At stage close run Go tests, Go vet, web lint, typecheck, web unit tests, and Playwright when browser flows change.
 
-## Current stage — Stage 2: Pilot-tayyor
+## Current stage — Stage 2: finish
 
-Stage 1 is complete. Goal and finish line are defined in `docs/ROADMAP.md`. Work only on these ordered items:
-
-1. SMS adapter.
-2. Hosting preparation.
-3. Scanner PWA.
-4. TOTP 2FA for admin and finance roles.
-5. Manual payment confirmation mode.
+1. Demo mode: gated OTP display, test payments, and header badge.
+2. Docker verification: images, compose, migrations/seed, smoke flows, and backup/restore.
+3. Free hosting preparation: embedded worker mode and one current, documented free deployment setup.

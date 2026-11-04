@@ -42,6 +42,7 @@ export async function SiteShell({ children, config, locale }: Props) {
           <Link className="shrink-0 text-subtitle font-bold tracking-tight text-brand" href="/">
             {brandConfig.name}
           </Link>
+          {config.demo_mode && <span className="rounded-full bg-brand-tint px-2 py-1 text-label font-semibold text-brand">Demo</span>}
           <SearchBox />
           <div className="ml-auto flex items-center gap-1">
             <select

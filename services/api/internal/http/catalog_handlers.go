@@ -21,13 +21,14 @@ type CatalogAPI struct {
 
 	catalog *catalog.Service
 	logger  *slog.Logger
+	demoMode bool
 }
 
 var _ gen.ServerInterface = (*CatalogAPI)(nil)
 
 // NewCatalogAPI binds the catalog service to the HTTP contract.
-func NewCatalogAPI(service *catalog.Service, logger *slog.Logger) *CatalogAPI {
-	return &CatalogAPI{catalog: service, logger: logger}
+func NewCatalogAPI(service *catalog.Service, logger *slog.Logger, demoMode bool) *CatalogAPI {
+	return &CatalogAPI{catalog: service, logger: logger, demoMode: demoMode}
 }
 
 func (a *CatalogAPI) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,7 @@ func (a *CatalogAPI) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
 		Currencies: []gen.Currency{gen.Currency("UZS")},
 		Cities:     mapCities(config.Cities),
 		Categories: mapCategories(config.Categories),
+		DemoMode: a.demoMode,
 	})
 }
 

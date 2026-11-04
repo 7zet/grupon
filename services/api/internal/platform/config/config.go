@@ -39,6 +39,8 @@ const (
 // Config contains process configuration shared by the API and worker binaries.
 type Config struct {
 	Environment     string
+	// DemoMode exposes demo-only login and mock-payment affordances.
+	DemoMode        bool
 	LogLevel        slog.Level
 	HTTP            HTTPConfig
 	ShutdownTimeout time.Duration
@@ -113,6 +115,8 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	demoMode, err := boolValue(lookup, "DEMO_MODE", false)
+	if err != nil { return Config{}, err }
 
 	address, err := stringValue(lookup, "API_ADDR", defaultAPIAddress)
 	if err != nil {
@@ -169,7 +173,7 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	commerceConfig, err := loadCommerce(lookup, environment)
+	commerceConfig, err := loadCommerce(lookup, environment, demoMode)
 	if err != nil {
 		return Config{}, err
 	}
@@ -198,6 +202,7 @@ func load(lookup lookupEnv) (Config, error) {
 
 	return Config{
 		Environment:         environment,
+		DemoMode:            demoMode,
 		LogLevel:            logLevel,
 		DatabaseURL:         databaseURL,
 		RedisURL:            redisURL,
@@ -345,7 +350,7 @@ type CommerceConfig struct {
 	ManualPaymentInstructions string
 }
 
-func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) {
+func loadCommerce(lookup lookupEnv, environment string, demoMode bool) (CommerceConfig, error) {
 	development := environment == defaultEnvironment
 
 	qrSecret := optionalString(lookup, "VOUCHER_QR_SECRET")
@@ -359,10 +364,11 @@ func loadCommerce(lookup lookupEnv, environment string) (CommerceConfig, error) 
 		return CommerceConfig{}, fmt.Errorf("VOUCHER_QR_SECRET must be at least 32 bytes")
 	}
 
-	mockEnabled, err := boolValue(lookup, "PAYMENT_MOCK_ENABLED", development)
+	mockEnabled, err := boolValue(lookup, "PAYMENT_MOCK_ENABLED", demoMode)
 	if err != nil {
 		return CommerceConfig{}, err
 	}
+	if !demoMode { mockEnabled = false }
 	mockSecret := optionalString(lookup, "PAYMENT_MOCK_WEBHOOK_SECRET")
 	if mockSecret == "" && mockEnabled {
 		if !development {
