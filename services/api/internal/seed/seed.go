@@ -227,6 +227,11 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[7]); err != nil {
 		return err
 	}
+	// Development-only deterministic factors let the seeded platform admins exercise the mandatory
+	// 2FA path in browser tests. Production never runs this seed command.
+	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$3,now()),($2,$3,now())`, userIDs[3], userIDs[7], "JBSWY3DPEHPK3PXP"); err != nil {
+		return err
+	}
 	deals := make([]dealSeed, 100)
 	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "paused", "ended", "draft"}
 	for i := range deals {

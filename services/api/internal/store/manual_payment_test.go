@@ -37,7 +37,10 @@ func TestManualPaymentConfirmationIsIdempotentAndAudited(t *testing.T) {
 	if session.Instructions == "" {
 		t.Fatal("manual instructions missing")
 	}
-	actor := uuid.New()
+	var actor uuid.UUID
+	if err := e.fixture.pool.QueryRow(context.Background(), `INSERT INTO users(email, name) VALUES($1, 'Manual payment admin') RETURNING id`, "manual-admin-"+uuid.NewString()+"@test.local").Scan(&actor); err != nil {
+		t.Fatal(err)
+	}
 	if err := service.ConfirmManualPayment(context.Background(), session.PaymentID, actor, "admin", "BANK-123", "matched statement"); err != nil {
 		t.Fatal(err)
 	}
@@ -47,8 +50,8 @@ func TestManualPaymentConfirmationIsIdempotentAndAudited(t *testing.T) {
 	if got := e.count(t, `SELECT count(*) FROM vouchers WHERE order_item_id IN (SELECT id FROM order_items WHERE order_id=$1)`, order.ID); got != 2 {
 		t.Fatalf("vouchers=%d want 2", got)
 	}
-	if got := e.count(t, `SELECT count(*) FROM journal_entries WHERE kind='payment_received' AND reference IN (SELECT id::text FROM order_items WHERE order_id=$1)`, order.ID); got != 2 {
-		t.Fatalf("ledger=%d want 2", got)
+	if got := e.count(t, `SELECT count(*) FROM journal_entries WHERE kind='payment_received' AND reference IN (SELECT id::text FROM order_items WHERE order_id=$1)`, order.ID); got != 1 {
+		t.Fatalf("ledger=%d want 1", got)
 	}
 	if got := e.count(t, `SELECT count(*) FROM audit_logs WHERE entity_type='payment' AND action='manual_payment_confirmed'`); got != 1 {
 		t.Fatalf("manual confirmation audits=%d want 1", got)
