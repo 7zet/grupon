@@ -23,7 +23,7 @@ and baseline `v0.1` exists.
 
 **Finish line:** Each AT is green, or deferred with a named stage (`needs PSP` / `Stage 3`); all Stage 1 browser and workflow gaps below are closed.
 
-**Holat:** In progress.
+**Holat:** Done.
 
 ### Done — verified in code and tests
 
@@ -36,9 +36,9 @@ and baseline `v0.1` exists.
   media, redeem, and a six-step deal wizard with live preview.
 - `price_proof` upload is present in the merchant review form and private-document backend.
 - SMS delivery has the `identity.CodeSender` port; `sms.LogSender` is the only runtime implementation.
-- Latest verified non-browser gates (2026-11-04): full Go tests, Go vet, web typecheck, and 6/6 web unit tests pass.
-- Full Playwright rerun (2026-11-04): 16/16 passed with four workers in 25.2 seconds. Non-fatal Next.js
-  image warnings were logged for localhost media SSRF protection and external Unsplash timeouts.
+- Stage-close verification (2026-11-04): full Go tests, Go vet, web lint, web typecheck, and 6/6 web unit tests pass.
+- Full Playwright stage-close rerun (2026-11-04): 17/17 passed with four workers in 31.0 seconds. Non-fatal
+  Next.js image warnings were logged for localhost media SSRF protection and external Unsplash timeouts.
 - Disputes enforce the full state machine and role split; every transition is audited atomically, payout holds
   remain through review, merchant resolution releases the hold, and customer resolution keeps the existing refund flow.
   Verified by `TestDisputeAllowedTransitionsAuditAndPayoutHold`, `TestDisputeCustomerResolutionKeepsRefundBehavior`,
@@ -55,9 +55,9 @@ and baseline `v0.1` exists.
 - The six-step deal wizard is covered end to end: validation, live preview, options, three media selections,
   localized details, branch/schedule, and browser submission ending in `in_review`.
 
-### Open — ordered
+### Open
 
-1. Run the Stage 1 closing verification and release sequence.
+None. Stage 1 meets its finish line.
 
 ## Bosqich 2 — Pilot-tayyor
 
@@ -68,8 +68,13 @@ and a documented manual-payment operating mode pass pilot checks.
 
 **Holat:** Not started.
 
-Scope: SMS provider, Uzbekistan hosting/data residency, shared object storage, Scanner PWA, 2FA for privileged
-roles, manual payment mode, operational monitoring, backups, and release/security checklists.
+Task list:
+
+1. SMS adapter.
+2. Hosting preparation.
+3. Scanner PWA.
+4. TOTP 2FA for admin and finance roles.
+5. Manual payment confirmation mode.
 
 ## Bosqich 3 — Real pul
 

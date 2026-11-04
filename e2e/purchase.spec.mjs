@@ -8,8 +8,8 @@ async function sellableVoucherDeal() {
   const page = await response.json();
   for (const deal of page.items) {
     if (deal.status !== 'active') continue;
-    const option = deal.options.find((item) => item.is_active && item.stock_total - item.stock_sold - item.stock_reserved > 0);
-    if (option) return { slug: deal.slug, title: deal.title.uz };
+    const optionIndex = deal.options.findIndex((item) => item.is_active && item.stock_total - item.stock_sold - item.stock_reserved > 0);
+    if (optionIndex >= 0) return { slug: deal.slug, title: deal.title.uz, optionIndex };
   }
   throw new Error('no sellable voucher deal in seed data');
 }
@@ -27,6 +27,7 @@ test('browse → login mid-flow → buy → voucher visible', async ({ page }) =
   // Browse the deal page without an account and start buying.
   await page.goto(`/uz/deal/${deal.slug}`);
   await page.waitForLoadState('networkidle');
+  await page.getByRole('radio').nth(deal.optionIndex).check();
   await page.getByRole('button', { name: /Hozir xarid qilish/ }).click();
 
   // Checkout requires a session, so the visitor lands on login with the return path.

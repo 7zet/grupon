@@ -63,17 +63,12 @@ repository at `../dealo-docs`; read it only when a task needs the original produ
   typecheck, and web unit tests. Run Playwright when browser flows change.
 - E2E rewrites `docs/screenshots/*.png`; do not commit those incidental changes.
 
-## Current stage — Stage 1: Demo-tayyor
+## Current stage — Stage 2: Pilot-tayyor
 
-Goal and finish line are defined in `docs/ROADMAP.md`. Work only on these ordered open items:
+Stage 1 is complete. Goal and finish line are defined in `docs/ROADMAP.md`. Work only on these ordered items:
 
-1. Complete dispute transitions: `open → awaiting_evidence → under_review → resolved_* → closed`,
-   with authorization, audit/state history, and tests.
-2. Add category-level `publishable` and `purchasable` flags; keep existing vouchers redeemable.
-3. Implement `GET /merchant/redemptions` (the contract exists but the handler/store do not), then add
-   a cashier E2E that signs in as Cashier B and performs redemption.
-4. Add full browser coverage for all six deal-wizard steps, validation, live preview, and submission.
-5. Add E2E coverage for the existing merchant `price_proof` upload UI and private-document flow.
-6. Run the full four-worker Playwright suite after these changes; keep screenshots unstaged.
-
-Do not start Stage 2 work until Stage 1 meets its finish line.
+1. SMS adapter.
+2. Hosting preparation.
+3. Scanner PWA.
+4. TOTP 2FA for admin and finance roles.
+5. Manual payment confirmation mode.
