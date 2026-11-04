@@ -160,6 +160,7 @@ func (s *Service) placeOrder(ctx context.Context, tx Store, userID uuid.UUID, in
 			Title:         record.Title,
 			UnitPrice:     record.DealPrice,
 			OriginalPrice: record.OriginalPrice,
+			Terms:         record.Terms,
 			Quantity:      item.Quantity,
 		}
 		line.ID, err = tx.InsertOrderItem(ctx, order.ID, line)

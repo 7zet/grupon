@@ -281,7 +281,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-interval '2 days') RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1)).Scan(&orderID); err != nil {
 			return err
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,quantity) SELECT $1,$2,$3,$4,$5,original_price,1 FROM deal_options WHERE id=$3 RETURNING id`, orderID, deal.ID, deal.OptionID, deal.Title, deal.Price).Scan(&itemID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,terms_snapshot,quantity) SELECT $1,$2,$3,$4,$5,o.original_price,d.terms,1 FROM deal_options o JOIN deals d ON d.id=o.deal_id WHERE o.id=$3 RETURNING id`, orderID, deal.ID, deal.OptionID, deal.Title, deal.Price).Scan(&itemID); err != nil {
 			return err
 		}
 		code := fmt.Sprintf("%04X-%04X", i+1, 65535-i)

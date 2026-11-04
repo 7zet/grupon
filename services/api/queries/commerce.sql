@@ -24,7 +24,7 @@ SELECT id FROM users WHERE id = sqlc.arg(user_id) AND deleted_at IS NULL FOR UPD
 -- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
-       d.status AS deal_status, d.starts_at, d.ends_at, d.max_per_user,
+       d.status AS deal_status, d.terms, d.starts_at, d.ends_at, d.max_per_user,
        d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        (m.review_status = 'approved') AS merchant_active
 FROM deal_options o
@@ -68,9 +68,9 @@ RETURNING id, created_at;
 
 -- name: InsertOrderItem :one
 INSERT INTO order_items (order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-                         original_price_snapshot, quantity)
+                         original_price_snapshot, terms_snapshot, quantity)
 VALUES (sqlc.arg(order_id), sqlc.arg(deal_id), sqlc.arg(option_id), sqlc.arg(title_snapshot),
-        sqlc.arg(unit_price), sqlc.arg(original_price), sqlc.arg(quantity))
+        sqlc.arg(unit_price), sqlc.arg(original_price), sqlc.arg(terms_snapshot), sqlc.arg(quantity))
 RETURNING id;
 
 -- name: InsertStockReservation :exec
@@ -100,7 +100,7 @@ SELECT COUNT(*)::bigint AS total FROM orders WHERE user_id = sqlc.arg(user_id);
 
 -- name: ListOrderItemsForOrders :many
 SELECT id, order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-       original_price_snapshot, quantity
+       original_price_snapshot, terms_snapshot, quantity
 FROM order_items WHERE order_id = ANY(sqlc.arg(order_ids)::uuid[]) ORDER BY created_at, id;
 
 -- name: SetOrderStatus :exec
@@ -153,12 +153,13 @@ VALUES (sqlc.arg(id), sqlc.arg(order_item_id), sqlc.arg(user_id), sqlc.arg(deal_
 SELECT EXISTS (SELECT 1 FROM vouchers WHERE code = sqlc.arg(code)) AS taken;
 
 -- name: ListVouchersForUser :many
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
-       valid_from, valid_until, redeemed_at, redeemed_location_id
-FROM vouchers
-WHERE user_id = sqlc.arg(user_id)
-  AND (sqlc.narg(status)::text IS NULL OR status::text = sqlc.narg(status)::text)
-ORDER BY valid_until, id
+SELECT v.id, v.order_item_id, v.user_id, v.deal_id, v.deal_option_id, v.merchant_id, v.code, v.qr_token,
+       v.status::text AS status, v.valid_from, v.valid_until, v.redeemed_at, v.redeemed_location_id,
+       oi.terms_snapshot
+FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+WHERE v.user_id = sqlc.arg(user_id)
+  AND (sqlc.narg(status)::text IS NULL OR v.status::text = sqlc.narg(status)::text)
+ORDER BY v.valid_until, v.id
 LIMIT sqlc.arg(page_size) OFFSET sqlc.arg(page_offset);
 
 -- name: CountVouchersForUser :one
@@ -167,9 +168,11 @@ WHERE user_id = sqlc.arg(user_id)
   AND (sqlc.narg(status)::text IS NULL OR status::text = sqlc.narg(status)::text);
 
 -- name: GetVoucherForUser :one
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
-       valid_from, valid_until, redeemed_at, redeemed_location_id
-FROM vouchers WHERE id = sqlc.arg(id) AND user_id = sqlc.arg(user_id);
+SELECT v.id, v.order_item_id, v.user_id, v.deal_id, v.deal_option_id, v.merchant_id, v.code, v.qr_token,
+       v.status::text AS status, v.valid_from, v.valid_until, v.redeemed_at, v.redeemed_location_id,
+       oi.terms_snapshot
+FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+WHERE v.id = sqlc.arg(id) AND v.user_id = sqlc.arg(user_id);
 
 -- name: ExpireDueVouchers :many
 UPDATE vouchers SET status = 'expired', updated_at = now()

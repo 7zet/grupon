@@ -875,6 +875,7 @@ type OrderItem struct {
 	Quantity              int32              `json:"quantity"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	TermsSnapshot         []byte             `json:"terms_snapshot"`
 }
 
 type Outbox struct {

@@ -345,6 +345,7 @@ func mapOrder(order commerce.Order) gen.Order {
 			TitleSnapshot: mapText(item.Title),
 			UnitPrice:     gen.Money{Amount: item.UnitPrice, Currency: gen.MoneyCurrencyUZS},
 			OriginalPrice: gen.Money{Amount: item.OriginalPrice, Currency: gen.MoneyCurrencyUZS},
+			TermsSnapshot: mapText(item.Terms),
 			Quantity:      item.Quantity,
 		})
 	}
@@ -376,6 +377,7 @@ func mapVoucher(view commerce.VoucherView) gen.Voucher {
 		Deal:             mapDealSummary(view.Deal),
 		Merchant:         merchant,
 		Option:           mapOptionRecord(view.Option),
+		TermsSnapshot:    mapText(view.Voucher.Terms),
 	}
 }
 

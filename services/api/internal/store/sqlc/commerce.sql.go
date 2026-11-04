@@ -153,7 +153,7 @@ func (q *Queries) FailOpenPayments(ctx context.Context, orderID pgtype.UUID) (in
 const getDealOptionRows = `-- name: GetDealOptionRows :many
 SELECT o.id AS option_id, o.deal_id, o.title AS option_title, o.original_price, o.deal_price,
        o.redemptions_allowed, o.stock_total, o.stock_sold, o.stock_reserved, o.is_active AS option_is_active,
-       d.status AS deal_status, d.starts_at, d.ends_at, d.max_per_user,
+       d.status AS deal_status, d.terms, d.starts_at, d.ends_at, d.max_per_user,
        d.voucher_valid_days, d.voucher_valid_until, d.merchant_id,
        (m.review_status = 'approved') AS merchant_active
 FROM deal_options o
@@ -174,6 +174,7 @@ type GetDealOptionRowsRow struct {
 	StockReserved      int32              `json:"stock_reserved"`
 	OptionIsActive     bool               `json:"option_is_active"`
 	DealStatus         DealStatus         `json:"deal_status"`
+	Terms              []byte             `json:"terms"`
 	StartsAt           pgtype.Timestamptz `json:"starts_at"`
 	EndsAt             pgtype.Timestamptz `json:"ends_at"`
 	MaxPerUser         int32              `json:"max_per_user"`
@@ -204,6 +205,7 @@ func (q *Queries) GetDealOptionRows(ctx context.Context, optionIds []pgtype.UUID
 			&i.StockReserved,
 			&i.OptionIsActive,
 			&i.DealStatus,
+			&i.Terms,
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.MaxPerUser,
@@ -320,9 +322,11 @@ func (q *Queries) GetUserContact(ctx context.Context, userID pgtype.UUID) (GetUs
 }
 
 const getVoucherForUser = `-- name: GetVoucherForUser :one
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
-       valid_from, valid_until, redeemed_at, redeemed_location_id
-FROM vouchers WHERE id = $1 AND user_id = $2
+SELECT v.id, v.order_item_id, v.user_id, v.deal_id, v.deal_option_id, v.merchant_id, v.code, v.qr_token,
+       v.status::text AS status, v.valid_from, v.valid_until, v.redeemed_at, v.redeemed_location_id,
+       oi.terms_snapshot
+FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+WHERE v.id = $1 AND v.user_id = $2
 `
 
 type GetVoucherForUserParams struct {
@@ -344,6 +348,7 @@ type GetVoucherForUserRow struct {
 	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
 	RedeemedAt         pgtype.Timestamptz `json:"redeemed_at"`
 	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
+	TermsSnapshot      []byte             `json:"terms_snapshot"`
 }
 
 func (q *Queries) GetVoucherForUser(ctx context.Context, arg GetVoucherForUserParams) (GetVoucherForUserRow, error) {
@@ -363,6 +368,7 @@ func (q *Queries) GetVoucherForUser(ctx context.Context, arg GetVoucherForUserPa
 		&i.ValidUntil,
 		&i.RedeemedAt,
 		&i.RedeemedLocationID,
+		&i.TermsSnapshot,
 	)
 	return i, err
 }
@@ -404,9 +410,9 @@ func (q *Queries) InsertOrder(ctx context.Context, arg InsertOrderParams) (Inser
 
 const insertOrderItem = `-- name: InsertOrderItem :one
 INSERT INTO order_items (order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-                         original_price_snapshot, quantity)
+                         original_price_snapshot, terms_snapshot, quantity)
 VALUES ($1, $2, $3, $4,
-        $5, $6, $7)
+        $5, $6, $7, $8)
 RETURNING id
 `
 
@@ -417,6 +423,7 @@ type InsertOrderItemParams struct {
 	TitleSnapshot []byte      `json:"title_snapshot"`
 	UnitPrice     int64       `json:"unit_price"`
 	OriginalPrice int64       `json:"original_price"`
+	TermsSnapshot []byte      `json:"terms_snapshot"`
 	Quantity      int32       `json:"quantity"`
 }
 
@@ -428,6 +435,7 @@ func (q *Queries) InsertOrderItem(ctx context.Context, arg InsertOrderItemParams
 		arg.TitleSnapshot,
 		arg.UnitPrice,
 		arg.OriginalPrice,
+		arg.TermsSnapshot,
 		arg.Quantity,
 	)
 	var id pgtype.UUID
@@ -602,7 +610,7 @@ func (q *Queries) ListOrderIDsForUser(ctx context.Context, arg ListOrderIDsForUs
 
 const listOrderItemsForOrders = `-- name: ListOrderItemsForOrders :many
 SELECT id, order_id, deal_id, deal_option_id, title_snapshot, unit_price_snapshot,
-       original_price_snapshot, quantity
+       original_price_snapshot, terms_snapshot, quantity
 FROM order_items WHERE order_id = ANY($1::uuid[]) ORDER BY created_at, id
 `
 
@@ -614,6 +622,7 @@ type ListOrderItemsForOrdersRow struct {
 	TitleSnapshot         []byte      `json:"title_snapshot"`
 	UnitPriceSnapshot     int64       `json:"unit_price_snapshot"`
 	OriginalPriceSnapshot int64       `json:"original_price_snapshot"`
+	TermsSnapshot         []byte      `json:"terms_snapshot"`
 	Quantity              int32       `json:"quantity"`
 }
 
@@ -634,6 +643,7 @@ func (q *Queries) ListOrderItemsForOrders(ctx context.Context, orderIds []pgtype
 			&i.TitleSnapshot,
 			&i.UnitPriceSnapshot,
 			&i.OriginalPriceSnapshot,
+			&i.TermsSnapshot,
 			&i.Quantity,
 		); err != nil {
 			return nil, err
@@ -704,12 +714,13 @@ func (q *Queries) ListUnreleasedReservations(ctx context.Context, orderID pgtype
 }
 
 const listVouchersForUser = `-- name: ListVouchersForUser :many
-SELECT id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token, status::text AS status,
-       valid_from, valid_until, redeemed_at, redeemed_location_id
-FROM vouchers
-WHERE user_id = $1
-  AND ($2::text IS NULL OR status::text = $2::text)
-ORDER BY valid_until, id
+SELECT v.id, v.order_item_id, v.user_id, v.deal_id, v.deal_option_id, v.merchant_id, v.code, v.qr_token,
+       v.status::text AS status, v.valid_from, v.valid_until, v.redeemed_at, v.redeemed_location_id,
+       oi.terms_snapshot
+FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
+WHERE v.user_id = $1
+  AND ($2::text IS NULL OR v.status::text = $2::text)
+ORDER BY v.valid_until, v.id
 LIMIT $4 OFFSET $3
 `
 
@@ -734,6 +745,7 @@ type ListVouchersForUserRow struct {
 	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
 	RedeemedAt         pgtype.Timestamptz `json:"redeemed_at"`
 	RedeemedLocationID pgtype.UUID        `json:"redeemed_location_id"`
+	TermsSnapshot      []byte             `json:"terms_snapshot"`
 }
 
 func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error) {
@@ -764,6 +776,7 @@ func (q *Queries) ListVouchersForUser(ctx context.Context, arg ListVouchersForUs
 			&i.ValidUntil,
 			&i.RedeemedAt,
 			&i.RedeemedLocationID,
+			&i.TermsSnapshot,
 		); err != nil {
 			return nil, err
 		}

@@ -39,7 +39,7 @@ func freshVoucher(t *testing.T, fixture catalogFixture, validUntil time.Time) (v
 		buyerID, price, uuid.NewString()).Scan(&orderID); err != nil {
 		t.Fatalf("order: %v", err)
 	}
-	if err := fixture.pool.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,quantity) SELECT $1,deal_id,id,title,$2,original_price,1 FROM deal_options WHERE id=$3 RETURNING id`,
+	if err := fixture.pool.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,terms_snapshot,quantity) SELECT $1,o.deal_id,o.id,o.title,$2,o.original_price,d.terms,1 FROM deal_options o JOIN deals d ON d.id=o.deal_id WHERE o.id=$3 RETURNING id`,
 		orderID, price, optionID).Scan(&itemID); err != nil {
 		t.Fatalf("item: %v", err)
 	}

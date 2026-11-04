@@ -1675,6 +1675,7 @@ export interface components {
       deal_id: components['schemas']['Uuid'];
       deal_option_id: components['schemas']['Uuid'];
       title_snapshot: components['schemas']['LocalizedText'];
+      terms_snapshot: components['schemas']['LocalizedText'];
       unit_price: components['schemas']['Money'];
       original_price: components['schemas']['Money'];
       quantity: number;
@@ -1727,6 +1728,7 @@ export interface components {
       deal: components['schemas']['DealSummary'];
       option: components['schemas']['DealOption'];
       merchant: components['schemas']['Merchant'];
+      terms_snapshot: components['schemas']['LocalizedText'];
       buyer_first_name?: string;
       code: string;
       /** @description Rotates every 30 seconds; the voucher page must refetch. */

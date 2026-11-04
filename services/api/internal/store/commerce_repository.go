@@ -90,6 +90,10 @@ func (s *commerceStore) OptionRecords(ctx context.Context, optionIDs []uuid.UUID
 		if err != nil {
 			return nil, err
 		}
+		terms, err := catalog.ParseText(row.Terms)
+		if err != nil {
+			return nil, err
+		}
 		records = append(records, commerce.OptionRecord{
 			ID:                 toUUID(row.OptionID),
 			DealID:             toUUID(row.DealID),
@@ -109,6 +113,7 @@ func (s *commerceStore) OptionRecords(ctx context.Context, optionIDs []uuid.UUID
 			VoucherValidUntil:  timePtr(row.VoucherValidUntil),
 			MerchantID:         toUUID(row.MerchantID),
 			MerchantActive:     row.MerchantActive,
+			Terms:              terms,
 		})
 	}
 	return records, nil
@@ -187,6 +192,10 @@ func (s *commerceStore) InsertOrderItem(ctx context.Context, orderID uuid.UUID, 
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("encode item title: %w", err)
 	}
+	terms, err := json.Marshal(item.Terms)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("encode item terms: %w", err)
+	}
 	id, err := s.q.InsertOrderItem(ctx, sqlc.InsertOrderItemParams{
 		OrderID:       toPgUUID(orderID),
 		DealID:        toPgUUID(item.DealID),
@@ -194,6 +203,7 @@ func (s *commerceStore) InsertOrderItem(ctx context.Context, orderID uuid.UUID, 
 		TitleSnapshot: title,
 		UnitPrice:     item.UnitPrice,
 		OriginalPrice: item.OriginalPrice,
+		TermsSnapshot: terms,
 		Quantity:      int32(item.Quantity),
 	})
 	if err != nil {
@@ -293,6 +303,10 @@ func (s *commerceStore) orderItems(ctx context.Context, orderIDs []uuid.UUID) (m
 		if err != nil {
 			return nil, err
 		}
+		terms, err := catalog.ParseText(row.TermsSnapshot)
+		if err != nil {
+			return nil, err
+		}
 		orderID := toUUID(row.OrderID)
 		grouped[orderID] = append(grouped[orderID], commerce.OrderItem{
 			ID:            toUUID(row.ID),
@@ -302,6 +316,7 @@ func (s *commerceStore) orderItems(ctx context.Context, orderIDs []uuid.UUID) (m
 			Title:         title,
 			UnitPrice:     row.UnitPriceSnapshot,
 			OriginalPrice: row.OriginalPriceSnapshot,
+			Terms:         terms,
 			Quantity:      int(row.Quantity),
 		})
 	}
@@ -488,8 +503,13 @@ func (s *commerceStore) ListVouchers(ctx context.Context, userID uuid.UUID, stat
 	}
 	vouchers := make([]commerce.Voucher, 0, len(rows))
 	for _, row := range rows {
-		vouchers = append(vouchers, voucherFromFields(row.ID, row.OrderItemID, row.UserID, row.DealID, row.DealOptionID,
-			row.MerchantID, row.Code, row.QrToken, row.Status, row.ValidFrom, row.ValidUntil, row.RedeemedAt))
+		voucher := voucherFromFields(row.ID, row.OrderItemID, row.UserID, row.DealID, row.DealOptionID,
+			row.MerchantID, row.Code, row.QrToken, row.Status, row.ValidFrom, row.ValidUntil, row.RedeemedAt)
+		voucher.Terms, err = catalog.ParseText(row.TermsSnapshot)
+		if err != nil {
+			return nil, 0, err
+		}
+		vouchers = append(vouchers, voucher)
 	}
 	return vouchers, total, nil
 }
@@ -502,8 +522,10 @@ func (s *commerceStore) VoucherForUser(ctx context.Context, userID, voucherID uu
 	if err != nil {
 		return commerce.Voucher{}, fmt.Errorf("load voucher: %w", err)
 	}
-	return voucherFromFields(row.ID, row.OrderItemID, row.UserID, row.DealID, row.DealOptionID,
-		row.MerchantID, row.Code, row.QrToken, row.Status, row.ValidFrom, row.ValidUntil, row.RedeemedAt), nil
+	voucher := voucherFromFields(row.ID, row.OrderItemID, row.UserID, row.DealID, row.DealOptionID,
+		row.MerchantID, row.Code, row.QrToken, row.Status, row.ValidFrom, row.ValidUntil, row.RedeemedAt)
+	voucher.Terms, err = catalog.ParseText(row.TermsSnapshot)
+	return voucher, err
 }
 
 func (s *commerceStore) ExpireDueVouchers(ctx context.Context, now time.Time, batch int) (int, error) {

@@ -277,3 +277,5 @@
 - AT-13: a late payment's refund is a row in `refunds` tied to the payment (`payment_id`); `voucher_id` and `requested_by` became optional for system refunds (migration 00021).
 - Multi-use vouchers: a partially used voucher stays usable until its last visit. This was broken since partially_redeemed was introduced (the use query only accepted `active`); fixed with AT-15.
 - sqlc keeps the enum types from before migrations 00019 and 00020 (it does not follow DROP TYPE and CREATE TYPE). Code compares those statuses with string literals until the enum is regenerated.
+
+- AT-06 terms are copied to `order_items.terms_snapshot` at checkout and exposed by order and voucher responses, so later deal edits cannot change the buyer's agreed terms.

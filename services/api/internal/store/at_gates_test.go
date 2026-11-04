@@ -138,12 +138,19 @@ func payableIDs(t *testing.T, ctx context.Context, repo *store.FinanceRepository
 func TestAT06ChangedPriceDoesNotChangeAPlacedOrder(t *testing.T) {
 	env := newATEnv(t, 1)
 	var agreed int64
+	var agreedTerms []byte
 	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT deal_price FROM deal_options WHERE id = $1`, env.optionID).Scan(&agreed); err != nil {
+		t.Fatal(err)
+	}
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT d.terms FROM deals d JOIN deal_options o ON o.deal_id = d.id WHERE o.id = $1`, env.optionID).Scan(&agreedTerms); err != nil {
 		t.Fatal(err)
 	}
 	order := env.order(t, 1)
 
 	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE deal_options SET deal_price = deal_price + 5000 WHERE id = $1`, env.optionID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := env.fixture.pool.Exec(env.ctx, `UPDATE deals SET terms = '{"uz":"Yangi shart","ru":"Новое условие","en":"New term"}' WHERE id = (SELECT deal_id FROM deal_options WHERE id = $1)`, env.optionID); err != nil {
 		t.Fatal(err)
 	}
 	session, err := env.service.PayOrder(env.ctx, env.buyer, order.ID, env.mock.Name())
@@ -159,5 +166,15 @@ func TestAT06ChangedPriceDoesNotChangeAPlacedOrder(t *testing.T) {
 	}
 	if got := env.count(t, `SELECT unit_price_snapshot::int FROM order_items WHERE order_id = $1`, order.ID); int64(got) != agreed {
 		t.Fatalf("item price = %d, want the agreed %d", got, agreed)
+	}
+	var itemTerms, voucherTerms []byte
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT terms_snapshot FROM order_items WHERE order_id = $1`, order.ID).Scan(&itemTerms); err != nil {
+		t.Fatal(err)
+	}
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT oi.terms_snapshot FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id WHERE oi.order_id = $1`, order.ID).Scan(&voucherTerms); err != nil {
+		t.Fatal(err)
+	}
+	if string(itemTerms) != string(agreedTerms) || string(voucherTerms) != string(agreedTerms) {
+		t.Fatalf("terms snapshots changed: item=%s voucher=%s want=%s", itemTerms, voucherTerms, agreedTerms)
 	}
 }

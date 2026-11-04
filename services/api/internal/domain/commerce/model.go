@@ -69,6 +69,7 @@ type OptionRecord struct {
 	VoucherValidUntil  *time.Time
 	MerchantID         uuid.UUID
 	MerchantActive     bool
+	Terms              catalog.Text
 }
 
 // Available is the number of units that can still be reserved.
@@ -151,6 +152,7 @@ type OrderItem struct {
 	Title         catalog.Text
 	UnitPrice     int64
 	OriginalPrice int64
+	Terms         catalog.Text
 	Quantity      int
 }
 
@@ -185,6 +187,7 @@ type Voucher struct {
 	ValidFrom   time.Time
 	ValidUntil  time.Time
 	RedeemedAt  *time.Time
+	Terms       catalog.Text
 	// RedemptionsAllowed is the use count copied from the option at purchase time.
 	RedemptionsAllowed int
 	// ZaxiraCodeHMAC is the stored hash of the backup code; the plain code is derived, not stored.
