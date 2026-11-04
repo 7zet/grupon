@@ -279,3 +279,5 @@
 - sqlc keeps the enum types from before migrations 00019 and 00020 (it does not follow DROP TYPE and CREATE TYPE). Code compares those statuses with string literals until the enum is regenerated.
 
 - AT-06 terms are copied to `order_items.terms_snapshot` at checkout and exposed by order and voucher responses, so later deal edits cannot change the buyer's agreed terms.
+
+- Stage 1 acceptance allows an AT to be green or explicitly deferred with a named stage. AT-08 is deferred as `needs PSP` to Stage 3; AT-17 bank-change protection is deferred to Stage 3.

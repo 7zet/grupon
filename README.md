@@ -1,7 +1,7 @@
 # Local deals marketplace
 
 This repository contains the web application, Go API and worker for the marketplace described in
-[`CLAUDE.md`](./CLAUDE.md).
+[`docs/ROADMAP.md`](./docs/ROADMAP.md). Agent instructions are in [`AGENTS.md`](./AGENTS.md).
 
 ## Prerequisites
 
@@ -45,5 +45,5 @@ go vet ./...
 go test ./...
 ```
 
-Generation and seed commands already exist as Phase 0 aggregators. Their implementations are added
-with the API contract and database in Phase 1.
+The API contract, generated clients, migrations, and deterministic development seed are implemented.
+See `docs/ENVIRONMENT.md` for the current local database and test-account setup.

@@ -15,16 +15,16 @@ Grupon is a marketplace for local deals in Uzbekistan. Buyers purchase vouchers,
 ## How a purchase works
 
 1. A visitor browses deals. No login is needed.
-2. At checkout the visitor logs in, and the cart stays intact.
-3. The API creates an order and reserves stock for 10 minutes. The reservation is one conditional database update, so two buyers can never take the last unit.
-4. The payment succeeds through the webhook. The order becomes paid, stock is sold, one voucher is issued per unit, and a confirmation email is sent.
+2. At checkout the visitor logs in, and the selected deal option is preserved without a cart.
+3. The API creates an order and reserves stock for 15 minutes. The reservation is one conditional database update, so two buyers can never take the last unit.
+4. The payment succeeds through the webhook. The order becomes paid, stock is sold, and one voucher is issued per unit.
 5. If payment fails, the order stays pending until the reservation expires, and the buyer can retry.
 
 ## How a deal goes live
 
 1. A merchant creates a draft with options, prices, photos and locations.
-2. Submitting it moves it to `pending_review`.
-3. A moderator approves it (it becomes active or scheduled) or rejects it with a reason the merchant can read.
+2. Submitting it moves it to `in_review`.
+3. A moderator approves it (it becomes active or scheduled) or requests changes with a reason.
 4. Changing the price, terms or options of a live deal sends it back to review. Changing only the stock does not.
 
 ## How a voucher is used
@@ -58,7 +58,7 @@ The API contract lives in `packages/api-spec/openapi.yaml`. Go server types and 
 ## Money and time
 
 - Amounts are whole numbers of the smallest unit (UZS). No floating-point money anywhere.
-- USD appears only as a display conversion.
+- UZS is the only supported currency.
 - All times are stored in UTC and shown in the buyer's local time.
 
 ## Audit
@@ -76,5 +76,5 @@ Every admin action and every sensitive merchant action (deal changes, voucher re
 
 - Media is stored on a local disk; a shared object store is needed before running more than one API instance.
 - The mock payment provider is the only one; real providers are out of scope for now.
-- Support tickets, disputes and system settings screens are not built yet.
+- Support tickets and system settings screens are not built; finance dispute handling exists, but the full PRD dispute transition chain is incomplete.
 - The admin screens currently live inside the web app; they will move to their own app.
