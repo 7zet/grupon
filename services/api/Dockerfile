@@ -36,6 +36,6 @@ ENTRYPOINT ["/app/migrate"]
 
 FROM migrate AS seed
 COPY --from=build /out/seed /app/seed
-COPY seed /app/seed
-ENV SEED_ROOT=/app
+COPY seed /data/seed
+ENV SEED_ROOT=/data
 ENTRYPOINT ["/app/seed"]
