@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 
 import type { MediaAsset } from '@/components/merchant-media-library';
@@ -374,7 +374,15 @@ export function DealWizard({ categories, locations, media }: Props) {
 
         {step === 2 && (
           <div className="grid gap-4">
-            <p className="text-sm text-ink-muted">{t('mediaPick')}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-ink-muted">{t('mediaPick')}</p>
+              <Link
+                className="rounded-control-ui bg-brand px-4 py-2 text-small font-semibold text-surface"
+                href="/merchant/media"
+              >
+                {t('mediaUpload')}
+              </Link>
+            </div>
             {media.length === 0 ? (
               <p className="text-ink-muted">{t('mediaEmpty')}</p>
             ) : (
