@@ -147,6 +147,8 @@ jobs:
       JWT_SECRET: 01234567890123456789012345678901
       VOUCHER_QR_SECRET: 01234567890123456789012345678901
       API_URL: http://127.0.0.1:8080/api/v1
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8080/api/v1
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -157,6 +159,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: go build -o bin/grupon-api ./services/api/cmd/api
       - run: bash scripts/bootstrap-demo.sh
-      - run: ./bin/grupon-api > api.log 2>&1 & pnpm --filter @grupon/web start --port 3000 > web.log 2>&1 &
-      - run: npx wait-on http://127.0.0.1:8080/readyz http://127.0.0.1:3000/uz
+      - run: pnpm --filter @grupon/web build
+      - name: Start API and web
+        run: |
+          ./bin/grupon-api > api.log 2>&1 &
+          pnpm --filter @grupon/web start --port 3000 > web.log 2>&1 &
+      - name: Wait for native services
+        shell: bash
+        run: |
+          for second in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:8080/readyz >/dev/null && curl -fsS http://127.0.0.1:3000/uz >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo '--- api.log ---'; cat api.log || true
+          echo '--- web.log ---'; cat web.log || true
+          echo '--- environment variable names ---'; env | cut -d= -f1 | sort
+          exit 1
       - run: pnpm exec playwright test e2e/purchase.spec.mjs e2e/merchant.spec.mjs
