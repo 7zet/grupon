@@ -1,6 +1,19 @@
 import type { NextConfig } from 'next';
 import path from 'node:path';
 
+const apiURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const apiMediaPattern = apiURL
+  ? (() => {
+      const url = new URL(apiURL);
+      return {
+        protocol: url.protocol.replace(':', '') as 'http' | 'https',
+        hostname: url.hostname,
+        ...(url.port ? { port: url.port } : {}),
+        pathname: '/media/**',
+      };
+    })()
+  : undefined;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ['127.0.0.1'],
@@ -11,6 +24,7 @@ const nextConfig: NextConfig = {
       // Local API media (MEDIA_PUBLIC_BASE in development).
       { protocol: 'http', hostname: 'localhost', port: '8080', pathname: '/media/**' },
       { protocol: 'http', hostname: '127.0.0.1', port: '8080', pathname: '/media/**' },
+      ...(apiMediaPattern ? [apiMediaPattern] : []),
     ],
     // Development serves media from localhost; production media is on a public host.
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
