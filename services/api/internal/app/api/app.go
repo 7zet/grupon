@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/grupon/grupon/services/api/internal/app/commerceapp"
+	workerapp "github.com/grupon/grupon/services/api/internal/app/worker"
 	"github.com/grupon/grupon/services/api/internal/domain/catalog"
 	"github.com/grupon/grupon/services/api/internal/domain/commerce"
 	"github.com/grupon/grupon/services/api/internal/domain/finance"
@@ -38,6 +39,13 @@ import (
 // Run connects to PostgreSQL and Redis, serves the HTTP API, and blocks until the server stops
 // or the context is canceled.
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
+	if cfg.RunWorkerInAPI {
+		go func() {
+			if err := workerapp.Run(ctx, cfg, logger); err != nil && ctx.Err() == nil {
+				logger.Error("embedded worker stopped", slog.String("error", err.Error()))
+			}
+		}()
+	}
 	pool, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)

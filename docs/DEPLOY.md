@@ -1,14 +1,15 @@
-# Deployment
+# Deployment (native runtime, no Docker)
 
-The production composition is provider-neutral: supply managed PostgreSQL (and optional Redis), a
-container runtime, persistent storage for `/app/data`, and HTTPS termination. Copy
+Use Vercel for the Next.js web app, a native Go runtime host for the API (with
+`RUN_WORKER_IN_API=true`), and managed PostgreSQL. Copy
 `.env.production.example` to a private `.env.production`; do not store its real values in Git.
 
 Build and apply the schema first:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml run --rm migrate
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build api worker web
+DATABASE_URL='postgres://…' scripts/bootstrap-demo.sh
+go build -o bin/grupon-api ./services/api/cmd/api
+RUN_WORKER_IN_API=true ./bin/grupon-api
 ```
 
 Probe `GET /healthz` for process liveness and `GET /readyz` for database readiness. Put the API and

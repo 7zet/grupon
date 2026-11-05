@@ -38,9 +38,10 @@ const (
 
 // Config contains process configuration shared by the API and worker binaries.
 type Config struct {
-	Environment     string
+	Environment string
 	// DemoMode exposes demo-only login and mock-payment affordances.
 	DemoMode        bool
+	RunWorkerInAPI  bool
 	LogLevel        slog.Level
 	HTTP            HTTPConfig
 	ShutdownTimeout time.Duration
@@ -116,7 +117,13 @@ func load(lookup lookupEnv) (Config, error) {
 		return Config{}, err
 	}
 	demoMode, err := boolValue(lookup, "DEMO_MODE", false)
-	if err != nil { return Config{}, err }
+	if err != nil {
+		return Config{}, err
+	}
+	runWorkerInAPI, err := boolValue(lookup, "RUN_WORKER_IN_API", false)
+	if err != nil {
+		return Config{}, err
+	}
 
 	address, err := stringValue(lookup, "API_ADDR", defaultAPIAddress)
 	if err != nil {
@@ -203,6 +210,7 @@ func load(lookup lookupEnv) (Config, error) {
 	return Config{
 		Environment:         environment,
 		DemoMode:            demoMode,
+		RunWorkerInAPI:      runWorkerInAPI,
 		LogLevel:            logLevel,
 		DatabaseURL:         databaseURL,
 		RedisURL:            redisURL,
@@ -368,7 +376,9 @@ func loadCommerce(lookup lookupEnv, environment string, demoMode bool) (Commerce
 	if err != nil {
 		return CommerceConfig{}, err
 	}
-	if !demoMode { mockEnabled = false }
+	if !demoMode {
+		mockEnabled = false
+	}
 	mockSecret := optionalString(lookup, "PAYMENT_MOCK_WEBHOOK_SECRET")
 	if mockSecret == "" && mockEnabled {
 		if !development {
