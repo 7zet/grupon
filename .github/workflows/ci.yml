@@ -138,7 +138,7 @@ jobs:
     services:
       postgres:
         image: postgres:16-alpine
-        env: {POSTGRES_DB: app, POSTGRES_USER: app, POSTGRES_PASSWORD: app_dev_password}
+        env: { POSTGRES_DB: app, POSTGRES_USER: app, POSTGRES_PASSWORD: app_dev_password }
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U app -d app" --health-interval 5s --health-timeout 5s --health-retries 10
@@ -153,13 +153,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
-        with: {go-version-file: go.mod}
+        with: { go-version-file: go.mod }
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
-        with: {node-version-file: .node-version, cache: pnpm}
+        with: { node-version-file: .node-version, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: go build -o bin/grupon-api ./services/api/cmd/api
-      - run: scripts/bootstrap-demo.sh
+      - run: bash scripts/bootstrap-demo.sh
       - run: ./bin/grupon-api > api.log 2>&1 & pnpm --filter @grupon/web start --port 3000 > web.log 2>&1 &
       - run: npx wait-on http://127.0.0.1:8080/readyz http://127.0.0.1:3000/uz
       - run: pnpm exec playwright test e2e/purchase.spec.mjs e2e/merchant.spec.mjs
