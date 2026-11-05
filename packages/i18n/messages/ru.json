@@ -147,7 +147,11 @@
     "termsText": "Эти условия объясняют правила работы маркетплейса и покупки ваучеров.",
     "privacyTitle": "Политика конфиденциальности",
     "privacyText": "Мы собираем только данные, необходимые для работы, защиты и улучшения сервиса.",
-    "contact": "Написать в поддержку"
+    "contact": "Написать в поддержку",
+    "phone": "Телефон",
+    "telegram": "Telegram",
+    "email": "Email",
+    "contactUnavailable": "Контакты поддержки пока не настроены."
   },
   "Footer": {
     "discover": "Открывайте",
@@ -157,7 +161,11 @@
     "terms": "Условия",
     "privacy": "Конфиденциальность",
     "appSoon": "Мобильное приложение скоро",
-    "rights": "Все права защищены."
+    "rights": "Все права защищены.",
+    "phone": "Телефон",
+    "telegram": "Telegram",
+    "email": "Email",
+    "contactUnavailable": "Контакты поддержки пока не настроены."
   },
   "ErrorPage": {
     "notFoundTitle": "Мы не нашли эту страницу",
@@ -256,7 +264,12 @@
     "phone": "Телефон",
     "language": "Язык",
     "currency": "Валюта",
-    "notSet": "Не указано"
+    "notSet": "Не указано",
+    "supportTitle": "Нужна помощь?",
+    "supportPhone": "Телефон",
+    "supportTelegram": "Telegram",
+    "supportEmail": "Email",
+    "supportUnavailable": "Контакты поддержки пока не настроены."
   },
   "Checkout": {
     "title": "Оформление заказа",

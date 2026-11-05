@@ -147,7 +147,11 @@
     "termsText": "These terms explain the rules for using the marketplace and purchasing vouchers.",
     "privacyTitle": "Privacy policy",
     "privacyText": "We collect only the information needed to operate, secure and improve the service.",
-    "contact": "Contact support"
+    "contact": "Contact support",
+    "phone": "Phone",
+    "telegram": "Telegram",
+    "email": "Email",
+    "contactUnavailable": "Support contacts are not configured yet."
   },
   "Footer": {
     "discover": "Discover",
@@ -157,7 +161,11 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "appSoon": "Mobile app coming soon",
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "phone": "Phone",
+    "telegram": "Telegram",
+    "email": "Email",
+    "contactUnavailable": "Support contacts are not configured yet."
   },
   "ErrorPage": {
     "notFoundTitle": "We couldn't find that page",
@@ -256,7 +264,12 @@
     "phone": "Phone",
     "language": "Language",
     "currency": "Currency",
-    "notSet": "Not set"
+    "notSet": "Not set",
+    "supportTitle": "Need help?",
+    "supportPhone": "Phone",
+    "supportTelegram": "Telegram",
+    "supportEmail": "Email",
+    "supportUnavailable": "Support contacts are not configured yet."
   },
   "Checkout": {
     "title": "Checkout",

@@ -49,6 +49,7 @@ After each task: run related tests, commit, push to `feat/stage-3`, and add one 
 **Progress:**
 
 - 2026-11-05: Final Stage 3 task list adopted on `feat/stage-3`; no implementation task is complete yet.
+- 2026-11-05: Task 1 complete — configured support contacts are localized in the footer, Help page, and voucher page; empty channels stay hidden. Web lint, typecheck, and unit tests pass.
 
 ## Stage 4 — Polish and demo quality
 

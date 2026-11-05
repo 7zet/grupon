@@ -22,6 +22,7 @@ Plain-language reference for every setting. The API reads its settings at start-
 | `MANUAL_PAYMENT_INSTRUCTIONS`                                                                 | when manual mode is on       | support message               | Instructions returned to the buyer for a manual payment.                         |
 | `SMS_PROVIDER`                                                                                | no                           | `log`                         | Selected phone-code sender; only the logging sender is implemented currently.    |
 | `WEB_PUBLIC_URL`                                                                              | yes                          | `http://localhost:3000`       | Public address of the web app, used in links and redirects.                      |
+| `SUPPORT_PHONE` / `SUPPORT_TELEGRAM` / `SUPPORT_EMAIL`                                        | no                           | empty                         | Public support contacts rendered in the web footer, Help page, and voucher page. Set these on the web deployment; empty channels stay hidden. |
 | `WEB_REVALIDATE_URL`                                                                          | yes                          | none                          | Web endpoint that clears cached pages.                                           |
 | `WEB_REVALIDATE_SECRET`                                                                       | yes                          | none                          | Shared secret sent to the web revalidation endpoint.                             |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM`                                                       | yes                          | none                          | Mail server for confirmation emails.                                             |
@@ -41,6 +42,7 @@ Plain-language reference for every setting. The API reads its settings at start-
 | `NEXT_PUBLIC_API_BASE_URL`        | build time          | Public API address, for example `https://api.example.com/api/v1`. |
 | `NEXT_PUBLIC_SITE_URL`            | build time          | Public web address.                                               |
 | `WEB_REVALIDATE_SECRET`           | run time            | Must match the API value.                                         |
+| `SUPPORT_PHONE` / `SUPPORT_TELEGRAM` / `SUPPORT_EMAIL` | run time | Public support contact values; do not prefix with `NEXT_PUBLIC_`. Empty values hide that channel. |
 | `USE_MSW` / `NEXT_PUBLIC_USE_MSW` | never in production | Mock API for development without the backend. Keep `false`.       |
 
 `NEXT_PUBLIC_*` values are copied into the browser bundle at build time, so changing them needs a new image.

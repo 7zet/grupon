@@ -147,7 +147,11 @@
     "termsText": "Ushbu shartlar platformadan foydalanish va vaucher xaridi qoidalarini tushuntiradi.",
     "privacyTitle": "Maxfiylik siyosati",
     "privacyText": "Biz xizmatni ishlatish, himoyalash va yaxshilash uchun zarur ma’lumotnigina yig‘amiz.",
-    "contact": "Yordamga yozish"
+    "contact": "Yordamga yozish",
+    "phone": "Telefon",
+    "telegram": "Telegram",
+    "email": "Elektron pochta",
+    "contactUnavailable": "Yordam kontaktlari hali sozlanmagan."
   },
   "Footer": {
     "discover": "Kashf etish",
@@ -157,7 +161,11 @@
     "terms": "Shartlar",
     "privacy": "Maxfiylik",
     "appSoon": "Mobil ilova tez orada",
-    "rights": "Barcha huquqlar himoyalangan."
+    "rights": "Barcha huquqlar himoyalangan.",
+    "phone": "Telefon",
+    "telegram": "Telegram",
+    "email": "Elektron pochta",
+    "contactUnavailable": "Yordam kontaktlari hali sozlanmagan."
   },
   "ErrorPage": {
     "notFoundTitle": "Bu sahifani topa olmadik",
@@ -256,7 +264,12 @@
     "phone": "Telefon",
     "language": "Til",
     "currency": "Valyuta",
-    "notSet": "Kiritilmagan"
+    "notSet": "Kiritilmagan",
+    "supportTitle": "Yordam kerakmi?",
+    "supportPhone": "Telefon",
+    "supportTelegram": "Telegram",
+    "supportEmail": "Elektron pochta",
+    "supportUnavailable": "Yordam kontaktlari hali sozlanmagan."
   },
   "Checkout": {
     "title": "Buyurtma",
