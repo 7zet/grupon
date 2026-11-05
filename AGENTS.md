@@ -31,11 +31,16 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 
 ## Current stage — Stage 3: Telegram bot and support contacts
 
-Stage 2 code is done at `v0.4`; deployment is manual and owned by the project owner using `docs/DEPLOY.md`.
+Stage 2 code is done at `v0.4`; deployment is manual and owned by the project owner using `docs/DEPLOY.md`. Work on `feat/stage-3`; do not push unfinished work to `main`. The site must work fully without Telegram and without real SMS.
 
-1. Configured support contacts in the footer, help page, and voucher page.
-2. Bot basics: localized commands, disabled-without-token behavior, polling, and verified webhooks.
-3. Buyer Telegram linking/unlinking with audited one-time deep-link tokens.
-4. Linked-user outbox notifications, dispute action, expiry reminders, and `/vouchers`.
-5. Fake-client bot tests.
-6. Telegram deployment documentation.
+1. Support contacts from env (`SUPPORT_PHONE`, `SUPPORT_TELEGRAM`, `SUPPORT_EMAIL`): footer, `/help` page, voucher page, Uzbek/Russian/English, never hardcoded.
+2. Bot basics (Go): `/start` with language choice, `/help`, `/support`; no `TELEGRAM_BOT_TOKEN` means disabled; long polling locally and webhook on hosting with Telegram secret-token-header verification.
+3. Account linking: “Connect Telegram” in the buyer profile → one-time deep link (single use, 10 min) → saved `chat_id`; unlink in profile and via `/stop`; audit-logged.
+4. Notifications through the existing outbox (linked users only): voucher issued; voucher redeemed with a “Bu men emasman” button that opens a dispute through the existing idempotent dispute logic; reminders 7 and 1 day before expiry without duplicates; `/vouchers` command with links to the site.
+5. Login code via Telegram (Dealo M01): “Get the code in Telegram” on the login page; bot requests a contact button, verifies it belongs to the same Telegram user, then sends the OTP under the same rules as SMS.
+6. SMS adapter (Eskiz) behind `SMS_PROVIDER=eskiz`, credentials only from env; default remains `SMS_PROVIDER=log`; retain 60-second phone cooldown and IP limits; add daily IP and global daily caps from env; Telegram selection sends no SMS.
+7. Bot menu button “Open site” → `NEXT_PUBLIC_SITE_URL` inside Telegram (WebApp button). Full Mini App login (`initData`) and support tickets are not included and must be recorded in `docs/HANDOVER.md`.
+8. Tests with fakes only (no real Telegram/SMS in CI): link-token single-use and expiry, dispute-button idempotency, reminder de-duplication, wrong contact rejection, OTP cooldown, SMS caps, and bot disabled without a token.
+9. `docs/TELEGRAM.md`: create the bot in @BotFather, set the webhook on Render, and configure env vars. Never commit tokens.
+
+After each task: run related tests, commit, push to `feat/stage-3`, and add one `docs/ROADMAP.md` line. At close: full checks, green CI, merge to `main`, tag `v0.5`, push.
