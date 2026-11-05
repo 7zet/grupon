@@ -1,13 +1,20 @@
 # Deployment (native runtime, no Docker)
 
-Use Vercel for the Next.js web app, a native Go runtime host for the API (with
-`RUN_WORKER_IN_API=true`), and managed PostgreSQL. Copy
+Recommended free demo setup (verified from provider documentation, November 2026; **check the provider site before deploying**):
+
+- **Web — Vercel Hobby:** free for personal, non-commercial use only.
+- **API — Render free web service:** use a native Go build (no Docker) with `RUN_WORKER_IN_API=true`.
+  It spins down after 15 minutes idle, takes about one minute to wake, and includes 750 instance hours/month.
+- **Database — Neon free Postgres:** autosuspends after about five minutes idle. Do not use Render free Postgres: it expires after 30 days.
+
+Background jobs pause while the API sleeps and catch up on wake-up; that is fine for this demo. Copy
 `.env.production.example` to a private `.env.production`; do not store its real values in Git.
 
 Build and apply the schema first:
 
 ```bash
-DATABASE_URL='postgres://…' scripts/bootstrap-demo.sh
+DEMO_MODE=true DATABASE_URL='postgres://…' go run ./services/api/cmd/bootstrap
+# Bash alternative: DATABASE_URL='postgres://…' scripts/bootstrap-demo.sh
 go build -o bin/grupon-api ./services/api/cmd/api
 RUN_WORKER_IN_API=true ./bin/grupon-api
 ```
