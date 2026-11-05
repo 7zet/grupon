@@ -1,6 +1,7 @@
 # Build context is the repository root (pnpm workspace). Serves the production build with `next start`.
-FROM node:26-alpine AS build
-RUN corepack enable
+# Keep in sync with .node-version and CI.
+FROM node:26.13.0-alpine AS build
+RUN npm install --global pnpm@12.16.1
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
@@ -9,8 +10,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile \
  && pnpm --filter @grupon/web build
 
-FROM node:26-alpine AS run
-RUN corepack enable
+FROM node:26.13.0-alpine AS run
+RUN npm install --global pnpm@12.16.1
 ENV NODE_ENV=production
 WORKDIR /repo
 COPY --from=build /repo /repo

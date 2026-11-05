@@ -13,8 +13,8 @@ import (
 const defaultDatabaseURL = "postgres://app:app_dev_password@localhost:5432/app?sslmode=disable"
 
 func main() {
-	if strings.EqualFold(os.Getenv("APP_ENV"), "production") {
-		log.Fatal("seed is disabled in production")
+	if strings.EqualFold(os.Getenv("APP_ENV"), "production") && !strings.EqualFold(os.Getenv("DEMO_MODE"), "true") {
+		log.Fatal("seed is disabled in production unless DEMO_MODE=true")
 	}
 	databaseURL := envOr("DATABASE_URL", defaultDatabaseURL)
 	if err := seed.Run(context.Background(), databaseURL); err != nil {

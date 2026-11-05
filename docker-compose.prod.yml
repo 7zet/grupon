@@ -1,6 +1,11 @@
 # Portable production composition. Copy .env.production.example to a private .env.production;
 # never commit real secrets. Run migrations once before bringing up api/worker/web.
 services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: [ci]
+    environment: {POSTGRES_DB: app, POSTGRES_USER: app, POSTGRES_PASSWORD: app_dev_password}
+    healthcheck: {test: [CMD-SHELL, pg_isready -U app -d app], interval: 2s, timeout: 5s, retries: 30}
   migrate:
     build: {context: ., dockerfile: services/api/Dockerfile, target: migrate}
     env_file: ${ENV_FILE:-.env.production}
@@ -20,6 +25,12 @@ services:
     restart: unless-stopped
     depends_on: {migrate: {condition: service_completed_successfully}}
     volumes: [api_data:/app/data]
+
+  seed:
+    build: {context: ., dockerfile: services/api/Dockerfile, target: seed}
+    profiles: [seed]
+    env_file: ${ENV_FILE:-.env.production}
+    restart: 'no'
 
   web:
     build:

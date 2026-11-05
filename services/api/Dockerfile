@@ -7,7 +7,8 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/api ./services/api/cmd/api \
  && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/worker ./services/api/cmd/worker \
- && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/migrate ./services/api/cmd/migrate
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/migrate ./services/api/cmd/migrate \
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/seed ./services/api/cmd/seed
 
 FROM gcr.io/distroless/static-debian12:nonroot AS api
 WORKDIR /app
@@ -32,3 +33,7 @@ COPY services/api/migrations /app/migrations
 ENV MIGRATIONS_DIR=/app/migrations
 USER nonroot
 ENTRYPOINT ["/app/migrate"]
+
+FROM migrate AS seed
+COPY --from=build /out/seed /app/seed
+ENTRYPOINT ["/app/seed"]
