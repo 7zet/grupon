@@ -96,6 +96,9 @@ func migrate(ctx context.Context, databaseURL, migrations string) error {
 }
 
 func repositoryRoot() (string, error) {
+	if root := os.Getenv("SEED_ROOT"); root != "" {
+		return root, nil
+	}
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
