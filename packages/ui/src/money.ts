@@ -18,7 +18,7 @@ export function formatMoney(
   const som = Math.round(tiyin / TIYIN_PER_SOM);
   const value = new Intl.NumberFormat(localeMap[locale])
     .format(som)
-    .replace(/[  ]/g, ' ');
+    .replace(/[\u00a0\u202f]/g, ' ');
   if (currency !== 'UZS') throw new RangeError(`unsupported currency ${currency}`);
   if (locale === 'ru') return `${value} сум`;
   if (locale === 'en') return `${value} UZS`;

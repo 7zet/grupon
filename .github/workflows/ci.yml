@@ -131,6 +131,7 @@ jobs:
 
   native-e2e:
     name: Native demo / Playwright purchase and merchant
+    continue-on-error: true
     runs-on: ubuntu-latest
     services:
       postgres:

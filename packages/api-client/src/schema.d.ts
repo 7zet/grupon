@@ -217,6 +217,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** Start TOTP enrollment */
     post: operations['enrollTwoFactor'];
     delete?: never;
     options?: never;
@@ -233,6 +234,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** Enable TOTP authentication */
     post: operations['enableTwoFactor'];
     delete?: never;
     options?: never;
@@ -249,6 +251,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** Verify a TOTP challenge */
     post: operations['verifyTwoFactor'];
     delete?: never;
     options?: never;
@@ -266,6 +269,7 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
+    /** Disable TOTP authentication */
     delete: operations['disableTwoFactor'];
     options?: never;
     head?: never;
