@@ -66,7 +66,8 @@ type Config struct {
 	// SMTP configures outbound email. Email is logged instead of sent when SMTPHost is empty.
 	SMTP SMTPConfig
 	// SMS selects the phone-code delivery adapter. Only log is implemented for the pilot.
-	SMS SMSConfig
+	SMS      SMSConfig
+	Telegram TelegramConfig
 	// Commerce configures vouchers and payment providers.
 	Commerce CommerceConfig
 	// TrustProxyHeaders makes rate limiting and audit use X-Forwarded-For or X-Real-IP. Enable only
@@ -94,6 +95,15 @@ type SMTPConfig struct {
 }
 
 type SMSConfig struct{ Provider string }
+
+type TelegramConfig struct {
+	Token           string
+	WebhookSecret   string
+	WebhookMode     bool
+	SupportPhone    string
+	SupportTelegram string
+	SupportEmail    string
+}
 
 // HTTPConfig contains the public HTTP server settings.
 type HTTPConfig struct {
@@ -180,6 +190,10 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	telegramConfig, err := loadTelegram(lookup)
+	if err != nil {
+		return Config{}, err
+	}
 	commerceConfig, err := loadCommerce(lookup, environment, demoMode)
 	if err != nil {
 		return Config{}, err
@@ -223,6 +237,7 @@ func load(lookup lookupEnv) (Config, error) {
 		Auth:                authConfig,
 		SMTP:                smtpConfig,
 		SMS:                 smsConfig,
+		Telegram:            telegramConfig,
 		Commerce:            commerceConfig,
 		TrustProxyHeaders:   trustProxy,
 		HTTP: HTTPConfig{
@@ -234,6 +249,19 @@ func load(lookup lookupEnv) (Config, error) {
 		},
 		ShutdownTimeout: shutdownTimeout,
 	}, nil
+}
+
+func loadTelegram(lookup lookupEnv) (TelegramConfig, error) {
+	token := optionalString(lookup, "TELEGRAM_BOT_TOKEN")
+	secret := optionalString(lookup, "TELEGRAM_WEBHOOK_SECRET")
+	mode, err := boolValue(lookup, "TELEGRAM_WEBHOOK_MODE", false)
+	if err != nil {
+		return TelegramConfig{}, err
+	}
+	if mode && secret == "" {
+		return TelegramConfig{}, fmt.Errorf("TELEGRAM_WEBHOOK_SECRET must be set in webhook mode")
+	}
+	return TelegramConfig{Token: token, WebhookSecret: secret, WebhookMode: mode, SupportPhone: optionalString(lookup, "SUPPORT_PHONE"), SupportTelegram: optionalString(lookup, "SUPPORT_TELEGRAM"), SupportEmail: optionalString(lookup, "SUPPORT_EMAIL")}, nil
 }
 
 func loadSMS(lookup lookupEnv) (SMSConfig, error) {

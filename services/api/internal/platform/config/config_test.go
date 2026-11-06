@@ -97,13 +97,14 @@ func TestLoadRejectsInvalidEnvironment(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]map[string]string{
-		"empty environment":        {"APP_ENV": " "},
-		"empty address":            {"API_ADDR": ""},
-		"invalid log level":        {"LOG_LEVEL": "verbose"},
-		"unknown SMS provider":     {"SMS_PROVIDER": "pilot-sms"},
-		"invalid duration":         {"HTTP_READ_TIMEOUT": "eventually"},
-		"non-positive duration":    {"HTTP_IDLE_TIMEOUT": "0s"},
-		"negative shutdown period": {"SHUTDOWN_TIMEOUT": "-1s"},
+		"empty environment":           {"APP_ENV": " "},
+		"empty address":               {"API_ADDR": ""},
+		"invalid log level":           {"LOG_LEVEL": "verbose"},
+		"unknown SMS provider":        {"SMS_PROVIDER": "pilot-sms"},
+		"webhook mode without secret": {"TELEGRAM_WEBHOOK_MODE": "true"},
+		"invalid duration":            {"HTTP_READ_TIMEOUT": "eventually"},
+		"non-positive duration":       {"HTTP_IDLE_TIMEOUT": "0s"},
+		"negative shutdown period":    {"SHUTDOWN_TIMEOUT": "-1s"},
 	}
 
 	for name, environment := range tests {

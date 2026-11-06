@@ -34,11 +34,16 @@ import (
 	"github.com/grupon/grupon/services/api/internal/platform/sms"
 	"github.com/grupon/grupon/services/api/internal/platform/storage"
 	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/grupon/grupon/services/api/internal/telegram"
 )
 
 // Run connects to PostgreSQL and Redis, serves the HTTP API, and blocks until the server stops
 // or the context is canceled.
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
+	bot := telegram.New(telegram.Config{Token: cfg.Telegram.Token, WebhookSecret: cfg.Telegram.WebhookSecret, Phone: cfg.Telegram.SupportPhone, Telegram: cfg.Telegram.SupportTelegram, Email: cfg.Telegram.SupportEmail})
+	if bot != nil && !cfg.Telegram.WebhookMode {
+		go bot.Poll(ctx)
+	}
 	if cfg.RunWorkerInAPI {
 		go func() {
 			if err := workerapp.Run(ctx, cfg, logger); err != nil && ctx.Err() == nil {
@@ -144,6 +149,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 			redemption.NewService(store.NewRedemptionRepository(pool, store.NewCommerceRepository(pool), store.NewCatalogRepository(pool)), verifyQRToken(commerceService), time.Now).WithBackupCodes(commerceService.Signer().BackupCodeHMAC),
 			workspaceService, authAPI, logger),
 		MediaFiles: http.StripPrefix("/media/", http.FileServer(http.Dir(mediaStore.Root()))),
+		Telegram:   httpapi.NewTelegramAPI(bot, cfg.Telegram.WebhookSecret, cfg.Telegram.WebhookMode),
 	})
 	server := newServer(cfg.HTTP, router, logger)
 

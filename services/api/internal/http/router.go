@@ -60,6 +60,7 @@ type RouterOptions struct {
 	Finance *FinanceAPI
 	// MediaFiles serves stored media files for the local storage adapter when set.
 	MediaFiles http.Handler
+	Telegram   *TelegramAPI
 }
 
 // maxRequestBodyBytes caps every request body. The largest accepted payload is a small JSON object.
@@ -105,6 +106,9 @@ func NewRouter(options RouterOptions) chi.Router {
 	}
 	if options.MediaFiles != nil {
 		router.Handle("/media/*", options.MediaFiles)
+	}
+	if options.Telegram != nil {
+		options.Telegram.mount(router)
 	}
 
 	return router
