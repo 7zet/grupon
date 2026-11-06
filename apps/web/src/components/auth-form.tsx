@@ -44,8 +44,9 @@ function problemKey(code: string | undefined) {
 }
 
 /** Phone sign-in: send a code, then enter it. The account is created on first use. */
-export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }) {
+export function AuthForm({ next, demoMode = false }: { mode?: 'login' | 'register'; next: string; demoMode?: boolean }) {
   const t = useTranslations('Auth');
+  const identity = useTranslations('Identity');
   const router = useRouter();
   const [phone, setPhone] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -133,6 +134,8 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
   if (phone === null) {
     const errors = phoneForm.formState.errors;
     return (
+      <>
+      {demoMode && <DemoAccounts onSelect={(phone) => phoneForm.setValue('digits', phone.slice(4), { shouldValidate: true })} labels={{ title: t('demoAccounts'), hint: t('demoAccountsHint'), buyer: identity('buyer'), owner: identity('owner'), manager: identity('manager'), cashier: identity('cashier') }} />}
       <form
         className="mx-auto mt-10 grid max-w-md gap-5"
         noValidate
@@ -171,6 +174,7 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
           {t('sendCode')}
         </button>
       </form>
+      </>
     );
   }
 
@@ -213,6 +217,15 @@ export function AuthForm({ next }: { mode?: 'login' | 'register'; next: string }
       </button>
     </form>
   );
+}
+
+function DemoAccounts({ onSelect, labels }: { onSelect: (phone: string) => void; labels: { title: string; hint: string; buyer: string; owner: string; manager: string; cashier: string } }) {
+  const accounts = [
+    { role: labels.buyer, phone: '+998900000001' }, { role: labels.buyer, phone: '+998910000009' },
+    { role: `${labels.owner} · Lotus Spa`, phone: '+998900000002' }, { role: `${labels.manager} · Lotus Spa`, phone: '+998910000010' },
+    { role: `${labels.cashier} · Lotus Spa`, phone: '+998900000003' }, { role: `${labels.cashier} · Urban Grill`, phone: '+998900000009' },
+  ];
+  return <section className="mx-auto mt-10 max-w-md rounded-card-ui border border-border bg-surface p-4"><h2 className="font-semibold">{labels.title}</h2><p className="mt-1 text-small text-ink-muted">{labels.hint}</p><ul className="mt-3 grid gap-2">{accounts.map((account) => <li key={account.phone}><button type="button" className="w-full rounded-control-ui border px-3 py-2 text-left text-small hover:bg-page" onClick={() => onSelect(account.phone)}><span className="font-medium">{account.role}</span><span className="ml-2 text-ink-muted">{account.phone}</span></button></li>)}</ul></section>;
 }
 
 function ErrorBox({ message }: { message: string }) {

@@ -10,6 +10,7 @@ const UUID = '[0-9a-f-]{36}';
 
 const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^me$/ },
+  { method: 'POST', pattern: /^auth\/logout$/ },
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
   { method: 'POST', pattern: /^merchant\/submit$/ },

@@ -7,12 +7,14 @@ import { Link } from '@/i18n/navigation';
 import { BusinessNavLink } from './business-nav-link';
 import { LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
+import { AccountMenu } from './account-menu';
 
 type Props = PropsWithChildren<{ config: PublicConfig; locale: Locale; currency: Currency }>;
 
 export async function SiteShell({ children, config, locale }: Props) {
   const t = await getTranslations('Navigation');
   const footer = await getTranslations('Footer');
+  const identity = await getTranslations('Identity');
   return (
     <>
       <a
@@ -58,13 +60,7 @@ export async function SiteShell({ children, config, locale }: Props) {
             </select>
             <LanguageSelect value={locale} />
             <BusinessNavLink />
-            <Link
-              className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block"
-              href="/login"
-              aria-label={t('account')}
-            >
-              <UserRound />
-            </Link>
+            <AccountMenu labels={{ account: t('account'), coupons: t('coupons'), logout: t('logout'), buyer: identity('buyer'), owner: identity('owner'), manager: identity('manager'), cashier: identity('cashier'), admin: identity('admin'), moderator: identity('moderator'), support: identity('support'), finance: identity('finance'), superadmin: identity('superadmin') }} />
           </div>
         </div>
         <nav className="hidden border-t lg:block">

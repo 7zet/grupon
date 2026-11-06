@@ -29,13 +29,10 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 - Go integration tests need `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable`.
 - Run focused tests for each change. At stage close run Go tests, Go vet, web lint, typecheck, web unit tests, and Playwright when browser flows change.
 
-## Current stage — Stage 3: Telegram bot and support contacts
+## Current stage — Stage 4a G0: demo usability
 
-Stage 2 code is done at `v0.4`; deployment is manual and owned by the project owner using `docs/DEPLOY.md`.
-
-1. Configured support contacts in the footer, help page, and voucher page.
-2. Bot basics: localized commands, disabled-without-token behavior, polling, and verified webhooks.
-3. Buyer Telegram linking/unlinking with audited one-time deep-link tokens.
-4. Linked-user outbox notifications, dispute action, expiry reminders, and `/vouchers`.
-5. Fake-client bot tests.
-6. Telegram deployment documentation.
+1. Account icon opens a signed-in account menu instead of navigating to login.
+2. Show a localized identity badge in the header and staff panels.
+3. Show non-admin demo account shortcuts only in demo mode.
+4. Keep clear, stable demo identities in the bootstrap seed.
+5. Keep `docs/DEMO.md` accurate; finish focused E2E and CI, then merge `v0.5`.
