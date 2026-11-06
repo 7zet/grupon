@@ -50,6 +50,7 @@ After each task: run related tests, commit, push to `feat/stage-3`, and add one 
 
 - 2026-11-05: Final Stage 3 task list adopted on `feat/stage-3`; no implementation task is complete yet.
 - 2026-11-05: Task 1 complete — configured support contacts are localized in the footer, Help page, and voucher page; empty channels stay hidden. Web lint, typecheck, and unit tests pass.
+- 2026-11-06: Task 2 in progress — Telegram bot is disabled without a token; polling/webhook basics and secret-header validation exist, and `/start` language is persisted per chat.
 
 ## Stage 4 — Polish and demo quality
 
