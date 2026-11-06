@@ -16,13 +16,22 @@ type Config struct{ Token, WebhookSecret, Phone, Telegram, Email string }
 type Bot struct {
 	cfg    Config
 	client *http.Client
+	store  LanguageStore
+}
+type LanguageStore interface {
+	SetLanguage(context.Context, int64, string) error
+	Language(context.Context, int64) (string, error)
 }
 
-func New(cfg Config) *Bot {
+func New(cfg Config, stores ...LanguageStore) *Bot {
 	if cfg.Token == "" {
 		return nil
 	}
-	return &Bot{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}}
+	var store LanguageStore
+	if len(stores) > 0 {
+		store = stores[0]
+	}
+	return &Bot{cfg: cfg, client: &http.Client{Timeout: 10 * time.Second}, store: store}
 }
 
 type Update struct {
@@ -54,6 +63,15 @@ func (b *Bot) Handle(ctx context.Context, update Update) error {
 	var reply string
 	switch text {
 	case "/start", "/start uz", "/start ru", "/start en":
+		lang := "uz"
+		if strings.HasPrefix(text, "/start ") {
+			lang = strings.TrimPrefix(text, "/start ")
+		}
+		if b.store != nil {
+			if err := b.store.SetLanguage(ctx, update.Message.Chat.ID, lang); err != nil {
+				return err
+			}
+		}
 		reply = "Tilni tanlang: O‘zbekcha / Русский / English\n/help — yordam\n/support — aloqa"
 	case "/help":
 		reply = "/support buyrug‘i orqali yordam kontaktlarini oling."

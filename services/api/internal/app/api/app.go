@@ -40,10 +40,6 @@ import (
 // Run connects to PostgreSQL and Redis, serves the HTTP API, and blocks until the server stops
 // or the context is canceled.
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
-	bot := telegram.New(telegram.Config{Token: cfg.Telegram.Token, WebhookSecret: cfg.Telegram.WebhookSecret, Phone: cfg.Telegram.SupportPhone, Telegram: cfg.Telegram.SupportTelegram, Email: cfg.Telegram.SupportEmail})
-	if bot != nil && !cfg.Telegram.WebhookMode {
-		go bot.Poll(ctx)
-	}
 	if cfg.RunWorkerInAPI {
 		go func() {
 			if err := workerapp.Run(ctx, cfg, logger); err != nil && ctx.Err() == nil {
@@ -56,6 +52,10 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return fmt.Errorf("open database: %w", err)
 	}
 	defer pool.Close()
+	bot := telegram.New(telegram.Config{Token: cfg.Telegram.Token, WebhookSecret: cfg.Telegram.WebhookSecret, Phone: cfg.Telegram.SupportPhone, Telegram: cfg.Telegram.SupportTelegram, Email: cfg.Telegram.SupportEmail}, telegram.NewPostgresStore(pool))
+	if bot != nil && !cfg.Telegram.WebhookMode {
+		go bot.Poll(ctx)
+	}
 
 	readiness := []httpapi.ReadinessCheck{func(ctx context.Context) error { return pool.Ping(ctx) }}
 	var responseCache catalog.Cache
