@@ -47,7 +47,15 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Finish line:** Demo scripts, visual polish, edge states, and cross-role browser tests are complete.
 
-**Status:** Not started.
+**Status:** In progress — G0 demo usability is the release blocker.
+
+**Current work:** G0 items 1–5 are implemented on `feat/stage-4a`; focused web checks are green. CI and browser verification are pending before the `v0.5` merge.
+
+**Delivery order (2026-11-06):**
+
+1. `feat/stage-4a` G0: account menu, identity badges, demo-account picker, clear seed names, and `docs/DEMO.md`; green CI, merge to `main`, tag `v0.5`.
+2. Rebase `feat/stage-3b` on that `main`; finish Eskiz SMS wiring/daily caps, Telegram cleanup, and documentation; green CI, merge to `main`, tag `v0.6`.
+3. Create a new branch from updated `main` for audit groups G1 through G5.
 
 ## Stage 5 — SEO, final documentation, handover, v1.0
 

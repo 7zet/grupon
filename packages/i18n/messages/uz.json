@@ -18,7 +18,8 @@
     "menu": "Menyu",
     "close": "Yopish",
     "skipToContent": "Asosiy qismga o‘tish",
-    "sell": "Biznesingizni joylang"
+    "sell": "Biznesingizni joylang",
+    "logout": "Chiqish"
   },
   "Home": {
     "eyebrow": "Shahringizdan ko‘proq bahra oling",
@@ -214,7 +215,9 @@
     "errorOtpCooldown": "Kod yaqinda yuborilgan. Bir daqiqadan keyin qayta urinib ko‘ring",
     "errorOtpInvalid": "Kod noto‘g‘ri yoki muddati tugagan",
     "errorOtpAttempts": "Juda ko‘p noto‘g‘ri urinish. Yangi kod oling",
-    "errorOtpUnavailable": "Hozir kod yuborib bo‘lmaydi. Keyinroq urinib ko‘ring"
+    "errorOtpUnavailable": "Hozir kod yuborib bo‘lmaydi. Keyinroq urinib ko‘ring",
+    "demoAccounts": "Demo akkauntlar",
+    "demoAccountsHint": "Raqamni bosib, kirish formasiga qo‘ying."
   },
   "Account": {
     "title": "Hisobim",
@@ -742,5 +745,16 @@
     "orderExpired": "Muddati o'tgan",
     "orderFailed": "Muvaffaqiyatsiz",
     "orderPartiallyRefunded": "Qisman qaytarilgan"
+  },
+  "Identity": {
+    "buyer": "Xaridor",
+    "owner": "Biznes egasi",
+    "manager": "Menejer",
+    "cashier": "Kassir",
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "support": "Qo'llab-quvvatlash",
+    "finance": "Moliya",
+    "superadmin": "Superadmin"
   }
 }

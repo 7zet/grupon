@@ -18,7 +18,8 @@
     "menu": "Menu",
     "close": "Close",
     "skipToContent": "Skip to main content",
-    "sell": "List your business"
+    "sell": "List your business",
+    "logout": "Log out"
   },
   "Home": {
     "eyebrow": "Make more of your city",
@@ -214,7 +215,9 @@
     "qrAlt": "Authenticator enrollment QR code",
     "recoveryTitle": "Save your recovery codes",
     "recoveryHint": "Each code works once. Store these codes somewhere safe.",
-    "continue": "Continue"
+    "continue": "Continue",
+    "demoAccounts": "Demo accounts",
+    "demoAccountsHint": "Select a number to fill in the sign-in form."
   },
   "Account": {
     "title": "My account",
@@ -742,5 +745,16 @@
     "orderExpired": "Expired",
     "orderFailed": "Failed",
     "orderPartiallyRefunded": "Partially refunded"
+  },
+  "Identity": {
+    "buyer": "Buyer",
+    "owner": "Owner",
+    "manager": "Manager",
+    "cashier": "Cashier",
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "support": "Support",
+    "finance": "Finance",
+    "superadmin": "Superadmin"
   }
 }

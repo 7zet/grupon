@@ -183,12 +183,19 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 	}
 	userIDs := make([]string, 24)
-	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test", "owner-b@local.test", "owner-c@local.test", "owner-d@local.test", "admin-b@local.test", "cashier-b@local.test"}
+	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test", "owner-b@local.test", "owner-c@local.test", "owner-d@local.test", "admin-b@local.test", "cashier-b@local.test", "buyer-b@local.test", "manager@local.test", "moderator@local.test", "support@local.test", "finance-a@local.test", "finance-b@local.test"}
+	demoNames := []string{
+		"Aziz — xaridor", "Dilnoza — Lotus Spa egasi", "Bekzod — Lotus Spa kassiri (Chilonzor)",
+		"Saida — superadmin", "Jasur — Urban Grill egasi", "Malika — Family Cafe egasi",
+		"Sardor — Beauty House egasi", "Kamron — admin", "Nodira — Urban Grill kassiri",
+		"Zarina — xaridor", "Sherzod — Lotus Spa menejeri", "Madina — moderator",
+		"Umida — qo'llab-quvvatlash", "Farhod — moliya tayyorlovchi", "Shahnoza — moliya tasdiqlovchi",
+	}
 	for i := range userIDs {
 		email := fmt.Sprintf("customer%02d@local.test", i)
 		name := fmt.Sprintf("Seed Customer %02d", i)
 		if i < len(emails) {
-			email, name = emails[i], []string{"Test User", "Merchant Owner", "Merchant Cashier", "Superadmin", "Merchant Owner B", "Merchant Owner C", "Merchant Owner D", "Superadmin B", "Merchant Cashier B"}[i]
+			email, name = emails[i], demoNames[i]
 		}
 		if err := tx.QueryRow(ctx, `INSERT INTO users(email,name,locale,currency,email_verified_at,phone) VALUES($1,$2,$3,'UZS',now(),$4) RETURNING id`, email, name, []string{"uz", "ru", "en"}[i%3], seedPhone(i)).Scan(&userIDs[i]); err != nil {
 			return err
@@ -203,6 +210,12 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	hours := `{"mon":["09:00","20:00"],"tue":["09:00","20:00"],"wed":["09:00","20:00"],"thu":["09:00","20:00"],"fri":["09:00","20:00"],"sat":["10:00","18:00"],"sun":null}`
 	for i := range merchantIDs {
 		name := fmt.Sprintf("%s %d", data.MerchantNames[i%len(data.MerchantNames)], i+1)
+		if i == 0 {
+			name = "Lotus Spa"
+		}
+		if i == 1 {
+			name = "Urban Grill"
+		}
 		slug := fmt.Sprintf("seed-merchant-%02d", i+1)
 		if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps,review_status) VALUES($1,$2,$2,$3,$4,$5,1500,'approved') RETURNING id`, slug, name, description, fmt.Sprintf("+99890100%04d", i), "https://local.test/business/"+slug).Scan(&merchantIDs[i]); err != nil {
 			return err
@@ -216,7 +229,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			locationIDs[i] = append(locationIDs[i], id)
 		}
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,'merchant_owner',$3),($2,'merchant_cashier',$3)`, userIDs[1], userIDs[2], merchantIDs[0]); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,'merchant_owner',$3),($2,'merchant_cashier',$3),($4,'merchant_manager',$3)`, userIDs[1], userIDs[2], merchantIDs[0], userIDs[10]); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[3]); err != nil {
@@ -228,6 +241,9 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[7]); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'moderator'),($2,'support'),($3,'finance'),($4,'finance')`, userIDs[11], userIDs[12], userIDs[13], userIDs[14]); err != nil {
 		return err
 	}
 	// Development-only deterministic factors let the seeded platform admins exercise the mandatory
@@ -346,7 +362,7 @@ func active(flag *bool) bool {
 // seedPhone is the development sign-in phone of the seeded user at index i. The first four are the
 // named test accounts; the rest get numbers from a reserved development range.
 func seedPhone(i int) string {
-	named := []string{"+998900000001", "+998900000002", "+998900000003", "+998900000004", "+998900000005", "+998900000006", "+998900000007", "+998900000008", "+998900000009"}
+	named := []string{"+998900000001", "+998900000002", "+998900000003", "+998900000004", "+998900000005", "+998900000006", "+998900000007", "+998900000008", "+998900000009", "+998910000009", "+998910000010", "+998910000011", "+998910000012", "+998910000013", "+998910000014"}
 	if i < len(named) {
 		return named[i]
 	}
