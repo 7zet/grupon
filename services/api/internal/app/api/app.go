@@ -108,6 +108,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		SecureCookies:     cfg.Environment != "development",
 		TrustProxyHeaders: cfg.TrustProxyHeaders,
 		RefreshTokenTTL:   cfg.Auth.RefreshTokenTTL,
+		AllowedOrigins:    []string{cfg.Auth.WebPublicURL},
+		AllowLocalOrigins: cfg.Environment == "development",
 	})
 
 	commerceService, err := commerceapp.New(cfg, pool, store.NewCatalogRepository(pool), logger)
