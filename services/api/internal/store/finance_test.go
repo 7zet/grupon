@@ -146,7 +146,9 @@ func TestReversalAfterPayoutBecomesMerchantReceivableAndOffsetsNextPayout(t *tes
 		firstVoucher, merchantID).Scan(&firstRedemption); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := fixture.pool.Exec(ctx, `UPDATE vouchers SET redemptions_used=1, status='redeemed' WHERE id=$1`, firstVoucher); err != nil {
+	if _, err := fixture.pool.Exec(ctx, `UPDATE vouchers SET redemptions_used=1, status='redeemed', redeemed_at=now(),
+		redeemed_by_user_id=(SELECT id FROM users WHERE email='owner@local.test'),
+		redeemed_location_id=(SELECT id FROM merchant_locations WHERE merchant_id=$2 LIMIT 1) WHERE id=$1`, firstVoucher, merchantID); err != nil {
 		t.Fatal(err)
 	}
 	firstRun, err := service.PreparePayout(ctx, preparer, merchantID)
