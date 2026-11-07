@@ -6,8 +6,8 @@ import { accountGetOrNull, loadForVisitor } from '@/lib/account-api';
 
 type User = components['schemas']['User'];
 
-export default async function AdminLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function AdminLayout({ children, params }: { children: ReactNode; params: Promise<unknown> }) {
+	const { locale } = await params as { locale: string };
   const user = await loadForVisitor(locale, `/${locale}/admin/moderation`, () => accountGetOrNull<User>('/me'));
   const t = await getTranslations('Identity');
   const role = user?.roles.find((item) => item !== 'user');
