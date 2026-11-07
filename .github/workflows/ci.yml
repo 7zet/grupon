@@ -178,4 +178,4 @@ jobs:
           echo '--- web.log ---'; cat web.log || true
           echo '--- environment variable names ---'; env | cut -d= -f1 | sort
           exit 1
-      - run: pnpm exec playwright test e2e/purchase.spec.mjs e2e/merchant.spec.mjs
+      - run: pnpm exec playwright test --config=e2e/playwright.config.mjs purchase.spec.mjs merchant.spec.mjs
