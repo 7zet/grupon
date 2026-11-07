@@ -32,6 +32,7 @@ var (
 	ErrOTPInvalid      = errors.New("identity: code is wrong or expired")
 	ErrOTPTooManyTries = errors.New("identity: too many wrong codes")
 	ErrOTPUnavailable  = errors.New("identity: sign-in codes are not available right now")
+	ErrSMSDailyCap     = errors.New("identity: daily SMS cap reached")
 )
 
 var uzPhone = regexp.MustCompile(`^\+998[0-9]{9}$`)
@@ -69,6 +70,11 @@ func (s *Service) RequestCode(ctx context.Context, meta RequestMeta, rawPhone st
 	if s.codeSender == nil {
 		return OTPRequest{}, ErrOTPUnavailable
 	}
+	if s.cfg.RealSMS {
+		if err := s.allowDailySMS(ctx, meta.IP); err != nil {
+			return OTPRequest{}, err
+		}
+	}
 	latest, err := s.repo.LatestIssuedPhoneOTP(ctx, phone)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return OTPRequest{}, err
@@ -81,17 +87,40 @@ func (s *Service) RequestCode(ctx context.Context, meta RequestMeta, rawPhone st
 	if err != nil {
 		return OTPRequest{}, err
 	}
-	if err := s.repo.InsertPhoneOTP(ctx, phone, HashToken(phone+":"+code), s.now().Add(otpTTL)); err != nil {
-		return OTPRequest{}, err
-	}
 	if err := s.codeSender.SendCode(ctx, phone, code); err != nil {
 		return OTPRequest{}, fmt.Errorf("send code: %w", err)
+	}
+	if err := s.repo.InsertPhoneOTP(ctx, phone, HashToken(phone+":"+code), s.now().Add(otpTTL)); err != nil {
+		return OTPRequest{}, err
 	}
 	result := OTPRequest{CooldownSeconds: int(s.cfg.OTPCooldown / time.Second)}
 	if s.cfg.OTPEcho {
 		result.DevCode = code
 	}
 	return result, nil
+}
+
+func (s *Service) allowDailySMS(ctx context.Context, ip string) error {
+	day := s.now().In(time.FixedZone("Asia/Tashkent", 5*60*60)).Truncate(24 * time.Hour)
+	if s.cfg.SMSDailyCapGlobal > 0 {
+		count, err := s.repo.IncrementSMSDailyUsage(ctx, day, "global", "all")
+		if err != nil {
+			return err
+		}
+		if count > s.cfg.SMSDailyCapGlobal {
+			return ErrSMSDailyCap
+		}
+	}
+	if s.cfg.SMSDailyCapPerIP > 0 {
+		count, err := s.repo.IncrementSMSDailyUsage(ctx, day, "ip", ip)
+		if err != nil {
+			return err
+		}
+		if count > s.cfg.SMSDailyCapPerIP {
+			return ErrSMSDailyCap
+		}
+	}
+	return nil
 }
 
 // VerifyCode checks the newest unused code for the phone. A correct code signs the account in and

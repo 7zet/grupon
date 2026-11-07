@@ -8,6 +8,8 @@ import { BusinessNavLink } from './business-nav-link';
 import { LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
 import { AccountMenu } from './account-menu';
+import { SupportContacts } from './support-contacts';
+import { getSupportContacts } from '@/lib/support';
 
 type Props = PropsWithChildren<{ config: PublicConfig; locale: Locale; currency: Currency }>;
 
@@ -15,6 +17,7 @@ export async function SiteShell({ children, config, locale }: Props) {
   const t = await getTranslations('Navigation');
   const footer = await getTranslations('Footer');
   const identity = await getTranslations('Identity');
+  const contacts = getSupportContacts();
   return (
     <>
       <a
@@ -112,6 +115,17 @@ export async function SiteShell({ children, config, locale }: Props) {
             <Link className="mt-3 block text-small text-ink-muted" href="/help">
               {footer('help')}
             </Link>
+            <div className="mt-3">
+              <SupportContacts
+                contacts={contacts}
+                labels={{
+                  phone: footer('phone'),
+                  telegram: footer('telegram'),
+                  email: footer('email'),
+                  unavailable: footer('contactUnavailable'),
+                }}
+              />
+            </div>
             <Link className="mt-2 block text-small text-ink-muted" href="/terms">
               {footer('terms')}
             </Link>

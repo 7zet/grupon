@@ -166,6 +166,12 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 	var codeSender identity.CodeSender
 	if cfg.SMS.Provider == "log" {
 		codeSender = sms.NewLogSender(logger)
+	} else if cfg.SMS.Provider == "eskiz" {
+		sender, senderErr := sms.NewEskizSender(cfg.SMS.EskizBaseURL, cfg.SMS.EskizEmail, cfg.SMS.EskizPassword, cfg.SMS.EskizSender)
+		if senderErr != nil {
+			return nil, fmt.Errorf("configure Eskiz sender: %w", senderErr)
+		}
+		codeSender = sender
 	}
 	tokens, err := identity.NewTokenIssuer(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL, time.Now)
 	if err != nil {
@@ -188,13 +194,16 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		Now:        time.Now,
 		CodeSender: codeSender,
 	}, identity.Config{
-		OTPEcho:         cfg.DemoMode,
-		OTPCooldown:     otpCooldown(cfg.Environment),
-		AccessTokenTTL:  cfg.Auth.AccessTokenTTL,
-		RefreshTokenTTL: cfg.Auth.RefreshTokenTTL,
-		VerifyEmailTTL:  verifyEmailTTL,
-		WebBaseURL:      cfg.Auth.WebPublicURL,
-		BrandName:       cfg.Auth.BrandName,
+		OTPEcho:           cfg.DemoMode,
+		OTPCooldown:       otpCooldown(cfg.Environment),
+		AccessTokenTTL:    cfg.Auth.AccessTokenTTL,
+		RefreshTokenTTL:   cfg.Auth.RefreshTokenTTL,
+		VerifyEmailTTL:    verifyEmailTTL,
+		WebBaseURL:        cfg.Auth.WebPublicURL,
+		BrandName:         cfg.Auth.BrandName,
+		RealSMS:           cfg.SMS.Provider == "eskiz",
+		SMSDailyCapPerIP:  cfg.SMS.DailyCapPerIP,
+		SMSDailyCapGlobal: cfg.SMS.DailyCapGlobal,
 	}), nil
 }
 

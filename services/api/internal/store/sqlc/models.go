@@ -1038,6 +1038,13 @@ type RoleAssignment struct {
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 }
 
+type SmsDailyUsage struct {
+	Day   pgtype.Date `json:"day"`
+	Scope string      `json:"scope"`
+	Key   string      `json:"key"`
+	Count int32       `json:"count"`
+}
+
 type StockReservation struct {
 	ID           pgtype.UUID        `json:"id"`
 	DealOptionID pgtype.UUID        `json:"deal_option_id"`

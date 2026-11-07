@@ -19,6 +19,14 @@ go build -o bin/grupon-api ./services/api/cmd/api
 RUN_WORKER_IN_API=true ./bin/grupon-api
 ```
 
+## Optional Eskiz SMS on Render
+
+Leave `SMS_PROVIDER=log` for the normal demo: sign-in codes are logged and shown only when
+`DEMO_MODE=true`. To send SMS, set these **Render API service** environment variables (never Vercel):
+`SMS_PROVIDER=eskiz`, `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_SENDER`,
+`SMS_DAILY_CAP_PER_IP`, and `SMS_DAILY_CAP_GLOBAL`. `ESKIZ_BASE_URL` is optional and defaults to
+the official Eskiz API URL. Credentials come from the Eskiz account; keep them out of Git.
+
 Probe `GET /healthz` for process liveness and `GET /readyz` for database readiness. Put the API and
 web behind HTTPS; the merchant scanner needs HTTPS for camera access on real phones.
 

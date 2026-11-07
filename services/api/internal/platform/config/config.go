@@ -93,7 +93,15 @@ type SMTPConfig struct {
 	From string
 }
 
-type SMSConfig struct{ Provider string }
+type SMSConfig struct {
+	Provider       string
+	EskizEmail     string
+	EskizPassword  string
+	EskizSender    string
+	EskizBaseURL   string
+	DailyCapPerIP  int
+	DailyCapGlobal int
+}
 
 // HTTPConfig contains the public HTTP server settings.
 type HTTPConfig struct {
@@ -241,10 +249,36 @@ func loadSMS(lookup lookupEnv) (SMSConfig, error) {
 	if err != nil {
 		return SMSConfig{}, err
 	}
-	if provider != "log" {
-		return SMSConfig{}, fmt.Errorf("SMS_PROVIDER %q is not configured; only log is available", provider)
+	if provider == "log" {
+		return SMSConfig{Provider: provider}, nil
 	}
-	return SMSConfig{Provider: provider}, nil
+	if provider != "eskiz" {
+		return SMSConfig{}, fmt.Errorf("SMS_PROVIDER %q is not configured", provider)
+	}
+	email, err := stringValue(lookup, "ESKIZ_EMAIL", "")
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	password, err := stringValue(lookup, "ESKIZ_PASSWORD", "")
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	sender, err := stringValue(lookup, "ESKIZ_SENDER", "")
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	perIP, err := intValue(lookup, "SMS_DAILY_CAP_PER_IP", 50)
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	global, err := intValue(lookup, "SMS_DAILY_CAP_GLOBAL", 1000)
+	if err != nil {
+		return SMSConfig{}, err
+	}
+	if perIP < 1 || global < 1 {
+		return SMSConfig{}, fmt.Errorf("SMS daily caps must be positive")
+	}
+	return SMSConfig{Provider: provider, EskizEmail: email, EskizPassword: password, EskizSender: sender, EskizBaseURL: optionalString(lookup, "ESKIZ_BASE_URL"), DailyCapPerIP: perIP, DailyCapGlobal: global}, nil
 }
 
 // optionalString returns the trimmed value of an optional variable, or an empty string.
@@ -265,6 +299,18 @@ func stringValue(lookup lookupEnv, name, fallback string) (string, error) {
 	}
 
 	return value, nil
+}
+
+func intValue(lookup lookupEnv, name string, fallback int) (int, error) {
+	value, ok := lookup(name)
+	if !ok {
+		return fallback, nil
+	}
+	parsed, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || parsed < 0 {
+		return 0, fmt.Errorf("%s must be a non-negative integer", name)
+	}
+	return parsed, nil
 }
 
 func levelValue(lookup lookupEnv, name string, fallback slog.Level) (slog.Level, error) {

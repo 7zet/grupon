@@ -5,8 +5,10 @@ import { notFound } from 'next/navigation';
 
 import { AccountShell } from '@/components/account-shell';
 import { ReviewForm } from '@/components/review-form';
+import { SupportContacts } from '@/components/support-contacts';
 import { accountGetOrNull, loadForVisitor } from '@/lib/account-api';
 import { pickText } from '@/lib/localized';
+import { getSupportContacts } from '@/lib/support';
 
 type Voucher = components['schemas']['Voucher'];
 
@@ -18,6 +20,7 @@ export default async function VoucherPage({
   const { locale, voucherId } = await params;
   const t = await getTranslations('Account');
   const format = await getFormatter();
+  const contacts = getSupportContacts();
 
   const voucher = await loadForVisitor(locale, `/${locale}/account/coupons/${voucherId}`, () =>
     accountGetOrNull<Voucher>(`/me/vouchers/${encodeURIComponent(voucherId)}`),
@@ -55,6 +58,22 @@ export default async function VoucherPage({
             <dd className="text-ink">{voucher.merchant.display_name}</dd>
           </div>
         </dl>
+        <section className="w-full rounded-card-ui border bg-surface p-4 text-left" aria-labelledby="voucher-support">
+          <h3 id="voucher-support" className="font-semibold text-ink">
+            {t('supportTitle')}
+          </h3>
+          <div className="mt-2">
+            <SupportContacts
+              contacts={contacts}
+              labels={{
+                phone: t('supportPhone'),
+                telegram: t('supportTelegram'),
+                email: t('supportEmail'),
+                unavailable: t('supportUnavailable'),
+              }}
+            />
+          </div>
+        </section>
       </article>
       {voucher.status === 'redeemed' && (
         <div className="mx-auto mt-8 max-w-md">
