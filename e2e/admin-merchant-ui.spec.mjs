@@ -59,6 +59,16 @@ async function loginPhone(phone) {
   return (await response.json()).access_token;
 }
 
+/** The business-level price proof that deal submission requires; uploading again replaces it. */
+async function uploadPriceProof(owner) {
+  const response = await fetch(`${API}/merchant/documents/price_proof`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${owner}`, 'Content-Type': 'image/png' },
+    body: PNG,
+  });
+  expect(response.status).toBe(204);
+}
+
 function call(token, method, path, body, headers = {}) {
   return fetch(`${API}${path}`, {
     method,
@@ -101,6 +111,7 @@ async function submitDeal(owner, title) {
     media,
   });
   const deal = await created.json();
+  await uploadPriceProof(owner);
   await call(owner, 'POST', `/merchant/deals/${deal.id}/submit`);
   return deal;
 }
@@ -191,6 +202,7 @@ test('buyers cannot open the moderation queue', async ({ page }) => {
 });
 
 test('merchant completes all six deal-wizard steps and submits for review', async ({ page }) => {
+  await uploadPriceProof(await login('owner-c@local.test'));
   await signIn(page, 'owner-c@local.test');
   await page.goto('/uz/merchant/media');
   await page.waitForLoadState('networkidle');
@@ -249,4 +261,37 @@ test('merchant completes all six deal-wizard steps and submits for review', asyn
   await page.goto('/uz/merchant/deals');
   const row = page.getByRole('row').filter({ hasText: title });
   await expect(row).toContainText(/Ko'rib chiqilmoqda/);
+});
+
+test('admin sees overview totals and the fraud signal page', async ({ page }) => {
+  await signIn(page, 'admin@local.test');
+  await page.goto('/uz/admin');
+  await expect(page.getByTestId('overview-users')).toBeVisible();
+  await expect(page.getByTestId('overview-activeDeals')).toBeVisible();
+  await page.goto('/uz/admin/fraud');
+  await expect(page.getByRole('heading', { name: /Firibgarlik signallari/ })).toBeVisible();
+});
+
+test('owner pauses and resumes a live deal; admin suspends and reinstates a business', async () => {
+  const owner = await login('owner-d@local.test');
+  const admin = await login('admin@local.test');
+  await uploadPriceProof(owner);
+  const deal = await submitDeal(owner, `Pauza ${Date.now()}`);
+  const approved = await call(admin, 'POST', `/admin/deals/${deal.id}/approve`);
+  expect((await approved.json()).status).toBe('active');
+
+  const paused = await call(owner, 'POST', `/merchant/deals/${deal.id}/pause`);
+  expect((await paused.json()).status).toBe('paused');
+  expect((await call(owner, 'POST', `/merchant/deals/${deal.id}/pause`)).status).toBe(409);
+  const resumed = await call(owner, 'POST', `/merchant/deals/${deal.id}/resume`);
+  expect((await resumed.json()).status).toBe('active');
+
+  const business = await (await call(owner, 'GET', '/merchant/business')).json();
+  const merchantId = business.id;
+  const suspended = await call(admin, 'POST', `/admin/merchants/${merchantId}/suspend`, { reason: 'Test suspension' });
+  expect(suspended.status).toBe(204);
+  const list = await (await call(admin, 'GET', '/admin/merchants?status=suspended')).json();
+  expect(list.items.some((item) => item.id === merchantId)).toBe(true);
+  const reinstated = await call(admin, 'POST', `/admin/merchants/${merchantId}/reinstate`);
+  expect(reinstated.status).toBe(204);
 });

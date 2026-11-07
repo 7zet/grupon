@@ -46,6 +46,15 @@ export default async function ModerationPage({ params }: { params: Promise<{ loc
                   ))}
                 </p>
               </div>
+              {deal.options.some(
+                (option) =>
+                  option.original_price.amount > 0 &&
+                  (1 - option.deal_price.amount / option.original_price.amount) * 100 > 70,
+              ) && (
+                <p role="note" className="rounded-control-ui bg-error-tint p-3 text-small text-error">
+                  {t('highDiscount')}
+                </p>
+              )}
               <ModerationActions dealId={deal.id} />
             </li>
           ))}

@@ -211,7 +211,8 @@ export function DealWizard({ categories, locations, media }: Props) {
       const response = await fetch(`/api/bff/merchant/deals/${deal.id}/submit`, { method: 'POST' });
       if (!response.ok) {
         setBusy(false);
-        return setProblem('errorGeneric');
+        const failure = (await response.json().catch(() => ({}))) as { errors?: Record<string, string[]> };
+        return setProblem(failure.errors?.price_proof ? 'errorPriceProof' : 'errorGeneric');
       }
     }
     setBusy(false);
