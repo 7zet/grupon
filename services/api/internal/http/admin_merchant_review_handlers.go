@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -109,6 +110,42 @@ func (a *MerchantReviewAPI) RejectMerchant(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if err := a.service.Reject(r.Context(), actor, uuid.UUID(id), body.Reason); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *MerchantReviewAPI) SuspendMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	a.withReason(w, r, id, a.service.Suspend)
+}
+
+func (a *MerchantReviewAPI) TerminateMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	a.withReason(w, r, id, a.service.Terminate)
+}
+
+func (a *MerchantReviewAPI) ReinstateMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, ok := a.actor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.service.Reinstate(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *MerchantReviewAPI) withReason(w http.ResponseWriter, r *http.Request, id gen.Id, decide func(context.Context, merchant.ReviewActor, uuid.UUID, string) error) {
+	actor, ok := a.actor(w, r)
+	if !ok {
+		return
+	}
+	var body gen.RejectMerchantRequest
+	if _, ok := decodeBody(w, r, &body); !ok {
+		return
+	}
+	if err := decide(r.Context(), actor, uuid.UUID(id), body.Reason); err != nil {
 		a.fail(w, r, err)
 		return
 	}

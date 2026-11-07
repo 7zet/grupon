@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -238,6 +239,8 @@ type DealRepository interface {
 	// References checks categories, subcategories and locations belong to the expected taxonomy and merchant.
 	References(ctx context.Context, merchantID uuid.UUID, in DealInput) error
 	CategoryAllowsDealCreation(ctx context.Context, categoryID uuid.UUID) (bool, error)
+	// HasDocument reports whether the business has uploaded a document of the kind (certificate, price_proof).
+	HasDocument(ctx context.Context, merchantID uuid.UUID, kind string) (bool, error)
 	Insert(ctx context.Context, merchantID uuid.UUID, write DealWrite, audit AuditEntry) (uuid.UUID, error)
 	Update(ctx context.Context, merchantID, dealID uuid.UUID, write DealWrite, audit AuditEntry) error
 	Record(ctx context.Context, merchantID, dealID uuid.UUID) (DealRecord, error)
@@ -322,7 +325,43 @@ func (s *DealService) Submit(ctx context.Context, merchantID, dealID uuid.UUID, 
 	if !enabled {
 		return catalog.Deal{}, &InvalidInputError{Field: "category_id", Code: "category_closed"}
 	}
+	hasProof, err := s.repo.HasDocument(ctx, merchantID, DocumentPriceProof)
+	if err != nil {
+		return catalog.Deal{}, err
+	}
+	if !hasProof {
+		return catalog.Deal{}, &InvalidInputError{Field: "price_proof", Code: "required"}
+	}
 	if err := s.repo.SetStatus(ctx, merchantID, dealID, DealInReview, actor.audit("deal_submitted", dealID, DealInReview)); err != nil {
+		return catalog.Deal{}, err
+	}
+	return s.repo.Detail(ctx, merchantID, dealID)
+}
+
+// Pause takes an active deal off sale. Vouchers already sold stay valid.
+func (s *DealService) Pause(ctx context.Context, merchantID, dealID uuid.UUID, actor Actor) (catalog.Deal, error) {
+	return s.move(ctx, merchantID, dealID, actor, []string{DealActive}, DealPaused, "deal_paused")
+}
+
+// Resume puts a paused deal back on sale.
+func (s *DealService) Resume(ctx context.Context, merchantID, dealID uuid.UUID, actor Actor) (catalog.Deal, error) {
+	return s.move(ctx, merchantID, dealID, actor, []string{DealPaused}, DealActive, "deal_resumed")
+}
+
+// Archive removes a deal from the working list. Live deals must be paused first.
+func (s *DealService) Archive(ctx context.Context, merchantID, dealID uuid.UUID, actor Actor) (catalog.Deal, error) {
+	return s.move(ctx, merchantID, dealID, actor, []string{DealDraft, DealChangesRequested, DealPaused, DealEnded}, DealArchived, "deal_archived")
+}
+
+func (s *DealService) move(ctx context.Context, merchantID, dealID uuid.UUID, actor Actor, from []string, to, action string) (catalog.Deal, error) {
+	current, err := s.repo.Record(ctx, merchantID, dealID)
+	if err != nil {
+		return catalog.Deal{}, err
+	}
+	if !slices.Contains(from, current.Status) {
+		return catalog.Deal{}, ErrDealStateInvalid
+	}
+	if err := s.repo.SetStatus(ctx, merchantID, dealID, to, actor.audit(action, dealID, to)); err != nil {
 		return catalog.Deal{}, err
 	}
 	return s.repo.Detail(ctx, merchantID, dealID)

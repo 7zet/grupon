@@ -84,7 +84,8 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
        d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
        d.booking_required, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
-       d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
+       d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug,
+       d.rejection_reason
 FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
 WHERE d.id = $1 AND d.merchant_id = $2 AND d.deleted_at IS NULL
@@ -122,6 +123,7 @@ type GetOwnedDealDetailRowRow struct {
 	SubcategoryID          pgtype.UUID        `json:"subcategory_id"`
 	SubcategoryName        []byte             `json:"subcategory_name"`
 	SubcategorySlug        string             `json:"subcategory_slug"`
+	RejectionReason        pgtype.Text        `json:"rejection_reason"`
 }
 
 func (q *Queries) GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDetailRowParams) (GetOwnedDealDetailRowRow, error) {
@@ -154,6 +156,7 @@ func (q *Queries) GetOwnedDealDetailRow(ctx context.Context, arg GetOwnedDealDet
 		&i.SubcategoryID,
 		&i.SubcategoryName,
 		&i.SubcategorySlug,
+		&i.RejectionReason,
 	)
 	return i, err
 }
@@ -362,6 +365,22 @@ func (q *Queries) ListOwnedDealIDs(ctx context.Context, arg ListOwnedDealIDsPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const merchantHasDocument = `-- name: MerchantHasDocument :one
+SELECT EXISTS (SELECT 1 FROM merchant_documents WHERE merchant_id = $1 AND kind = $2)
+`
+
+type MerchantHasDocumentParams struct {
+	MerchantID pgtype.UUID `json:"merchant_id"`
+	Kind       string      `json:"kind"`
+}
+
+func (q *Queries) MerchantHasDocument(ctx context.Context, arg MerchantHasDocumentParams) (bool, error) {
+	row := q.db.QueryRow(ctx, merchantHasDocument, arg.MerchantID, arg.Kind)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const setOwnedDealStatus = `-- name: SetOwnedDealStatus :execrows

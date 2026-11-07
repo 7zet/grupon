@@ -20,6 +20,9 @@ var ErrAuditForbidden = errors.New("moderation: role may not read the audit log"
 // auditRoles may read the audit trail. Moderators cannot.
 var auditRoles = map[string]bool{"superadmin": true, "admin": true}
 
+// staffRoles may read the overview totals.
+var staffRoles = map[string]bool{"superadmin": true, "admin": true, "moderator": true}
+
 // Report is a complaint about a review.
 type Report struct {
 	ID        uuid.UUID
@@ -48,6 +51,28 @@ type ReportRepository interface {
 	// HideReview hides the review, closes its open reports and writes the audit row in one transaction.
 	HideReview(ctx context.Context, reviewID uuid.UUID, audit AuditEntry) (bool, error)
 	AuditRows(ctx context.Context, page catalog.Page) ([]AuditRow, int64, error)
+	FraudSignals(ctx context.Context, page catalog.Page) ([]FraudSignal, int64, error)
+	Overview(ctx context.Context) (Overview, error)
+}
+
+// FraudSignal is one hit of a fraud rule, for staff review.
+type FraudSignal struct {
+	ID            uuid.UUID
+	Rule          string
+	Status        string
+	MerchantID    uuid.UUID
+	MerchantName  string
+	SubjectUserID uuid.UUID
+	Detail        map[string]any
+	CreatedAt     time.Time
+}
+
+// Overview holds the platform totals shown on the admin overview.
+type Overview struct {
+	Users       int64
+	Businesses  int64
+	ActiveDeals int64
+	OrdersToday int64
 }
 
 // ReportService applies moderator decisions on reviews.
@@ -110,4 +135,20 @@ func (s *ReportService) Audit(ctx context.Context, actor Actor, page catalog.Pag
 		return nil, 0, ErrAuditForbidden
 	}
 	return s.repo.AuditRows(ctx, page)
+}
+
+// FraudSignals returns one page of fraud signals, newest first. Only admins and superadmins may read them.
+func (s *ReportService) FraudSignals(ctx context.Context, actor Actor, page catalog.Page) ([]FraudSignal, int64, error) {
+	if !auditRoles[actor.Role] {
+		return nil, 0, ErrAuditForbidden
+	}
+	return s.repo.FraudSignals(ctx, page)
+}
+
+// Overview returns the platform totals for staff.
+func (s *ReportService) Overview(ctx context.Context, actor Actor) (Overview, error) {
+	if !staffRoles[actor.Role] {
+		return Overview{}, ErrAuditForbidden
+	}
+	return s.repo.Overview(ctx)
 }

@@ -662,3 +662,67 @@ func (s apiServer) UpdateMerchantSettings(w http.ResponseWriter, r *http.Request
 	}
 	s.ServerInterface.UpdateMerchantSettings(w, r)
 }
+
+func (s apiServer) SuspendMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.SuspendMerchant(w, r, id)
+		return
+	}
+	s.ServerInterface.SuspendMerchant(w, r, id)
+}
+
+func (s apiServer) TerminateMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.TerminateMerchant(w, r, id)
+		return
+	}
+	s.ServerInterface.TerminateMerchant(w, r, id)
+}
+
+func (s apiServer) ReinstateMerchant(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.merchantReview != nil {
+		s.merchantReview.ReinstateMerchant(w, r, id)
+		return
+	}
+	s.ServerInterface.ReinstateMerchant(w, r, id)
+}
+
+func (s apiServer) PauseMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.deals != nil {
+		s.deals.PauseMerchantDeal(w, r, id)
+		return
+	}
+	s.ServerInterface.PauseMerchantDeal(w, r, id)
+}
+
+func (s apiServer) ResumeMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.deals != nil {
+		s.deals.ResumeMerchantDeal(w, r, id)
+		return
+	}
+	s.ServerInterface.ResumeMerchantDeal(w, r, id)
+}
+
+func (s apiServer) ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.deals != nil {
+		s.deals.ArchiveMerchantDeal(w, r, id)
+		return
+	}
+	s.ServerInterface.ArchiveMerchantDeal(w, r, id)
+}
+
+func (s apiServer) ListFraudSignals(w http.ResponseWriter, r *http.Request, params gen.ListFraudSignalsParams) {
+	if s.adminReports != nil {
+		s.adminReports.listFraudSignals(w, r, params.Page)
+		return
+	}
+	s.ServerInterface.ListFraudSignals(w, r, params)
+}
+
+func (s apiServer) GetAdminOverview(w http.ResponseWriter, r *http.Request) {
+	if s.adminReports != nil {
+		s.adminReports.getOverview(w, r)
+		return
+	}
+	s.ServerInterface.GetAdminOverview(w, r)
+}

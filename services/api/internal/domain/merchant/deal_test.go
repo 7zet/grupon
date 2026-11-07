@@ -16,6 +16,11 @@ type fakeDealRepo struct {
 	writes  []DealWrite
 	status  string
 	deleted bool
+	noProof bool
+}
+
+func (f *fakeDealRepo) HasDocument(context.Context, uuid.UUID, string) (bool, error) {
+	return !f.noProof, nil
 }
 
 func (f *fakeDealRepo) References(context.Context, uuid.UUID, DealInput) error { return nil }
@@ -171,5 +176,39 @@ func TestSubmitAndDeleteRespectWorkflowState(t *testing.T) {
 	}
 	if repo.status != DealInReview {
 		t.Fatalf("submitted status = %s", repo.status)
+	}
+}
+
+func TestSubmitNeedsPriceProof(t *testing.T) {
+	repo := &fakeDealRepo{record: DealRecord{ID: uuid.New(), Status: DealDraft}, noProof: true}
+	service := NewDealService(repo, time.Now)
+	_, err := service.Submit(context.Background(), uuid.New(), repo.record.ID, Actor{UserID: uuid.New(), Role: RoleOwner})
+	var invalid *InvalidInputError
+	if !errors.As(err, &invalid) || invalid.Field != "price_proof" {
+		t.Fatalf("submit without proof: got %v, want price_proof error", err)
+	}
+}
+
+func TestPauseResumeArchiveFollowStateRules(t *testing.T) {
+	repo := &fakeDealRepo{record: DealRecord{ID: uuid.New(), Status: DealActive}}
+	service := NewDealService(repo, time.Now)
+	actor := Actor{UserID: uuid.New(), Role: RoleManager}
+	ctx := context.Background()
+
+	if _, err := service.Archive(ctx, uuid.New(), repo.record.ID, actor); !errors.Is(err, ErrDealStateInvalid) {
+		t.Fatalf("archive active deal: got %v", err)
+	}
+	if _, err := service.Pause(ctx, uuid.New(), repo.record.ID, actor); err != nil || repo.status != DealPaused {
+		t.Fatalf("pause: err=%v status=%s", err, repo.status)
+	}
+	repo.record.Status = DealPaused
+	if _, err := service.Pause(ctx, uuid.New(), repo.record.ID, actor); !errors.Is(err, ErrDealStateInvalid) {
+		t.Fatalf("pause paused deal: got %v", err)
+	}
+	if _, err := service.Resume(ctx, uuid.New(), repo.record.ID, actor); err != nil || repo.status != DealActive {
+		t.Fatalf("resume: err=%v status=%s", err, repo.status)
+	}
+	if _, err := service.Archive(ctx, uuid.New(), repo.record.ID, actor); err != nil || repo.status != DealArchived {
+		t.Fatalf("archive paused deal: err=%v status=%s", err, repo.status)
 	}
 }

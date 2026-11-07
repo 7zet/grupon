@@ -41,7 +41,8 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        d.rating_count, d.starts_at, d.ends_at, d.short_description, d.description, d.highlights,
        d.whats_included, d.terms, d.faq, d.redemption_method, d.redemption_instructions,
        d.booking_required, d.voucher_valid_days, d.voucher_valid_until, d.max_per_user,
-       d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug
+       d.merchant_id, d.category_id, d.subcategory_id, sc.name AS subcategory_name, sc.slug AS subcategory_slug,
+       d.rejection_reason
 FROM deals d
 JOIN subcategories sc ON sc.id = d.subcategory_id
 WHERE d.id = sqlc.arg(id) AND d.merchant_id = sqlc.arg(merchant_id) AND d.deleted_at IS NULL;
@@ -96,3 +97,6 @@ LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, after_data)
 VALUES (sqlc.arg(actor_user_id), sqlc.arg(actor_role)::app_role, sqlc.arg(action), sqlc.arg(entity_type),
         sqlc.arg(entity_id), sqlc.arg(after_data));
+
+-- name: MerchantHasDocument :one
+SELECT EXISTS (SELECT 1 FROM merchant_documents WHERE merchant_id = sqlc.arg(merchant_id) AND kind = sqlc.arg(kind));

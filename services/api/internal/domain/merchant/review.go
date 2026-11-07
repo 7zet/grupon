@@ -95,6 +95,38 @@ func (s *ReviewService) Reject(ctx context.Context, actor ReviewActor, merchantI
 	return s.decide(ctx, actor, merchantID, []string{"submitted", "in_review"}, "rejected", reason, "merchant_rejected")
 }
 
+// Suspend takes an approved business off the marketplace with a reason. Its deals leave the catalog
+// because the catalog only shows approved businesses.
+func (s *ReviewService) Suspend(ctx context.Context, actor ReviewActor, merchantID uuid.UUID, reason string) error {
+	reason, err := cleanReason(reason)
+	if err != nil {
+		return err
+	}
+	return s.decide(ctx, actor, merchantID, []string{"approved"}, "suspended", reason, "merchant_suspended")
+}
+
+// Terminate ends the relationship with an approved or suspended business. It cannot be undone.
+func (s *ReviewService) Terminate(ctx context.Context, actor ReviewActor, merchantID uuid.UUID, reason string) error {
+	reason, err := cleanReason(reason)
+	if err != nil {
+		return err
+	}
+	return s.decide(ctx, actor, merchantID, []string{"approved", "suspended"}, "terminated", reason, "merchant_terminated")
+}
+
+// Reinstate returns a suspended business to approved.
+func (s *ReviewService) Reinstate(ctx context.Context, actor ReviewActor, merchantID uuid.UUID) error {
+	return s.decide(ctx, actor, merchantID, []string{"suspended"}, "approved", "", "merchant_reinstated")
+}
+
+func cleanReason(reason string) (string, error) {
+	reason = strings.TrimSpace(reason)
+	if n := len([]rune(reason)); n < 3 || n > 500 {
+		return "", &InvalidInputError{Field: "reason", Code: "length"}
+	}
+	return reason, nil
+}
+
 func (s *ReviewService) decide(ctx context.Context, actor ReviewActor, merchantID uuid.UUID, from []string, to, reason, action string) error {
 	if !reviewerRoles[actor.Role] {
 		return ErrForbidden

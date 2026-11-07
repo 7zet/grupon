@@ -726,6 +726,71 @@ paths:
       summary: Phase 1 admin API stub
       security: [{cookieAuth: []}, {bearerAuth: []}]
       responses: {'200': {description: Stub status, content: {application/json: {schema: {type: object, required: [available], properties: {available: {type: boolean, const: false}}}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/deals/{id}/pause:
+    post:
+      tags: [Merchant]
+      operationId: pauseMerchantDeal
+      summary: Take an active deal off sale (owner or manager)
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/deals/{id}/resume:
+    post:
+      tags: [Merchant]
+      operationId: resumeMerchantDeal
+      summary: Put a paused deal back on sale
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/merchant/deals/{id}/archive:
+    post:
+      tags: [Merchant]
+      operationId: archiveMerchantDeal
+      summary: Archive a paused, ended or rejected deal
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'200': {description: Deal, content: {application/json: {schema: {$ref: '#/components/schemas/Deal'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/suspend:
+    post:
+      tags: [Admin]
+      operationId: suspendMerchant
+      summary: Suspend an approved business with a reason
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectMerchantRequest'}}}}
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/terminate:
+    post:
+      tags: [Admin]
+      operationId: terminateMerchant
+      summary: Terminate a business with a reason
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectMerchantRequest'}}}}
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/merchants/{id}/reinstate:
+    post:
+      tags: [Admin]
+      operationId: reinstateMerchant
+      summary: Return a suspended business to approved
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Done}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/fraud-signals:
+    get:
+      tags: [Admin]
+      operationId: listFraudSignals
+      summary: Fraud signals raised by the rules, newest first
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Page'}]
+      responses: {'200': {description: Signals, content: {application/json: {schema: {$ref: '#/components/schemas/FraudSignalPage'}}}}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/overview:
+    get:
+      tags: [Admin]
+      operationId: getAdminOverview
+      summary: Platform totals for the admin overview
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      responses: {'200': {description: Totals, content: {application/json: {schema: {$ref: '#/components/schemas/AdminOverview'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/merchant/submit:
     post:
       tags: [Merchant]
@@ -739,7 +804,7 @@ paths:
       operationId: listMerchantReviewQueue
       summary: List businesses waiting for review
       security: [{cookieAuth: []}, {bearerAuth: []}]
-      parameters: [{name: status, in: query, schema: {type: string, enum: [submitted, in_review]}}]
+      parameters: [{name: status, in: query, schema: {type: string, enum: [submitted, in_review, approved, suspended]}}]
       responses: {'200': {description: Queue, content: {application/json: {schema: {$ref: '#/components/schemas/MerchantReviewList'}}}}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/admin/merchants/{id}/start-review:
     post:
@@ -948,7 +1013,7 @@ components:
       required: [q, a]
       properties: {q: {$ref: '#/components/schemas/LocalizedText'}, a: {$ref: '#/components/schemas/LocalizedText'}}
     Deal:
-      allOf: [{$ref: '#/components/schemas/DealSummary'}, {type: object, required: [subcategory, short_description, description, highlights, whats_included, terms, faq, redemption_method, booking_required, max_per_user, locations], properties: {subcategory: {$ref: '#/components/schemas/Subcategory'}, short_description: {$ref: '#/components/schemas/LocalizedText'}, description: {$ref: '#/components/schemas/LocalizedText'}, highlights: {type: array, minItems: 3, maxItems: 5, items: {$ref: '#/components/schemas/LocalizedText'}}, whats_included: {type: array, items: {$ref: '#/components/schemas/LocalizedText'}}, terms: {$ref: '#/components/schemas/LocalizedText'}, faq: {type: array, items: {$ref: '#/components/schemas/FaqItem'}}, redemption_method: {type: string, enum: [qr, code, qr_or_code]}, redemption_instructions: {$ref: '#/components/schemas/LocalizedText'}, booking_required: {type: boolean}, voucher_valid_days: {type: [integer, 'null'], minimum: 1}, voucher_valid_until: {type: [string, 'null'], format: date-time}, max_per_user: {type: integer, minimum: 1}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}}}]
+      allOf: [{$ref: '#/components/schemas/DealSummary'}, {type: object, required: [subcategory, short_description, description, highlights, whats_included, terms, faq, redemption_method, booking_required, max_per_user, locations], properties: {subcategory: {$ref: '#/components/schemas/Subcategory'}, short_description: {$ref: '#/components/schemas/LocalizedText'}, description: {$ref: '#/components/schemas/LocalizedText'}, highlights: {type: array, minItems: 3, maxItems: 5, items: {$ref: '#/components/schemas/LocalizedText'}}, whats_included: {type: array, items: {$ref: '#/components/schemas/LocalizedText'}}, terms: {$ref: '#/components/schemas/LocalizedText'}, faq: {type: array, items: {$ref: '#/components/schemas/FaqItem'}}, redemption_method: {type: string, enum: [qr, code, qr_or_code]}, redemption_instructions: {$ref: '#/components/schemas/LocalizedText'}, booking_required: {type: boolean}, voucher_valid_days: {type: [integer, 'null'], minimum: 1}, voucher_valid_until: {type: [string, 'null'], format: date-time}, max_per_user: {type: integer, minimum: 1}, locations: {type: array, items: {$ref: '#/components/schemas/MerchantLocation'}}, rejection_reason: {type: [string, 'null'], description: Moderator reason; returned to the owning merchant only}}}]
     DealList:
       type: object
       required: [items]
@@ -1130,6 +1195,18 @@ components:
       type: object
       required: [items, page, page_size, total]
       properties: {items: {type: array, items: {$ref: '#/components/schemas/AuditLog'}}, page: {type: integer, minimum: 1}, page_size: {type: integer, minimum: 1}, total: {type: integer, format: int64}}
+    FraudSignal:
+      type: object
+      required: [id, rule, status, detail, created_at]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, rule: {type: string}, status: {type: string, enum: [open, closed]}, merchant_id: {$ref: '#/components/schemas/Uuid'}, merchant_name: {type: string}, subject_user_id: {$ref: '#/components/schemas/Uuid'}, detail: {type: object, additionalProperties: true}, created_at: {type: string, format: date-time}}
+    FraudSignalPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/FraudSignal'}}, page: {type: integer, minimum: 1}, page_size: {type: integer, minimum: 1}, total: {type: integer, format: int64}}
+    AdminOverview:
+      type: object
+      required: [users, businesses, active_deals, orders_today]
+      properties: {users: {type: integer, format: int64}, businesses: {type: integer, format: int64}, active_deals: {type: integer, format: int64}, orders_today: {type: integer, format: int64}}
     ReverseRequest:
       type: object
       required: [reason]
@@ -1228,7 +1305,7 @@ components:
     MerchantReview:
       type: object
       required: [id, legal_name, display_name, stir, org_form, tax_regime, bank_mfo, bank_account, responsible_name, review_status, submitted_at]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter, price_proof]}, description: Document kinds already uploaded}}
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, legal_name: {type: string}, display_name: {type: string}, stir: {type: string}, org_form: {type: string, enum: [mchj, yatt]}, tax_regime: {type: string, enum: [vat_payer, turnover_tax]}, bank_mfo: {type: string}, bank_account: {type: string}, responsible_name: {type: string}, review_status: {type: string, enum: [submitted, in_review, approved, suspended]}, submitted_at: {type: string, format: date-time}, documents: {type: array, items: {type: string, enum: [certificate, bank_letter, price_proof]}, description: Document kinds already uploaded}}
     MerchantReviewList:
       type: object
       required: [items]

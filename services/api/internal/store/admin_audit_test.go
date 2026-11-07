@@ -158,3 +158,20 @@ func TestAuditLogsAreAppendOnly(t *testing.T) {
 		t.Fatal("delete from audit_logs succeeded, want append-only error")
 	}
 }
+
+func TestAdminOverviewAndFraudSignals(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	repo := store.NewAdminReportRepository(fixture.pool, store.NewReviewRepository(fixture.pool))
+	if _, err := fixture.pool.Exec(ctx, `INSERT INTO fraud_signals (rule, detail) VALUES ('overview_probe', '{"count": 7}')`); err != nil {
+		t.Fatalf("insert fraud signal: %v", err)
+	}
+	signals, total, err := repo.FraudSignals(ctx, catalog.Page{Number: 1, Size: 5})
+	if err != nil || total < 1 || len(signals) == 0 {
+		t.Fatalf("FraudSignals() = %d rows, total %d, err %v", len(signals), total, err)
+	}
+	overview, err := repo.Overview(ctx)
+	if err != nil || overview.Users < 1 || overview.ActiveDeals < 1 {
+		t.Fatalf("Overview() = %+v, err %v", overview, err)
+	}
+}

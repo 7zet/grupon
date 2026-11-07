@@ -135,6 +135,24 @@ func (e DealStatus) Valid() bool {
 	}
 }
 
+// Defines values for FraudSignalStatus.
+const (
+	Closed FraudSignalStatus = "closed"
+	Open   FraudSignalStatus = "open"
+)
+
+// Valid indicates whether the value is a known member of the FraudSignalStatus enum.
+func (e FraudSignalStatus) Valid() bool {
+	switch e {
+	case Closed:
+		return true
+	case Open:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HomepageSectionType.
 const (
 	Categories HomepageSectionType = "categories"
@@ -380,16 +398,22 @@ func (e MerchantReviewOrgForm) Valid() bool {
 
 // Defines values for MerchantReviewReviewStatus.
 const (
+	MerchantReviewReviewStatusApproved  MerchantReviewReviewStatus = "approved"
 	MerchantReviewReviewStatusInReview  MerchantReviewReviewStatus = "in_review"
 	MerchantReviewReviewStatusSubmitted MerchantReviewReviewStatus = "submitted"
+	MerchantReviewReviewStatusSuspended MerchantReviewReviewStatus = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the MerchantReviewReviewStatus enum.
 func (e MerchantReviewReviewStatus) Valid() bool {
 	switch e {
+	case MerchantReviewReviewStatusApproved:
+		return true
 	case MerchantReviewReviewStatusInReview:
 		return true
 	case MerchantReviewReviewStatusSubmitted:
+		return true
+	case MerchantReviewReviewStatusSuspended:
 		return true
 	default:
 		return false
@@ -857,16 +881,22 @@ func (e VoucherStatus) Valid() bool {
 
 // Defines values for ListMerchantReviewQueueParamsStatus.
 const (
+	ListMerchantReviewQueueParamsStatusApproved  ListMerchantReviewQueueParamsStatus = "approved"
 	ListMerchantReviewQueueParamsStatusInReview  ListMerchantReviewQueueParamsStatus = "in_review"
 	ListMerchantReviewQueueParamsStatusSubmitted ListMerchantReviewQueueParamsStatus = "submitted"
+	ListMerchantReviewQueueParamsStatusSuspended ListMerchantReviewQueueParamsStatus = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the ListMerchantReviewQueueParamsStatus enum.
 func (e ListMerchantReviewQueueParamsStatus) Valid() bool {
 	switch e {
+	case ListMerchantReviewQueueParamsStatusApproved:
+		return true
 	case ListMerchantReviewQueueParamsStatusInReview:
 		return true
 	case ListMerchantReviewQueueParamsStatusSubmitted:
+		return true
+	case ListMerchantReviewQueueParamsStatusSuspended:
 		return true
 	default:
 		return false
@@ -1008,6 +1038,14 @@ func (e ReceivePaymentWebhookParamsProvider) Valid() bool {
 	}
 }
 
+// AdminOverview defines model for AdminOverview.
+type AdminOverview struct {
+	ActiveDeals int64 `json:"active_deals"`
+	Businesses  int64 `json:"businesses"`
+	OrdersToday int64 `json:"orders_today"`
+	Users       int64 `json:"users"`
+}
+
 // ApprovePayoutRequest defines model for ApprovePayoutRequest.
 type ApprovePayoutRequest struct {
 	BankDocRef *string `json:"bank_doc_ref,omitempty"`
@@ -1128,17 +1166,20 @@ type Deal struct {
 	RatingCount            int                  `json:"rating_count"`
 	RedemptionInstructions *LocalizedText       `json:"redemption_instructions,omitempty"`
 	RedemptionMethod       DealRedemptionMethod `json:"redemption_method"`
-	ShortDescription       LocalizedText        `json:"short_description"`
-	Slug                   string               `json:"slug"`
-	SoldCount              int                  `json:"sold_count"`
-	StartsAt               *time.Time           `json:"starts_at,omitempty"`
-	Status                 DealStatus           `json:"status"`
-	Subcategory            Subcategory          `json:"subcategory"`
-	Terms                  LocalizedText        `json:"terms"`
-	Title                  LocalizedText        `json:"title"`
-	VoucherValidDays       *int                 `json:"voucher_valid_days,omitempty"`
-	VoucherValidUntil      *time.Time           `json:"voucher_valid_until,omitempty"`
-	WhatsIncluded          []LocalizedText      `json:"whats_included"`
+
+	// RejectionReason Moderator reason; returned to the owning merchant only
+	RejectionReason   *string         `json:"rejection_reason,omitempty"`
+	ShortDescription  LocalizedText   `json:"short_description"`
+	Slug              string          `json:"slug"`
+	SoldCount         int             `json:"sold_count"`
+	StartsAt          *time.Time      `json:"starts_at,omitempty"`
+	Status            DealStatus      `json:"status"`
+	Subcategory       Subcategory     `json:"subcategory"`
+	Terms             LocalizedText   `json:"terms"`
+	Title             LocalizedText   `json:"title"`
+	VoucherValidDays  *int            `json:"voucher_valid_days,omitempty"`
+	VoucherValidUntil *time.Time      `json:"voucher_valid_until,omitempty"`
+	WhatsIncluded     []LocalizedText `json:"whats_included"`
 }
 
 // DealRedemptionMethod defines model for Deal.RedemptionMethod.
@@ -1281,6 +1322,29 @@ type FinanceQueue struct {
 	Disputes   []DisputeItem   `json:"disputes"`
 	PayoutRuns []PayoutRunItem `json:"payout_runs"`
 	Refunds    []RefundItem    `json:"refunds"`
+}
+
+// FraudSignal defines model for FraudSignal.
+type FraudSignal struct {
+	CreatedAt     time.Time              `json:"created_at"`
+	Detail        map[string]interface{} `json:"detail"`
+	Id            Uuid                   `json:"id"`
+	MerchantId    *Uuid                  `json:"merchant_id,omitempty"`
+	MerchantName  *string                `json:"merchant_name,omitempty"`
+	Rule          string                 `json:"rule"`
+	Status        FraudSignalStatus      `json:"status"`
+	SubjectUserId *Uuid                  `json:"subject_user_id,omitempty"`
+}
+
+// FraudSignalStatus defines model for FraudSignal.Status.
+type FraudSignalStatus string
+
+// FraudSignalPage defines model for FraudSignalPage.
+type FraudSignalPage struct {
+	Items    []FraudSignal `json:"items"`
+	Page     int           `json:"page"`
+	PageSize int           `json:"page_size"`
+	Total    int64         `json:"total"`
 }
 
 // Homepage defines model for Homepage.
@@ -2070,6 +2134,11 @@ type ListAuditLogsParams struct {
 	Page *Page `form:"page,omitempty" json:"page,omitempty"`
 }
 
+// ListFraudSignalsParams defines parameters for ListFraudSignals.
+type ListFraudSignalsParams struct {
+	Page *Page `form:"page,omitempty" json:"page,omitempty"`
+}
+
 // ListMerchantReviewQueueParams defines parameters for ListMerchantReviewQueue.
 type ListMerchantReviewQueueParams struct {
 	Status *ListMerchantReviewQueueParamsStatus `form:"status,omitempty" json:"status,omitempty"`
@@ -2237,6 +2306,12 @@ type ResolveDisputeJSONRequestBody = ResolveDisputeRequest
 
 // RejectMerchantJSONRequestBody defines body for RejectMerchant for application/json ContentType.
 type RejectMerchantJSONRequestBody = RejectMerchantRequest
+
+// SuspendMerchantJSONRequestBody defines body for SuspendMerchant for application/json ContentType.
+type SuspendMerchantJSONRequestBody = RejectMerchantRequest
+
+// TerminateMerchantJSONRequestBody defines body for TerminateMerchant for application/json ContentType.
+type TerminateMerchantJSONRequestBody = RejectMerchantRequest
 
 // ConfirmManualPaymentJSONRequestBody defines body for ConfirmManualPayment for application/json ContentType.
 type ConfirmManualPaymentJSONRequestBody = ManualPaymentConfirmation
@@ -2476,6 +2551,9 @@ type ServerInterface interface {
 	// GetFinanceQueue Open payouts, refunds and disputes for the finance desk
 	// (GET /api/v1/admin/finance/queue)
 	GetFinanceQueue(w http.ResponseWriter, r *http.Request)
+	// ListFraudSignals Fraud signals raised by the rules, newest first
+	// (GET /api/v1/admin/fraud-signals)
+	ListFraudSignals(w http.ResponseWriter, r *http.Request, params ListFraudSignalsParams)
 	// ListMerchantReviewQueue List businesses waiting for review
 	// (GET /api/v1/admin/merchants)
 	ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams)
@@ -2488,15 +2566,27 @@ type ServerInterface interface {
 	// PreparePayout Prepare a payout run for a merchant (finance operator)
 	// (POST /api/v1/admin/merchants/{id}/payouts)
 	PreparePayout(w http.ResponseWriter, r *http.Request, id Id)
+	// ReinstateMerchant Return a suspended business to approved
+	// (POST /api/v1/admin/merchants/{id}/reinstate)
+	ReinstateMerchant(w http.ResponseWriter, r *http.Request, id Id)
 	// RejectMerchant Reject a submitted or in-review business with a reason
 	// (POST /api/v1/admin/merchants/{id}/reject)
 	RejectMerchant(w http.ResponseWriter, r *http.Request, id Id)
 	// StartMerchantReview Move a submitted business to in_review
 	// (POST /api/v1/admin/merchants/{id}/start-review)
 	StartMerchantReview(w http.ResponseWriter, r *http.Request, id Id)
+	// SuspendMerchant Suspend an approved business with a reason
+	// (POST /api/v1/admin/merchants/{id}/suspend)
+	SuspendMerchant(w http.ResponseWriter, r *http.Request, id Id)
+	// TerminateMerchant Terminate a business with a reason
+	// (POST /api/v1/admin/merchants/{id}/terminate)
+	TerminateMerchant(w http.ResponseWriter, r *http.Request, id Id)
 	// ListModerationDeals Deals waiting for review
 	// (GET /api/v1/admin/moderation/deals)
 	ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams)
+	// GetAdminOverview Platform totals for the admin overview
+	// (GET /api/v1/admin/overview)
+	GetAdminOverview(w http.ResponseWriter, r *http.Request)
 	// ConfirmManualPayment Confirm a manual pilot payment through the normal settlement path
 	// (POST /api/v1/admin/payments/{id}/manual-confirm)
 	ConfirmManualPayment(w http.ResponseWriter, r *http.Request, id Id)
@@ -2650,6 +2740,15 @@ type ServerInterface interface {
 	// UpdateMerchantDeal Replace owned deal draft
 	// (PUT /api/v1/merchant/deals/{id})
 	UpdateMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// ArchiveMerchantDeal Archive a paused, ended or rejected deal
+	// (POST /api/v1/merchant/deals/{id}/archive)
+	ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// PauseMerchantDeal Take an active deal off sale (owner or manager)
+	// (POST /api/v1/merchant/deals/{id}/pause)
+	PauseMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
+	// ResumeMerchantDeal Put a paused deal back on sale
+	// (POST /api/v1/merchant/deals/{id}/resume)
+	ResumeMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
 	// SubmitMerchantDeal Submit complete deal for moderation
 	// (POST /api/v1/merchant/deals/{id}/submit)
 	SubmitMerchantDeal(w http.ResponseWriter, r *http.Request, id Id)
@@ -2812,6 +2911,12 @@ func (_ Unimplemented) GetFinanceQueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListFraudSignals Fraud signals raised by the rules, newest first
+// (GET /api/v1/admin/fraud-signals)
+func (_ Unimplemented) ListFraudSignals(w http.ResponseWriter, r *http.Request, params ListFraudSignalsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListMerchantReviewQueue List businesses waiting for review
 // (GET /api/v1/admin/merchants)
 func (_ Unimplemented) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams) {
@@ -2836,6 +2941,12 @@ func (_ Unimplemented) PreparePayout(w http.ResponseWriter, r *http.Request, id 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ReinstateMerchant Return a suspended business to approved
+// (POST /api/v1/admin/merchants/{id}/reinstate)
+func (_ Unimplemented) ReinstateMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // RejectMerchant Reject a submitted or in-review business with a reason
 // (POST /api/v1/admin/merchants/{id}/reject)
 func (_ Unimplemented) RejectMerchant(w http.ResponseWriter, r *http.Request, id Id) {
@@ -2848,9 +2959,27 @@ func (_ Unimplemented) StartMerchantReview(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SuspendMerchant Suspend an approved business with a reason
+// (POST /api/v1/admin/merchants/{id}/suspend)
+func (_ Unimplemented) SuspendMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// TerminateMerchant Terminate a business with a reason
+// (POST /api/v1/admin/merchants/{id}/terminate)
+func (_ Unimplemented) TerminateMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListModerationDeals Deals waiting for review
 // (GET /api/v1/admin/moderation/deals)
 func (_ Unimplemented) ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetAdminOverview Platform totals for the admin overview
+// (GET /api/v1/admin/overview)
+func (_ Unimplemented) GetAdminOverview(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3157,6 +3286,24 @@ func (_ Unimplemented) GetMerchantDeal(w http.ResponseWriter, r *http.Request, i
 // UpdateMerchantDeal Replace owned deal draft
 // (PUT /api/v1/merchant/deals/{id})
 func (_ Unimplemented) UpdateMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ArchiveMerchantDeal Archive a paused, ended or rejected deal
+// (POST /api/v1/merchant/deals/{id}/archive)
+func (_ Unimplemented) ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PauseMerchantDeal Take an active deal off sale (owner or manager)
+// (POST /api/v1/merchant/deals/{id}/pause)
+func (_ Unimplemented) PauseMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ResumeMerchantDeal Put a paused deal back on sale
+// (POST /api/v1/merchant/deals/{id}/resume)
+func (_ Unimplemented) ResumeMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3588,6 +3735,39 @@ func (siw *ServerInterfaceWrapper) GetFinanceQueue(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListFraudSignals operation middleware
+func (siw *ServerInterfaceWrapper) ListFraudSignals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListFraudSignalsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListFraudSignals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMerchantReviewQueue operation middleware
 func (siw *ServerInterfaceWrapper) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request) {
 
@@ -3708,6 +3888,32 @@ func (siw *ServerInterfaceWrapper) PreparePayout(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ReinstateMerchant operation middleware
+func (siw *ServerInterfaceWrapper) ReinstateMerchant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReinstateMerchant(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RejectMerchant operation middleware
 func (siw *ServerInterfaceWrapper) RejectMerchant(w http.ResponseWriter, r *http.Request) {
 
@@ -3760,6 +3966,58 @@ func (siw *ServerInterfaceWrapper) StartMerchantReview(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// SuspendMerchant operation middleware
+func (siw *ServerInterfaceWrapper) SuspendMerchant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuspendMerchant(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TerminateMerchant operation middleware
+func (siw *ServerInterfaceWrapper) TerminateMerchant(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TerminateMerchant(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListModerationDeals operation middleware
 func (siw *ServerInterfaceWrapper) ListModerationDeals(w http.ResponseWriter, r *http.Request) {
 
@@ -3784,6 +4042,20 @@ func (siw *ServerInterfaceWrapper) ListModerationDeals(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListModerationDeals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminOverview operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminOverview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminOverview(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5268,6 +5540,84 @@ func (siw *ServerInterfaceWrapper) UpdateMerchantDeal(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ArchiveMerchantDeal operation middleware
+func (siw *ServerInterfaceWrapper) ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ArchiveMerchantDeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PauseMerchantDeal operation middleware
+func (siw *ServerInterfaceWrapper) PauseMerchantDeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PauseMerchantDeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResumeMerchantDeal operation middleware
+func (siw *ServerInterfaceWrapper) ResumeMerchantDeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResumeMerchantDeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SubmitMerchantDeal operation middleware
 func (siw *ServerInterfaceWrapper) SubmitMerchantDeal(w http.ResponseWriter, r *http.Request) {
 
@@ -6556,6 +6906,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/v1/admin/status", wrapper.GetAdminStatus)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/merchant/deals/{id}/pause", wrapper.PauseMerchantDeal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/merchant/deals/{id}/resume", wrapper.ResumeMerchantDeal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/merchant/deals/{id}/archive", wrapper.ArchiveMerchantDeal)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/suspend", wrapper.SuspendMerchant)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/terminate", wrapper.TerminateMerchant)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/v1/admin/merchants/{id}/reinstate", wrapper.ReinstateMerchant)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/fraud-signals", wrapper.ListFraudSignals)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/admin/overview", wrapper.GetAdminOverview)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/merchant/submit", wrapper.SubmitMerchantForReview)
 	})
 	r.Group(func(r chi.Router) {
@@ -6883,6 +7257,45 @@ func (response GetFinanceQueuedefaultApplicationProblemPlusJSONResponse) VisitGe
 	return err
 }
 
+type ListFraudSignalsRequestObject struct {
+	Params ListFraudSignalsParams
+}
+
+type ListFraudSignalsResponseObject interface {
+	VisitListFraudSignalsResponse(w http.ResponseWriter) error
+}
+
+type ListFraudSignals200JSONResponse FraudSignalPage
+
+func (response ListFraudSignals200JSONResponse) VisitListFraudSignalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListFraudSignalsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ListFraudSignalsdefaultApplicationProblemPlusJSONResponse) VisitListFraudSignalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListMerchantReviewQueueRequestObject struct {
 	Params ListMerchantReviewQueueParams
 }
@@ -7074,6 +7487,39 @@ func (response PreparePayoutdefaultApplicationProblemPlusJSONResponse) VisitPrep
 	return err
 }
 
+type ReinstateMerchantRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ReinstateMerchantResponseObject interface {
+	VisitReinstateMerchantResponse(w http.ResponseWriter) error
+}
+
+type ReinstateMerchant204Response struct {
+}
+
+func (response ReinstateMerchant204Response) VisitReinstateMerchantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReinstateMerchantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ReinstateMerchantdefaultApplicationProblemPlusJSONResponse) VisitReinstateMerchantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RejectMerchantRequestObject struct {
 	Id   Id `json:"id"`
 	Body *RejectMerchantJSONRequestBody
@@ -7141,6 +7587,74 @@ func (response StartMerchantReviewdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type SuspendMerchantRequestObject struct {
+	Id   Id `json:"id"`
+	Body *SuspendMerchantJSONRequestBody
+}
+
+type SuspendMerchantResponseObject interface {
+	VisitSuspendMerchantResponse(w http.ResponseWriter) error
+}
+
+type SuspendMerchant204Response struct {
+}
+
+func (response SuspendMerchant204Response) VisitSuspendMerchantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SuspendMerchantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response SuspendMerchantdefaultApplicationProblemPlusJSONResponse) VisitSuspendMerchantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TerminateMerchantRequestObject struct {
+	Id   Id `json:"id"`
+	Body *TerminateMerchantJSONRequestBody
+}
+
+type TerminateMerchantResponseObject interface {
+	VisitTerminateMerchantResponse(w http.ResponseWriter) error
+}
+
+type TerminateMerchant204Response struct {
+}
+
+func (response TerminateMerchant204Response) VisitTerminateMerchantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type TerminateMerchantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response TerminateMerchantdefaultApplicationProblemPlusJSONResponse) VisitTerminateMerchantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListModerationDealsRequestObject struct {
 	Params ListModerationDealsParams
 }
@@ -7169,6 +7683,44 @@ type ListModerationDealsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ListModerationDealsdefaultApplicationProblemPlusJSONResponse) VisitListModerationDealsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminOverviewRequestObject struct {
+}
+
+type GetAdminOverviewResponseObject interface {
+	VisitGetAdminOverviewResponse(w http.ResponseWriter) error
+}
+
+type GetAdminOverview200JSONResponse AdminOverview
+
+func (response GetAdminOverview200JSONResponse) VisitGetAdminOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminOverviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetAdminOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetAdminOverviewResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -8968,6 +9520,123 @@ func (response UpdateMerchantDealdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ArchiveMerchantDealRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ArchiveMerchantDealResponseObject interface {
+	VisitArchiveMerchantDealResponse(w http.ResponseWriter) error
+}
+
+type ArchiveMerchantDeal200JSONResponse Deal
+
+func (response ArchiveMerchantDeal200JSONResponse) VisitArchiveMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ArchiveMerchantDealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ArchiveMerchantDealdefaultApplicationProblemPlusJSONResponse) VisitArchiveMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseMerchantDealRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type PauseMerchantDealResponseObject interface {
+	VisitPauseMerchantDealResponse(w http.ResponseWriter) error
+}
+
+type PauseMerchantDeal200JSONResponse Deal
+
+func (response PauseMerchantDeal200JSONResponse) VisitPauseMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseMerchantDealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PauseMerchantDealdefaultApplicationProblemPlusJSONResponse) VisitPauseMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeMerchantDealRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type ResumeMerchantDealResponseObject interface {
+	VisitResumeMerchantDealResponse(w http.ResponseWriter) error
+}
+
+type ResumeMerchantDeal200JSONResponse Deal
+
+func (response ResumeMerchantDeal200JSONResponse) VisitResumeMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResumeMerchantDealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response ResumeMerchantDealdefaultApplicationProblemPlusJSONResponse) VisitResumeMerchantDealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SubmitMerchantDealRequestObject struct {
 	Id Id `json:"id"`
 }
@@ -10252,6 +10921,9 @@ type StrictServerInterface interface {
 	// GetFinanceQueue Open payouts, refunds and disputes for the finance desk
 	// (GET /api/v1/admin/finance/queue)
 	GetFinanceQueue(ctx context.Context, request GetFinanceQueueRequestObject) (GetFinanceQueueResponseObject, error)
+	// ListFraudSignals Fraud signals raised by the rules, newest first
+	// (GET /api/v1/admin/fraud-signals)
+	ListFraudSignals(ctx context.Context, request ListFraudSignalsRequestObject) (ListFraudSignalsResponseObject, error)
 	// ListMerchantReviewQueue List businesses waiting for review
 	// (GET /api/v1/admin/merchants)
 	ListMerchantReviewQueue(ctx context.Context, request ListMerchantReviewQueueRequestObject) (ListMerchantReviewQueueResponseObject, error)
@@ -10264,15 +10936,27 @@ type StrictServerInterface interface {
 	// PreparePayout Prepare a payout run for a merchant (finance operator)
 	// (POST /api/v1/admin/merchants/{id}/payouts)
 	PreparePayout(ctx context.Context, request PreparePayoutRequestObject) (PreparePayoutResponseObject, error)
+	// ReinstateMerchant Return a suspended business to approved
+	// (POST /api/v1/admin/merchants/{id}/reinstate)
+	ReinstateMerchant(ctx context.Context, request ReinstateMerchantRequestObject) (ReinstateMerchantResponseObject, error)
 	// RejectMerchant Reject a submitted or in-review business with a reason
 	// (POST /api/v1/admin/merchants/{id}/reject)
 	RejectMerchant(ctx context.Context, request RejectMerchantRequestObject) (RejectMerchantResponseObject, error)
 	// StartMerchantReview Move a submitted business to in_review
 	// (POST /api/v1/admin/merchants/{id}/start-review)
 	StartMerchantReview(ctx context.Context, request StartMerchantReviewRequestObject) (StartMerchantReviewResponseObject, error)
+	// SuspendMerchant Suspend an approved business with a reason
+	// (POST /api/v1/admin/merchants/{id}/suspend)
+	SuspendMerchant(ctx context.Context, request SuspendMerchantRequestObject) (SuspendMerchantResponseObject, error)
+	// TerminateMerchant Terminate a business with a reason
+	// (POST /api/v1/admin/merchants/{id}/terminate)
+	TerminateMerchant(ctx context.Context, request TerminateMerchantRequestObject) (TerminateMerchantResponseObject, error)
 	// ListModerationDeals Deals waiting for review
 	// (GET /api/v1/admin/moderation/deals)
 	ListModerationDeals(ctx context.Context, request ListModerationDealsRequestObject) (ListModerationDealsResponseObject, error)
+	// GetAdminOverview Platform totals for the admin overview
+	// (GET /api/v1/admin/overview)
+	GetAdminOverview(ctx context.Context, request GetAdminOverviewRequestObject) (GetAdminOverviewResponseObject, error)
 	// ConfirmManualPayment Confirm a manual pilot payment through the normal settlement path
 	// (POST /api/v1/admin/payments/{id}/manual-confirm)
 	ConfirmManualPayment(ctx context.Context, request ConfirmManualPaymentRequestObject) (ConfirmManualPaymentResponseObject, error)
@@ -10426,6 +11110,15 @@ type StrictServerInterface interface {
 	// UpdateMerchantDeal Replace owned deal draft
 	// (PUT /api/v1/merchant/deals/{id})
 	UpdateMerchantDeal(ctx context.Context, request UpdateMerchantDealRequestObject) (UpdateMerchantDealResponseObject, error)
+	// ArchiveMerchantDeal Archive a paused, ended or rejected deal
+	// (POST /api/v1/merchant/deals/{id}/archive)
+	ArchiveMerchantDeal(ctx context.Context, request ArchiveMerchantDealRequestObject) (ArchiveMerchantDealResponseObject, error)
+	// PauseMerchantDeal Take an active deal off sale (owner or manager)
+	// (POST /api/v1/merchant/deals/{id}/pause)
+	PauseMerchantDeal(ctx context.Context, request PauseMerchantDealRequestObject) (PauseMerchantDealResponseObject, error)
+	// ResumeMerchantDeal Put a paused deal back on sale
+	// (POST /api/v1/merchant/deals/{id}/resume)
+	ResumeMerchantDeal(ctx context.Context, request ResumeMerchantDealRequestObject) (ResumeMerchantDealResponseObject, error)
 	// SubmitMerchantDeal Submit complete deal for moderation
 	// (POST /api/v1/merchant/deals/{id}/submit)
 	SubmitMerchantDeal(ctx context.Context, request SubmitMerchantDealRequestObject) (SubmitMerchantDealResponseObject, error)
@@ -10795,6 +11488,32 @@ func (sh *strictHandler) GetFinanceQueue(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// ListFraudSignals operation middleware
+func (sh *strictHandler) ListFraudSignals(w http.ResponseWriter, r *http.Request, params ListFraudSignalsParams) {
+	var request ListFraudSignalsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListFraudSignals(ctx, request.(ListFraudSignalsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListFraudSignals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListFraudSignalsResponseObject); ok {
+		if err := validResponse.VisitListFraudSignalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMerchantReviewQueue operation middleware
 func (sh *strictHandler) ListMerchantReviewQueue(w http.ResponseWriter, r *http.Request, params ListMerchantReviewQueueParams) {
 	var request ListMerchantReviewQueueRequestObject
@@ -10900,6 +11619,32 @@ func (sh *strictHandler) PreparePayout(w http.ResponseWriter, r *http.Request, i
 	}
 }
 
+// ReinstateMerchant operation middleware
+func (sh *strictHandler) ReinstateMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ReinstateMerchantRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReinstateMerchant(ctx, request.(ReinstateMerchantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReinstateMerchant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReinstateMerchantResponseObject); ok {
+		if err := validResponse.VisitReinstateMerchantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RejectMerchant operation middleware
 func (sh *strictHandler) RejectMerchant(w http.ResponseWriter, r *http.Request, id Id) {
 	var request RejectMerchantRequestObject
@@ -10959,6 +11704,72 @@ func (sh *strictHandler) StartMerchantReview(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// SuspendMerchant operation middleware
+func (sh *strictHandler) SuspendMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	var request SuspendMerchantRequestObject
+
+	request.Id = id
+
+	var body SuspendMerchantJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SuspendMerchant(ctx, request.(SuspendMerchantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuspendMerchant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SuspendMerchantResponseObject); ok {
+		if err := validResponse.VisitSuspendMerchantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TerminateMerchant operation middleware
+func (sh *strictHandler) TerminateMerchant(w http.ResponseWriter, r *http.Request, id Id) {
+	var request TerminateMerchantRequestObject
+
+	request.Id = id
+
+	var body TerminateMerchantJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TerminateMerchant(ctx, request.(TerminateMerchantRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TerminateMerchant")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TerminateMerchantResponseObject); ok {
+		if err := validResponse.VisitTerminateMerchantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListModerationDeals operation middleware
 func (sh *strictHandler) ListModerationDeals(w http.ResponseWriter, r *http.Request, params ListModerationDealsParams) {
 	var request ListModerationDealsRequestObject
@@ -10978,6 +11789,30 @@ func (sh *strictHandler) ListModerationDeals(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListModerationDealsResponseObject); ok {
 		if err := validResponse.VisitListModerationDealsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminOverview operation middleware
+func (sh *strictHandler) GetAdminOverview(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminOverviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminOverview(ctx, request.(GetAdminOverviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminOverview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminOverviewResponseObject); ok {
+		if err := validResponse.VisitGetAdminOverviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -12383,6 +13218,84 @@ func (sh *strictHandler) UpdateMerchantDeal(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ArchiveMerchantDeal operation middleware
+func (sh *strictHandler) ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ArchiveMerchantDealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ArchiveMerchantDeal(ctx, request.(ArchiveMerchantDealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ArchiveMerchantDeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ArchiveMerchantDealResponseObject); ok {
+		if err := validResponse.VisitArchiveMerchantDealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PauseMerchantDeal operation middleware
+func (sh *strictHandler) PauseMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request PauseMerchantDealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PauseMerchantDeal(ctx, request.(PauseMerchantDealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PauseMerchantDeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PauseMerchantDealResponseObject); ok {
+		if err := validResponse.VisitPauseMerchantDealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResumeMerchantDeal operation middleware
+func (sh *strictHandler) ResumeMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
+	var request ResumeMerchantDealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResumeMerchantDeal(ctx, request.(ResumeMerchantDealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResumeMerchantDeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResumeMerchantDealResponseObject); ok {
+		if err := validResponse.VisitResumeMerchantDealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SubmitMerchantDeal operation middleware
 func (sh *strictHandler) SubmitMerchantDeal(w http.ResponseWriter, r *http.Request, id Id) {
 	var request SubmitMerchantDealRequestObject
@@ -13429,181 +14342,188 @@ func (sh *strictHandler) GetSearchSuggestions(w http.ResponseWriter, r *http.Req
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

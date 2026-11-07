@@ -184,3 +184,57 @@ func (s apiServer) ListAuditLogs(w http.ResponseWriter, r *http.Request, params 
 	}
 	s.ServerInterface.ListAuditLogs(w, r, params)
 }
+
+func (a *AdminReportsAPI) listFraudSignals(w http.ResponseWriter, r *http.Request, page *int) {
+	actor, ok := a.staff(w, r)
+	if !ok {
+		return
+	}
+	pageParams, err := catalog.NewPage(page, nil)
+	if err != nil {
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_page", nil, map[string][]string{"page": {"invalid_page"}})
+		return
+	}
+	signals, total, err := a.reports.FraudSignals(r.Context(), actor, pageParams)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	items := make([]gen.FraudSignal, 0, len(signals))
+	for _, signal := range signals {
+		item := gen.FraudSignal{
+			Id:        gen.Uuid(signal.ID),
+			Rule:      signal.Rule,
+			Status:    gen.FraudSignalStatus(signal.Status),
+			Detail:    signal.Detail,
+			CreatedAt: signal.CreatedAt,
+		}
+		if signal.MerchantID != uuid.Nil {
+			id := gen.Uuid(signal.MerchantID)
+			item.MerchantId = &id
+		}
+		if signal.MerchantName != "" {
+			name := signal.MerchantName
+			item.MerchantName = &name
+		}
+		if signal.SubjectUserID != uuid.Nil {
+			id := gen.Uuid(signal.SubjectUserID)
+			item.SubjectUserId = &id
+		}
+		items = append(items, item)
+	}
+	writeJSON(w, http.StatusOK, gen.FraudSignalPage{Items: items, Page: pageParams.Number, PageSize: pageParams.Size, Total: total})
+}
+
+func (a *AdminReportsAPI) getOverview(w http.ResponseWriter, r *http.Request) {
+	actor, ok := a.staff(w, r)
+	if !ok {
+		return
+	}
+	overview, err := a.reports.Overview(r.Context(), actor)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, gen.AdminOverview{Users: overview.Users, Businesses: overview.Businesses, ActiveDeals: overview.ActiveDeals, OrdersToday: overview.OrdersToday})
+}

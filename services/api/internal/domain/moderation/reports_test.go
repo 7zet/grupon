@@ -39,6 +39,29 @@ func (f *fakeReports) AuditRows(context.Context, catalog.Page) ([]AuditRow, int6
 	return nil, 0, nil
 }
 
+func (f *fakeReports) FraudSignals(context.Context, catalog.Page) ([]FraudSignal, int64, error) {
+	return nil, 0, nil
+}
+
+func (f *fakeReports) Overview(context.Context) (Overview, error) { return Overview{Users: 3}, nil }
+
+func TestFraudSignalsAreForAdminsAndOverviewForAllStaff(t *testing.T) {
+	service := NewReportService(&fakeReports{})
+	ctx := context.Background()
+	if _, _, err := service.FraudSignals(ctx, Actor{Role: "moderator"}, catalog.Page{}); !errors.Is(err, ErrAuditForbidden) {
+		t.Fatalf("moderator fraud signals: got %v", err)
+	}
+	if _, _, err := service.FraudSignals(ctx, Actor{Role: "admin"}, catalog.Page{}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := service.Overview(ctx, Actor{Role: "moderator"}); err != nil || got.Users != 3 {
+		t.Fatalf("moderator overview: %v %v", got, err)
+	}
+	if _, err := service.Overview(ctx, Actor{Role: "customer"}); !errors.Is(err, ErrAuditForbidden) {
+		t.Fatalf("customer overview: got %v", err)
+	}
+}
+
 func TestDismissClosesOnlyOpenReportsAndAudits(t *testing.T) {
 	report := uuid.New()
 	repo := &fakeReports{open: map[uuid.UUID]bool{report: true}, hidden: map[uuid.UUID]bool{}}

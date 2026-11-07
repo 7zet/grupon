@@ -21,12 +21,50 @@ func (q *Queries) ActionOpenReviewReports(ctx context.Context, reviewID pgtype.U
 	return err
 }
 
+const adminOverviewTotals = `-- name: AdminOverviewTotals :one
+SELECT
+  (SELECT count(*) FROM users WHERE deleted_at IS NULL)::bigint AS users,
+  (SELECT count(*) FROM merchants WHERE deleted_at IS NULL AND review_status = 'approved')::bigint AS businesses,
+  (SELECT count(*) FROM deals WHERE deleted_at IS NULL AND status = 'active')::bigint AS active_deals,
+  (SELECT count(*) FROM orders WHERE created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Tashkent') AT TIME ZONE 'Asia/Tashkent')::bigint AS orders_today
+`
+
+type AdminOverviewTotalsRow struct {
+	Users       int64 `json:"users"`
+	Businesses  int64 `json:"businesses"`
+	ActiveDeals int64 `json:"active_deals"`
+	OrdersToday int64 `json:"orders_today"`
+}
+
+func (q *Queries) AdminOverviewTotals(ctx context.Context) (AdminOverviewTotalsRow, error) {
+	row := q.db.QueryRow(ctx, adminOverviewTotals)
+	var i AdminOverviewTotalsRow
+	err := row.Scan(
+		&i.Users,
+		&i.Businesses,
+		&i.ActiveDeals,
+		&i.OrdersToday,
+	)
+	return i, err
+}
+
 const countAuditLogs = `-- name: CountAuditLogs :one
 SELECT count(*) FROM audit_logs
 `
 
 func (q *Queries) CountAuditLogs(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, countAuditLogs)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countFraudSignals = `-- name: CountFraudSignals :one
+SELECT count(*) FROM fraud_signals
+`
+
+func (q *Queries) CountFraudSignals(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countFraudSignals)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -134,6 +172,59 @@ func (q *Queries) ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([
 			&i.EntityType,
 			&i.EntityID,
 			&i.AfterData,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFraudSignals = `-- name: ListFraudSignals :many
+SELECT f.id, f.rule, f.status, f.merchant_id, m.display_name AS merchant_name, f.subject_user_id, f.detail, f.created_at
+FROM fraud_signals f
+LEFT JOIN merchants m ON m.id = f.merchant_id
+ORDER BY f.created_at DESC, f.id DESC
+LIMIT $2 OFFSET $1
+`
+
+type ListFraudSignalsParams struct {
+	PageOffset int32 `json:"page_offset"`
+	PageLimit  int32 `json:"page_limit"`
+}
+
+type ListFraudSignalsRow struct {
+	ID            pgtype.UUID        `json:"id"`
+	Rule          string             `json:"rule"`
+	Status        string             `json:"status"`
+	MerchantID    pgtype.UUID        `json:"merchant_id"`
+	MerchantName  pgtype.Text        `json:"merchant_name"`
+	SubjectUserID pgtype.UUID        `json:"subject_user_id"`
+	Detail        []byte             `json:"detail"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListFraudSignals(ctx context.Context, arg ListFraudSignalsParams) ([]ListFraudSignalsRow, error) {
+	rows, err := q.db.Query(ctx, listFraudSignals, arg.PageOffset, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFraudSignalsRow{}
+	for rows.Next() {
+		var i ListFraudSignalsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Rule,
+			&i.Status,
+			&i.MerchantID,
+			&i.MerchantName,
+			&i.SubjectUserID,
+			&i.Detail,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
