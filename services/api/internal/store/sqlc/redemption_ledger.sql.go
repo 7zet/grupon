@@ -150,7 +150,7 @@ FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
 WHERE r.voucher_id = $1 AND r.merchant_id = $2 AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
-FOR UPDATE
+FOR UPDATE OF r
 `
 
 type LatestOpenRedemptionParams struct {
@@ -194,7 +194,7 @@ FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
 WHERE r.voucher_id = $1 AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
-FOR UPDATE
+FOR UPDATE OF r
 `
 
 type LatestOpenRedemptionForVoucherRow struct {

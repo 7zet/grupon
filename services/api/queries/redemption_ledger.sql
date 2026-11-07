@@ -33,7 +33,7 @@ FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
 WHERE r.voucher_id = sqlc.arg(voucher_id) AND r.merchant_id = sqlc.arg(merchant_id) AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
-FOR UPDATE;
+FOR UPDATE OF r;
 
 -- name: MarkRedemptionReversed :execrows
 UPDATE redemptions SET reversed_at = now(), reversed_by_user_id = sqlc.arg(actor_user_id), reversal_reason = sqlc.arg(reason)
@@ -65,7 +65,7 @@ FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
 WHERE r.voucher_id = sqlc.arg(voucher_id) AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
-FOR UPDATE;
+FOR UPDATE OF r;
 
 -- name: InsertBuyerNotification :exec
 INSERT INTO notifications (user_id, kind, voucher_id, merchant_name)
