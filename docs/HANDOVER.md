@@ -10,5 +10,6 @@ Grupon is a polished demonstration project. It has no real users, real money pro
 - Legal, regulatory, privacy, merchant-contract, and launch gates.
 - A real pilot launch or seven-day staging run.
 - Dockerfiles and `docker-compose.prod.yml` are optional and not verified; deployment and CI use native runtimes.
+- Telegram bot, Telegram OTP, Telegram notifications, and Telegram Mini App were not included by decision. The unfinished work is retained only in the `archive/telegram-wip` tag.
 
 The existing payment, ledger, finance, SMS-sender, and deployment interfaces are intentionally retained so a later production project can implement these capabilities without redesigning the demo’s core flows.

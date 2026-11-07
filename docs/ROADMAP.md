@@ -24,22 +24,19 @@ This is the single source of truth for delivery status. Acceptance evidence live
 - 2026-11-04: `DEMO_MODE` now gates OTP echo, mock payment provider/actions, and the public header badge; `SMS_PROVIDER=log` remains the default.
 - 2026-11-05: Native purchase/merchant Playwright runs in CI as advisory after two failed attempts; readiness succeeds, but its test failure remains recorded in CI logs.
 
-## Stage 3 — Telegram bot and support contacts
+## Stage 3 — Support contacts and SMS adapter
 
-**Goal:** Give demo users an easy way to discover the product and ask for help.
+**Goal:** Give demo users visible support contacts and an optional real-SMS adapter.
 
-**Finish line:** Telegram bot flows and visible support contacts are complete and tested.
+**Finish line:** Configured contacts and the Eskiz adapter are complete and tested; the default stays local log delivery.
 
 **Status:** In progress.
 
 **Ordered tasks:**
 
-1. Support contacts from configuration in the footer, help page, and voucher page.
-2. Telegram bot basics: localized `/start`, `/help`, `/support`, disabled without a token, long-polling locally and verified-secret webhooks for hosting.
-3. Buyer account linking and unlinking through one-time, ten-minute Telegram deep-link tokens, with audit logging.
-4. Linked-user outbox notifications, redemption dispute action, expiry reminders, and `/vouchers`.
-5. Fake-client tests for bot disablement, link tokens, idempotent dispute actions, and reminder de-duplication.
-6. `docs/TELEGRAM.md` for BotFather, environment configuration, and Render webhook setup.
+1. Support contacts from configuration in the footer, help page, and voucher page — done.
+2. Eskiz SMS adapter with cooldown, rate limits, daily caps, and fake-server tests — in progress.
+3. Telegram bot, Telegram OTP, notifications and Mini App — dropped by decision; WIP is archived at `archive/telegram-wip`.
 
 ## Stage 4 — Polish and demo quality
 
@@ -49,7 +46,7 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Status:** In progress — G0 demo usability is the release blocker.
 
-**Current work:** G0 items 1–5 are implemented on `feat/stage-4a`; focused web checks are green. CI and browser verification are pending before the `v0.5` merge.
+**Current work:** G0 items 1–5 were released as `v0.5`; Stage 3b SMS cleanup is next.
 
 **Delivery order (2026-11-06):**
 
