@@ -993,6 +993,7 @@ type Refund struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 	PaymentID   pgtype.UUID        `json:"payment_id"`
+	ProposedBy  pgtype.UUID        `json:"proposed_by"`
 }
 
 type Review struct {

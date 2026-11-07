@@ -44,15 +44,17 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Finish line:** Demo scripts, visual polish, edge states, and cross-role browser tests are complete.
 
-**Status:** In progress — G0 demo usability is the release blocker.
+**Status:** In progress — audit fixes G1 are implemented locally and awaiting the blocking CI run.
 
-**Current work:** G0 items 1–5 were released as `v0.5`; Stage 3b SMS cleanup is next.
+**Current work:** G0 was released as `v0.5` and Stage 3b as `v0.6`; G1 audit fixes are next.
 
 **Delivery order (2026-11-06):**
 
 1. `feat/stage-4a` G0: account menu, identity badges, demo-account picker, clear seed names, and `docs/DEMO.md`; green CI, merge to `main`, tag `v0.5`.
 2. Rebase `feat/stage-3b` on that `main`; finish Eskiz SMS wiring/daily caps, Telegram cleanup, and documentation; green CI, merge to `main`, tag `v0.6`.
 3. Create a new branch from updated `main` for audit groups G1 through G5.
+
+**2026-11-07 — Stage 4a G1:** QR refresh follows server token expiry; checkout accepts one variant only; late and dispute refunds require support proposal then a different finance approver; finance denial/self-approval is audited; native Playwright is blocking and installs Chromium in CI. Migration: `00029_refund_proposals.sql`.
 
 ## Stage 5 — SEO, final documentation, handover, v1.0
 

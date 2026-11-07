@@ -208,6 +208,7 @@ type Querier interface {
 	PayableRedemptions(ctx context.Context, arg PayableRedemptionsParams) ([]PayableRedemptionsRow, error)
 	PayoutRunDetail(ctx context.Context, id pgtype.UUID) (PayoutRunDetailRow, error)
 	PlaceMerchantHold(ctx context.Context, arg PlaceMerchantHoldParams) error
+	ProposeRequestedRefund(ctx context.Context, arg ProposeRequestedRefundParams) (int64, error)
 	RecentStaffRedemptions(ctx context.Context, arg RecentStaffRedemptionsParams) (int64, error)
 	RecomputeDealRatings(ctx context.Context) (int64, error)
 	RecomputeDealSoldCounts(ctx context.Context) (int64, error)

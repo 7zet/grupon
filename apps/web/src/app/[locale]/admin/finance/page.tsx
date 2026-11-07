@@ -17,6 +17,7 @@ const STATUS_KEYS = {
   approved: 'status.approved',
   sent: 'status.sent',
   requested: 'status.requested',
+  proposed: 'status.proposed',
   processing: 'status.processing',
   open: 'status.open',
   awaiting_evidence: 'status.awaiting_evidence',
@@ -79,7 +80,13 @@ export default async function FinancePage({ params }: { params: Promise<{ locale
                   {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.requested')}
                 </p>
                 <p className="text-small text-ink-muted">{item.reason}</p>
-                <FinanceActions kind="refund" id={item.id} status={item.status} />
+                <FinanceActions
+                  kind="refund"
+                  id={item.id}
+                  status={item.status}
+                  canSupport={canSupport}
+                  canResolve={canResolve}
+                />
               </li>
             ))}
           </ul>

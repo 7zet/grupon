@@ -29,8 +29,9 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 - Go integration tests need `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable`.
 - Run focused tests for each change. At stage close run Go tests, Go vet, web lint, typecheck, web unit tests, and Playwright when browser flows change.
 
-## Current stage — Stage 3b: support contacts and SMS adapter
+## Current stage — Stage 4a audit fixes
 
-1. Keep configured support contacts in the footer, Help page, and voucher page.
-2. Finish the optional Eskiz adapter, rate limits, daily caps, fake-server tests, and deployment docs.
-3. Telegram bot scope is dropped; retain only merchant profile links and `SUPPORT_TELEGRAM` support contact.
+G1 is complete locally: QR expiry refresh, one-variant checkout, four-eyes refunds/payout audit,
+and blocking native Playwright CI. Next groups are G2 money correctness, G3 security, G4 demo
+features, then G5 documentation. Verify each audit finding in code before changing it; record an
+incorrect finding in `docs/DECISIONS.md`.

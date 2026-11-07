@@ -6,7 +6,7 @@
 
 | AT | Scenario | Status | Evidence / what is missing |
 |---|---|---|---|
-| AT-01 | Webhook duplicate | ✅ | `store/at_payments_test.go` (TestAT01…): 5 deliveries, 1 voucher, order paid. Ledger lines are not checked yet |
+| AT-01 | Webhook duplicate | ✅ | `store/at_payments_test.go` (TestAT01…): 5 deliveries, 1 voucher, order paid, exactly 1 journal entry. |
 | AT-02 | Parallel redeem | ✅ | `store/at_redeem_test.go` (TestAT02…): 100 concurrent scans, one redemption |
 | AT-03 | Inventory oversell | ✅ | `store/commerce_concurrency_test.go` (TestOverSellingIsImpossible) |
 | AT-04 | Foreign merchant scans voucher | ✅ | `domain/redemption` TestForeignMerchantScanIsRefusedAndAudited: refused, voucher unchanged, `voucher_scan_denied` audit row |
@@ -14,7 +14,7 @@
 | AT-06 | Price version lock | ✅ | `store/at_gates_test.go` (TestAT06…): order total, item price, order-item terms and voucher terms keep the buyer's agreed snapshots after the deal changes |
 | AT-07 | Failed payment, hold expires | ✅ | `store/at_payments_test.go` (TestAT07…): stock returned, no voucher, order `expired` |
 | AT-08 | Reconciliation alert | ⏳ | Deferred: needs PSP (Stage 3) |
-| AT-09 | Cashier cannot approve payout | ✅ | `store/at_gates_test.go` (TestAT09…): ErrForbidden, `payout_prepare_denied` audit row |
+| AT-09 | Cashier cannot approve payout | ✅ | `store/at_gates_test.go` and `store/finance_test.go`: denied prepare and denied approve paths are audit-logged. |
 | AT-10 | Closed category gate | ✅ | `store/at_gates_test.go`: create and submit return `category_closed`; separate tests prove search, publish, checkout, and redemption capability gates |
 | AT-11 | Refund within 14 days | ✅ | `store/finance_test.go` (TestUnusedVoucherRefundsAutomaticallyWithinFourteenDays) |
 | AT-12 | Voucher expiry at Tashkent 23:59 | ✅ | `domain/commerce/voucher_window_test.go` |
@@ -23,6 +23,6 @@
 | AT-15 | Multi-use, parallel last use | ✅ | `store/at_redeem_test.go`: two racing scans, one succeeds; second visit also tested. Fixed a bug: partially used vouchers could not be used again |
 | AT-16 | Dispute holds payout | ✅ | `store/at_gates_test.go` (TestAT16…): disputed redemption leaves the payable set. `store/finance_test.go` (`TestDisputeAllowedTransitionsAuditAndPayoutHold`): hold remains through evidence/review and is released on merchant resolution; all transitions are audited |
 | AT-17 | Bank account change hold (72 h) | ⏳ | Deferred: Stage 3 |
-| AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover) |
+| AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover): self and wrong-role approvals are refused and audit-logged. |
 
 Counts: ✅ 16 · 🟡 0 · ❔ 0 · ⏳ 2 (AT-08: needs PSP / Stage 3; AT-17: Stage 3).

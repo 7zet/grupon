@@ -87,7 +87,7 @@ func (q *Queries) ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunPara
 const approveRequestedRefund = `-- name: ApproveRequestedRefund :one
 UPDATE refunds r SET status = 'approved', approved_by = $1, updated_at = now()
 FROM vouchers v
-WHERE r.id = $2 AND r.status = 'requested' AND r.requested_by <> $1 AND v.id = r.voucher_id
+WHERE r.id = $2 AND r.status = 'proposed' AND r.proposed_by <> $1 AND v.id = r.voucher_id
 RETURNING r.id, r.amount, r.voucher_id, v.merchant_id
 `
 
@@ -526,7 +526,7 @@ func (q *Queries) ListOpenPayoutRuns(ctx context.Context) ([]ListOpenPayoutRunsR
 const listOpenRefunds = `-- name: ListOpenRefunds :many
 SELECT r.id, v.code AS voucher_code, r.amount, r.status, r.reason, r.created_at
 FROM refunds r JOIN vouchers v ON v.id = r.voucher_id
-WHERE r.status IN ('requested', 'approved', 'processing')
+WHERE r.status IN ('requested', 'proposed', 'approved', 'processing')
 ORDER BY r.created_at
 `
 
@@ -740,6 +740,24 @@ type PlaceMerchantHoldParams struct {
 func (q *Queries) PlaceMerchantHold(ctx context.Context, arg PlaceMerchantHoldParams) error {
 	_, err := q.db.Exec(ctx, placeMerchantHold, arg.MerchantID, arg.Reason, arg.HoldUntil)
 	return err
+}
+
+const proposeRequestedRefund = `-- name: ProposeRequestedRefund :execrows
+UPDATE refunds SET status = 'proposed', proposed_by = $1, updated_at = now()
+WHERE id = $2 AND status = 'requested'
+`
+
+type ProposeRequestedRefundParams struct {
+	ProposedBy pgtype.UUID `json:"proposed_by"`
+	ID         pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) ProposeRequestedRefund(ctx context.Context, arg ProposeRequestedRefundParams) (int64, error) {
+	result, err := q.db.Exec(ctx, proposeRequestedRefund, arg.ProposedBy, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const recentStaffRedemptions = `-- name: RecentStaffRedemptions :one

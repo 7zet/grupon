@@ -6,7 +6,7 @@ import { Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { useCart } from '@/stores/cart';
+import { useCheckout } from '@/stores/checkout';
 type Deal = components['schemas']['Deal'];
 
 export function PurchasePanel({
@@ -20,7 +20,7 @@ export function PurchasePanel({
 }) {
   const t = useTranslations('Deal');
   const router = useRouter();
-  const add = useCart((state) => state.add);
+  const selectForCheckout = useCheckout((state) => state.select);
   const [selected, setSelected] = useState(deal.options[0]!.id);
   const [quantity, setQuantity] = useState(1);
   const option = deal.options.find((item) => item.id === selected)!;
@@ -36,7 +36,7 @@ export function PurchasePanel({
     originalPrice: option.original_price.amount,
   });
   const buy = () => {
-    add(cartLine());
+    selectForCheckout(cartLine());
     router.push('/checkout');
   };
 

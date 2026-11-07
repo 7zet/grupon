@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Link, useRouter } from '@/i18n/navigation';
-import { useCart, type CartItem } from '@/stores/cart';
+import { useCheckout } from '@/stores/checkout';
 
 type Values = { terms: boolean };
 
@@ -38,7 +38,7 @@ export function CheckoutForm({ demoMode }: { demoMode: boolean }) {
   const t = useTranslations('Checkout');
   const locale = useLocale();
   const router = useRouter();
-  const items = useCart((state) => state.items);
+  const item = useCheckout((state) => state.item);
   const [error, setError] = useState<string | null>(null);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
@@ -55,7 +55,7 @@ export function CheckoutForm({ demoMode }: { demoMode: boolean }) {
   });
 
   if (!ready) return <p className="text-ink-muted">…</p>;
-  if (items.length === 0) {
+  if (!item) {
     return (
       <div className="grid gap-4">
         <p className="text-ink-muted">{t('emptyCart')}</p>
@@ -66,21 +66,19 @@ export function CheckoutForm({ demoMode }: { demoMode: boolean }) {
     );
   }
 
+  // Capture the narrowed state for submit callbacks, where TypeScript cannot
+  // retain the render-time null check.
+  const checkoutItem = item;
+
   const money = (amount: number) =>
     formatMoney(amount, locale as Parameters<typeof formatMoney>[1], 'UZS');
-  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const savings = items.reduce(
-    (sum, item) => sum + (item.originalPrice - item.unitPrice) * item.quantity,
-    0,
-  );
+  const total = item.unitPrice * item.quantity;
+  const savings = (item.originalPrice - item.unitPrice) * item.quantity;
 
   async function submit() {
     setError(null);
     const orderBody = {
-      items: items.map(({ optionId, quantity }: CartItem) => ({
-        deal_option_id: optionId,
-        quantity,
-      })),
+      items: [{ deal_option_id: checkoutItem.optionId, quantity: checkoutItem.quantity }],
     };
 
     const orderResponse = await fetch('/api/bff/orders', {
@@ -116,17 +114,15 @@ export function CheckoutForm({ demoMode }: { demoMode: boolean }) {
           {t('summary')}
         </h2>
         <ul className="grid gap-3">
-          {items.map((item) => (
-            <li key={item.optionId} className="rounded-card border border-border bg-surface p-4">
-              <span className="block font-semibold text-ink">{item.title}</span>
-              <span className="text-sm text-ink-muted">
-                {t('quantity')}: {item.quantity}
-              </span>
-              <span className="block font-semibold text-ink tabular-nums">
-                {money(item.unitPrice * item.quantity)}
-              </span>
-            </li>
-          ))}
+          <li className="rounded-card border border-border bg-surface p-4">
+            <span className="block font-semibold text-ink">{item.title}</span>
+            <span className="text-sm text-ink-muted">
+              {t('quantity')}: {item.quantity}
+            </span>
+            <span className="block font-semibold text-ink tabular-nums">
+              {money(item.unitPrice * item.quantity)}
+            </span>
+          </li>
         </ul>
         {savings > 0 && (
           <p className="rounded-control-ui bg-save-tint px-4 py-2 font-semibold text-save">

@@ -1220,8 +1220,25 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Support approves a refund request (over 14 days or from a dispute) */
+    /** Finance approves a support-proposed refund (over 14 days or from a dispute) */
     post: operations['approveRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/propose': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support proposes a requested refund for finance approval */
+    post: operations['proposeRefund'];
     delete?: never;
     options?: never;
     head?: never;
@@ -4347,6 +4364,27 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description Approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  proposeRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Proposed */
       204: {
         headers: {
           [name: string]: unknown;

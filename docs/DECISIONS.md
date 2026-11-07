@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-11-07 — Stage 4a audit source availability and G1 corrections
+
+`docs/AUDIT.md`, named as the source for the Stage 4a findings, is not present on the branch or
+on `main`. The owner-provided G1 list is therefore treated as the audit scope and each item was
+verified against the code. A-2's wording was inaccurate: the voucher page did not refresh a QR at
+all, although the API correctly supplied `qr_token_expires_at`; the page now refreshes at that
+server-supplied expiry rather than on a fixed client interval. Late and dispute refund requests now
+move through `requested → proposed → approved`: support proposes, a different finance operator
+approves. This requires migration `00029_refund_proposals.sql`.
+
 ## 2026-10-31 — Phase 0 assumptions
 
 1. **Phase boundary.** Phase 0 contains only the foundation. The admin application, full API

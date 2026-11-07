@@ -136,6 +136,9 @@ func TestAT01DuplicateSuccessWebhookIssuesOneVoucherSet(t *testing.T) {
 	if got := env.scalarText(t, `SELECT status::text FROM payments WHERE id = $1`, session.PaymentID); got != "succeeded" {
 		t.Fatalf("payment status = %s, want succeeded", got)
 	}
+	if got := env.count(t, `SELECT count(*) FROM journal_entries WHERE reference = (SELECT id::text FROM order_items WHERE order_id = $1)`, order.ID); got != 1 {
+		t.Fatalf("journal entries = %d, want exactly 1", got)
+	}
 }
 
 // AT-07: the payment fails, the hold runs out. Stock comes back, no voucher exists, and the order is expired.

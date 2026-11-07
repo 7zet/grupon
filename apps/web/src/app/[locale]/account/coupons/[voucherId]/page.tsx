@@ -1,11 +1,11 @@
 import type { components } from '@grupon/api-client';
 import { getTranslations, getFormatter } from 'next-intl/server';
-import QRCode from 'qrcode';
 import { notFound } from 'next/navigation';
 
 import { AccountShell } from '@/components/account-shell';
 import { ReviewForm } from '@/components/review-form';
 import { SupportContacts } from '@/components/support-contacts';
+import { VoucherQRCode } from '@/components/voucher-qr';
 import { accountGetOrNull, loadForVisitor } from '@/lib/account-api';
 import { pickText } from '@/lib/localized';
 import { getSupportContacts } from '@/lib/support';
@@ -27,21 +27,11 @@ export default async function VoucherPage({
   );
   if (!voucher) notFound();
 
-  // The QR encodes the server-signed token only, never the raw voucher id.
-  const qrDataUrl = await QRCode.toDataURL(voucher.qr_token, { margin: 1, width: 320 });
-
   return (
     <AccountShell section="coupons">
       <article className="mx-auto grid max-w-md justify-items-center gap-5 text-center">
         <h2 className="text-lead font-semibold text-ink">{pickText(voucher.deal.title, locale)}</h2>
-        {/* eslint-disable-next-line @next/next/no-img-element -- generated data URL, not an optimizable asset */}
-        <img
-          src={qrDataUrl}
-          alt={t('qrAlt')}
-          width={320}
-          height={320}
-          className="h-auto max-w-full rounded-card bg-surface p-3"
-        />
+        <VoucherQRCode voucher={voucher} alt={t('qrAlt')} />
         <p className="text-sm text-ink-muted">{t('brightnessHint')}</p>
         <p className="text-sm text-ink-muted">
           {t('validUntil', {

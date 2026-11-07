@@ -391,6 +391,18 @@ func (r *FinanceRepository) ApproveRefund(ctx context.Context, refundID, approve
 	return ref, tx.Commit(ctx)
 }
 
+// ProposeRefund records the support person who reviewed a requested refund.
+func (r *FinanceRepository) ProposeRefund(ctx context.Context, refundID, proposerID uuid.UUID) (bool, error) {
+	rows, err := sqlc.New(r.pool).ProposeRequestedRefund(ctx, sqlc.ProposeRequestedRefundParams{
+		ID:         toPgUUID(refundID),
+		ProposedBy: toPgUUID(proposerID),
+	})
+	if err != nil {
+		return false, fmt.Errorf("propose refund: %w", err)
+	}
+	return rows == 1, nil
+}
+
 // TransitionDispute changes state and writes its audit row in one transaction. Customer resolution
 // keeps the existing refund request behavior; merchant resolution releases the payout hold.
 func (r *FinanceRepository) TransitionDispute(ctx context.Context, disputeID uuid.UUID, actor finance.Actor, from []string, to string) error {

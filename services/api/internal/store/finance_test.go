@@ -112,6 +112,17 @@ func TestPayoutNeedsADifferentApprover(t *testing.T) {
 	if err := service.ApprovePayout(ctx, preparer, runID, "BANK-1"); !errors.Is(err, finance.ErrSelfApproval) {
 		t.Fatalf("self approval: got %v", err)
 	}
+	var denied int
+	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE action='payout_approve_self_denied' AND entity_id=$1`, runID).Scan(&denied); err != nil || denied != 1 {
+		t.Fatalf("self-approval audit rows = %d, err = %v; want 1", denied, err)
+	}
+	supportActorID := seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`)
+	if err := service.ApprovePayout(ctx, finance.Actor{UserID: supportActorID, Role: "support"}, runID, "BANK-1"); !errors.Is(err, finance.ErrForbidden) {
+		t.Fatalf("wrong-role approval: got %v", err)
+	}
+	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE action='payout_approve_denied' AND entity_id=$1`, runID).Scan(&denied); err != nil || denied != 1 {
+		t.Fatalf("wrong-role approval audit rows = %d, err = %v; want 1", denied, err)
+	}
 	approverID := seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`)
 	if err := service.ApprovePayout(ctx, finance.Actor{UserID: approverID, Role: "finance"}, runID, "BANK-1"); err != nil {
 		t.Fatalf("approve: %v", err)
@@ -201,7 +212,7 @@ func testCode() string {
 	return raw[0:4] + "-" + raw[4:8]
 }
 
-func TestSupportApprovesRefundOlderThanFourteenDays(t *testing.T) {
+func TestFinanceApprovesRefundOlderThanFourteenDays(t *testing.T) {
 	fixture := newCatalogFixture(t)
 	ctx := context.Background()
 	voucherID, buyerID, _, _ := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
@@ -220,10 +231,21 @@ func TestSupportApprovesRefundOlderThanFourteenDays(t *testing.T) {
 	}
 	supportID := seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`)
 	support := finance.Actor{UserID: supportID, Role: "support"}
-	if err := service.ApproveRefund(ctx, support, refundID); err != nil {
-		t.Fatalf("approve: %v", err)
+	if err := service.ApproveRefund(ctx, support, refundID); !errors.Is(err, finance.ErrForbidden) {
+		t.Fatalf("support approval: got %v", err)
 	}
-	if err := service.ApproveRefund(ctx, support, refundID); !errors.Is(err, finance.ErrNotPending) {
+	var denied int
+	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE action='refund_approve_denied' AND entity_id=$1`, refundID).Scan(&denied); err != nil || denied != 1 {
+		t.Fatalf("support approval audit rows = %d, err = %v; want 1", denied, err)
+	}
+	if err := service.ProposeRefund(ctx, support, refundID); err != nil {
+		t.Fatalf("support proposal: %v", err)
+	}
+	approver := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`), Role: "finance"}
+	if err := service.ApproveRefund(ctx, approver, refundID); err != nil {
+		t.Fatalf("finance approval: %v", err)
+	}
+	if err := service.ApproveRefund(ctx, approver, refundID); !errors.Is(err, finance.ErrNotPending) {
 		t.Fatalf("second approval: got %v", err)
 	}
 	if err := fixture.pool.QueryRow(ctx, `SELECT status FROM vouchers WHERE id=$1`, voucherID).Scan(&status); err != nil || status != "refunded" {
@@ -341,6 +363,17 @@ func TestDisputeCustomerResolutionKeepsRefundBehavior(t *testing.T) {
 	var refunds int
 	if err := fixture.pool.QueryRow(ctx, `SELECT count(*) FROM refunds r JOIN disputes d ON d.id=$1 JOIN redemptions rd ON rd.id=d.redemption_id WHERE r.voucher_id=rd.voucher_id AND r.status='requested'`, disputeID).Scan(&refunds); err != nil || refunds != 1 {
 		t.Fatalf("refunds=%d err=%v", refunds, err)
+	}
+	var disputeRefundID uuid.UUID
+	if err := fixture.pool.QueryRow(ctx, `SELECT r.id FROM refunds r JOIN disputes d ON d.id=$1 JOIN redemptions rd ON rd.id=d.redemption_id WHERE r.voucher_id=rd.voucher_id`, disputeID).Scan(&disputeRefundID); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.ProposeRefund(ctx, support, disputeRefundID); err != nil {
+		t.Fatalf("support proposal: %v", err)
+	}
+	otherFinance := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='user@local.test'`), Role: "finance"}
+	if err := service.ApproveRefund(ctx, otherFinance, disputeRefundID); err != nil {
+		t.Fatalf("finance approval: %v", err)
 	}
 	if err := service.CloseDispute(ctx, finance.Actor{Role: "system"}, disputeID); err != nil {
 		t.Fatal(err)

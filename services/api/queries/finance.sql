@@ -131,8 +131,12 @@ UPDATE payout_runs SET status = 'reconciled', updated_at = now() WHERE id = sqlc
 -- name: ApproveRequestedRefund :one
 UPDATE refunds r SET status = 'approved', approved_by = sqlc.arg(approver_id), updated_at = now()
 FROM vouchers v
-WHERE r.id = sqlc.arg(id) AND r.status = 'requested' AND r.requested_by <> sqlc.arg(approver_id) AND v.id = r.voucher_id
+WHERE r.id = sqlc.arg(id) AND r.status = 'proposed' AND r.proposed_by <> sqlc.arg(approver_id) AND v.id = r.voucher_id
 RETURNING r.id, r.amount, r.voucher_id, v.merchant_id;
+
+-- name: ProposeRequestedRefund :execrows
+UPDATE refunds SET status = 'proposed', proposed_by = sqlc.arg(proposed_by), updated_at = now()
+WHERE id = sqlc.arg(id) AND status = 'requested';
 
 -- name: DisputeForResolution :one
 SELECT d.id, d.redemption_id, d.status, r.voucher_id, r.merchant_id, r.amount, r.commission, r.payout_run_id
@@ -154,7 +158,7 @@ ORDER BY pr.created_at;
 -- name: ListOpenRefunds :many
 SELECT r.id, v.code AS voucher_code, r.amount, r.status, r.reason, r.created_at
 FROM refunds r JOIN vouchers v ON v.id = r.voucher_id
-WHERE r.status IN ('requested', 'approved', 'processing')
+WHERE r.status IN ('requested', 'proposed', 'approved', 'processing')
 ORDER BY r.created_at;
 
 -- name: ListOpenDisputes :many

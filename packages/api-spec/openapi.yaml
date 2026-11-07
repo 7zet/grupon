@@ -674,10 +674,18 @@ paths:
     post:
       tags: [Admin]
       operationId: approveRefund
-      summary: Support approves a refund request (over 14 days or from a dispute)
+      summary: Finance approves a support-proposed refund (over 14 days or from a dispute)
       security: [{cookieAuth: []}, {bearerAuth: []}]
       parameters: [{$ref: '#/components/parameters/Id'}]
       responses: {'204': {description: Approved}, default: {$ref: '#/components/responses/Problem'}}
+  /api/v1/admin/refunds/{id}/propose:
+    post:
+      tags: [Admin]
+      operationId: proposeRefund
+      summary: Support proposes a requested refund for finance approval
+      security: [{cookieAuth: []}, {bearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses: {'204': {description: Proposed}, default: {$ref: '#/components/responses/Problem'}}
   /api/v1/admin/disputes/{id}/resolve:
     post:
       tags: [Admin]

@@ -10,6 +10,7 @@ const UUID = '[0-9a-f-]{36}';
 
 const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^me$/ },
+  { method: 'GET', pattern: new RegExp(`^me\\/vouchers\\/${UUID}$`) },
   { method: 'POST', pattern: /^auth\/logout$/ },
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
@@ -23,6 +24,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^admin\/finance\/queue$/ },
   { method: 'POST', pattern: new RegExp(`^admin\\/payouts\\/${UUID}\\/(approve|reconcile)$`) },
   { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/(approve|paid)$`) },
+  { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/propose$`) },
   {
     method: 'POST',
     pattern: new RegExp(

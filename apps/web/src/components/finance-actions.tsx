@@ -104,13 +104,18 @@ export function FinanceActions({
     return (
       <div className="grid gap-2">
         <div className="flex flex-wrap gap-2">
-          {status === 'requested' && (
+          {status === 'requested' && canSupport && (
             <button
               type="button"
               disabled={busy}
               className={button}
-              onClick={() => act(`refunds/${id}/approve`)}
+              onClick={() => act(`refunds/${id}/propose`)}
             >
+              {t('propose')}
+            </button>
+          )}
+          {status === 'proposed' && canResolve && (
+            <button type="button" disabled={busy} className={button} onClick={() => act(`refunds/${id}/approve`)}>
               {t('approve')}
             </button>
           )}
