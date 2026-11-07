@@ -143,3 +143,18 @@ func TestModeratorCannotReadFinanceOrAuditWrites(t *testing.T) {
 		t.Fatalf("moderator audit read: got %v", err)
 	}
 }
+
+func TestAuditLogsAreAppendOnly(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	if _, err := fixture.pool.Exec(ctx,
+		`INSERT INTO audit_logs (actor_role, action, entity_type) VALUES ('admin', 'append_only_probe', 'probe')`); err != nil {
+		t.Fatalf("insert audit row: %v", err)
+	}
+	if _, err := fixture.pool.Exec(ctx, `UPDATE audit_logs SET action = 'changed' WHERE action = 'append_only_probe'`); err == nil {
+		t.Fatal("update of audit_logs succeeded, want append-only error")
+	}
+	if _, err := fixture.pool.Exec(ctx, `DELETE FROM audit_logs WHERE action = 'append_only_probe'`); err == nil {
+		t.Fatal("delete from audit_logs succeeded, want append-only error")
+	}
+}
