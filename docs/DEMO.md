@@ -30,3 +30,8 @@ they are not part of the recommended walkthrough.
 4. Sign in as Madina, approve or reject a review/deal in moderation.
 5. Sign in as Farhod and Shahnoza separately to demonstrate the two-person finance flow.
 6. Finish as Saida to show the audit trail and role-specific navigation.
+
+Notes: every demo business already has a placeholder price proof (a PDF marked DEMO), so
+Dilnoza can submit a new deal without uploading anything. Madina and Saida also see the admin
+overview totals; Saida can open the fraud-signal page and suspend or reinstate a business under
+Admin → Businesses.
