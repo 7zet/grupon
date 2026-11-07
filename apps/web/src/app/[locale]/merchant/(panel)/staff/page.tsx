@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { MerchantStaffInvite, MerchantStaffRow } from '@/components/merchant-staff-actions';
 import { accountGet, loadForVisitor } from '@/lib/account-api';
+import { maskPhone } from '@/lib/phone';
 
 type StaffList = components['schemas']['StaffList'];
 
@@ -40,7 +41,7 @@ export default async function StaffPage({ params }: { params: Promise<{ locale: 
               {list.items.map((member) => (
                 <tr key={member.id} className="border-t border-border">
                   <td className="py-2 pr-4">{member.user.name}</td>
-                  <td className="py-2 pr-4">{member.user.phone}</td>
+                  <td className="py-2 pr-4">{maskPhone(member.user.phone)}</td>
                   <td className="py-2 pr-4">
                     {member.role === 'merchant_owner' ? (
                       t(ROLE_KEYS[member.role])
