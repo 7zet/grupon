@@ -300,6 +300,5 @@ approves. This requires migration `00029_refund_proposals.sql`.
 - A-12: migration `00032_audit_logs_append_only.sql` blocks UPDATE and DELETE on `audit_logs`.
 - C-9: CI has a `security` job: govulncheck, `pnpm audit --prod --audit-level high`, gitleaks. kin-openapi moved to v0.148.0 and `go.mod` pins `toolchain go1.26.10` to clear reported standard-library issues.
 
-### Open questions (owner)
-
-- Switching the live API to `APP_ENV=production` needs a Redis instance (Render Key Value or Upstash). Until then it stays in development mode.
+- Demo seed: every demo merchant gets a placeholder `price_proof` row with a `demo-` storage key; the API serves a generated PDF marked DEMO for it, so no file has to exist on the host. An approved business may replace its price proof (other documents stay locked).
+- The hosted demo stays on `DEMO_MODE=true` with a non-production `APP_ENV`. Real production needs Redis and `APP_ENV=production` (see DEPLOY.md and HANDOVER.md).

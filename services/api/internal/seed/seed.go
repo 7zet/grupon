@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/grupon/grupon/services/api/internal/domain/merchant"
 	"github.com/grupon/grupon/services/api/internal/store"
 	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
 	"os"
@@ -218,6 +219,10 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		slug := fmt.Sprintf("seed-merchant-%02d", i+1)
 		if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps,review_status) VALUES($1,$2,$2,$3,$4,$5,1500,'approved') RETURNING id`, slug, name, description, fmt.Sprintf("+99890100%04d", i), "https://local.test/business/"+slug).Scan(&merchantIDs[i]); err != nil {
+			return err
+		}
+		demoProof := merchant.DemoDocument()
+		if _, err := tx.Exec(ctx, `INSERT INTO merchant_documents(merchant_id,kind,storage_key,content_type,size_bytes,uploaded_by) VALUES($1,'price_proof',$2,'application/pdf',$3,$4)`, merchantIDs[i], merchant.DemoDocumentKey(slug), len(demoProof), userIDs[1]); err != nil {
 			return err
 		}
 		for j := 0; j < 1+i%3; j++ {

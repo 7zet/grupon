@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -144,6 +145,9 @@ func (s *DocumentService) Open(ctx context.Context, actor ReviewActor, merchantI
 	doc, err := s.repo.Document(ctx, merchantID, kind)
 	if err != nil {
 		return Document{}, nil, err
+	}
+	if strings.HasPrefix(doc.StorageKey, DemoDocumentPrefix) {
+		return doc, io.NopCloser(bytes.NewReader(DemoDocument())), nil
 	}
 	file, err := s.files.Open(doc.StorageKey)
 	if err != nil {

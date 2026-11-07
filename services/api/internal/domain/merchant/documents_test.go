@@ -15,6 +15,7 @@ import (
 type memDocRepo struct {
 	status string
 	saved  []Document
+	docs   map[string]Document
 }
 
 func (m *memDocRepo) OwnedBusiness(context.Context, uuid.UUID) (uuid.UUID, string, error) {
@@ -28,7 +29,10 @@ func (m *memDocRepo) SaveDocument(_ context.Context, _, _ uuid.UUID, doc Documen
 
 func (m *memDocRepo) Documents(context.Context, uuid.UUID) ([]Document, error) { return nil, nil }
 
-func (m *memDocRepo) Document(context.Context, uuid.UUID, string) (Document, error) {
+func (m *memDocRepo) Document(_ context.Context, _ uuid.UUID, kind string) (Document, error) {
+	if doc, ok := m.docs[kind]; ok {
+		return doc, nil
+	}
 	return Document{}, ErrDocumentNotFound
 }
 
@@ -103,5 +107,21 @@ func TestApprovedBusinessMayReplaceOnlyThePriceProof(t *testing.T) {
 	}
 	if _, err := service.Upload(ctx, uuid.New(), DocumentCertificate, "application/pdf", bytes.NewReader([]byte("%PDF"))); !errors.Is(err, ErrDocumentsLocked) {
 		t.Fatalf("certificate while approved: got %v, want ErrDocumentsLocked", err)
+	}
+}
+
+func TestDemoPriceProofIsServedWithoutAStoredFile(t *testing.T) {
+	t.Parallel()
+	repo := &memDocRepo{status: "approved"}
+	repo.docs = map[string]Document{DocumentPriceProof: {Kind: DocumentPriceProof, ContentType: "application/pdf", StorageKey: DemoDocumentKey("seed-merchant-01")}}
+	service := NewDocumentService(repo, &memFiles{})
+	_, body, err := service.Open(context.Background(), ReviewActor{UserID: uuid.New(), Role: "admin"}, uuid.New(), DocumentPriceProof)
+	if err != nil {
+		t.Fatalf("open demo proof: %v", err)
+	}
+	defer body.Close()
+	data, _ := io.ReadAll(body)
+	if !bytes.HasPrefix(data, []byte("%PDF-1.4")) || !bytes.Contains(data, []byte("DEMO")) {
+		t.Fatalf("demo proof is not a marked PDF: %q", data[:20])
 	}
 }
