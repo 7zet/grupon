@@ -56,6 +56,8 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **2026-11-07 — Stage 4a G1:** QR refresh follows server token expiry; checkout accepts one variant only; late and dispute refunds require support proposal then a different finance approver; finance denial/self-approval is audited; native Playwright is blocking and installs Chromium in CI. Migration: `00029_refund_proposals.sql`.
 
+**2026-11-07 — Stage 4a G2:** voucher issuance is sequenced and unique per order item; redemption requires a branch attached to the deal; partial and recently expired vouchers refund only their remaining floor-split value and commission remainder goes to the final visit; a reversal after payout becomes merchant receivable and is offset from the next payout. Migrations: `00030_voucher_sequence.sql`, `00031_payout_receivable_offset.sql`.
+
 ## Stage 5 — SEO, final documentation, handover, v1.0
 
 **Goal:** Package the project for a maintainable v1.0 handover.

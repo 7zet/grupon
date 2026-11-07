@@ -27,9 +27,10 @@ VALUES (sqlc.arg(voucher_id), sqlc.arg(merchant_id), sqlc.arg(location_id), sqlc
 RETURNING id;
 
 -- name: LatestOpenRedemption :one
-SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
-FROM redemptions
-WHERE voucher_id = sqlc.arg(voucher_id) AND merchant_id = sqlc.arg(merchant_id) AND reversed_at IS NULL
+SELECT r.id, r.voucher_id, r.merchant_id, r.staff_user_id, r.sequence, r.amount, r.commission, r.created_at,
+       CASE WHEN pr.id IS NOT NULL AND pr.status::text IN ('sent', 'reconciled') THEN true ELSE false END AS payout_sent
+FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
+WHERE r.voucher_id = sqlc.arg(voucher_id) AND r.merchant_id = sqlc.arg(merchant_id) AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
 FOR UPDATE;
@@ -52,10 +53,16 @@ SELECT id FROM vouchers WHERE zaxira_code_hmac = sqlc.arg(zaxira_code_hmac);
 -- name: MerchantLocationCoords :one
 SELECT lat::float8 AS lat, lng::float8 AS lng FROM merchant_locations WHERE id = sqlc.arg(id) AND merchant_id = sqlc.arg(merchant_id);
 
+-- name: LocationAttachedToDeal :one
+SELECT EXISTS (
+  SELECT 1 FROM deal_locations WHERE deal_id = sqlc.arg(deal_id) AND merchant_location_id = sqlc.arg(location_id)
+);
+
 -- name: LatestOpenRedemptionForVoucher :one
-SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
-FROM redemptions
-WHERE voucher_id = sqlc.arg(voucher_id) AND reversed_at IS NULL
+SELECT r.id, r.voucher_id, r.merchant_id, r.staff_user_id, r.sequence, r.amount, r.commission, r.created_at,
+       CASE WHEN pr.id IS NOT NULL AND pr.status::text IN ('sent', 'reconciled') THEN true ELSE false END AS payout_sent
+FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
+WHERE r.voucher_id = sqlc.arg(voucher_id) AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
 FOR UPDATE;

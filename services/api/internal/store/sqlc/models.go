@@ -906,15 +906,16 @@ type Payment struct {
 }
 
 type PayoutRun struct {
-	ID         pgtype.UUID        `json:"id"`
-	MerchantID pgtype.UUID        `json:"merchant_id"`
-	Amount     int64              `json:"amount"`
-	Status     string             `json:"status"`
-	PreparedBy pgtype.UUID        `json:"prepared_by"`
-	ApprovedBy pgtype.UUID        `json:"approved_by"`
-	BankDocRef pgtype.Text        `json:"bank_doc_ref"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	ID               pgtype.UUID        `json:"id"`
+	MerchantID       pgtype.UUID        `json:"merchant_id"`
+	Amount           int64              `json:"amount"`
+	Status           string             `json:"status"`
+	PreparedBy       pgtype.UUID        `json:"prepared_by"`
+	ApprovedBy       pgtype.UUID        `json:"approved_by"`
+	BankDocRef       pgtype.Text        `json:"bank_doc_ref"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ReceivableOffset int64              `json:"receivable_offset"`
 }
 
 type PhoneOtp struct {
@@ -1127,4 +1128,5 @@ type Voucher struct {
 	ZaxiraCodeHmac     pgtype.Text        `json:"zaxira_code_hmac"`
 	FraudHold          bool               `json:"fraud_hold"`
 	DisputeOpen        bool               `json:"dispute_open"`
+	Seq                int32              `json:"seq"`
 }

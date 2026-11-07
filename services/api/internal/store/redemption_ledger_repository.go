@@ -67,7 +67,13 @@ func (r *RedemptionRepository) UseVoucher(ctx context.Context, merchantID, vouch
 		return false, fmt.Errorf("split voucher value: %w", err)
 	}
 	amount := shares[shareIndex-1]
-	commission := ledger.Commission(amount, int(voucher.CommissionBps))
+	// Commission is split from the whole voucher, with its rounding remainder
+	// assigned to the last visit (L-08), rather than rounding every visit down.
+	commissionShares, err := ledger.Split(ledger.Commission(voucher.UnitPriceSnapshot, int(voucher.CommissionBps)), int(voucher.RedemptionsAllowed))
+	if err != nil {
+		return false, fmt.Errorf("split voucher commission: %w", err)
+	}
+	commission := commissionShares[shareIndex-1]
 
 	rows, err := queries.ApplyVoucherUse(ctx, sqlc.ApplyVoucherUseParams{
 		ID:          toPgUUID(voucherID),
@@ -167,6 +173,7 @@ func (r *RedemptionRepository) LatestOpenRedemptionForVoucher(ctx context.Contex
 		Amount:     row.Amount,
 		Commission: row.Commission,
 		CreatedAt:  row.CreatedAt.Time,
+		PayoutSent: row.PayoutSent,
 	}, nil
 }
 
@@ -189,6 +196,7 @@ func (r *RedemptionRepository) ReversalCandidate(ctx context.Context, merchantID
 		Amount:     row.Amount,
 		Commission: row.Commission,
 		CreatedAt:  row.CreatedAt.Time,
+		PayoutSent: row.PayoutSent,
 	}, nil
 }
 
@@ -225,7 +233,11 @@ func (r *RedemptionRepository) ReverseUse(ctx context.Context, merchantID uuid.U
 		}
 		return fmt.Errorf("roll back voucher: %w", err)
 	}
-	if _, err := PostEntry(ctx, queries, ledger.Reversed(found.ID.String(), merchantID.String(), found.Amount, found.Commission)); err != nil {
+	entry := ledger.Reversed(found.ID.String(), merchantID.String(), found.Amount, found.Commission)
+	if found.PayoutSent {
+		entry = ledger.ReversedAfterPayout(found.ID.String(), merchantID.String(), found.Amount, found.Commission)
+	}
+	if _, err := PostEntry(ctx, queries, entry); err != nil {
 		return fmt.Errorf("post reversal: %w", err)
 	}
 	if err := writeVoucherAudit(ctx, queries, audit, found.VoucherID, found.ID); err != nil {

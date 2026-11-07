@@ -132,6 +132,70 @@ func TestPayoutNeedsADifferentApprover(t *testing.T) {
 	}
 }
 
+func TestReversalAfterPayoutBecomesMerchantReceivableAndOffsetsNextPayout(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	service := finance.NewService(store.NewFinanceRepository(fixture.pool), time.Now)
+	preparer := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='admin@local.test'`), Role: "finance"}
+	approver := finance.Actor{UserID: seededID(t, fixture, `SELECT id FROM users WHERE email='owner@local.test'`), Role: "finance"}
+
+	firstVoucher, _, merchantID, _ := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	var firstRedemption uuid.UUID
+	if err := fixture.pool.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission,created_at)
+		SELECT $1,$2,(SELECT id FROM merchant_locations WHERE merchant_id=$2 LIMIT 1),(SELECT id FROM users WHERE email='owner@local.test'),1,100000,15000,now()-interval '4 days' RETURNING id`,
+		firstVoucher, merchantID).Scan(&firstRedemption); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fixture.pool.Exec(ctx, `UPDATE vouchers SET redemptions_used=1, status='redeemed' WHERE id=$1`, firstVoucher); err != nil {
+		t.Fatal(err)
+	}
+	firstRun, err := service.PreparePayout(ctx, preparer, merchantID)
+	if err != nil {
+		t.Fatalf("prepare first payout: %v", err)
+	}
+	if err := service.ApprovePayout(ctx, approver, firstRun, "BANK-FIRST"); err != nil {
+		t.Fatalf("approve first payout: %v", err)
+	}
+
+	redemptions := store.NewRedemptionRepository(fixture.pool, store.NewCommerceRepository(fixture.pool), store.NewCatalogRepository(fixture.pool))
+	candidate, err := redemptions.ReversalCandidate(ctx, merchantID, firstVoucher)
+	if err != nil || candidate.ID != firstRedemption || !candidate.PayoutSent {
+		t.Fatalf("payout reversal candidate = %+v, err=%v", candidate, err)
+	}
+	if err := redemptions.ReverseUse(ctx, merchantID, candidate, "test reversal", redemption.AuditEntry{ActorID: preparer.UserID, Role: "support", VoucherID: firstVoucher, Action: "voucher_reversal"}); err != nil {
+		t.Fatalf("reverse paid redemption: %v", err)
+	}
+	var receivable int64
+	if err := fixture.pool.QueryRow(ctx, `SELECT COALESCE(SUM(CASE WHEN jl.direction='debit' THEN jl.amount ELSE -jl.amount END),0)
+		FROM journal_lines jl JOIN ledger_accounts la ON la.id=jl.account_id WHERE la.code=$1`, ledger.MerchantReceivable+merchantID.String()).Scan(&receivable); err != nil || receivable != 85000 {
+		t.Fatalf("merchant receivable=%d err=%v; want 85000", receivable, err)
+	}
+
+	secondVoucher, _, _, _ := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	if _, err := fixture.pool.Exec(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission,created_at)
+		SELECT $1,$2,(SELECT id FROM merchant_locations WHERE merchant_id=$2 LIMIT 1),(SELECT id FROM users WHERE email='owner@local.test'),1,200000,30000,now()-interval '4 days'`, secondVoucher, merchantID); err != nil {
+		t.Fatal(err)
+	}
+	secondRun, err := service.PreparePayout(ctx, preparer, merchantID)
+	if err != nil {
+		t.Fatalf("prepare offset payout: %v", err)
+	}
+	run, err := store.NewFinanceRepository(fixture.pool).PayoutRun(ctx, secondRun)
+	if err != nil || run.Amount != 85000 || run.ReceivableOffset != 85000 {
+		t.Fatalf("offset payout=%+v err=%v; want cash and offset 85000", run, err)
+	}
+	if err := service.ApprovePayout(ctx, approver, secondRun, "BANK-OFFSET"); err != nil {
+		t.Fatalf("approve offset payout: %v", err)
+	}
+	if err := fixture.pool.QueryRow(ctx, `SELECT COALESCE(SUM(CASE WHEN jl.direction='debit' THEN jl.amount ELSE -jl.amount END),0)
+		FROM journal_lines jl JOIN ledger_accounts la ON la.id=jl.account_id WHERE la.code=$1`, ledger.MerchantReceivable+merchantID.String()).Scan(&receivable); err != nil || receivable != 0 {
+		t.Fatalf("merchant receivable after offset=%d err=%v; want 0", receivable, err)
+	}
+	if diff := unbalancedLines(t, fixture); diff != 0 {
+		t.Fatalf("ledger unbalanced after paid reversal: %d", diff)
+	}
+}
+
 func TestBreakageMovesExpiredValue(t *testing.T) {
 	fixture := newCatalogFixture(t)
 	voucherID, _, _, price := freshVoucher(t, fixture, time.Now().Add(-100*24*time.Hour))
@@ -164,6 +228,41 @@ func TestUnusedVoucherRefundsAutomaticallyWithinFourteenDays(t *testing.T) {
 	ok, err := service.Reconcile(context.Background())
 	if err != nil || !ok {
 		t.Fatalf("reconcile after refund: ok=%v err=%v", ok, err)
+	}
+}
+
+func TestPartialAndRecentlyExpiredVoucherRefundUsesRemainingShares(t *testing.T) {
+	fixture := newCatalogFixture(t)
+	ctx := context.Background()
+	voucherID, buyerID, _, price := freshVoucher(t, fixture, time.Now().Add(30*24*time.Hour))
+	if _, err := fixture.pool.Exec(ctx, `UPDATE order_items SET unit_price_snapshot=100001 WHERE id=(SELECT order_item_id FROM vouchers WHERE id=$1)`, voucherID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fixture.pool.Exec(ctx, `UPDATE vouchers SET redemptions_allowed=3, redemptions_used=1, status='partially_redeemed' WHERE id=$1`, voucherID); err != nil {
+		t.Fatal(err)
+	}
+	service := finance.NewService(store.NewFinanceRepository(fixture.pool), time.Now)
+	if _, err := service.RequestRefund(ctx, buyerID, voucherID, "one visit used"); err != nil {
+		t.Fatalf("partial refund: %v", err)
+	}
+	var amount int64
+	if err := fixture.pool.QueryRow(ctx, `SELECT amount FROM refunds WHERE voucher_id=$1`, voucherID).Scan(&amount); err != nil {
+		t.Fatal(err)
+	}
+	if amount != 66668 { // 100001 split as 33333, 33333, 33335; one visit was used.
+		t.Fatalf("partial refund amount=%d, want 66668 (original price %d)", amount, price)
+	}
+	var status string
+	if err := fixture.pool.QueryRow(ctx, `SELECT status FROM vouchers WHERE id=$1`, voucherID).Scan(&status); err != nil || status != "refunded" {
+		t.Fatalf("partial voucher status=%q err=%v", status, err)
+	}
+
+	expiredID, expiredBuyer, _, _ := freshVoucher(t, fixture, time.Now().Add(-24*time.Hour))
+	if _, err := fixture.pool.Exec(ctx, `UPDATE vouchers SET status='expired' WHERE id=$1`, expiredID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.RequestRefund(ctx, expiredBuyer, expiredID, "recently expired"); err != nil {
+		t.Fatalf("recent expired refund: %v", err)
 	}
 }
 

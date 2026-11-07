@@ -178,17 +178,19 @@ type Payment struct {
 type Voucher struct {
 	ID          uuid.UUID
 	OrderItemID uuid.UUID
-	UserID      uuid.UUID
-	DealID      uuid.UUID
-	OptionID    uuid.UUID
-	MerchantID  uuid.UUID
-	Code        string
-	QRToken     string
-	Status      string
-	ValidFrom   time.Time
-	ValidUntil  time.Time
-	RedeemedAt  *time.Time
-	Terms       catalog.Text
+	// Seq is the one-based unit number inside an order item. It is immutable and unique per item.
+	Seq        int
+	UserID     uuid.UUID
+	DealID     uuid.UUID
+	OptionID   uuid.UUID
+	MerchantID uuid.UUID
+	Code       string
+	QRToken    string
+	Status     string
+	ValidFrom  time.Time
+	ValidUntil time.Time
+	RedeemedAt *time.Time
+	Terms      catalog.Text
 	// RedemptionsAllowed is the use count copied from the option at purchase time.
 	RedemptionsAllowed int
 	// ZaxiraCodeHMAC is the stored hash of the backup code; the plain code is derived, not stored.

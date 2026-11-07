@@ -154,9 +154,9 @@ VALUES (sqlc.arg(actor_id), sqlc.arg(actor_role)::app_role, 'manual_payment_conf
         sqlc.arg(payment_id), jsonb_build_object('reference', sqlc.arg(reference)::text, 'note', sqlc.arg(note)::text));
 
 -- name: InsertVoucher :exec
-INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
+INSERT INTO vouchers (id, order_item_id, seq, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
                       status, valid_from, valid_until, redemptions_allowed, zaxira_code_hmac)
-VALUES (sqlc.arg(id), sqlc.arg(order_item_id), sqlc.arg(user_id), sqlc.arg(deal_id), sqlc.arg(option_id),
+VALUES (sqlc.arg(id), sqlc.arg(order_item_id), sqlc.arg(seq), sqlc.arg(user_id), sqlc.arg(deal_id), sqlc.arg(option_id),
         sqlc.arg(merchant_id), sqlc.arg(code), sqlc.arg(qr_token), 'active', sqlc.arg(valid_from), sqlc.arg(valid_until),
         sqlc.arg(redemptions_allowed), sqlc.arg(zaxira_code_hmac));
 

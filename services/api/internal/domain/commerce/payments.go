@@ -257,7 +257,7 @@ func (s *Service) settlePaid(ctx context.Context, tx Store, payment Payment, ord
 			return nil, ErrOptionUnavailable
 		}
 		for unit := 0; unit < item.Quantity; unit++ {
-			if err := s.issueVoucher(ctx, tx, order.UserID, item, record, validFrom, validUntil); err != nil {
+			if err := s.issueVoucher(ctx, tx, order.UserID, item, record, unit+1, validFrom, validUntil); err != nil {
 				return nil, err
 			}
 			issued++
@@ -278,7 +278,7 @@ func (s *Service) settlePaid(ctx context.Context, tx Store, payment Payment, ord
 }
 
 // issueVoucher creates one voucher for one unit with a fresh unambiguous code and a signed QR token.
-func (s *Service) issueVoucher(ctx context.Context, tx Store, userID uuid.UUID, item OrderItem, record OptionRecord, validFrom, validUntil time.Time) error {
+func (s *Service) issueVoucher(ctx context.Context, tx Store, userID uuid.UUID, item OrderItem, record OptionRecord, seq int, validFrom, validUntil time.Time) error {
 	voucherID, err := uuid.NewV7()
 	if err != nil {
 		return fmt.Errorf("new voucher id: %w", err)
@@ -290,6 +290,7 @@ func (s *Service) issueVoucher(ctx context.Context, tx Store, userID uuid.UUID, 
 	return tx.InsertVoucher(ctx, Voucher{
 		ID:                 voucherID,
 		OrderItemID:        item.ID,
+		Seq:                seq,
 		UserID:             userID,
 		DealID:             item.DealID,
 		OptionID:           item.OptionID,

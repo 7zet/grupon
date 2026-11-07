@@ -459,6 +459,7 @@ func (s *commerceStore) InsertVoucher(ctx context.Context, voucher commerce.Vouc
 	return s.q.InsertVoucher(ctx, sqlc.InsertVoucherParams{
 		ID:                 toPgUUID(voucher.ID),
 		OrderItemID:        toPgUUID(voucher.OrderItemID),
+		Seq:                int32(voucher.Seq),
 		UserID:             toPgUUID(voucher.UserID),
 		DealID:             toPgUUID(voucher.DealID),
 		OptionID:           toPgUUID(voucher.OptionID),

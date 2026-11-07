@@ -56,6 +56,7 @@ type Redemption struct {
 	Amount     int64
 	Commission int64
 	CreatedAt  time.Time
+	PayoutSent bool
 }
 
 type HistoryItem struct {
@@ -129,6 +130,8 @@ type Repository interface {
 	// RecordDenied writes the audit row for a scan by a staff member of another business (AT-04).
 	RecordDenied(ctx context.Context, audit AuditEntry) error
 	LocationOwned(ctx context.Context, merchantID, locationID uuid.UUID) (bool, error)
+	// LocationAttached verifies the counter branch is one of the voucher deal's branches (BR-04).
+	LocationAttached(ctx context.Context, dealID, locationID uuid.UUID) (bool, error)
 	// Redeem marks the voucher redeemed only while it is still active and inside its validity window.
 	Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit AuditEntry, geo *Geo) (bool, error)
 	View(ctx context.Context, voucher commerce.Voucher) (commerce.VoucherView, error)
@@ -277,6 +280,13 @@ func (s *Service) Redeem(ctx context.Context, merchantID uuid.UUID, actor mercha
 	}
 	if !owned {
 		return commerce.VoucherView{}, &merchant.InvalidInputError{Field: "location_id", Code: "location_not_found"}
+	}
+	attached, err := s.repo.LocationAttached(ctx, voucher.DealID, locationID)
+	if err != nil {
+		return commerce.VoucherView{}, err
+	}
+	if !attached {
+		return commerce.VoucherView{}, &merchant.InvalidInputError{Field: "location_id", Code: "location_not_attached_to_deal"}
 	}
 	at := s.now()
 	audit := AuditEntry{

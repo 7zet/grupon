@@ -144,9 +144,10 @@ func (q *Queries) InsertRedemptionAttempt(ctx context.Context, arg InsertRedempt
 }
 
 const latestOpenRedemption = `-- name: LatestOpenRedemption :one
-SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
-FROM redemptions
-WHERE voucher_id = $1 AND merchant_id = $2 AND reversed_at IS NULL
+SELECT r.id, r.voucher_id, r.merchant_id, r.staff_user_id, r.sequence, r.amount, r.commission, r.created_at,
+       CASE WHEN pr.id IS NOT NULL AND pr.status::text IN ('sent', 'reconciled') THEN true ELSE false END AS payout_sent
+FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
+WHERE r.voucher_id = $1 AND r.merchant_id = $2 AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
 FOR UPDATE
@@ -166,6 +167,7 @@ type LatestOpenRedemptionRow struct {
 	Amount      int64              `json:"amount"`
 	Commission  int64              `json:"commission"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	PayoutSent  bool               `json:"payout_sent"`
 }
 
 func (q *Queries) LatestOpenRedemption(ctx context.Context, arg LatestOpenRedemptionParams) (LatestOpenRedemptionRow, error) {
@@ -180,14 +182,16 @@ func (q *Queries) LatestOpenRedemption(ctx context.Context, arg LatestOpenRedemp
 		&i.Amount,
 		&i.Commission,
 		&i.CreatedAt,
+		&i.PayoutSent,
 	)
 	return i, err
 }
 
 const latestOpenRedemptionForVoucher = `-- name: LatestOpenRedemptionForVoucher :one
-SELECT id, voucher_id, merchant_id, staff_user_id, sequence, amount, commission, created_at
-FROM redemptions
-WHERE voucher_id = $1 AND reversed_at IS NULL
+SELECT r.id, r.voucher_id, r.merchant_id, r.staff_user_id, r.sequence, r.amount, r.commission, r.created_at,
+       CASE WHEN pr.id IS NOT NULL AND pr.status::text IN ('sent', 'reconciled') THEN true ELSE false END AS payout_sent
+FROM redemptions r LEFT JOIN payout_runs pr ON pr.id = r.payout_run_id
+WHERE r.voucher_id = $1 AND r.reversed_at IS NULL
 ORDER BY sequence DESC
 LIMIT 1
 FOR UPDATE
@@ -202,6 +206,7 @@ type LatestOpenRedemptionForVoucherRow struct {
 	Amount      int64              `json:"amount"`
 	Commission  int64              `json:"commission"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	PayoutSent  bool               `json:"payout_sent"`
 }
 
 func (q *Queries) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID pgtype.UUID) (LatestOpenRedemptionForVoucherRow, error) {
@@ -216,8 +221,27 @@ func (q *Queries) LatestOpenRedemptionForVoucher(ctx context.Context, voucherID 
 		&i.Amount,
 		&i.Commission,
 		&i.CreatedAt,
+		&i.PayoutSent,
 	)
 	return i, err
+}
+
+const locationAttachedToDeal = `-- name: LocationAttachedToDeal :one
+SELECT EXISTS (
+  SELECT 1 FROM deal_locations WHERE deal_id = $1 AND merchant_location_id = $2
+)
+`
+
+type LocationAttachedToDealParams struct {
+	DealID     pgtype.UUID `json:"deal_id"`
+	LocationID pgtype.UUID `json:"location_id"`
+}
+
+func (q *Queries) LocationAttachedToDeal(ctx context.Context, arg LocationAttachedToDealParams) (bool, error) {
+	row := q.db.QueryRow(ctx, locationAttachedToDeal, arg.DealID, arg.LocationID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const lockVoucherForRedemption = `-- name: LockVoucherForRedemption :one

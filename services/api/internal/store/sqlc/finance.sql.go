@@ -344,19 +344,25 @@ func (q *Queries) InsertOutbox(ctx context.Context, arg InsertOutboxParams) erro
 }
 
 const insertPayoutRun = `-- name: InsertPayoutRun :one
-INSERT INTO payout_runs (merchant_id, amount, status, prepared_by)
-VALUES ($1, $2, 'pending_approval', $3)
+INSERT INTO payout_runs (merchant_id, amount, receivable_offset, status, prepared_by)
+VALUES ($1, $2, $3, 'pending_approval', $4)
 RETURNING id
 `
 
 type InsertPayoutRunParams struct {
-	MerchantID pgtype.UUID `json:"merchant_id"`
-	Amount     int64       `json:"amount"`
-	PreparedBy pgtype.UUID `json:"prepared_by"`
+	MerchantID       pgtype.UUID `json:"merchant_id"`
+	Amount           int64       `json:"amount"`
+	ReceivableOffset int64       `json:"receivable_offset"`
+	PreparedBy       pgtype.UUID `json:"prepared_by"`
 }
 
 func (q *Queries) InsertPayoutRun(ctx context.Context, arg InsertPayoutRunParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, insertPayoutRun, arg.MerchantID, arg.Amount, arg.PreparedBy)
+	row := q.db.QueryRow(ctx, insertPayoutRun,
+		arg.MerchantID,
+		arg.Amount,
+		arg.ReceivableOffset,
+		arg.PreparedBy,
+	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -567,15 +573,16 @@ func (q *Queries) ListOpenRefunds(ctx context.Context) ([]ListOpenRefundsRow, er
 }
 
 const lockPayoutRun = `-- name: LockPayoutRun :one
-SELECT id, merchant_id, amount, status, prepared_by FROM payout_runs WHERE id = $1 FOR UPDATE
+SELECT id, merchant_id, amount, receivable_offset, status, prepared_by FROM payout_runs WHERE id = $1 FOR UPDATE
 `
 
 type LockPayoutRunRow struct {
-	ID         pgtype.UUID `json:"id"`
-	MerchantID pgtype.UUID `json:"merchant_id"`
-	Amount     int64       `json:"amount"`
-	Status     string      `json:"status"`
-	PreparedBy pgtype.UUID `json:"prepared_by"`
+	ID               pgtype.UUID `json:"id"`
+	MerchantID       pgtype.UUID `json:"merchant_id"`
+	Amount           int64       `json:"amount"`
+	ReceivableOffset int64       `json:"receivable_offset"`
+	Status           string      `json:"status"`
+	PreparedBy       pgtype.UUID `json:"prepared_by"`
 }
 
 func (q *Queries) LockPayoutRun(ctx context.Context, id pgtype.UUID) (LockPayoutRunRow, error) {
@@ -585,6 +592,7 @@ func (q *Queries) LockPayoutRun(ctx context.Context, id pgtype.UUID) (LockPayout
 		&i.ID,
 		&i.MerchantID,
 		&i.Amount,
+		&i.ReceivableOffset,
 		&i.Status,
 		&i.PreparedBy,
 	)
@@ -631,7 +639,8 @@ func (q *Queries) MarkRefundSucceeded(ctx context.Context, arg MarkRefundSucceed
 }
 
 const markVoucherRefunded = `-- name: MarkVoucherRefunded :execrows
-UPDATE vouchers SET status = 'refunded', updated_at = now() WHERE id = $1 AND status = 'active' AND redemptions_used = 0
+UPDATE vouchers SET status = 'refunded', updated_at = now()
+WHERE id = $1 AND status IN ('active', 'partially_redeemed', 'expired') AND redemptions_used < redemptions_allowed
 `
 
 func (q *Queries) MarkVoucherRefunded(ctx context.Context, id pgtype.UUID) (int64, error) {
@@ -654,6 +663,19 @@ func (q *Queries) MerchantOnHold(ctx context.Context, merchantID pgtype.UUID) (b
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const merchantReceivableBalance = `-- name: MerchantReceivableBalance :one
+SELECT COALESCE(SUM(CASE WHEN jl.direction = 'debit' THEN jl.amount ELSE -jl.amount END), 0)::bigint
+FROM journal_lines jl JOIN ledger_accounts la ON la.id = jl.account_id
+WHERE la.code = $1
+`
+
+func (q *Queries) MerchantReceivableBalance(ctx context.Context, code string) (int64, error) {
+	row := q.db.QueryRow(ctx, merchantReceivableBalance, code)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const payableRedemptions = `-- name: PayableRedemptions :many
@@ -701,15 +723,16 @@ func (q *Queries) PayableRedemptions(ctx context.Context, arg PayableRedemptions
 }
 
 const payoutRunDetail = `-- name: PayoutRunDetail :one
-SELECT pr.id, pr.merchant_id, pr.amount, pr.status, pr.prepared_by FROM payout_runs pr WHERE pr.id = $1
+SELECT pr.id, pr.merchant_id, pr.amount, pr.receivable_offset, pr.status, pr.prepared_by FROM payout_runs pr WHERE pr.id = $1
 `
 
 type PayoutRunDetailRow struct {
-	ID         pgtype.UUID `json:"id"`
-	MerchantID pgtype.UUID `json:"merchant_id"`
-	Amount     int64       `json:"amount"`
-	Status     string      `json:"status"`
-	PreparedBy pgtype.UUID `json:"prepared_by"`
+	ID               pgtype.UUID `json:"id"`
+	MerchantID       pgtype.UUID `json:"merchant_id"`
+	Amount           int64       `json:"amount"`
+	ReceivableOffset int64       `json:"receivable_offset"`
+	Status           string      `json:"status"`
+	PreparedBy       pgtype.UUID `json:"prepared_by"`
 }
 
 func (q *Queries) PayoutRunDetail(ctx context.Context, id pgtype.UUID) (PayoutRunDetailRow, error) {
@@ -719,6 +742,7 @@ func (q *Queries) PayoutRunDetail(ctx context.Context, id pgtype.UUID) (PayoutRu
 		&i.ID,
 		&i.MerchantID,
 		&i.Amount,
+		&i.ReceivableOffset,
 		&i.Status,
 		&i.PreparedBy,
 	)
@@ -855,7 +879,7 @@ func (q *Queries) TransitionDispute(ctx context.Context, arg TransitionDisputePa
 }
 
 const voucherForRefund = `-- name: VoucherForRefund :one
-SELECT v.id, v.user_id, v.merchant_id, v.status, v.redemptions_used, v.created_at, oi.unit_price_snapshot, o.paid_at
+SELECT v.id, v.user_id, v.merchant_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_until, v.created_at, oi.unit_price_snapshot, o.paid_at
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN orders o ON o.id = oi.order_id
@@ -864,14 +888,16 @@ FOR UPDATE OF v
 `
 
 type VoucherForRefundRow struct {
-	ID                pgtype.UUID        `json:"id"`
-	UserID            pgtype.UUID        `json:"user_id"`
-	MerchantID        pgtype.UUID        `json:"merchant_id"`
-	Status            VoucherStatus      `json:"status"`
-	RedemptionsUsed   int32              `json:"redemptions_used"`
-	CreatedAt         pgtype.Timestamptz `json:"created_at"`
-	UnitPriceSnapshot int64              `json:"unit_price_snapshot"`
-	PaidAt            pgtype.Timestamptz `json:"paid_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	UserID             pgtype.UUID        `json:"user_id"`
+	MerchantID         pgtype.UUID        `json:"merchant_id"`
+	Status             VoucherStatus      `json:"status"`
+	RedemptionsUsed    int32              `json:"redemptions_used"`
+	RedemptionsAllowed int32              `json:"redemptions_allowed"`
+	ValidUntil         pgtype.Timestamptz `json:"valid_until"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UnitPriceSnapshot  int64              `json:"unit_price_snapshot"`
+	PaidAt             pgtype.Timestamptz `json:"paid_at"`
 }
 
 func (q *Queries) VoucherForRefund(ctx context.Context, id pgtype.UUID) (VoucherForRefundRow, error) {
@@ -883,6 +909,8 @@ func (q *Queries) VoucherForRefund(ctx context.Context, id pgtype.UUID) (Voucher
 		&i.MerchantID,
 		&i.Status,
 		&i.RedemptionsUsed,
+		&i.RedemptionsAllowed,
+		&i.ValidUntil,
 		&i.CreatedAt,
 		&i.UnitPriceSnapshot,
 		&i.PaidAt,

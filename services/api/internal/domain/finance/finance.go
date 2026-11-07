@@ -53,22 +53,25 @@ type Payable struct {
 
 // PayoutRun is a batch of payable redemptions for one merchant.
 type PayoutRun struct {
-	ID         uuid.UUID
-	MerchantID uuid.UUID
-	Amount     int64
-	Status     string
-	PreparedBy uuid.UUID
+	ID               uuid.UUID
+	MerchantID       uuid.UUID
+	Amount           int64
+	ReceivableOffset int64
+	Status           string
+	PreparedBy       uuid.UUID
 }
 
 // VoucherRef is what a refund or dispute needs to know about a voucher.
 type VoucherRef struct {
-	ID              uuid.UUID
-	BuyerID         uuid.UUID
-	MerchantID      uuid.UUID
-	Status          string
-	RedemptionsUsed int
-	UnitPrice       int64
-	PaidAt          time.Time
+	ID                 uuid.UUID
+	BuyerID            uuid.UUID
+	MerchantID         uuid.UUID
+	Status             string
+	RedemptionsUsed    int
+	UnitPrice          int64
+	PaidAt             time.Time
+	ValidUntil         time.Time
+	RedemptionsAllowed int
 }
 
 // BreakageItem is a voucher whose window closed long enough ago to be recognised as breakage.
@@ -115,7 +118,8 @@ type Repository interface {
 	RecordDenied(ctx context.Context, actor Actor, action string, entityID uuid.UUID) error
 	PayableRedemptions(ctx context.Context, merchantID uuid.UUID, before time.Time) ([]Payable, error)
 	MerchantOnHold(ctx context.Context, merchantID uuid.UUID) (bool, error)
-	CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error)
+	MerchantReceivable(ctx context.Context, merchantID uuid.UUID) (int64, error)
+	CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount, receivableOffset int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error)
 	PayoutRun(ctx context.Context, runID uuid.UUID) (PayoutRun, error)
 	ApprovePayoutRun(ctx context.Context, run PayoutRun, approverID uuid.UUID, bankDocRef string) (bool, error)
 	VoucherForRefund(ctx context.Context, voucherID uuid.UUID) (VoucherRef, error)
@@ -182,7 +186,15 @@ func (s *Service) PreparePayout(ctx context.Context, actor Actor, merchantID uui
 	if total <= 0 {
 		return uuid.Nil, ErrNothingToPay
 	}
-	return s.repo.CreatePayoutRun(ctx, merchantID, total, actor.UserID, ids)
+	receivable, err := s.repo.MerchantReceivable(ctx, merchantID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	offset := min(total, receivable)
+	if total <= offset {
+		return uuid.Nil, ErrNothingToPay
+	}
+	return s.repo.CreatePayoutRun(ctx, merchantID, total-offset, offset, actor.UserID, ids)
 }
 
 // ApprovePayout sends the money. The approver must differ from the preparer (AT-18).
@@ -226,10 +238,22 @@ func (s *Service) RequestRefund(ctx context.Context, buyerID, voucherID uuid.UUI
 	if voucher.BuyerID != buyerID {
 		return uuid.Nil, ErrNotOwner
 	}
-	if voucher.Status != "active" || voucher.RedemptionsUsed > 0 {
+	if voucher.RedemptionsAllowed < 1 || voucher.RedemptionsUsed >= voucher.RedemptionsAllowed {
+		return uuid.Nil, ErrNotRefundable
+	}
+	if voucher.Status != "active" && voucher.Status != "partially_redeemed" && voucher.Status != "expired" {
+		return uuid.Nil, ErrNotRefundable
+	}
+	// An expired voucher can still be refunded for ninety days; after that its
+	// unused value belongs to the breakage process rather than a refund queue.
+	if voucher.Status == "expired" && s.now().After(voucher.ValidUntil.Add(BreakageWindow)) {
 		return uuid.Nil, ErrNotRefundable
 	}
 	auto := s.now().Sub(voucher.PaidAt) <= RefundWindow
+	voucher.UnitPrice = Remaining(voucher.UnitPrice, voucher.RedemptionsAllowed, voucher.RedemptionsUsed)
+	if voucher.UnitPrice <= 0 {
+		return uuid.Nil, ErrNotRefundable
+	}
 	return s.repo.RequestRefund(ctx, voucher, buyerID, reason, auto)
 }
 
