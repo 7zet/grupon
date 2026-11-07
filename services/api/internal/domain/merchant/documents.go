@@ -101,7 +101,10 @@ func (s *DocumentService) Upload(ctx context.Context, ownerID uuid.UUID, kind, c
 	if err != nil {
 		return Document{}, err
 	}
-	if status != "draft" && status != "rejected" {
+	// Identity documents are locked once a business is submitted. A price proof backs deal pricing, so
+	// an approved business may still replace it.
+	editable := status == "draft" || status == "rejected" || (kind == DocumentPriceProof && status == "approved")
+	if !editable {
 		return Document{}, ErrDocumentsLocked
 	}
 

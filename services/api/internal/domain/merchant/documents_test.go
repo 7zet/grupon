@@ -93,3 +93,15 @@ func TestUploadStoresUnderAGeneratedKey(t *testing.T) {
 		t.Fatalf("metadata = %+v", doc)
 	}
 }
+
+func TestApprovedBusinessMayReplaceOnlyThePriceProof(t *testing.T) {
+	t.Parallel()
+	service := NewDocumentService(&memDocRepo{status: "approved"}, &memFiles{})
+	ctx := context.Background()
+	if _, err := service.Upload(ctx, uuid.New(), DocumentPriceProof, "application/pdf", bytes.NewReader([]byte("%PDF"))); err != nil {
+		t.Fatalf("price proof while approved: %v", err)
+	}
+	if _, err := service.Upload(ctx, uuid.New(), DocumentCertificate, "application/pdf", bytes.NewReader([]byte("%PDF"))); !errors.Is(err, ErrDocumentsLocked) {
+		t.Fatalf("certificate while approved: got %v, want ErrDocumentsLocked", err)
+	}
+}
