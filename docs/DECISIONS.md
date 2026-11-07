@@ -302,3 +302,14 @@ approves. This requires migration `00029_refund_proposals.sql`.
 
 - Demo seed: every demo merchant gets a placeholder `price_proof` row with a `demo-` storage key; the API serves a generated PDF marked DEMO for it, so no file has to exist on the host. An approved business may replace its price proof (other documents stay locked).
 - The hosted demo stays on `DEMO_MODE=true` with a non-production `APP_ENV`. Real production needs Redis and `APP_ENV=production` (see DEPLOY.md and HANDOVER.md).
+
+## Superseded lines (2026-11-07, audit section B)
+
+The older entries above are kept as history. Where they disagree with the code, these win:
+
+- The "NOT YET DONE" and "Not done from the review" lists (QR rotation, backup code, multi-use, reconciled status, refund approval, off-hours/distance rules, merchant web pages for staff/payouts/reviews/orders/customers/analytics/settings, campaign calculator, price proof upload, admin finance pages) are all implemented now.
+- Passwords and Google sign-in are removed (migration 00018); sign-in is phone code only.
+- The backup code has 10 characters (`XXXXX-XXXXX`), not 8.
+- `fraud_hold` is set by the burst rule (`redemption_burst`).
+- Merchant `suspended` and `terminated`, and deal `paused` and `archived`, are reachable now (G4).
+- The sign-in code sender `log` runs only with `DEMO_MODE=true`.

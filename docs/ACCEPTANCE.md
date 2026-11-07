@@ -25,4 +25,8 @@
 | AT-17 | Bank account change hold (72 h) | ⏳ | Deferred: Stage 3 |
 | AT-18 | 4-eyes on payouts | ✅ | `store/finance_test.go` (TestPayoutNeedsADifferentApprover): self and wrong-role approvals are refused and audit-logged. |
 
+### Re-check after the audit fixes (2026-11-07)
+
+Re-checked against `docs/AUDIT.md`: AT-09 and AT-18 now cover the approve path and self-approval with audit rows (audit B-4, fixed in G1). AT-01 asserts exactly one journal entry. The DB-backed store tests run in CI (Postgres service) and locally with `TEST_DATABASE_URL`; they are not skipped there. Partials that stay partial: AT-14 (hold covers the whole merchant, not only the burst amount). New checks since the audit: QR refresh, one merchant and one variant per order, refund four-eyes, voucher sequence uniqueness, deal-branch check on redeem, reversal offset against the next payout, append-only `audit_logs`, Origin check, price proof on submit.
+
 Counts: ✅ 16 · 🟡 0 · ❔ 0 · ⏳ 2 (AT-08: needs PSP / Stage 3; AT-17: Stage 3).
