@@ -82,6 +82,18 @@ func (r *RedemptionRepository) LocationOwned(ctx context.Context, merchantID, lo
 	return count == 1, nil
 }
 
+// LocationAttached reports whether this merchant branch was enabled for the voucher's deal.
+func (r *RedemptionRepository) LocationAttached(ctx context.Context, dealID, locationID uuid.UUID) (bool, error) {
+	attached, err := sqlc.New(r.pool).LocationAttachedToDeal(ctx, sqlc.LocationAttachedToDealParams{
+		DealID:     toPgUUID(dealID),
+		LocationID: toPgUUID(locationID),
+	})
+	if err != nil {
+		return false, fmt.Errorf("check deal location: %w", err)
+	}
+	return attached, nil
+}
+
 // Redeem records one use of the voucher; see UseVoucher for the transactional rules.
 func (r *RedemptionRepository) Redeem(ctx context.Context, merchantID, voucherID, locationID uuid.UUID, at time.Time, audit redemption.AuditEntry, geo *redemption.Geo) (bool, error) {
 	return r.UseVoucher(ctx, merchantID, voucherID, locationID, at, audit, geo)

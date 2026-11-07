@@ -513,16 +513,17 @@ func (q *Queries) InsertStockReservation(ctx context.Context, arg InsertStockRes
 }
 
 const insertVoucher = `-- name: InsertVoucher :exec
-INSERT INTO vouchers (id, order_item_id, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
+INSERT INTO vouchers (id, order_item_id, seq, user_id, deal_id, deal_option_id, merchant_id, code, qr_token,
                       status, valid_from, valid_until, redemptions_allowed, zaxira_code_hmac)
-VALUES ($1, $2, $3, $4, $5,
-        $6, $7, $8, 'active', $9, $10,
-        $11, $12)
+VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8, $9, 'active', $10, $11,
+        $12, $13)
 `
 
 type InsertVoucherParams struct {
 	ID                 pgtype.UUID        `json:"id"`
 	OrderItemID        pgtype.UUID        `json:"order_item_id"`
+	Seq                int32              `json:"seq"`
 	UserID             pgtype.UUID        `json:"user_id"`
 	DealID             pgtype.UUID        `json:"deal_id"`
 	OptionID           pgtype.UUID        `json:"option_id"`
@@ -539,6 +540,7 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 	_, err := q.db.Exec(ctx, insertVoucher,
 		arg.ID,
 		arg.OrderItemID,
+		arg.Seq,
 		arg.UserID,
 		arg.DealID,
 		arg.OptionID,

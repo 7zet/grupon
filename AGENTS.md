@@ -16,7 +16,7 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 - Do not spawn subagents. Keep context compact and use `rg` before broad scans.
 - Preserve unrelated changes. Never commit `Grupon_hisobot.pdf` or generated E2E screenshots.
 - Record durable product decisions in `docs/DECISIONS.md`; update `docs/ROADMAP.md` when stage work changes.
-- Do not push unless the owner explicitly asks. Commits include `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`.
+- `docs/FINISH-PLAN.md` is the task list and wins over this file. Push to feature branches freely; merge to `main` only at a stage close, after CI is green and the owner says "merge" (main deploys the live site). Never touch the production database. Commits include `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`.
 - Contract first: update `packages/api-spec/openapi.yaml`, regenerate with `corepack pnpm --filter @grupon/api-client run gen`, then run `go generate ./...` in `services/api`. Never hand-edit generated types.
 - Go layers are handler → domain → store/sqlc. Money is `int64` tiyin, UZS only. Ledger entries are append-only and double-entry.
 - Sensitive merchant/admin actions must audit in the same transaction. Stock reservation is transactional and conditional. Errors use `problem+json` with stable codes.
@@ -29,8 +29,6 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 - Go integration tests need `TEST_DATABASE_URL=postgres://app:app_dev_password@localhost:5433/app?sslmode=disable`.
 - Run focused tests for each change. At stage close run Go tests, Go vet, web lint, typecheck, web unit tests, and Playwright when browser flows change.
 
-## Current stage — Stage 3b: support contacts and SMS adapter
+## Current stage
 
-1. Keep configured support contacts in the footer, Help page, and voucher page.
-2. Finish the optional Eskiz adapter, rate limits, daily caps, fake-server tests, and deployment docs.
-3. Telegram bot scope is dropped; retain only merchant profile links and `SUPPORT_TELEGRAM` support contact.
+Follow `docs/FINISH-PLAN.md` from section 1 at the start of every session. Stage 4a (G3 security, G4 features, G5 docs) is the current work; then Stage 4b (design and demo content) and Stage 5 (handover, v1.0). Verify each audit finding in `docs/AUDIT.md` before changing it; record an incorrect finding in `docs/DECISIONS.md`.

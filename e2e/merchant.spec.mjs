@@ -58,6 +58,16 @@ async function login(email) {
   return (await response.json()).access_token;
 }
 
+/** The business-level price proof that deal submission requires; uploading again replaces it. */
+async function uploadPriceProof(owner) {
+  const response = await fetch(`${API}/merchant/documents/price_proof`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${owner}`, 'Content-Type': 'image/png' },
+    body: PNG,
+  });
+  expect(response.status).toBe(204);
+}
+
 function call(token, method, path, body, headers = {}) {
   return fetch(`${API}${path}`, {
     method,
@@ -132,6 +142,7 @@ test('owner creates, admin approves, buyer buys, cashier redeems and sees own hi
   expect(created.status).toBe(201);
   const deal = await created.json();
 
+  await uploadPriceProof(owner);
   const submitted = await call(owner, 'POST', `/merchant/deals/${deal.id}/submit`);
   expect(submitted.status).toBe(200);
 

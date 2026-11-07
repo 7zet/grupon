@@ -17,8 +17,8 @@ SELECT EXISTS (
 );
 
 -- name: InsertPayoutRun :one
-INSERT INTO payout_runs (merchant_id, amount, status, prepared_by)
-VALUES (sqlc.arg(merchant_id), sqlc.arg(amount), 'pending_approval', sqlc.arg(prepared_by))
+INSERT INTO payout_runs (merchant_id, amount, receivable_offset, status, prepared_by)
+VALUES (sqlc.arg(merchant_id), sqlc.arg(amount), sqlc.arg(receivable_offset), 'pending_approval', sqlc.arg(prepared_by))
 RETURNING id;
 
 -- name: AttachRedemptionToRun :execrows
@@ -26,7 +26,12 @@ UPDATE redemptions SET payout_run_id = sqlc.arg(run_id)
 WHERE id = sqlc.arg(id) AND payout_run_id IS NULL;
 
 -- name: LockPayoutRun :one
-SELECT id, merchant_id, amount, status, prepared_by FROM payout_runs WHERE id = sqlc.arg(id) FOR UPDATE;
+SELECT id, merchant_id, amount, receivable_offset, status, prepared_by FROM payout_runs WHERE id = sqlc.arg(id) FOR UPDATE;
+
+-- name: MerchantReceivableBalance :one
+SELECT COALESCE(SUM(CASE WHEN jl.direction = 'debit' THEN jl.amount ELSE -jl.amount END), 0)::bigint
+FROM journal_lines jl JOIN ledger_accounts la ON la.id = jl.account_id
+WHERE la.code = sqlc.arg(code);
 
 -- name: ApprovePayoutRun :execrows
 UPDATE payout_runs SET status = 'sent', approved_by = sqlc.arg(approved_by), bank_doc_ref = sqlc.arg(bank_doc_ref), updated_at = now()
@@ -38,7 +43,7 @@ VALUES (sqlc.arg(voucher_id), sqlc.arg(amount), sqlc.arg(reason), sqlc.arg(statu
 RETURNING id;
 
 -- name: VoucherForRefund :one
-SELECT v.id, v.user_id, v.merchant_id, v.status, v.redemptions_used, v.created_at, oi.unit_price_snapshot, o.paid_at
+SELECT v.id, v.user_id, v.merchant_id, v.status, v.redemptions_used, v.redemptions_allowed, v.valid_until, v.created_at, oi.unit_price_snapshot, o.paid_at
 FROM vouchers v
 JOIN order_items oi ON oi.id = v.order_item_id
 JOIN orders o ON o.id = oi.order_id
@@ -46,7 +51,8 @@ WHERE v.id = sqlc.arg(id)
 FOR UPDATE OF v;
 
 -- name: MarkVoucherRefunded :execrows
-UPDATE vouchers SET status = 'refunded', updated_at = now() WHERE id = sqlc.arg(id) AND status = 'active' AND redemptions_used = 0;
+UPDATE vouchers SET status = 'refunded', updated_at = now()
+WHERE id = sqlc.arg(id) AND status IN ('active', 'partially_redeemed', 'expired') AND redemptions_used < redemptions_allowed;
 
 -- name: SetRefundStatus :execrows
 UPDATE refunds SET status = sqlc.arg(status), updated_at = now() WHERE id = sqlc.arg(id);
@@ -110,7 +116,7 @@ FROM vouchers v JOIN order_items oi ON oi.id = v.order_item_id
 WHERE v.status = 'active';
 
 -- name: PayoutRunDetail :one
-SELECT pr.id, pr.merchant_id, pr.amount, pr.status, pr.prepared_by FROM payout_runs pr WHERE pr.id = sqlc.arg(id);
+SELECT pr.id, pr.merchant_id, pr.amount, pr.receivable_offset, pr.status, pr.prepared_by FROM payout_runs pr WHERE pr.id = sqlc.arg(id);
 
 -- name: RefundDetail :one
 SELECT r.id, r.voucher_id, r.amount, r.status, r.requested_by FROM refunds r WHERE r.id = sqlc.arg(id) FOR UPDATE;
@@ -131,8 +137,12 @@ UPDATE payout_runs SET status = 'reconciled', updated_at = now() WHERE id = sqlc
 -- name: ApproveRequestedRefund :one
 UPDATE refunds r SET status = 'approved', approved_by = sqlc.arg(approver_id), updated_at = now()
 FROM vouchers v
-WHERE r.id = sqlc.arg(id) AND r.status = 'requested' AND r.requested_by <> sqlc.arg(approver_id) AND v.id = r.voucher_id
+WHERE r.id = sqlc.arg(id) AND r.status = 'proposed' AND r.proposed_by <> sqlc.arg(approver_id) AND v.id = r.voucher_id
 RETURNING r.id, r.amount, r.voucher_id, v.merchant_id;
+
+-- name: ProposeRequestedRefund :execrows
+UPDATE refunds SET status = 'proposed', proposed_by = sqlc.arg(proposed_by), updated_at = now()
+WHERE id = sqlc.arg(id) AND status = 'requested';
 
 -- name: DisputeForResolution :one
 SELECT d.id, d.redemption_id, d.status, r.voucher_id, r.merchant_id, r.amount, r.commission, r.payout_run_id
@@ -154,7 +164,7 @@ ORDER BY pr.created_at;
 -- name: ListOpenRefunds :many
 SELECT r.id, v.code AS voucher_code, r.amount, r.status, r.reason, r.created_at
 FROM refunds r JOIN vouchers v ON v.id = r.voucher_id
-WHERE r.status IN ('requested', 'approved', 'processing')
+WHERE r.status IN ('requested', 'proposed', 'approved', 'processing')
 ORDER BY r.created_at;
 
 -- name: ListOpenDisputes :many

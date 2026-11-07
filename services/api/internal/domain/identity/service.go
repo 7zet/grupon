@@ -31,6 +31,8 @@ type Config struct {
 	RealSMS           bool
 	SMSDailyCapPerIP  int
 	SMSDailyCapGlobal int
+	// RateLimitFailClosed refuses requests when the limiter is missing or fails. Production sets it.
+	RateLimitFailClosed bool
 }
 
 // Dependencies are the ports the service needs.
@@ -285,10 +287,13 @@ const (
 	kindVerifyEmail = "verify_email"
 )
 
-// allow spends one attempt on every key. A limiter failure is logged and the request is allowed,
-// so a Redis outage does not lock every user out.
+// allow spends one attempt on every key. A limiter failure is logged and the request is allowed
+// outside production; with RateLimitFailClosed (production) it is refused.
 func (s *Service) allow(ctx context.Context, keys ...string) error {
 	if s.limiter == nil {
+		if s.cfg.RateLimitFailClosed {
+			return ErrRateLimited
+		}
 		return nil
 	}
 	for _, key := range keys {
@@ -297,6 +302,10 @@ func (s *Service) allow(ctx context.Context, keys ...string) error {
 		}
 		ok, err := s.limiter.Allow(ctx, key)
 		if err != nil {
+			if s.cfg.RateLimitFailClosed {
+				s.logger.ErrorContext(ctx, "rate limiter unavailable; refusing request", slogError(err))
+				return ErrRateLimited
+			}
 			s.logger.WarnContext(ctx, "rate limiter unavailable; allowing request", slogError(err))
 			continue
 		}

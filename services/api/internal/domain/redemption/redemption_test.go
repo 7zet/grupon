@@ -18,6 +18,7 @@ type fakeRepo struct {
 	reversed   bool
 	voucher    commerce.Voucher
 	locations  map[uuid.UUID]bool
+	attached   map[uuid.UUID]bool
 	redeemed   bool
 	audits     int
 	denied     []string
@@ -46,6 +47,10 @@ func (f *fakeRepo) LocationOwned(_ context.Context, _, locationID uuid.UUID) (bo
 	return f.locations[locationID], nil
 }
 
+func (f *fakeRepo) LocationAttached(_ context.Context, _, locationID uuid.UUID) (bool, error) {
+	return f.attached[locationID], nil
+}
+
 func (f *fakeRepo) Redeem(_ context.Context, _, _, _ uuid.UUID, at time.Time, audit AuditEntry, _ *Geo) (bool, error) {
 	if f.voucher.Status != StatusActive || !at.Before(f.voucher.ValidUntil) {
 		return false, nil
@@ -67,8 +72,9 @@ func newFixture(status string, validUntil time.Time) (*fakeRepo, *Service, uuid.
 	locationID := uuid.New()
 	voucherID := uuid.New()
 	repo := &fakeRepo{
-		voucher:   commerce.Voucher{ID: voucherID, MerchantID: merchantID, Code: "7KQ4-M9TX", Status: status, ValidFrom: now.AddDate(0, -1, 0), ValidUntil: validUntil},
+		voucher:   commerce.Voucher{ID: voucherID, DealID: uuid.New(), MerchantID: merchantID, Code: "7KQ4-M9TX", Status: status, ValidFrom: now.AddDate(0, -1, 0), ValidUntil: validUntil},
 		locations: map[uuid.UUID]bool{locationID: true},
+		attached:  map[uuid.UUID]bool{locationID: true},
 	}
 	verify := func(token string) (uuid.UUID, error) {
 		if token != "good" {
@@ -77,6 +83,19 @@ func newFixture(status string, validUntil time.Time) (*fakeRepo, *Service, uuid.
 		return voucherID, nil
 	}
 	return repo, NewService(repo, verify, func() time.Time { return now }), merchantID, locationID, merchant.Actor{UserID: uuid.New(), Role: merchant.RoleCashier}
+}
+
+func TestRedeemRequiresABranchAttachedToTheDeal(t *testing.T) {
+	repo, service, merchantID, locationID, actor := newFixture(StatusActive, now.AddDate(0, 1, 0))
+	repo.attached[locationID] = false
+	_, err := service.Redeem(context.Background(), merchantID, actor, repo.voucher.ID, locationID, nil)
+	var input *merchant.InvalidInputError
+	if !errors.As(err, &input) || input.Field != "location_id" || input.Code != "location_not_attached_to_deal" {
+		t.Fatalf("redeem at unattached branch: %v", err)
+	}
+	if repo.redeemed {
+		t.Fatal("voucher was redeemed at a branch not attached to its deal")
+	}
 }
 
 func TestLookupByCodeAndToken(t *testing.T) {

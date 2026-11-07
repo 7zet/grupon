@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { AccountShell } from '@/components/account-shell';
 import { accountGet, loadForVisitor } from '@/lib/account-api';
+import { maskPhone } from '@/lib/phone';
 
 type User = components['schemas']['User'];
 
@@ -16,7 +17,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   const rows: [string, string | null | undefined][] = [
     [t('name'), user.name],
     [t('email'), user.email],
-    [t('phone'), user.phone ?? t('notSet')],
+    [t('phone'), user.phone ? maskPhone(user.phone) : t('notSet')],
     [t('language'), user.locale],
     [t('currency'), user.currency],
   ];

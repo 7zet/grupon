@@ -143,6 +143,45 @@ func (a *MerchantDealAPI) SubmitMerchantDeal(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusOK, mapDeal(deal))
 }
 
+func (a *MerchantDealAPI) PauseMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, merchantID, ok := a.scope(w, r, true)
+	if !ok {
+		return
+	}
+	deal, err := a.deals.Pause(r.Context(), merchantID, uuid.UUID(id), actor)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, mapDeal(deal))
+}
+
+func (a *MerchantDealAPI) ResumeMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, merchantID, ok := a.scope(w, r, true)
+	if !ok {
+		return
+	}
+	deal, err := a.deals.Resume(r.Context(), merchantID, uuid.UUID(id), actor)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, mapDeal(deal))
+}
+
+func (a *MerchantDealAPI) ArchiveMerchantDeal(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, merchantID, ok := a.scope(w, r, true)
+	if !ok {
+		return
+	}
+	deal, err := a.deals.Archive(r.Context(), merchantID, uuid.UUID(id), actor)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, mapDeal(deal))
+}
+
 func (a *MerchantDealAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var invalid *merchant.InvalidInputError
 	switch {

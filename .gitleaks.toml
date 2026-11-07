@@ -1,0 +1,13 @@
+title = "grupon"
+
+[extend]
+useDefault = true
+
+# Reviewed false positives: fixed test secrets (never used outside tests) and an old progress note.
+[allowlist]
+description = "reviewed test fixtures and archived notes"
+paths = [
+  '''services/api/internal/platform/config/config_test\.go''',
+  '''services/api/internal/domain/identity/totp_test\.go''',
+  '''docs/JARAYON\.md''',
+]

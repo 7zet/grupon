@@ -66,7 +66,7 @@ func (r *FinanceRepository) MerchantOnHold(ctx context.Context, merchantID uuid.
 }
 
 // CreatePayoutRun opens a run awaiting approval and attaches its redemptions, in one transaction.
-func (r *FinanceRepository) CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error) {
+func (r *FinanceRepository) CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount, receivableOffset int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("begin payout run: %w", err)
@@ -75,9 +75,10 @@ func (r *FinanceRepository) CreatePayoutRun(ctx context.Context, merchantID uuid
 
 	queries := sqlc.New(tx)
 	runID, err := queries.InsertPayoutRun(ctx, sqlc.InsertPayoutRunParams{
-		MerchantID: toPgUUID(merchantID),
-		Amount:     amount,
-		PreparedBy: toPgUUID(preparedBy),
+		MerchantID:       toPgUUID(merchantID),
+		Amount:           amount,
+		ReceivableOffset: receivableOffset,
+		PreparedBy:       toPgUUID(preparedBy),
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("insert payout run: %w", err)
@@ -94,6 +95,15 @@ func (r *FinanceRepository) CreatePayoutRun(ctx context.Context, merchantID uuid
 	return toUUID(runID), tx.Commit(ctx)
 }
 
+// MerchantReceivable is the outstanding post-payout reversal debt to offset from the next payout.
+func (r *FinanceRepository) MerchantReceivable(ctx context.Context, merchantID uuid.UUID) (int64, error) {
+	amount, err := sqlc.New(r.pool).MerchantReceivableBalance(ctx, ledger.MerchantReceivable+merchantID.String())
+	if err != nil {
+		return 0, fmt.Errorf("merchant receivable: %w", err)
+	}
+	return amount, nil
+}
+
 // PayoutRun loads a run.
 func (r *FinanceRepository) PayoutRun(ctx context.Context, runID uuid.UUID) (finance.PayoutRun, error) {
 	row, err := sqlc.New(r.pool).PayoutRunDetail(ctx, toPgUUID(runID))
@@ -104,11 +114,12 @@ func (r *FinanceRepository) PayoutRun(ctx context.Context, runID uuid.UUID) (fin
 		return finance.PayoutRun{}, fmt.Errorf("load payout run: %w", err)
 	}
 	return finance.PayoutRun{
-		ID:         toUUID(row.ID),
-		MerchantID: toUUID(row.MerchantID),
-		Amount:     row.Amount,
-		Status:     row.Status,
-		PreparedBy: toUUID(row.PreparedBy),
+		ID:               toUUID(row.ID),
+		MerchantID:       toUUID(row.MerchantID),
+		Amount:           row.Amount,
+		ReceivableOffset: row.ReceivableOffset,
+		Status:           row.Status,
+		PreparedBy:       toUUID(row.PreparedBy),
 	}, nil
 }
 
@@ -139,7 +150,7 @@ func (r *FinanceRepository) ApprovePayoutRun(ctx context.Context, run finance.Pa
 	if rows != 1 {
 		return false, nil
 	}
-	if _, err := PostEntry(ctx, queries, ledger.PayoutSent(run.ID.String(), run.MerchantID.String(), run.Amount)); err != nil {
+	if _, err := PostEntry(ctx, queries, ledger.PayoutSent(run.ID.String(), run.MerchantID.String(), run.Amount, run.ReceivableOffset)); err != nil {
 		return false, fmt.Errorf("post payout: %w", err)
 	}
 	return true, tx.Commit(ctx)
@@ -159,13 +170,15 @@ func (r *FinanceRepository) VoucherForRefund(ctx context.Context, voucherID uuid
 		paidAt = row.PaidAt.Time
 	}
 	return finance.VoucherRef{
-		ID:              toUUID(row.ID),
-		BuyerID:         toUUID(row.UserID),
-		MerchantID:      toUUID(row.MerchantID),
-		Status:          string(row.Status),
-		RedemptionsUsed: int(row.RedemptionsUsed),
-		UnitPrice:       row.UnitPriceSnapshot,
-		PaidAt:          paidAt,
+		ID:                 toUUID(row.ID),
+		BuyerID:            toUUID(row.UserID),
+		MerchantID:         toUUID(row.MerchantID),
+		Status:             string(row.Status),
+		RedemptionsUsed:    int(row.RedemptionsUsed),
+		RedemptionsAllowed: int(row.RedemptionsAllowed),
+		UnitPrice:          row.UnitPriceSnapshot,
+		PaidAt:             paidAt,
+		ValidUntil:         row.ValidUntil.Time,
 	}, nil
 }
 
@@ -389,6 +402,18 @@ func (r *FinanceRepository) ApproveRefund(ctx context.Context, refundID, approve
 		return finance.RefundRef{}, fmt.Errorf("post refund approval: %w", err)
 	}
 	return ref, tx.Commit(ctx)
+}
+
+// ProposeRefund records the support person who reviewed a requested refund.
+func (r *FinanceRepository) ProposeRefund(ctx context.Context, refundID, proposerID uuid.UUID) (bool, error) {
+	rows, err := sqlc.New(r.pool).ProposeRequestedRefund(ctx, sqlc.ProposeRequestedRefundParams{
+		ID:         toPgUUID(refundID),
+		ProposedBy: toPgUUID(proposerID),
+	})
+	if err != nil {
+		return false, fmt.Errorf("propose refund: %w", err)
+	}
+	return rows == 1, nil
 }
 
 // TransitionDispute changes state and writes its audit row in one transaction. Customer resolution

@@ -21,6 +21,7 @@ type Querier interface {
 	ActiveVoucherValue(ctx context.Context) (int64, error)
 	ActiveVouchersForValue(ctx context.Context) ([]ActiveVouchersForValueRow, error)
 	AddDealSoldCount(ctx context.Context, arg AddDealSoldCountParams) error
+	AdminOverviewTotals(ctx context.Context) (AdminOverviewTotalsRow, error)
 	ApplyVoucherUse(ctx context.Context, arg ApplyVoucherUseParams) (int64, error)
 	ApprovePayoutRun(ctx context.Context, arg ApprovePayoutRunParams) (int64, error)
 	ApproveRequestedRefund(ctx context.Context, arg ApproveRequestedRefundParams) (ApproveRequestedRefundRow, error)
@@ -33,6 +34,7 @@ type Querier interface {
 	ConsumePhoneOTP(ctx context.Context, id pgtype.UUID) (int64, error)
 	ConvertReservedStock(ctx context.Context, arg ConvertReservedStockParams) error
 	CountAuditLogs(ctx context.Context) (int64, error)
+	CountFraudSignals(ctx context.Context) (int64, error)
 	CountMerchantDocumentKinds(ctx context.Context, merchantID pgtype.UUID) (int32, error)
 	CountMerchantRedemptionHistory(ctx context.Context, arg CountMerchantRedemptionHistoryParams) (int64, error)
 	CountOpenReviewReports(ctx context.Context) (int64, error)
@@ -149,6 +151,7 @@ type Querier interface {
 	ListDealLocationRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealLocationRowsRow, error)
 	ListDealMediaForDeals(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealMediaForDealsRow, error)
 	ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error)
+	ListFraudSignals(ctx context.Context, arg ListFraudSignalsParams) ([]ListFraudSignalsRow, error)
 	ListMediaAssets(ctx context.Context, arg ListMediaAssetsParams) ([]ListMediaAssetsRow, error)
 	ListMerchantDocuments(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantDocumentsRow, error)
 	ListMerchantLocationRows(ctx context.Context, merchantID pgtype.UUID) ([]ListMerchantLocationRowsRow, error)
@@ -172,6 +175,7 @@ type Querier interface {
 	ListUnreleasedReservations(ctx context.Context, orderID pgtype.UUID) ([]ListUnreleasedReservationsRow, error)
 	ListUserRoles(ctx context.Context, userID pgtype.UUID) ([]RoleAssignment, error)
 	ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error)
+	LocationAttachedToDeal(ctx context.Context, arg LocationAttachedToDealParams) (bool, error)
 	LockOrderByID(ctx context.Context, orderID pgtype.UUID) (LockOrderByIDRow, error)
 	LockPaymentByProviderID(ctx context.Context, arg LockPaymentByProviderIDParams) (LockPaymentByProviderIDRow, error)
 	LockPayoutRun(ctx context.Context, id pgtype.UUID) (LockPayoutRunRow, error)
@@ -186,11 +190,13 @@ type Querier interface {
 	MarkUserEmailVerified(ctx context.Context, id pgtype.UUID) error
 	MarkVoucherRefunded(ctx context.Context, id pgtype.UUID) (int64, error)
 	MerchantCustomerRows(ctx context.Context, merchantID pgtype.UUID) ([]MerchantCustomerRowsRow, error)
+	MerchantHasDocument(ctx context.Context, arg MerchantHasDocumentParams) (bool, error)
 	MerchantLocationBelongsTo(ctx context.Context, arg MerchantLocationBelongsToParams) (bool, error)
 	MerchantLocationCoords(ctx context.Context, arg MerchantLocationCoordsParams) (MerchantLocationCoordsRow, error)
 	MerchantOnHold(ctx context.Context, merchantID pgtype.UUID) (bool, error)
 	MerchantOrderRows(ctx context.Context, merchantID pgtype.UUID) ([]MerchantOrderRowsRow, error)
 	MerchantPayoutRows(ctx context.Context, merchantID pgtype.UUID) ([]MerchantPayoutRowsRow, error)
+	MerchantReceivableBalance(ctx context.Context, code string) (int64, error)
 	MerchantRedeemedCount(ctx context.Context, arg MerchantRedeemedCountParams) (int64, error)
 	MerchantReviewRows(ctx context.Context, merchantID pgtype.UUID) ([]MerchantReviewRowsRow, error)
 	MerchantReviewStatusByID(ctx context.Context, id pgtype.UUID) (string, error)
@@ -208,6 +214,7 @@ type Querier interface {
 	PayableRedemptions(ctx context.Context, arg PayableRedemptionsParams) ([]PayableRedemptionsRow, error)
 	PayoutRunDetail(ctx context.Context, id pgtype.UUID) (PayoutRunDetailRow, error)
 	PlaceMerchantHold(ctx context.Context, arg PlaceMerchantHoldParams) error
+	ProposeRequestedRefund(ctx context.Context, arg ProposeRequestedRefundParams) (int64, error)
 	RecentStaffRedemptions(ctx context.Context, arg RecentStaffRedemptionsParams) (int64, error)
 	RecomputeDealRatings(ctx context.Context) (int64, error)
 	RecomputeDealSoldCounts(ctx context.Context) (int64, error)

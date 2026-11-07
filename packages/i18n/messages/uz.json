@@ -480,7 +480,15 @@
     "status_changes_requested": "Tuzatish kerak",
     "status_ended": "Tugagan",
     "status_approved": "Tasdiqlangan",
-    "status_archived": "Arxivlangan"
+    "status_archived": "Arxivlangan",
+    "rejectionReason": "Moderator sababi",
+    "colActions": "Amallar",
+    "pause": "To'xtatish",
+    "resume": "Davom ettirish",
+    "archive": "Arxivlash",
+    "submitForReview": "Tekshiruvga yuborish",
+    "actionError": "Amalni bajarib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring.",
+    "errorPriceProof": "Qoralama saqlandi. Biznes tekshiruvi sahifasida narx tasdig'ini yuklang, so'ng aksiyani ro'yxatdan tekshiruvga yuboring."
   },
   "Moderation": {
     "title": "Moderatsiya navbati",
@@ -491,7 +499,8 @@
     "reasonError": "Sabab kamida 3 ta belgi bo‘lishi kerak",
     "sendReject": "Rad etishni yuborish",
     "cancel": "Bekor qilish",
-    "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring"
+    "errorGeneric": "Xatolik yuz berdi, qayta urinib ko‘ring",
+    "highDiscount": "Chegirma 70% dan ortiq. Tasdiqlashdan oldin narx tasdig'ini tekshiring."
   },
   "Redeem": {
     "internetNeededTitle": "Internet kerak",
@@ -602,7 +611,9 @@
     },
     "status": {
       "submitted": "Yuborilgan",
-      "in_review": "Ko‘rib chiqilmoqda"
+      "in_review": "Ko‘rib chiqilmoqda",
+      "approved": "Tasdiqlangan",
+      "suspended": "To'xtatilgan"
     },
     "document": {
       "certificate": "Guvohnoma",
@@ -617,7 +628,18 @@
     "reasonLabel": "Rad etish sababi (merchant ko‘radi)",
     "reasonError": "Sababni kamida 3 ta belgi bilan yozing.",
     "errorTransition": "Bu holatda bu amalni bajarib bo‘lmaydi. Sahifani yangilang.",
-    "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring."
+    "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring.",
+    "tabQueue": "Tekshiruv kutmoqda",
+    "tabApproved": "Tasdiqlanganlar",
+    "tabSuspended": "To'xtatilganlar",
+    "emptyApproved": "Tasdiqlangan bizneslar yo'q.",
+    "emptySuspended": "To'xtatilgan bizneslar yo'q.",
+    "suspend": "To'xtatish",
+    "terminate": "Shartnomani bekor qilish",
+    "reinstate": "Qayta tiklash",
+    "sendSuspend": "Biznesni to'xtatish",
+    "sendTerminate": "Biznes bilan aloqani tugatish",
+    "actionReasonLabel": "Sabab (audit jurnaliga yoziladi)"
   },
   "Notifications": {
     "title": "Xabarlar",
@@ -633,6 +655,7 @@
     "refunds": "Qaytarishlar (refund)",
     "disputes": "Nizolar (dispute)",
     "approve": "Tasdiqlash",
+    "propose": "Moliya uchun taklif qilish",
     "reconcile": "Bank bilan solishtirish",
     "markPaid": "Bank orqali to‘langan deb belgilash",
     "requestEvidence": "Dalil so‘rash",
@@ -646,6 +669,7 @@
       "approved": "Tasdiqlangan",
       "sent": "Yuborilgan",
       "requested": "So‘ralgan",
+      "proposed": "Moliya tasdig‘i kutilmoqda",
       "processing": "Jarayonda",
       "open": "Ochiq",
       "awaiting_evidence": "Dalil kutilmoqda",
@@ -757,7 +781,11 @@
     "orderCompleted": "Yakunlangan",
     "orderExpired": "Muddati o'tgan",
     "orderFailed": "Muvaffaqiyatsiz",
-    "orderPartiallyRefunded": "Qisman qaytarilgan"
+    "orderPartiallyRefunded": "Qisman qaytarilgan",
+    "calcCost": "Bir kupon uchun xarajatingiz (so'm)",
+    "calcNet": "Bir kupondan sof daromad",
+    "calcNetTotal": "Jami sof daromad",
+    "calcNegative": "Bu raqamlarda har bir kupondan zarar ko'rasiz. Aksiya narxini oshiring yoki xarajatni qisqartiring."
   },
   "Identity": {
     "buyer": "Xaridor",
@@ -769,5 +797,36 @@
     "support": "Qo'llab-quvvatlash",
     "finance": "Moliya",
     "superadmin": "Superadmin"
+  },
+  "AdminNav": {
+    "label": "Admin bo'limlari",
+    "overview": "Umumiy ko'rinish",
+    "moderation": "Aksiyalar",
+    "merchants": "Bizneslar",
+    "finance": "Moliya",
+    "reports": "Sharh shikoyatlari",
+    "fraud": "Firibgarlik signallari",
+    "audit": "Audit jurnali"
+  },
+  "AdminOverview": {
+    "title": "Umumiy ko'rinish",
+    "users": "Foydalanuvchilar",
+    "businesses": "Tasdiqlangan bizneslar",
+    "activeDeals": "Faol aksiyalar",
+    "ordersToday": "Bugungi buyurtmalar"
+  },
+  "AdminFraud": {
+    "title": "Firibgarlik signallari",
+    "empty": "Firibgarlik signallari yo'q.",
+    "rule": "Qoida",
+    "merchant": "Biznes",
+    "status": "Holat",
+    "detail": "Tafsilot",
+    "date": "Sana",
+    "open": "Ochiq",
+    "closed": "Yopiq",
+    "rules": {
+      "redemption_burst": "Bir daqiqada ko'p marta ishlatish"
+    }
   }
 }

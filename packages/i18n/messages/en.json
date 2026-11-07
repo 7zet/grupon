@@ -480,7 +480,15 @@
     "status_changes_requested": "Changes requested",
     "status_ended": "Ended",
     "status_approved": "Approved",
-    "status_archived": "Archived"
+    "status_archived": "Archived",
+    "rejectionReason": "Moderator's reason",
+    "colActions": "Actions",
+    "pause": "Pause",
+    "resume": "Resume",
+    "archive": "Archive",
+    "submitForReview": "Submit for review",
+    "actionError": "The action could not be completed. Refresh and try again.",
+    "errorPriceProof": "Draft saved. Upload a price proof on the business review page, then submit the deal from your deals list."
   },
   "Moderation": {
     "title": "Moderation queue",
@@ -491,7 +499,8 @@
     "reasonError": "The reason needs at least 3 characters",
     "sendReject": "Send rejection",
     "cancel": "Cancel",
-    "errorGeneric": "Something went wrong, please try again"
+    "errorGeneric": "Something went wrong, please try again",
+    "highDiscount": "Discount above 70%. Check the price proof before approving."
   },
   "Redeem": {
     "internetNeededTitle": "Internet needed",
@@ -602,7 +611,9 @@
     },
     "status": {
       "submitted": "Submitted",
-      "in_review": "In review"
+      "in_review": "In review",
+      "approved": "Approved",
+      "suspended": "Suspended"
     },
     "document": {
       "certificate": "Certificate",
@@ -617,7 +628,18 @@
     "reasonLabel": "Rejection reason (the merchant sees it)",
     "reasonError": "Write a reason of at least 3 characters.",
     "errorTransition": "This action is not allowed in the current status. Refresh the page.",
-    "errorGeneric": "The action could not be completed. Please try again."
+    "errorGeneric": "The action could not be completed. Please try again.",
+    "tabQueue": "Waiting for review",
+    "tabApproved": "Approved",
+    "tabSuspended": "Suspended",
+    "emptyApproved": "No approved businesses.",
+    "emptySuspended": "No suspended businesses.",
+    "suspend": "Suspend",
+    "terminate": "Terminate",
+    "reinstate": "Reinstate",
+    "sendSuspend": "Suspend business",
+    "sendTerminate": "Terminate business",
+    "actionReasonLabel": "Reason (recorded in the audit log)"
   },
   "Notifications": {
     "title": "Notifications",
@@ -633,6 +655,7 @@
     "refunds": "Refunds",
     "disputes": "Disputes",
     "approve": "Approve",
+    "propose": "Propose to finance",
     "reconcile": "Reconcile with bank",
     "markPaid": "Mark as paid by bank",
     "requestEvidence": "Request evidence",
@@ -646,6 +669,7 @@
       "approved": "Approved",
       "sent": "Sent",
       "requested": "Requested",
+      "proposed": "Awaiting finance approval",
       "processing": "Processing",
       "open": "Open",
       "awaiting_evidence": "Awaiting evidence",
@@ -757,7 +781,11 @@
     "orderCompleted": "Completed",
     "orderExpired": "Expired",
     "orderFailed": "Failed",
-    "orderPartiallyRefunded": "Partially refunded"
+    "orderPartiallyRefunded": "Partially refunded",
+    "calcCost": "Your cost per voucher (so'm)",
+    "calcNet": "Net income per voucher",
+    "calcNetTotal": "Net income in total",
+    "calcNegative": "You lose money on every voucher at these numbers. Raise the deal price or cut your cost."
   },
   "Identity": {
     "buyer": "Buyer",
@@ -769,5 +797,36 @@
     "support": "Support",
     "finance": "Finance",
     "superadmin": "Superadmin"
+  },
+  "AdminNav": {
+    "label": "Admin sections",
+    "overview": "Overview",
+    "moderation": "Deals",
+    "merchants": "Businesses",
+    "finance": "Finance",
+    "reports": "Review reports",
+    "fraud": "Fraud signals",
+    "audit": "Audit log"
+  },
+  "AdminOverview": {
+    "title": "Overview",
+    "users": "Users",
+    "businesses": "Approved businesses",
+    "activeDeals": "Active deals",
+    "ordersToday": "Orders today"
+  },
+  "AdminFraud": {
+    "title": "Fraud signals",
+    "empty": "No fraud signals have been raised.",
+    "rule": "Rule",
+    "merchant": "Business",
+    "status": "Status",
+    "detail": "Detail",
+    "date": "Date",
+    "open": "Open",
+    "closed": "Closed",
+    "rules": {
+      "redemption_burst": "Many redemptions in one minute"
+    }
   }
 }

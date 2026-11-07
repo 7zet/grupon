@@ -18,11 +18,14 @@ export function CampaignCalculator({ locale }: { locale: Locale }) {
   const [deal, setDeal] = useState(50000);
   const [capacity, setCapacity] = useState(100);
   const [commission, setCommission] = useState(15);
+  const [cost, setCost] = useState(20000);
 
   const valid = original > 0 && deal > 0 && deal < original && capacity > 0 && commission >= 0 && commission < 100;
   const discount = valid ? Math.round((1 - deal / original) * 100) : 0;
   const perVoucher = valid ? deal * (1 - commission / 100) : 0;
   const totalReceive = perVoucher * capacity;
+  const netPerVoucher = perVoucher - cost;
+  const netTotal = netPerVoucher * capacity;
   const customersPay = deal * capacity;
   const show = (som: number) => formatMoney(Math.round(som * 100), locale, currency);
 
@@ -34,6 +37,7 @@ export function CampaignCalculator({ locale }: { locale: Locale }) {
         <NumberField label={t('calcDeal')} value={deal} onChange={setDeal} className={inputClass} />
         <NumberField label={t('calcCapacity')} value={capacity} onChange={setCapacity} className={inputClass} />
         <NumberField label={t('calcCommission')} value={commission} onChange={setCommission} className={inputClass} />
+        <NumberField label={t('calcCost')} value={cost} onChange={setCost} className={inputClass} />
       </div>
       {valid && (
         <dl className="grid max-w-2xl gap-3 rounded-card border border-border p-5 text-sm sm:grid-cols-2">
@@ -41,7 +45,14 @@ export function CampaignCalculator({ locale }: { locale: Locale }) {
           <Row label={t('calcPerVoucher')} value={show(perVoucher)} />
           <Row label={t('calcCustomerPays')} value={show(customersPay)} />
           <Row label={t('calcTotal')} value={show(totalReceive)} />
+          <Row label={t('calcNet')} value={show(netPerVoucher)} />
+          <Row label={t('calcNetTotal')} value={show(netTotal)} />
         </dl>
+      )}
+      {valid && netPerVoucher < 0 && (
+        <p role="alert" className="max-w-2xl rounded-control-ui bg-error-tint p-3 text-error">
+          {t('calcNegative')}
+        </p>
       )}
     </div>
   );

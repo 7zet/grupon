@@ -30,12 +30,12 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Finish line:** Configured contacts and the Eskiz adapter are complete and tested; the default stays local log delivery.
 
-**Status:** In progress.
+**Status:** Done (`v0.6`). Telegram dropped.
 
 **Ordered tasks:**
 
 1. Support contacts from configuration in the footer, help page, and voucher page — done.
-2. Eskiz SMS adapter with cooldown, rate limits, daily caps, and fake-server tests — in progress.
+2. Eskiz SMS adapter with cooldown, rate limits, daily caps, and fake-server tests — done.
 3. Telegram bot, Telegram OTP, notifications and Mini App — dropped by decision; WIP is archived at `archive/telegram-wip`.
 
 ## Stage 4 — Polish and demo quality
@@ -44,15 +44,19 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Finish line:** Demo scripts, visual polish, edge states, and cross-role browser tests are complete.
 
-**Status:** In progress — G0 demo usability is the release blocker.
+**Status:** In progress — Stage 4a: G0–G4 done, G5 docs in progress. Follow `docs/FINISH-PLAN.md`.
 
-**Current work:** G0 items 1–5 were released as `v0.5`; Stage 3b SMS cleanup is next.
+**Current work:** G0 was released as `v0.5` and Stage 3b as `v0.6`; G1–G4 are on `feat/stage-4a-fixes`.
 
 **Delivery order (2026-11-06):**
 
 1. `feat/stage-4a` G0: account menu, identity badges, demo-account picker, clear seed names, and `docs/DEMO.md`; green CI, merge to `main`, tag `v0.5`.
 2. Rebase `feat/stage-3b` on that `main`; finish Eskiz SMS wiring/daily caps, Telegram cleanup, and documentation; green CI, merge to `main`, tag `v0.6`.
 3. Create a new branch from updated `main` for audit groups G1 through G5.
+
+**2026-11-07 — Stage 4a G1:** QR refresh follows server token expiry; checkout accepts one variant only; late and dispute refunds require support proposal then a different finance approver; finance denial/self-approval is audited; native Playwright is blocking and installs Chromium in CI. Migration: `00029_refund_proposals.sql`.
+
+**2026-11-07 — Stage 4a G2:** voucher issuance is sequenced and unique per order item; redemption requires a branch attached to the deal; partial and recently expired vouchers refund only their remaining floor-split value and commission remainder goes to the final visit; a reversal after payout becomes merchant receivable and is offset from the next payout. Migrations: `00030_voucher_sequence.sql`, `00031_payout_receivable_offset.sql`.
 
 ## Stage 5 — SEO, final documentation, handover, v1.0
 
@@ -61,3 +65,5 @@ This is the single source of truth for delivery status. Acceptance evidence live
 **Finish line:** SEO essentials, final operational documentation, a handover checklist, and `v1.0` are complete.
 
 **Status:** Not started.
+
+**2026-11-07 — Stage 4a G3/G4:** log SMS only with `DEMO_MODE`; production requires Redis and fails OTP limits closed; Origin check on cookie sessions; `audit_logs` append-only (migration `00032_audit_logs_append_only.sql`); CI security job; masked phones. Merchant sees the rejection reason; deal pause/resume/archive; merchant suspend/terminate/reinstate; admin overview and fraud-signal pages; price proof required on submit (demo merchants are seeded with a placeholder); discount over 70% flagged; calculator warns on negative net income.

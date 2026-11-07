@@ -184,7 +184,13 @@ func load(lookup lookupEnv) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	smsConfig, err := loadSMS(lookup)
+	if environment == productionEnvironment {
+		if redisValue, set := lookup("REDIS_URL"); !set || strings.TrimSpace(redisValue) == "" {
+			return Config{}, fmt.Errorf("REDIS_URL must be set in production so OTP rate limits can fail closed")
+		}
+	}
+
+	smsConfig, err := loadSMS(lookup, demoMode)
 	if err != nil {
 		return Config{}, err
 	}
@@ -244,12 +250,15 @@ func load(lookup lookupEnv) (Config, error) {
 	}, nil
 }
 
-func loadSMS(lookup lookupEnv) (SMSConfig, error) {
+func loadSMS(lookup lookupEnv, demoMode bool) (SMSConfig, error) {
 	provider, err := stringValue(lookup, "SMS_PROVIDER", "log")
 	if err != nil {
 		return SMSConfig{}, err
 	}
 	if provider == "log" {
+		if !demoMode {
+			return SMSConfig{}, fmt.Errorf("SMS_PROVIDER=log requires DEMO_MODE=true")
+		}
 		return SMSConfig{Provider: provider}, nil
 	}
 	if provider != "eskiz" {

@@ -19,6 +19,7 @@ const (
 	CustomerPrepaid    = "customer_prepaid:"
 	CustomerPrepaidExp = "customer_prepaid_expired:"
 	MerchantPayable    = "merchant_payable:"
+	MerchantReceivable = "merchant_receivable:"
 )
 
 // Direction is the side of a line.
@@ -138,16 +139,32 @@ func Reversed(redemptionID, merchantID string, amount int64, commission int64) E
 	}
 }
 
+// ReversedAfterPayout records a merchant debt when a redemption is reversed after that merchant
+// was already paid. The debt is offset against the next payout instead of recreating a payable.
+func ReversedAfterPayout(redemptionID, merchantID string, amount int64, commission int64) Entry {
+	return Entry{
+		Kind:           "redemption_reversal_after_payout",
+		Reference:      redemptionID,
+		IdempotencyKey: "redemption_reversal:" + redemptionID,
+		Lines: withoutZero(
+			Line{Account: MerchantReceivable + merchantID, Direction: Debit, Amount: amount - commission},
+			Line{Account: CommissionRevenue, Direction: Debit, Amount: commission},
+			Line{Account: CustomerPrepaid + merchantID, Direction: Credit, Amount: amount},
+		),
+	}
+}
+
 // PayoutSent records a payout that left the bank.
-func PayoutSent(runID, merchantID string, amount int64) Entry {
+func PayoutSent(runID, merchantID string, amount, receivableOffset int64) Entry {
 	return Entry{
 		Kind:           "payout_sent",
 		Reference:      runID,
 		IdempotencyKey: "payout_sent:" + runID,
-		Lines: []Line{
-			{Account: MerchantPayable + merchantID, Direction: Debit, Amount: amount},
-			{Account: BankOperating, Direction: Credit, Amount: amount},
-		},
+		Lines: withoutZero(
+			Line{Account: MerchantPayable + merchantID, Direction: Debit, Amount: amount + receivableOffset},
+			Line{Account: BankOperating, Direction: Credit, Amount: amount},
+			Line{Account: MerchantReceivable + merchantID, Direction: Credit, Amount: receivableOffset},
+		),
 	}
 }
 

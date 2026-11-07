@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"testing"
@@ -135,6 +136,44 @@ func TestAT01DuplicateSuccessWebhookIssuesOneVoucherSet(t *testing.T) {
 	}
 	if got := env.scalarText(t, `SELECT status::text FROM payments WHERE id = $1`, session.PaymentID); got != "succeeded" {
 		t.Fatalf("payment status = %s, want succeeded", got)
+	}
+	if got := env.count(t, `SELECT count(*) FROM journal_entries WHERE reference = (SELECT id::text FROM order_items WHERE order_id = $1)`, order.ID); got != 1 {
+		t.Fatalf("journal entries = %d, want exactly 1", got)
+	}
+}
+
+func TestVoucherSequenceIsUniquePerOrderItem(t *testing.T) {
+	env := newATEnv(t, 5)
+	order := env.order(t, 3)
+	session, err := env.service.PayOrder(env.ctx, env.buyer, order.ID, env.mock.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := env.service.CompleteMockPayment(env.ctx, session.PaymentID, payments.OutcomeSucceeded); err != nil {
+		t.Fatal(err)
+	}
+	var sequences []int
+	rows, err := env.fixture.pool.Query(env.ctx, `SELECT seq FROM vouchers WHERE order_item_id = $1 ORDER BY seq`, order.Items[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var seq int
+		if err := rows.Scan(&seq); err != nil {
+			t.Fatal(err)
+		}
+		sequences = append(sequences, seq)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := fmt.Sprint(sequences), "[1 2 3]"; got != want {
+		t.Fatalf("voucher sequences = %s, want %s", got, want)
+	}
+	_, err = env.fixture.pool.Exec(env.ctx, `INSERT INTO vouchers(order_item_id,seq,user_id,deal_id,deal_option_id,merchant_id,code,qr_token,valid_from,valid_until) SELECT order_item_id,1,user_id,deal_id,deal_option_id,merchant_id,$2,$3,now(),now()+interval '1 day' FROM vouchers WHERE order_item_id=$1 LIMIT 1`, order.Items[0].ID, testCode(), uuid.NewString())
+	if err == nil {
+		t.Fatal("duplicate (order_item_id, seq) was accepted")
 	}
 }
 

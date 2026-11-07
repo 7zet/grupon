@@ -36,12 +36,13 @@ SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1 AND searchable = true);
 
 -- name: ListMerchantsForReview :many
 SELECT m.id, m.legal_name, m.display_name, m.stir, m.org_form, m.tax_regime, m.bank_mfo, m.bank_account,
-       m.responsible_name, m.review_status, m.submitted_at,
+       m.responsible_name, m.review_status, COALESCE(m.submitted_at, m.created_at)::timestamptz AS submitted_at,
        ARRAY(SELECT d.kind FROM merchant_documents d WHERE d.merchant_id = m.id ORDER BY d.kind)::text[] AS documents
 FROM merchants m
-WHERE m.deleted_at IS NULL AND m.review_status IN ('submitted', 'in_review')
-  AND (sqlc.narg(status)::text IS NULL OR m.review_status = sqlc.narg(status)::text)
-ORDER BY m.submitted_at, m.id;
+WHERE m.deleted_at IS NULL
+  AND ((sqlc.narg(status)::text IS NULL AND m.review_status IN ('submitted', 'in_review'))
+    OR m.review_status = sqlc.narg(status)::text)
+ORDER BY COALESCE(m.submitted_at, m.created_at), m.id;
 
 -- name: MerchantReviewStatusByID :one
 SELECT review_status FROM merchants WHERE id = sqlc.arg(id) AND deleted_at IS NULL;

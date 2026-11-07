@@ -12,7 +12,7 @@ func TestEveryPlanBalances(t *testing.T) {
 		"payment":     PaymentReceived("i1", merchant, 10000000),
 		"redemption":  Redeemed("r1", merchant, 10000000, Commission(10000000, 1500)),
 		"reversal":    Reversed("r1", merchant, 10000000, Commission(10000000, 1500)),
-		"payout":      PayoutSent("p1", merchant, 8500000),
+		"payout":      PayoutSent("p1", merchant, 8500000, 0),
 		"psp":         PSPSettled("b1", 10000000, 200000),
 		"refund":      RefundApproved("f1", merchant, 10000000),
 		"refund-paid": RefundPaid("f1", 10000000),

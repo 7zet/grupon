@@ -19,8 +19,8 @@ const defaultLocale = "uz"
 type CatalogAPI struct {
 	gen.Unimplemented
 
-	catalog *catalog.Service
-	logger  *slog.Logger
+	catalog  *catalog.Service
+	logger   *slog.Logger
 	demoMode bool
 }
 
@@ -42,7 +42,7 @@ func (a *CatalogAPI) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
 		Currencies: []gen.Currency{gen.Currency("UZS")},
 		Cities:     mapCities(config.Cities),
 		Categories: mapCategories(config.Categories),
-		DemoMode: a.demoMode,
+		DemoMode:   a.demoMode,
 	})
 }
 
@@ -494,6 +494,7 @@ func mapDeal(deal catalog.Deal) gen.Deal {
 		StartsAt:               deal.StartsAt,
 		EndsAt:                 deal.EndsAt,
 		Locations:              locations,
+		RejectionReason:        deal.RejectionReason,
 	}
 }
 

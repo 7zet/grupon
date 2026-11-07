@@ -125,6 +125,26 @@ func TestCategoryPurchasableBlocksCheckout(t *testing.T) {
 	}
 }
 
+// A buyer checks out one selected variant at a time. This also rejects a
+// crafted cross-merchant request before any stock reservation is made.
+func TestOrderRequiresExactlyOneVariant(t *testing.T) {
+	env := newATEnv(t, 5)
+	var other uuid.UUID
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT id FROM deal_options WHERE id <> $1 LIMIT 1`, env.optionID).Scan(&other); err != nil {
+		t.Fatal(err)
+	}
+	for _, items := range [][]commerce.OrderItemInput{
+		{{OptionID: env.optionID, Quantity: 1}, {OptionID: env.optionID, Quantity: 1}},
+		{{OptionID: env.optionID, Quantity: 1}, {OptionID: other, Quantity: 1}},
+	} {
+		_, _, err := env.service.CreateOrder(env.ctx, env.buyer, commerce.OrderInput{IdempotencyKey: uuid.NewString(), Items: items})
+		var validation *commerce.ValidationError
+		if !errors.As(err, &validation) || validation.Field != "items" || validation.Code != "exactly_one_variant_required" {
+			t.Fatalf("items=%d error = %v, want stable one-variant validation", len(items), err)
+		}
+	}
+}
+
 func TestCategoryRedeemableBlocksOnlyWhenFalse(t *testing.T) {
 	env := newATEnv(t, 1)
 	voucherID := env.sellOneVoucher(t, env.buyer)

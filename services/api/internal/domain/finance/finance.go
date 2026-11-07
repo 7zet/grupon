@@ -53,22 +53,25 @@ type Payable struct {
 
 // PayoutRun is a batch of payable redemptions for one merchant.
 type PayoutRun struct {
-	ID         uuid.UUID
-	MerchantID uuid.UUID
-	Amount     int64
-	Status     string
-	PreparedBy uuid.UUID
+	ID               uuid.UUID
+	MerchantID       uuid.UUID
+	Amount           int64
+	ReceivableOffset int64
+	Status           string
+	PreparedBy       uuid.UUID
 }
 
 // VoucherRef is what a refund or dispute needs to know about a voucher.
 type VoucherRef struct {
-	ID              uuid.UUID
-	BuyerID         uuid.UUID
-	MerchantID      uuid.UUID
-	Status          string
-	RedemptionsUsed int
-	UnitPrice       int64
-	PaidAt          time.Time
+	ID                 uuid.UUID
+	BuyerID            uuid.UUID
+	MerchantID         uuid.UUID
+	Status             string
+	RedemptionsUsed    int
+	UnitPrice          int64
+	PaidAt             time.Time
+	ValidUntil         time.Time
+	RedemptionsAllowed int
 }
 
 // BreakageItem is a voucher whose window closed long enough ago to be recognised as breakage.
@@ -115,7 +118,8 @@ type Repository interface {
 	RecordDenied(ctx context.Context, actor Actor, action string, entityID uuid.UUID) error
 	PayableRedemptions(ctx context.Context, merchantID uuid.UUID, before time.Time) ([]Payable, error)
 	MerchantOnHold(ctx context.Context, merchantID uuid.UUID) (bool, error)
-	CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error)
+	MerchantReceivable(ctx context.Context, merchantID uuid.UUID) (int64, error)
+	CreatePayoutRun(ctx context.Context, merchantID uuid.UUID, amount, receivableOffset int64, preparedBy uuid.UUID, redemptionIDs []uuid.UUID) (uuid.UUID, error)
 	PayoutRun(ctx context.Context, runID uuid.UUID) (PayoutRun, error)
 	ApprovePayoutRun(ctx context.Context, run PayoutRun, approverID uuid.UUID, bankDocRef string) (bool, error)
 	VoucherForRefund(ctx context.Context, voucherID uuid.UUID) (VoucherRef, error)
@@ -131,6 +135,8 @@ type Repository interface {
 	MarkPayoutReconciled(ctx context.Context, runID uuid.UUID) (bool, error)
 	// ApproveRefund approves a requested refund and posts it. The approver cannot be the requester.
 	ApproveRefund(ctx context.Context, refundID, approverID uuid.UUID) (RefundRef, error)
+	// ProposeRefund moves a customer/dispute request to the finance approval queue.
+	ProposeRefund(ctx context.Context, refundID, proposerID uuid.UUID) (bool, error)
 	// TransitionDispute changes one state atomically with its audit row and resolution side effects.
 	TransitionDispute(ctx context.Context, disputeID uuid.UUID, actor Actor, from []string, to string) error
 	// Open lists the open payouts, refunds and disputes for the finance desk.
@@ -180,12 +186,23 @@ func (s *Service) PreparePayout(ctx context.Context, actor Actor, merchantID uui
 	if total <= 0 {
 		return uuid.Nil, ErrNothingToPay
 	}
-	return s.repo.CreatePayoutRun(ctx, merchantID, total, actor.UserID, ids)
+	receivable, err := s.repo.MerchantReceivable(ctx, merchantID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	offset := min(total, receivable)
+	if total <= offset {
+		return uuid.Nil, ErrNothingToPay
+	}
+	return s.repo.CreatePayoutRun(ctx, merchantID, total-offset, offset, actor.UserID, ids)
 }
 
 // ApprovePayout sends the money. The approver must differ from the preparer (AT-18).
 func (s *Service) ApprovePayout(ctx context.Context, actor Actor, runID uuid.UUID, bankDocRef string) error {
 	if !financeApprover(actor.Role) {
+		if err := s.repo.RecordDenied(ctx, actor, "payout_approve_denied", runID); err != nil {
+			return err
+		}
 		return ErrForbidden
 	}
 	run, err := s.repo.PayoutRun(ctx, runID)
@@ -196,6 +213,9 @@ func (s *Service) ApprovePayout(ctx context.Context, actor Actor, runID uuid.UUI
 		return ErrNotPending
 	}
 	if run.PreparedBy == actor.UserID {
+		if err := s.repo.RecordDenied(ctx, actor, "payout_approve_self_denied", runID); err != nil {
+			return err
+		}
 		return ErrSelfApproval
 	}
 	ok, err := s.repo.ApprovePayoutRun(ctx, run, actor.UserID, bankDocRef)
@@ -218,10 +238,22 @@ func (s *Service) RequestRefund(ctx context.Context, buyerID, voucherID uuid.UUI
 	if voucher.BuyerID != buyerID {
 		return uuid.Nil, ErrNotOwner
 	}
-	if voucher.Status != "active" || voucher.RedemptionsUsed > 0 {
+	if voucher.RedemptionsAllowed < 1 || voucher.RedemptionsUsed >= voucher.RedemptionsAllowed {
+		return uuid.Nil, ErrNotRefundable
+	}
+	if voucher.Status != "active" && voucher.Status != "partially_redeemed" && voucher.Status != "expired" {
+		return uuid.Nil, ErrNotRefundable
+	}
+	// An expired voucher can still be refunded for ninety days; after that its
+	// unused value belongs to the breakage process rather than a refund queue.
+	if voucher.Status == "expired" && s.now().After(voucher.ValidUntil.Add(BreakageWindow)) {
 		return uuid.Nil, ErrNotRefundable
 	}
 	auto := s.now().Sub(voucher.PaidAt) <= RefundWindow
+	voucher.UnitPrice = Remaining(voucher.UnitPrice, voucher.RedemptionsAllowed, voucher.RedemptionsUsed)
+	if voucher.UnitPrice <= 0 {
+		return uuid.Nil, ErrNotRefundable
+	}
 	return s.repo.RequestRefund(ctx, voucher, buyerID, reason, auto)
 }
 
@@ -329,13 +361,39 @@ func (s *Service) MarkPayoutReconciled(ctx context.Context, actor Actor, runID u
 	return nil
 }
 
-// ApproveRefund is the support step for refunds past the 14-day window and for dispute refunds.
+// ApproveRefund is the finance approval step for refunds proposed after the 14-day window or from a dispute.
 func (s *Service) ApproveRefund(ctx context.Context, actor Actor, refundID uuid.UUID) error {
-	if !supportOrFinance(actor.Role) {
+	if !financeApprover(actor.Role) {
+		if err := s.repo.RecordDenied(ctx, actor, "refund_approve_denied", refundID); err != nil {
+			return err
+		}
 		return ErrForbidden
 	}
 	_, err := s.repo.ApproveRefund(ctx, refundID, actor.UserID)
+	if errors.Is(err, ErrForbidden) {
+		if auditErr := s.repo.RecordDenied(ctx, actor, "refund_approve_self_denied", refundID); auditErr != nil {
+			return auditErr
+		}
+	}
 	return err
+}
+
+// ProposeRefund makes support's review explicit; the proposer can never be the finance approver.
+func (s *Service) ProposeRefund(ctx context.Context, actor Actor, refundID uuid.UUID) error {
+	if !supportActor(actor.Role) {
+		if err := s.repo.RecordDenied(ctx, actor, "refund_propose_denied", refundID); err != nil {
+			return err
+		}
+		return ErrForbidden
+	}
+	ok, err := s.repo.ProposeRefund(ctx, refundID, actor.UserID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotPending
+	}
+	return nil
 }
 
 // ResolveDispute decides a dispute. "customer" refunds the buyer (a refund request for support to
@@ -390,7 +448,7 @@ func (s *Service) Queue(ctx context.Context, actor Actor) (Queue, error) {
 }
 
 func supportOrFinance(role string) bool {
-	return role == "support" || role == "finance" || role == "superadmin"
+	return role == "support" || financeApprover(role)
 }
 
 func supportActor(role string) bool {

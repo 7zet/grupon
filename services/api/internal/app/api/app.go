@@ -108,6 +108,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		SecureCookies:     cfg.Environment != "development",
 		TrustProxyHeaders: cfg.TrustProxyHeaders,
 		RefreshTokenTTL:   cfg.Auth.RefreshTokenTTL,
+		AllowedOrigins:    []string{cfg.Auth.WebPublicURL},
+		AllowLocalOrigins: cfg.Environment == "development",
 	})
 
 	commerceService, err := commerceapp.New(cfg, pool, store.NewCatalogRepository(pool), logger)
@@ -204,6 +206,8 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		RealSMS:           cfg.SMS.Provider == "eskiz",
 		SMSDailyCapPerIP:  cfg.SMS.DailyCapPerIP,
 		SMSDailyCapGlobal: cfg.SMS.DailyCapGlobal,
+
+		RateLimitFailClosed: cfg.Environment == "production",
 	}), nil
 }
 

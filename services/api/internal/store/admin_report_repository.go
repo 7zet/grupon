@@ -162,3 +162,48 @@ func writeModerationAudit(ctx context.Context, queries *sqlc.Queries, audit mode
 	}
 	return nil
 }
+
+// FraudSignals returns one page of fraud signals, newest first.
+func (r *AdminReportRepository) FraudSignals(ctx context.Context, page catalog.Page) ([]moderation.FraudSignal, int64, error) {
+	queries := sqlc.New(r.pool)
+	total, err := queries.CountFraudSignals(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count fraud signals: %w", err)
+	}
+	rows, err := queries.ListFraudSignals(ctx, sqlc.ListFraudSignalsParams{
+		PageLimit:  int32(page.Size),
+		PageOffset: int32(page.Offset()),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("list fraud signals: %w", err)
+	}
+	signals := make([]moderation.FraudSignal, 0, len(rows))
+	for _, row := range rows {
+		detail := map[string]any{}
+		if len(row.Detail) > 0 {
+			if err := json.Unmarshal(row.Detail, &detail); err != nil {
+				return nil, 0, fmt.Errorf("decode fraud detail: %w", err)
+			}
+		}
+		signals = append(signals, moderation.FraudSignal{
+			ID:            toUUID(row.ID),
+			Rule:          row.Rule,
+			Status:        row.Status,
+			MerchantID:    toUUID(row.MerchantID),
+			MerchantName:  row.MerchantName.String,
+			SubjectUserID: toUUID(row.SubjectUserID),
+			Detail:        detail,
+			CreatedAt:     row.CreatedAt.Time,
+		})
+	}
+	return signals, total, nil
+}
+
+// Overview returns the platform totals.
+func (r *AdminReportRepository) Overview(ctx context.Context) (moderation.Overview, error) {
+	row, err := sqlc.New(r.pool).AdminOverviewTotals(ctx)
+	if err != nil {
+		return moderation.Overview{}, fmt.Errorf("admin overview: %w", err)
+	}
+	return moderation.Overview{Users: row.Users, Businesses: row.Businesses, ActiveDeals: row.ActiveDeals, OrdersToday: row.OrdersToday}, nil
+}

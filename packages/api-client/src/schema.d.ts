@@ -1220,8 +1220,25 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Support approves a refund request (over 14 days or from a dispute) */
+    /** Finance approves a support-proposed refund (over 14 days or from a dispute) */
     post: operations['approveRefund'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/refunds/{id}/propose': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Support proposes a requested refund for finance approval */
+    post: operations['proposeRefund'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1305,6 +1322,142 @@ export interface paths {
     };
     /** Phase 1 admin API stub */
     get: operations['getAdminStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/deals/{id}/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Take an active deal off sale (owner or manager) */
+    post: operations['pauseMerchantDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/deals/{id}/resume': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Put a paused deal back on sale */
+    post: operations['resumeMerchantDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/merchant/deals/{id}/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive a paused, ended or rejected deal */
+    post: operations['archiveMerchantDeal'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/suspend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Suspend an approved business with a reason */
+    post: operations['suspendMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/terminate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Terminate a business with a reason */
+    post: operations['terminateMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/merchants/{id}/reinstate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Return a suspended business to approved */
+    post: operations['reinstateMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/fraud-signals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fraud signals raised by the rules, newest first */
+    get: operations['listFraudSignals'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Platform totals for the admin overview */
+    get: operations['getAdminOverview'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1708,6 +1861,8 @@ export interface components {
       voucher_valid_until?: string | null;
       max_per_user: number;
       locations: components['schemas']['MerchantLocation'][];
+      /** @description Moderator reason; returned to the owning merchant only */
+      rejection_reason?: string | null;
     };
     DealList: {
       items: components['schemas']['DealSummary'][];
@@ -2050,6 +2205,37 @@ export interface components {
       /** Format: int64 */
       total: number;
     };
+    FraudSignal: {
+      id: components['schemas']['Uuid'];
+      rule: string;
+      /** @enum {string} */
+      status: 'open' | 'closed';
+      merchant_id?: components['schemas']['Uuid'];
+      merchant_name?: string;
+      subject_user_id?: components['schemas']['Uuid'];
+      detail: {
+        [key: string]: unknown;
+      };
+      /** Format: date-time */
+      created_at: string;
+    };
+    FraudSignalPage: {
+      items: components['schemas']['FraudSignal'][];
+      page: number;
+      page_size: number;
+      /** Format: int64 */
+      total: number;
+    };
+    AdminOverview: {
+      /** Format: int64 */
+      users: number;
+      /** Format: int64 */
+      businesses: number;
+      /** Format: int64 */
+      active_deals: number;
+      /** Format: int64 */
+      orders_today: number;
+    };
     ReverseRequest: {
       reason: string;
     };
@@ -2225,7 +2411,7 @@ export interface components {
       bank_account: string;
       responsible_name: string;
       /** @enum {string} */
-      review_status: 'submitted' | 'in_review';
+      review_status: 'submitted' | 'in_review' | 'approved' | 'suspended';
       /** Format: date-time */
       submitted_at: string;
       /** @description Document kinds already uploaded */
@@ -4356,6 +4542,27 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
+  proposeRefund: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Proposed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
   resolveDispute: {
     parameters: {
       query?: never;
@@ -4468,6 +4675,190 @@ export interface operations {
       default: components['responses']['Problem'];
     };
   };
+  pauseMerchantDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  resumeMerchantDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  archiveMerchantDeal: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deal */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Deal'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  suspendMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectMerchantRequest'];
+      };
+    };
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  terminateMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RejectMerchantRequest'];
+      };
+    };
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  reinstateMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components['parameters']['Id'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Done */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listFraudSignals: {
+    parameters: {
+      query?: {
+        page?: components['parameters']['Page'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Signals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FraudSignalPage'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  getAdminOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Totals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminOverview'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
   submitMerchantForReview: {
     parameters: {
       query?: never;
@@ -4492,7 +4883,7 @@ export interface operations {
   listMerchantReviewQueue: {
     parameters: {
       query?: {
-        status?: 'submitted' | 'in_review';
+        status?: 'submitted' | 'in_review' | 'approved' | 'suspended';
       };
       header?: never;
       path?: never;

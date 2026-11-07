@@ -10,6 +10,7 @@ const UUID = '[0-9a-f-]{36}';
 
 const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^me$/ },
+  { method: 'GET', pattern: new RegExp(`^me\\/vouchers\\/${UUID}$`) },
   { method: 'POST', pattern: /^auth\/logout$/ },
   { method: 'POST', pattern: /^orders$/ },
   { method: 'POST', pattern: /^merchants$/ },
@@ -23,6 +24,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: /^admin\/finance\/queue$/ },
   { method: 'POST', pattern: new RegExp(`^admin\\/payouts\\/${UUID}\\/(approve|reconcile)$`) },
   { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/(approve|paid)$`) },
+  { method: 'POST', pattern: new RegExp(`^admin\\/refunds\\/${UUID}\\/propose$`) },
   {
     method: 'POST',
     pattern: new RegExp(
@@ -31,7 +33,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   },
   {
     method: 'POST',
-    pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject)$`),
+    pattern: new RegExp(`^admin\\/merchants\\/${UUID}\\/(start-review|approve|reject|suspend|terminate|reinstate)$`),
   },
   {
     method: 'GET',
@@ -68,7 +70,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: /^merchant\/deals$/ },
   { method: 'PUT', pattern: new RegExp(`^merchant\\/deals\\/${UUID}$`) },
   { method: 'DELETE', pattern: new RegExp(`^merchant\\/deals\\/${UUID}$`) },
-  { method: 'POST', pattern: new RegExp(`^merchant\\/deals\\/${UUID}\\/submit$`) },
+  { method: 'POST', pattern: new RegExp(`^merchant\\/deals\\/${UUID}\\/(submit|pause|resume|archive)$`) },
   { method: 'POST', pattern: /^merchant\/media$/ },
   { method: 'PUT', pattern: new RegExp(`^merchant\\/media\\/${UUID}\\/content$`) },
   { method: 'DELETE', pattern: new RegExp(`^merchant\\/media\\/${UUID}$`) },

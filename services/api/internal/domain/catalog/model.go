@@ -174,6 +174,8 @@ type Deal struct {
 	VoucherValidUntil      *time.Time  `json:"voucher_valid_until,omitempty"`
 	MaxPerUser             int         `json:"max_per_user"`
 	Locations              []Location  `json:"locations"`
+	// RejectionReason is shown to the owning merchant only; public queries leave it empty.
+	RejectionReason *string `json:"rejection_reason,omitempty"`
 }
 
 // Review is a published verified-purchase review.

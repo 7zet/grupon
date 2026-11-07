@@ -86,6 +86,15 @@ func (r *MerchantDealRepository) CategoryAllowsDealCreation(ctx context.Context,
 }
 
 // Insert stores a new deal with its children and audit row.
+// HasDocument reports whether the business has uploaded a document of the given kind.
+func (r *MerchantDealRepository) HasDocument(ctx context.Context, merchantID uuid.UUID, kind string) (bool, error) {
+	has, err := sqlc.New(r.pool).MerchantHasDocument(ctx, sqlc.MerchantHasDocumentParams{MerchantID: toPgUUID(merchantID), Kind: kind})
+	if err != nil {
+		return false, fmt.Errorf("check merchant document: %w", err)
+	}
+	return has, nil
+}
+
 func (r *MerchantDealRepository) Insert(ctx context.Context, merchantID uuid.UUID, write merchant.DealWrite, audit merchant.AuditEntry) (uuid.UUID, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -289,6 +298,7 @@ func (r *MerchantDealRepository) Detail(ctx context.Context, merchantID, dealID 
 	}
 	deal.DealSummary = summaries[0]
 	deal.Locations = locations
+	deal.RejectionReason = textPtr(row.RejectionReason)
 	return deal, nil
 }
 

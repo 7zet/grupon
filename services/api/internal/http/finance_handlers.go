@@ -170,6 +170,18 @@ func (a *FinanceAPI) ApproveRefund(w http.ResponseWriter, r *http.Request, id ge
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (a *FinanceAPI) ProposeRefund(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	actor, _, ok := a.staffActor(w, r)
+	if !ok {
+		return
+	}
+	if err := a.finance.ProposeRefund(r.Context(), actor, uuid.UUID(id)); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (a *FinanceAPI) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {
 	actor, _, ok := a.staffActor(w, r)
 	if !ok {
@@ -329,6 +341,14 @@ func (s apiServer) ApproveRefund(w http.ResponseWriter, r *http.Request, id gen.
 		return
 	}
 	s.ServerInterface.ApproveRefund(w, r, id)
+}
+
+func (s apiServer) ProposeRefund(w http.ResponseWriter, r *http.Request, id gen.Id) {
+	if s.finance != nil {
+		s.finance.ProposeRefund(w, r, id)
+		return
+	}
+	s.ServerInterface.ProposeRefund(w, r, id)
 }
 
 func (s apiServer) ResolveDispute(w http.ResponseWriter, r *http.Request, id gen.Id) {

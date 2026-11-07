@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-11-07 — Stage 4a audit source availability and G1 corrections
+
+`docs/AUDIT.md`, named as the source for the Stage 4a findings, is not present on the branch or
+on `main`. The owner-provided G1 list is therefore treated as the audit scope and each item was
+verified against the code. A-2's wording was inaccurate: the voucher page did not refresh a QR at
+all, although the API correctly supplied `qr_token_expires_at`; the page now refreshes at that
+server-supplied expiry rather than on a fixed client interval. Late and dispute refund requests now
+move through `requested → proposed → approved`: support proposes, a different finance operator
+approves. This requires migration `00029_refund_proposals.sql`.
+
 ## 2026-10-31 — Phase 0 assumptions
 
 1. **Phase boundary.** Phase 0 contains only the foundation. The admin application, full API
@@ -281,3 +291,25 @@
 - AT-06 terms are copied to `order_items.terms_snapshot` at checkout and exposed by order and voucher responses, so later deal edits cannot change the buyer's agreed terms.
 
 - Stage 1 acceptance allows an AT to be green or explicitly deferred with a named stage. AT-08 is deferred as `needs PSP` to Stage 3; AT-17 bank-change protection is deferred to Stage 3.
+
+## Stage 4a G3 — security (2026-11-07)
+
+- `docs/AUDIT.md` and `docs/DEALO-REQUIREMENTS.md` are not in the repository, so G3 items were taken from `docs/FINISH-PLAN.md` and verified against the code directly.
+- C-1: `SMS_PROVIDER=log` is refused unless `DEMO_MODE=true`. C-2: in production `REDIS_URL` is required and a missing or failing limiter refuses the request (`rate_limited`). C-5: `.data` is untracked (it was already in `.gitignore`).
+- C-6: a cookie-authenticated change (non-GET) with an `Origin` outside `WEB_PUBLIC_URL` (or a `Sec-Fetch-Site: cross-site` request without Origin) returns 403 `origin_not_allowed`. Development also accepts localhost and 127.0.0.1. Bearer requests are not checked.
+- A-12: migration `00032_audit_logs_append_only.sql` blocks UPDATE and DELETE on `audit_logs`.
+- C-9: CI has a `security` job: govulncheck, `pnpm audit --prod --audit-level high`, gitleaks. kin-openapi moved to v0.148.0 and `go.mod` pins `toolchain go1.26.10` to clear reported standard-library issues.
+
+- Demo seed: every demo merchant gets a placeholder `price_proof` row with a `demo-` storage key; the API serves a generated PDF marked DEMO for it, so no file has to exist on the host. An approved business may replace its price proof (other documents stay locked).
+- The hosted demo stays on `DEMO_MODE=true` with a non-production `APP_ENV`. Real production needs Redis and `APP_ENV=production` (see DEPLOY.md and HANDOVER.md).
+
+## Superseded lines (2026-11-07, audit section B)
+
+The older entries above are kept as history. Where they disagree with the code, these win:
+
+- The "NOT YET DONE" and "Not done from the review" lists (QR rotation, backup code, multi-use, reconciled status, refund approval, off-hours/distance rules, merchant web pages for staff/payouts/reviews/orders/customers/analytics/settings, campaign calculator, price proof upload, admin finance pages) are all implemented now.
+- Passwords and Google sign-in are removed (migration 00018); sign-in is phone code only.
+- The backup code has 10 characters (`XXXXX-XXXXX`), not 8.
+- `fraud_hold` is set by the burst rule (`redemption_burst`).
+- Merchant `suspended` and `terminated`, and deal `paused` and `archived`, are reachable now (G4).
+- The sign-in code sender `log` runs only with `DEMO_MODE=true`.

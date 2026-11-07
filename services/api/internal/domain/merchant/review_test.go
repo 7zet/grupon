@@ -108,3 +108,29 @@ func TestDealCreationWaitsForApproval(t *testing.T) {
 		t.Fatalf("create before approval: got %v, want ErrMerchantNotApproved", err)
 	}
 }
+
+func TestSuspendReinstateAndTerminate(t *testing.T) {
+	t.Parallel()
+	repo := &memReviewRepo{status: "approved"}
+	service := NewReviewService(repo)
+	ctx := context.Background()
+
+	if err := service.Suspend(ctx, reviewer, business, "  "); err == nil {
+		t.Fatal("suspend without reason succeeded")
+	}
+	if err := service.Suspend(ctx, reviewer, business, "Repeated customer complaints"); err != nil || repo.status != "suspended" {
+		t.Fatalf("suspend: err=%v status=%s", err, repo.status)
+	}
+	if err := service.Reinstate(ctx, reviewer, business); err != nil || repo.status != "approved" {
+		t.Fatalf("reinstate: err=%v status=%s", err, repo.status)
+	}
+	if err := service.Reinstate(ctx, reviewer, business); !errors.Is(err, ErrInvalidTransition) {
+		t.Fatalf("reinstate approved business: got %v", err)
+	}
+	if err := service.Terminate(ctx, reviewer, business, "Fraud confirmed"); err != nil || repo.status != "terminated" {
+		t.Fatalf("terminate: err=%v status=%s", err, repo.status)
+	}
+	if err := service.Suspend(ctx, reviewer, business, "Again after closing"); !errors.Is(err, ErrInvalidTransition) {
+		t.Fatalf("suspend terminated business: got %v", err)
+	}
+}

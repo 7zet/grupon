@@ -16,11 +16,11 @@ func (s *Service) CreateOrder(ctx context.Context, userID uuid.UUID, input Order
 	if err := ValidateIdempotencyKey(input.IdempotencyKey); err != nil {
 		return Order{}, false, err
 	}
-	if len(input.Items) == 0 {
-		return Order{}, false, invalid("items", "required")
-	}
-	if len(input.Items) > MaxOrderItems {
-		return Order{}, false, invalid("items", "too_many")
+	if len(input.Items) != 1 {
+		// Checkout is deliberately a single-option flow. Keeping this rule in the
+		// domain prevents old browser state or a crafted API request from creating
+		// a multi-merchant order.
+		return Order{}, false, invalid("items", "exactly_one_variant_required")
 	}
 	for i, item := range input.Items {
 		field := fmt.Sprintf("items[%d]", i)

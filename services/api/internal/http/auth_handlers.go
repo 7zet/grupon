@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -38,6 +39,10 @@ type AuthOptions struct {
 	TrustProxyHeaders bool
 	// RefreshTokenTTL sets the refresh cookie lifetime.
 	RefreshTokenTTL time.Duration
+	// AllowedOrigins lists the web origins that may send cookie-authenticated changes.
+	AllowedOrigins []string
+	// AllowLocalOrigins also accepts http://localhost and http://127.0.0.1 on any port (development).
+	AllowLocalOrigins bool
 }
 
 // AuthAPI serves the authentication and account endpoints. Handlers only translate HTTP to the
@@ -430,6 +435,10 @@ func (a *AuthAPI) withCredentials(next http.Handler) http.Handler {
 				token = cookie.Value
 			}
 		}
+		if bearerValue(r) == "" && !a.originAllowed(r) {
+			writeProblem(w, r, http.StatusForbidden, "origin_not_allowed", nil, nil)
+			return
+		}
 		if token != "" {
 			r = r.WithContext(context.WithValue(r.Context(), accessTokenKey{}, token))
 		}
@@ -452,4 +461,35 @@ func limitRequestBody(maxBytes int64) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// originAllowed blocks cross-site changes that ride on cookies. Safe methods and requests without
+// cookie credentials pass. A browser always sends Origin on cross-origin changes, so a present
+// Origin must be a known web origin; a request marked cross-site without Origin is refused.
+func (a *AuthAPI) originAllowed(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return true
+	}
+	if _, err := r.Cookie(accessCookieName); err != nil {
+		if _, refreshErr := r.Cookie(refreshCookieName); refreshErr != nil {
+			return true
+		}
+	}
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return r.Header.Get("Sec-Fetch-Site") != "cross-site"
+	}
+	origin = strings.TrimSuffix(origin, "/")
+	for _, allowed := range a.options.AllowedOrigins {
+		if origin == strings.TrimSuffix(allowed, "/") {
+			return true
+		}
+	}
+	if a.options.AllowLocalOrigins {
+		if u, err := url.Parse(origin); err == nil && u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1") {
+			return true
+		}
+	}
+	return false
 }
