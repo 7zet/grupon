@@ -27,7 +27,7 @@ func TestLoadAuthRejectsShortSecret(t *testing.T) {
 func TestLoadAuthDefaultsInDevelopment(t *testing.T) {
 	t.Parallel()
 
-	got, err := load(mapEnvironment(nil))
+	got, err := load(mapEnvironment(map[string]string{"DEMO_MODE": "true"}))
 	if err != nil {
 		t.Fatalf("load() error = %v", err)
 	}

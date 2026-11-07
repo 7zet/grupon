@@ -9,7 +9,7 @@ import (
 func TestLoadUsesDefaults(t *testing.T) {
 	t.Parallel()
 
-	got, err := load(emptyEnvironment)
+	got, err := load(mapEnvironment(map[string]string{"DEMO_MODE": "true"}))
 	if err != nil {
 		t.Fatalf("load() error = %v", err)
 	}
@@ -50,16 +50,18 @@ func TestLoadReadsEnvironment(t *testing.T) {
 	t.Parallel()
 
 	environment := map[string]string{
-		"APP_ENV":                  "test",
-		"API_ADDR":                 "127.0.0.1:9090",
-		"LOG_LEVEL":                "debug",
-		"HTTP_READ_HEADER_TIMEOUT": "1s",
-		"HTTP_READ_TIMEOUT":        "2s",
-		"HTTP_WRITE_TIMEOUT":       "3s",
-		"HTTP_IDLE_TIMEOUT":        "4s",
-		"SHUTDOWN_TIMEOUT":         "5s",
-		"JWT_SECRET":               "test-secret-with-at-least-32-bytes!!",
-		"VOUCHER_QR_SECRET":        "test-qr-secret-with-at-least-32-bytes",
+		"APP_ENV":                     "test",
+		"API_ADDR":                    "127.0.0.1:9090",
+		"LOG_LEVEL":                   "debug",
+		"HTTP_READ_HEADER_TIMEOUT":    "1s",
+		"HTTP_READ_TIMEOUT":           "2s",
+		"HTTP_WRITE_TIMEOUT":          "3s",
+		"HTTP_IDLE_TIMEOUT":           "4s",
+		"SHUTDOWN_TIMEOUT":            "5s",
+		"DEMO_MODE":                   "true",
+		"PAYMENT_MOCK_WEBHOOK_SECRET": "test-mock-webhook-secret-32-bytes!!",
+		"JWT_SECRET":                  "test-secret-with-at-least-32-bytes!!",
+		"VOUCHER_QR_SECRET":           "test-qr-secret-with-at-least-32-bytes",
 	}
 
 	got, err := load(mapEnvironment(environment))
@@ -101,6 +103,8 @@ func TestLoadRejectsInvalidEnvironment(t *testing.T) {
 		"empty address":            {"API_ADDR": ""},
 		"invalid log level":        {"LOG_LEVEL": "verbose"},
 		"unknown SMS provider":     {"SMS_PROVIDER": "pilot-sms"},
+		"log SMS outside demo":     {"SMS_PROVIDER": "log", "DEMO_MODE": "false"},
+		"production without redis": {"APP_ENV": "production", "DATABASE_URL": "postgres://x", "JWT_SECRET": "0123456789abcdef0123456789abcdef", "DEMO_MODE": "true"},
 		"invalid duration":         {"HTTP_READ_TIMEOUT": "eventually"},
 		"non-positive duration":    {"HTTP_IDLE_TIMEOUT": "0s"},
 		"negative shutdown period": {"SHUTDOWN_TIMEOUT": "-1s"},

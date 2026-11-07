@@ -204,6 +204,8 @@ func newIdentityService(cfg config.Config, pool *pgxpool.Pool, limiter identity.
 		RealSMS:           cfg.SMS.Provider == "eskiz",
 		SMSDailyCapPerIP:  cfg.SMS.DailyCapPerIP,
 		SMSDailyCapGlobal: cfg.SMS.DailyCapGlobal,
+
+		RateLimitFailClosed: cfg.Environment == "production",
 	}), nil
 }
 
