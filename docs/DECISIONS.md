@@ -291,3 +291,15 @@ approves. This requires migration `00029_refund_proposals.sql`.
 - AT-06 terms are copied to `order_items.terms_snapshot` at checkout and exposed by order and voucher responses, so later deal edits cannot change the buyer's agreed terms.
 
 - Stage 1 acceptance allows an AT to be green or explicitly deferred with a named stage. AT-08 is deferred as `needs PSP` to Stage 3; AT-17 bank-change protection is deferred to Stage 3.
+
+## Stage 4a G3 — security (2026-11-07)
+
+- `docs/AUDIT.md` and `docs/DEALO-REQUIREMENTS.md` are not in the repository, so G3 items were taken from `docs/FINISH-PLAN.md` and verified against the code directly.
+- C-1: `SMS_PROVIDER=log` is refused unless `DEMO_MODE=true`. C-2: in production `REDIS_URL` is required and a missing or failing limiter refuses the request (`rate_limited`). C-5: `.data` is untracked (it was already in `.gitignore`).
+- C-6: a cookie-authenticated change (non-GET) with an `Origin` outside `WEB_PUBLIC_URL` (or a `Sec-Fetch-Site: cross-site` request without Origin) returns 403 `origin_not_allowed`. Development also accepts localhost and 127.0.0.1. Bearer requests are not checked.
+- A-12: migration `00032_audit_logs_append_only.sql` blocks UPDATE and DELETE on `audit_logs`.
+- C-9: CI has a `security` job: govulncheck, `pnpm audit --prod --audit-level high`, gitleaks. kin-openapi moved to v0.148.0 and `go.mod` pins `toolchain go1.26.10` to clear reported standard-library issues.
+
+### Open questions (owner)
+
+- Switching the live API to `APP_ENV=production` needs a Redis instance (Render Key Value or Upstash). Until then it stays in development mode.

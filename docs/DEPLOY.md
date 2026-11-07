@@ -27,6 +27,15 @@ Leave `SMS_PROVIDER=log` for the normal demo: sign-in codes are logged and shown
 `SMS_DAILY_CAP_PER_IP`, and `SMS_DAILY_CAP_GLOBAL`. `ESKIZ_BASE_URL` is optional and defaults to
 the official Eskiz API URL. Credentials come from the Eskiz account; keep them out of Git.
 
+## Environment mode (`APP_ENV`)
+
+The live API currently logs `environment: development` because `APP_ENV` is not set on Render. Set
+`APP_ENV=production` on Render once these are in place, or the API refuses to start:
+`DATABASE_URL`, `JWT_SECRET`, `VOUCHER_QR_SECRET`, `REDIS_URL` (OTP rate limits fail closed without
+it), and either a real `SMS_PROVIDER` or `DEMO_MODE=true` (`SMS_PROVIDER=log` is accepted only with
+`DEMO_MODE=true`). Also set `WEB_PUBLIC_URL` to the exact Vercel origin: cookie-authenticated changes
+from any other browser origin are refused with `origin_not_allowed`.
+
 Probe `GET /healthz` for process liveness and `GET /readyz` for database readiness. Put the API and
 web behind HTTPS; the merchant scanner needs HTTPS for camera access on real phones.
 
