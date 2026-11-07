@@ -110,3 +110,10 @@ func (r *IdentityRepository) LatestIssuedPhoneOTP(ctx context.Context, phone str
 		CreatedAt: row.CreatedAt.Time,
 	}, nil
 }
+
+func (r *IdentityRepository) IncrementSMSDailyUsage(ctx context.Context, day time.Time, scope, key string) (int, error) {
+	count, err := r.queries.IncrementSMSDailyUsage(ctx, sqlc.IncrementSMSDailyUsageParams{
+		Day: pgtype.Date{Time: day, Valid: true}, Scope: scope, Key: key,
+	})
+	return int(count), err
+}

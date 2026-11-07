@@ -60,6 +60,8 @@ func (a *AuthAPI) phoneFail(w http.ResponseWriter, r *http.Request, err error) {
 		writeProblem(w, r, http.StatusTooManyRequests, "otp_attempts_exceeded", nil, nil)
 	case errors.Is(err, identity.ErrOTPUnavailable):
 		writeProblem(w, r, http.StatusServiceUnavailable, "otp_unavailable", nil, nil)
+	case errors.Is(err, identity.ErrSMSDailyCap):
+		writeProblem(w, r, http.StatusTooManyRequests, "sms_daily_cap_reached", nil, nil)
 	default:
 		a.fail(w, r, err)
 	}

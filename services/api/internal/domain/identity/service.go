@@ -27,7 +27,10 @@ type Config struct {
 	// automated sign-ins can repeat; other environments keep the full minute.
 	OTPCooldown time.Duration
 	// BrandName is substituted into email subjects.
-	BrandName string
+	BrandName         string
+	RealSMS           bool
+	SMSDailyCapPerIP  int
+	SMSDailyCapGlobal int
 }
 
 // Dependencies are the ports the service needs.

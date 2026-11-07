@@ -104,6 +104,7 @@ type Querier interface {
 	// PRD 12.1: vouchers scanned by a staff member during a redemption burst wait for fraud review.
 	HoldBurstVouchers(ctx context.Context, arg HoldBurstVouchersParams) (int64, error)
 	IncrementPhoneOTPAttempts(ctx context.Context, id pgtype.UUID) error
+	IncrementSMSDailyUsage(ctx context.Context, arg IncrementSMSDailyUsageParams) (int32, error)
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) error
 	InsertBuyerNotification(ctx context.Context, arg InsertBuyerNotificationParams) error
 	InsertDeal(ctx context.Context, arg InsertDealParams) (pgtype.UUID, error)

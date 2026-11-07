@@ -99,6 +99,26 @@ func (q *Queries) IncrementPhoneOTPAttempts(ctx context.Context, id pgtype.UUID)
 	return err
 }
 
+const incrementSMSDailyUsage = `-- name: IncrementSMSDailyUsage :one
+INSERT INTO sms_daily_usage (day, scope, key, count)
+VALUES ($1, $2, $3, 1)
+ON CONFLICT (day, scope, key) DO UPDATE SET count = sms_daily_usage.count + 1
+RETURNING count
+`
+
+type IncrementSMSDailyUsageParams struct {
+	Day   pgtype.Date `json:"day"`
+	Scope string      `json:"scope"`
+	Key   string      `json:"key"`
+}
+
+func (q *Queries) IncrementSMSDailyUsage(ctx context.Context, arg IncrementSMSDailyUsageParams) (int32, error) {
+	row := q.db.QueryRow(ctx, incrementSMSDailyUsage, arg.Day, arg.Scope, arg.Key)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
 const insertPhoneOTP = `-- name: InsertPhoneOTP :exec
 INSERT INTO phone_otps (phone, code_hash, expires_at)
 VALUES ($1, $2, $3)

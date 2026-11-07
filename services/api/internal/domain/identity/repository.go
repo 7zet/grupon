@@ -35,6 +35,7 @@ type Repository interface {
 	LatestIssuedPhoneOTP(ctx context.Context, phone string) (PhoneOTP, error)
 	IncrementPhoneOTPAttempts(ctx context.Context, id uuid.UUID) error
 	ConsumePhoneOTP(ctx context.Context, id uuid.UUID) (bool, error)
+	IncrementSMSDailyUsage(ctx context.Context, day time.Time, scope, key string) (int, error)
 
 	CreateTwoFactorChallenge(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
 	GetTwoFactorChallenge(ctx context.Context, tokenHash string) (uuid.UUID, error)

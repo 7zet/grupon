@@ -26,6 +26,13 @@ func (c *otpClock) Now() time.Time { return c.now }
 
 func otpService(t *testing.T, clk *otpClock, sender identity.CodeSender, cooldown time.Duration) *identity.Service {
 	t.Helper()
+	return otpServiceWithConfig(t, clk, sender, identity.Config{
+		AccessTokenTTL: 15 * time.Minute, RefreshTokenTTL: 24 * time.Hour, OTPEcho: true, OTPCooldown: cooldown,
+	})
+}
+
+func otpServiceWithConfig(t *testing.T, clk *otpClock, sender identity.CodeSender, cfg identity.Config) *identity.Service {
+	t.Helper()
 	issuer, err := identity.NewTokenIssuer(otpSecret, 15*time.Minute, clk.Now)
 	if err != nil {
 		t.Fatal(err)
@@ -36,12 +43,7 @@ func otpService(t *testing.T, clk *otpClock, sender identity.CodeSender, cooldow
 		Tokens:     issuer,
 		CodeSender: sender,
 		Now:        clk.Now,
-	}, identity.Config{
-		AccessTokenTTL:  15 * time.Minute,
-		RefreshTokenTTL: 24 * time.Hour,
-		OTPEcho:         true,
-		OTPCooldown:     cooldown,
-	})
+	}, cfg)
 }
 
 var codePattern = regexp.MustCompile(`^[0-9]{6}$`)
@@ -125,5 +127,19 @@ func TestRejectsNonUzbekPhones(t *testing.T) {
 		if _, err := svc.RequestCode(context.Background(), identity.RequestMeta{}, phone); !errors.Is(err, identity.ErrInvalidPhone) {
 			t.Fatalf("%s: got %v", phone, err)
 		}
+	}
+}
+
+func TestRealSMSDailyCaps(t *testing.T) {
+	clk := &otpClock{now: time.Date(2026, 6, 1, 9, 0, 0, 0, time.UTC)}
+	svc := otpServiceWithConfig(t, clk, &capturedSender{}, identity.Config{AccessTokenTTL: 15 * time.Minute, RefreshTokenTTL: time.Hour, RealSMS: true, SMSDailyCapPerIP: 1, SMSDailyCapGlobal: 2})
+	if _, err := svc.RequestCode(context.Background(), identity.RequestMeta{IP: "203.0.113.55"}, "+998901111111"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.RequestCode(context.Background(), identity.RequestMeta{IP: "203.0.113.55"}, "+998902222222"); !errors.Is(err, identity.ErrSMSDailyCap) {
+		t.Fatalf("per-IP cap: %v", err)
+	}
+	if _, err := svc.RequestCode(context.Background(), identity.RequestMeta{IP: "203.0.113.56"}, "+998903333333"); !errors.Is(err, identity.ErrSMSDailyCap) {
+		t.Fatalf("global cap: %v", err)
 	}
 }

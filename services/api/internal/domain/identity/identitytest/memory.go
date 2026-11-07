@@ -30,6 +30,7 @@ type Repository struct {
 	refresh    map[string]identity.RefreshToken
 	authTokens map[string]*authToken
 	phoneCodes []*phoneCode
+	smsUsage map[string]int
 	twoFactor  map[uuid.UUID]identity.TwoFactorState
 	challenges map[string]*authToken
 	recovery   map[uuid.UUID]map[string]bool

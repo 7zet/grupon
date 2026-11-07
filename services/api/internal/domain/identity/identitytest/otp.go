@@ -19,6 +19,17 @@ type phoneCode struct {
 	consumed  bool
 }
 
+func (r *Repository) IncrementSMSDailyUsage(_ context.Context, _ time.Time, scope, key string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.smsUsage == nil {
+		r.smsUsage = map[string]int{}
+	}
+	usageKey := scope + ":" + key
+	r.smsUsage[usageKey]++
+	return r.smsUsage[usageKey], nil
+}
+
 func (r *Repository) GetUserByPhone(_ context.Context, phone string) (identity.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

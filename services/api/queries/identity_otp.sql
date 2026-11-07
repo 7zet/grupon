@@ -28,3 +28,9 @@ SELECT * FROM phone_otps
 WHERE phone = sqlc.arg(phone)
 ORDER BY created_at DESC, id DESC
 LIMIT 1;
+
+-- name: IncrementSMSDailyUsage :one
+INSERT INTO sms_daily_usage (day, scope, key, count)
+VALUES (sqlc.arg(day), sqlc.arg(scope), sqlc.arg(key), 1)
+ON CONFLICT (day, scope, key) DO UPDATE SET count = sms_daily_usage.count + 1
+RETURNING count;

@@ -30,13 +30,14 @@ func NewEskizSender(base, email, password, sender string) (*EskizSender, error) 
 	return &EskizSender{strings.TrimSuffix(base, "/"), email, password, sender, &http.Client{Timeout: 10 * time.Second}, sync.Mutex{}, ""}, nil
 }
 func (s *EskizSender) SendCode(ctx context.Context, phone, code string) error {
-	if err := s.send(ctx, phone, code); err != nil && strings.Contains(err.Error(), "401") {
+	err := s.send(ctx, phone, code)
+	if err != nil && strings.Contains(err.Error(), "401") {
 		s.mu.Lock()
 		s.token = ""
 		s.mu.Unlock()
 		return s.send(ctx, phone, code)
 	}
-	return nil
+	return err
 }
 func (s *EskizSender) send(ctx context.Context, phone, code string) error {
 	token, err := s.auth(ctx)
