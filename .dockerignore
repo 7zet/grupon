@@ -1,7 +1,7 @@
 .git
 .env
 .env.*
-!.env.production.example
+!.env.local.example
 node_modules
 **/node_modules
 .next

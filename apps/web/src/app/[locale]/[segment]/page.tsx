@@ -1,5 +1,5 @@
 import { isCategorySlug, isCitySlug, type Locale } from '@grupon/config';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ListingPage } from '@/components/listing-page';
 export default async function SegmentPage({
   params,
@@ -10,6 +10,6 @@ export default async function SegmentPage({
 }) {
   const { locale, segment } = await params;
   if (isCategorySlug(segment)) redirect(`/${locale}/tashkent/${segment}`);
-  if (!isCitySlug(segment)) redirect(`/${locale}`);
+  if (!isCitySlug(segment)) notFound();
   return <ListingPage locale={locale} citySlug={segment} searchParams={await searchParams} />;
 }

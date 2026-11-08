@@ -1,9 +1,9 @@
 import type { Locale } from '@grupon/config';
 import { ArrowRight, BarChart3, QrCode, Store } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 export default async function MerchantLanding({ params }: { params: Promise<{ locale: Locale }> }) {
-  await params;
+  setRequestLocale((await params).locale);
   const t = await getTranslations('Merchant');
   const steps = [
     { icon: Store, title: 'step1Title', text: 'step1Text' },

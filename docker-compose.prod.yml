@@ -1,4 +1,4 @@
-# Portable production composition. Copy .env.production.example to a private .env.production;
+# Portable production composition. Copy .env.local.example to a private .env.production;
 # never commit real secrets. Run migrations once before bringing up api/worker/web.
 services:
   postgres:

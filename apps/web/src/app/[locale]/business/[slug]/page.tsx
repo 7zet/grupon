@@ -7,6 +7,14 @@ import { notFound } from 'next/navigation';
 import { DealGrid } from '@/components/deal-grid';
 import { MapView } from '@/components/map-view';
 import { getCurrency } from '@/lib/preferences';
+/** Public catalog pages are cached and rebuilt at most once a minute. */
+export const revalidate = 60;
+
+/** No page is built ahead of time; each one is rendered on first visit, then cached. */
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function BusinessPage({
   params,
 }: {

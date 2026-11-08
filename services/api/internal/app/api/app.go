@@ -108,7 +108,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		SecureCookies:     cfg.Environment != "development",
 		TrustProxyHeaders: cfg.TrustProxyHeaders,
 		RefreshTokenTTL:   cfg.Auth.RefreshTokenTTL,
-		AllowedOrigins:    []string{cfg.Auth.WebPublicURL},
+		AllowedOrigins:    cfg.Auth.AllowedOrigins,
 		AllowLocalOrigins: cfg.Environment == "development",
 	})
 

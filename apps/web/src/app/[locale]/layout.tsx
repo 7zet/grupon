@@ -1,11 +1,10 @@
 import { publicApi } from '@grupon/api-client';
-import { brandConfig, isCurrency, isLocale, locales } from '@grupon/config';
+import { brandConfig, isLocale, type Currency } from '@grupon/config';
 import { BaseLayout, appFont } from '@grupon/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
 import type { PropsWithChildren } from 'react';
 
 import '../globals.css';
@@ -15,10 +14,6 @@ import { SiteShell } from '@/components/site-shell';
 type LocaleLayoutProps = PropsWithChildren<{
   params: Promise<{ locale: string }>;
 }>;
-
-export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
 
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
   const { locale } = await params;
@@ -31,7 +26,7 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
 
   return {
     description: t('description'),
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+    metadataBase: new URL(process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
     title: t('title', { brand: brandConfig.name }),
   };
 }
@@ -45,9 +40,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const cookieStore = await cookies();
-  const rawCurrency = cookieStore.get('currency')?.value;
-  const currency = isCurrency(rawCurrency) ? rawCurrency : 'UZS';
+  const currency: Currency = 'UZS';
   const config = await publicApi.config();
 
   return (

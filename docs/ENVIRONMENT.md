@@ -1,6 +1,6 @@
 # Environment variables
 
-Plain-language reference for every setting. The API reads its settings at start-up and refuses to start when a required value is missing or weak. Copy `.env.example` to `.env` for local development only.
+Plain-language reference for every setting. The API reads its settings at start-up and refuses to start when a required value is missing or weak. Copy `.env.local.example` to `.env.local` (git-ignored); `scripts/demo.ps1` does this on its first run and passes the values to the API and the web app.
 
 ## API (`services/api`)
 
@@ -21,6 +21,8 @@ Plain-language reference for every setting. The API reads its settings at start-
 | `MANUAL_PAYMENT_HOLD`                                                                         | no                           | `24h`                         | Reservation hold used for manual-payment attempts.                               |
 | `MANUAL_PAYMENT_INSTRUCTIONS`                                                                 | when manual mode is on       | support message               | Instructions returned to the buyer for a manual payment.                         |
 | `SMS_PROVIDER` | no | `log` | `log` (codes in the log) is accepted only with `DEMO_MODE=true`; `eskiz` sends real SMS. |
+| `SITE_URL`                                                                              | yes                          | `http://localhost:3000`       | Public address of the site (http://localhost:3000, or the ngrok https URL). Overrides `WEB_PUBLIC_URL`.                      |
+| `ALLOWED_ORIGINS`                                                                              | no                           | empty       | Comma-separated extra web origins allowed to send cookie-authenticated changes.                      |
 | `WEB_PUBLIC_URL`                                                                              | yes                          | `http://localhost:3000`       | Public address of the web app, used in links and redirects.                      |
 | `SUPPORT_PHONE` / `SUPPORT_TELEGRAM` / `SUPPORT_EMAIL`                                        | no                           | empty                         | Public support contacts rendered in the web footer, Help page, and voucher page. Set these on the web deployment; empty channels stay hidden. |
 | `WEB_REVALIDATE_URL`                                                                          | yes                          | none                          | Web endpoint that clears cached pages.                                           |
@@ -59,7 +61,7 @@ Run `migrate` once per release before starting the new API and worker. `seed` is
 ## Secrets checklist
 
 - Generate `JWT_SECRET`, `VOUCHER_QR_SECRET`, `PAYMENT_MOCK_WEBHOOK_SECRET`, `WEB_REVALIDATE_SECRET` and `INTERNAL_API_TOKEN` separately with a cryptographic random generator.
-- Never reuse the `.env.example` values; they are public.
+- Never reuse the `.env.local.example` values; they are public.
 - Keep secrets in the platform's secret store, not in the image.
 
 ## Test accounts (development seed)

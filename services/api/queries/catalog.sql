@@ -111,13 +111,15 @@ WITH candidates AS (
           WHERE dl.deal_id = d.id AND ci.slug = sqlc.narg('city')::text
         ))
     AND (sqlc.narg('query')::text IS NULL OR (
-          d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
-          OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent(sqlc.narg('query')::text))
-          OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent(sqlc.narg('query')::text))
+          d.title_uz_search @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
+          OR d.title_ru_search @@ websearch_to_tsquery('russian', immutable_unaccent(sqlc.narg('query')::text))
+          OR d.title_en_search @@ websearch_to_tsquery('english', immutable_unaccent(sqlc.narg('query')::text))
           OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
                immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
           OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
                immutable_unaccent(m.display_name)) >= 0.35
+          OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
+             @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
         ))
     AND (sqlc.narg('min_price')::bigint IS NULL OR pr.min_price >= sqlc.narg('min_price')::bigint)
     AND (sqlc.narg('max_price')::bigint IS NULL OR pr.min_price <= sqlc.narg('max_price')::bigint)
@@ -167,13 +169,15 @@ WHERE d.deleted_at IS NULL
         WHERE dl.deal_id = d.id AND ci.slug = sqlc.narg('city')::text
       ))
   AND (sqlc.narg('query')::text IS NULL OR (
-        d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
-        OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent(sqlc.narg('query')::text))
-        OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent(sqlc.narg('query')::text))
+        d.title_uz_search @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
+        OR d.title_ru_search @@ websearch_to_tsquery('russian', immutable_unaccent(sqlc.narg('query')::text))
+        OR d.title_en_search @@ websearch_to_tsquery('english', immutable_unaccent(sqlc.narg('query')::text))
         OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
              immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
         OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
              immutable_unaccent(m.display_name)) >= 0.35
+        OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
+           @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
       ))
   AND (sqlc.narg('min_price')::bigint IS NULL OR pr.min_price >= sqlc.narg('min_price')::bigint)
   AND (sqlc.narg('max_price')::bigint IS NULL OR pr.min_price <= sqlc.narg('max_price')::bigint)

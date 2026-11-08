@@ -32,7 +32,7 @@ export function DealCard({
       transition={{ duration: 0.18 }}
       className="group relative h-full overflow-hidden rounded-card-ui border bg-surface hover:shadow-floating-ui"
     >
-      <Link className="flex h-full flex-col" href={`/deal/${deal.slug}`}>
+      <Link className="flex h-full flex-col" href={`/deal/${deal.slug}`} prefetch={false}>
         <div className="relative aspect-[4/3] overflow-hidden bg-brand-tint">
           <Image
             className="object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"

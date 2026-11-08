@@ -9,12 +9,14 @@ A **demo** of a local-deals voucher marketplace for Tashkent, based on the Dealo
 (`docs/DEALO-REQUIREMENTS.md`). No real users, no real money, no legal work.
 Stack: Go API + worker (`services/api`), Next.js web (`apps/web`, buyer + `/merchant/*` + `/admin/*`),
 PostgreSQL, OpenAPI contract in `packages/api-spec/openapi.yaml`.
-Live: web on Vercel, API on Render, DB on Neon. **Render and Vercel auto-deploy from `main`.**
+**No hosting (decision of November 2026).** The demo runs on the owner's Windows PC (localhost) and is shared
+when needed through one ngrok HTTPS tunnel to the web app. Anything in this file that mentions Vercel, Render or
+Neon is superseded by section 6.
 
 Decisions already made (do NOT reopen them):
 - Telegram bot is dropped (WIP archived at tag `archive/telegram-wip`). Only `SUPPORT_TELEGRAM`
   contact and the merchant Telegram profile link remain.
-- No one-click demo login, no role switcher. Demo accounts list on the login page stays as it is.
+- No one-click demo login, no role switcher. The login page no longer lists demo accounts (docs/DEMO.md does).
 - Real PSP, fiscal, MXIK/VAT, bank-change protection, legal gates: not included (interfaces only).
 - Docker files are optional and unverified.
 - SMS: `SMS_PROVIDER=log` by default, Eskiz adapter exists.
@@ -40,10 +42,10 @@ Decisions already made (do NOT reopen them):
   (`go test ./...` with TEST_DATABASE_URL, `go vet ./...`, web lint, typecheck, unit tests, Playwright)
   and wait for CI to be green (`gh run watch`).
 - Merge to `main` ONLY at the stage close points below, ONLY with CI green
-  (main = live site).
-- Forbidden: force-push, rewriting history, deleting branches or tags, touching the production
-  database, using real secrets, calling the live site with write requests.
-  **Do not run migrations/bootstrap against Neon — the owner does that.**
+  (main is the release line).
+- Forbidden: force-push, rewriting history, deleting branches or tags, touching any remote
+  database, using real secrets. You MAY run migrations and bootstrap against the LOCAL database
+  (`C:\dev\grupon-pgdata`, see `docs/ENVIRONMENT.md`).
 - Every new migration: list it in the stage report.
 - If a task needs a decision from the owner (accounts, money, legal, design taste) —
   write it in `docs/DECISIONS.md` under "Open questions", skip it, continue.
@@ -127,7 +129,7 @@ Findings from a live review of the site:
 - [ ] **G. Copy check:** no untranslated keys, no English text on uz/ru pages, no dead
   strings (e.g. "shipping"). Add a test that fails on missing keys in any locale.
 - [ ] **Stage close 4b:** full checks, CI green → merge into main, tag `v0.8`, push.
-  Report migrations (if any) and tell the owner to re-run bootstrap on Neon (seed changed).
+  Report migrations (if any). (Done, v0.8.)
 
 ## 5. Stage 5 — handover (new branch `feat/stage-5` from main)
 
@@ -136,7 +138,7 @@ Findings from a live review of the site:
 - [ ] **Docs (plain language, short):**
   - `README.md`: what it is, how to run locally (Windows-friendly), demo link
   - `docs/ARCHITECTURE.md`: how the parts work together, main flows
-  - `docs/DEPLOY.md`: Vercel + Render + Neon step by step, env table, how to run bootstrap
+  - (hosting guide dropped: see section 6; `docs/SHARE.md` explains ngrok sharing)
   - `docs/DEMO.md`: every demo account (role, business, phone), admin 2FA note,
     a 10-minute demo script (buyer → cashier redeem → "Siz emasmisiz?" → admin)
   - `docs/HANDOVER.md`: what is included, what is not (and why), known limitations,
@@ -148,3 +150,10 @@ Findings from a live review of the site:
 - [ ] **Stage close 5:** merge into main, tag `v1.0`, push. Final report (max 15 lines):
   what was delivered, final counts, migrations to run on Neon, env vars to set,
   and the list of "Open questions" for the owner.
+
+## 6. Local demo, no hosting (branch `feat/local-demo` from main) — replaces all hosting parts
+
+Runs on localhost; `scripts/demo.ps1` starts everything; `scripts/share.ps1` helps with ngrok.
+Site URL and allowed origins come from env (`SITE_URL`, `ALLOWED_ORIGINS`), default localhost.
+Old hosting docs live in `docs/archive/`. Stop before merging to main and report.
+

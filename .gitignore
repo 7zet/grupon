@@ -20,6 +20,7 @@ playwright-report/
 .env
 .env.*
 !.env.example
+!.env.local.example
 
 # Runtime data
 tmp/
@@ -43,3 +44,4 @@ services/api/.data/
 # Owner and generated browser-test artifacts live outside the repository.
 /Grupon_hisobot.pdf
 /docs/screenshots/*.png
+bin/
