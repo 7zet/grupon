@@ -1,5 +1,5 @@
 import { publicApi } from '@grupon/api-client';
-import { brandConfig, isLocale, locales, type Currency } from '@grupon/config';
+import { brandConfig, isLocale, type Currency } from '@grupon/config';
 import { BaseLayout, appFont } from '@grupon/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
@@ -15,8 +15,9 @@ type LocaleLayoutProps = PropsWithChildren<{
   params: Promise<{ locale: string }>;
 }>;
 
+/** Nothing is built ahead of time, so `next build` does not need the API. Pages are rendered on first visit and cached. */
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
+  return [];
 }
 
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
