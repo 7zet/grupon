@@ -19,6 +19,11 @@ development factor for a hosted demo.
 | Shahnoza — moliya tasdiqlovchi | Finance | `+998910000014` | Second finance identity for four-eyes approval. |
 | Saida — superadmin | Superadmin | `+998900000004` | Administrative audit, moderation and demo-wide oversight. |
 
+Every business also has its own staff: phone `+998912MMRPP`, where `MM` is the business number
+(`01`-`30`, the `seed-merchant-MM` slug) and `R` is `1` owner, `2` manager, `3` cashier. For
+example business 27 (Dolphin Swim Club): owner `+99891227100`, manager `+99891227200`, cashier
+`+99891227300`. The login page does not list demo accounts; this table is the only list.
+
 The extra seeded owner and administrator accounts exist for parallel automated tests;
 they are not part of the recommended walkthrough.
 

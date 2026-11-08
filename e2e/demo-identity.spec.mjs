@@ -2,9 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('buyer stays signed in when opening the account menu', async ({ page }) => {
   await page.goto('/uz/login');
-  await expect(page.getByText('Demo akkauntlar')).toBeVisible();
-  await page.getByRole('button', { name: /Xaridor.*998900000001/ }).click();
-  await expect(page.getByLabel(/Telefon raqami/)).toHaveValue('900000001');
+  await expect(page.getByText('Demo akkauntlar')).toHaveCount(0);
+  await page.getByLabel(/Telefon raqami/).fill('900000001');
   await page.getByRole('button', { name: /Kod yuborish/ }).click();
   const hint = page.getByText(/Test rejimi kodi: \d{6}/);
   await expect(hint).toBeVisible();
