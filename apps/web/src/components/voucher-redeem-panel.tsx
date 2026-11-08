@@ -11,7 +11,7 @@ import { pickText } from '@/lib/localized';
 type Voucher = components['schemas']['Voucher'];
 type Location = { id: string; label: string };
 
-const inputClass = 'rounded-control-ui border border-border bg-surface px-4 py-3 text-ink text-lg';
+const inputClass = 'w-full min-w-0 rounded-control-ui border border-border bg-surface px-4 py-3 text-ink text-lg';
 
 /** Problem codes the counter needs to explain. Anything else shows the generic message. */
 const PROBLEM_KEYS = [
@@ -132,8 +132,8 @@ export function VoucherRedeemPanel({
   const status = voucher?.status;
   if (!online) return <section role="alert" className="max-w-xl rounded-card border border-warning bg-warning-tint p-5 text-ink"><h2 className="font-semibold">{t('internetNeededTitle')}</h2><p className="mt-2">{t('internetNeededBody')}</p></section>;
   return (
-    <div className="grid gap-6">
-      <section className="grid max-w-xl gap-3">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
+      <section className="grid min-w-0 max-w-xl grid-cols-[minmax(0,1fr)] gap-3">
         <label className="grid gap-1 text-sm">
           {t('locationLabel')}
           <select

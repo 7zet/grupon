@@ -10,7 +10,7 @@ export default async function MediaPage({ params }: { params: Promise<{ locale: 
     accountGet<{ items: MediaAsset[] }>('/merchant/media'),
   );
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('mediaTitle')}</h1>
       <MerchantMediaLibrary assets={list.items} />
     </div>

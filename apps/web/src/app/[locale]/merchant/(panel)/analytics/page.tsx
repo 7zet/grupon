@@ -36,7 +36,7 @@ export default async function AnalyticsPage({
   const percent = Math.round(data.redemption_rate * 100);
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('analyticsTitle')}</h1>
       <form className="flex flex-wrap items-end gap-4 text-sm" method="get">
         <label className="grid gap-2 font-semibold">

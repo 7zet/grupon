@@ -21,7 +21,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ locale
   const reports = await accountGet<ReportPage>('/admin/review-reports');
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('title')}</h1>
       {reports.items.length === 0 ? (
         <p className="text-ink-muted">{t('empty')}</p>

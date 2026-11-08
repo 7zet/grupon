@@ -23,10 +23,10 @@ export default async function RedeemPage({ params }: { params: Promise<{ locale:
     label: `${pickText(location.city.name, locale)} — ${location.address}`,
   }));
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('title')}</h1>
       <VoucherRedeemPanel locations={locations} locale={locale} />
-      <section className="grid gap-4">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <h2 className="text-lead font-semibold">{t('historyTitle')}</h2>
         {history.items.length === 0 ? (
           <p className="text-ink-muted">{t('historyEmpty')}</p>

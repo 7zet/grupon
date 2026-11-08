@@ -7,7 +7,7 @@ export default async function CalculatorPage({ params }: { params: Promise<{ loc
   const { locale } = await params;
   const t = await getTranslations('MerchantPanel');
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('calcTitle')}</h1>
       <CampaignCalculator locale={locale as 'uz' | 'ru' | 'en'} />
     </div>

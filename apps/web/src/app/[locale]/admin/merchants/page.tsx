@@ -32,7 +32,7 @@ export default async function MerchantReviewQueuePage({
   const queue = await accountGet<ReviewList>(tab === 'queue' ? '/admin/merchants' : `/admin/merchants?status=${tab}`);
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('title')}</h1>
       <nav className="flex flex-wrap gap-2 text-small">
         {TABS.map((item) => (

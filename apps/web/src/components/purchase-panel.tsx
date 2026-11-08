@@ -30,7 +30,7 @@ export function PurchasePanel({
   const cartLine = () => ({
     optionId: option.id,
     quantity,
-    title: localized(option.title, locale),
+    title: `${localized(deal.title, locale)} · ${localized(option.title, locale)}`,
     dealSlug: deal.slug,
     unitPrice: option.deal_price.amount,
     originalPrice: option.original_price.amount,

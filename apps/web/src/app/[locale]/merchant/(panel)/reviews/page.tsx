@@ -18,7 +18,7 @@ export default async function ReviewsPage({ params }: { params: Promise<{ locale
     accountGet<ReviewList>('/merchant/reviews'),
   );
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('reviewsTitle')}</h1>
       {list.items.length === 0 ? (
         <p className="text-ink-muted">{t('reviewsEmpty')}</p>

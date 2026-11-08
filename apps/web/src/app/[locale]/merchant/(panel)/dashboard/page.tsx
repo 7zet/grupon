@@ -25,7 +25,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   ];
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('overviewTitle')}</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map(({ label, metric, format: render }) => (
