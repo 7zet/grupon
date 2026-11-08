@@ -103,7 +103,9 @@
     "validity": "Voucher validity",
     "booking": "Advance booking required",
     "addSuccess": "Added to your cart",
-    "paymentNote": "Payment is charged in so'm."
+    "paymentNote": "Payment is charged in so'm.",
+    "validityDays": "{count, plural, one {# day} other {# days}}",
+    "closed": "Closed"
   },
   "Coupons": {
     "title": "Coupons",

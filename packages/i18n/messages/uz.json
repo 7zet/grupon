@@ -103,7 +103,9 @@
     "validity": "Kupon amal qilish muddati",
     "booking": "Oldindan band qilish kerak",
     "addSuccess": "Savatga qo‘shildi",
-    "paymentNote": "To‘lov so‘mda yechiladi."
+    "paymentNote": "To‘lov so‘mda yechiladi.",
+    "validityDays": "{count} kun",
+    "closed": "Dam olish kuni"
   },
   "Coupons": {
     "title": "Kuponlar",

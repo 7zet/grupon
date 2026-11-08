@@ -1,3 +1,4 @@
+import { hoursLines } from '@/lib/hours';
 import { publicApi } from '@grupon/api-client';
 import { localized, type Locale } from '@grupon/config';
 import { Check, Clock3, MapPin, Star } from 'lucide-react';
@@ -98,13 +99,15 @@ export default async function DealPage({ params }: Props) {
               <h1 className="mt-1 text-subtitle font-bold leading-tight sm:text-title-small">
                 {localized(deal.title, locale)}
               </h1>
-              <a
-                className="mt-2 inline-flex items-center gap-1 text-small text-ink-muted"
-                href="#reviews"
-              >
-                <Star className="size-4 fill-rating text-rating" />
-                {deal.rating_avg.toFixed(1)} ({deal.rating_count})
-              </a>
+              {deal.rating_count > 0 && (
+                <a
+                  className="mt-2 inline-flex items-center gap-1 text-small text-ink-muted"
+                  href="#reviews"
+                >
+                  <Star className="size-4 fill-rating text-rating" />
+                  {deal.rating_avg.toFixed(1)} ({deal.rating_count})
+                </a>
+              )}
             </div>
             <div className="mt-4 lg:hidden" id="purchase-panel">
               <PurchasePanel deal={deal} locale={locale} currency={currency} />
@@ -140,7 +143,12 @@ export default async function DealPage({ params }: Props) {
                 <p className="mt-3 text-ink-muted">{localized(deal.terms, locale)}</p>
                 <p className="mt-3 flex items-center gap-2 text-small">
                   <Clock3 className="size-4 text-brand" />
-                  {t('validity')}: {deal.voucher_valid_days}
+                  {t('validity')}:{' '}
+                  {deal.voucher_valid_days
+                    ? t('validityDays', { count: deal.voucher_valid_days })
+                    : deal.voucher_valid_until
+                      ? new Date(deal.voucher_valid_until).toLocaleDateString(locale)
+                      : ''}
                 </p>
                 {deal.booking_required && <p className="mt-2 text-small">{t('booking')}</p>}
               </section>
@@ -152,7 +160,14 @@ export default async function DealPage({ params }: Props) {
                       <MapPin className="mb-2 text-brand" />
                       <strong>{localized(location.city.name, locale)}</strong>
                       <p className="mt-1 text-small text-ink-muted">{location.address}</p>
-                      <p className="mt-2 text-small">{String(location.opening_hours.mon)}</p>
+                      <ul className="mt-2 grid gap-0.5 text-small">
+                        {hoursLines(location.opening_hours, locale).map((line) => (
+                          <li className="flex justify-between gap-4" key={line.day}>
+                            <span className="text-ink-muted">{line.label}</span>
+                            <span>{line.open ?? t('closed')}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   ))}
                 </div>
@@ -160,7 +175,8 @@ export default async function DealPage({ params }: Props) {
               </section>
               <section id="reviews">
                 <h2 className="text-subtitle font-bold">
-                  {t('reviews')} · {deal.rating_avg.toFixed(1)}
+                  {t('reviews')}
+                  {deal.rating_count > 0 && ` · ${deal.rating_avg.toFixed(1)}`}
                 </h2>
                 <div className="mt-5 grid gap-4">
                   {reviews.items.slice(0, 6).map((review) => (
