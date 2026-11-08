@@ -342,17 +342,21 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		detail, _ := json.Marshal(template.Description)
 		highlights, _ := json.Marshal(template.Highlights)
 		included, _ := json.Marshal(template.Included)
+		status := statuses[i%len(statuses)]
+		if i%20 == 9 {
+			status = "in_review" // a few deals wait in the moderation queue for the demo
+		}
 		start := time.Now().UTC().Add(-24 * time.Hour)
 		end := start.Add(time.Duration(10+i%20) * 24 * time.Hour)
-		if statuses[i%len(statuses)] == "scheduled" {
+		if status == "scheduled" {
 			start = time.Now().UTC().Add(48 * time.Hour)
 			end = start.Add(10 * 24 * time.Hour)
 		}
-		if statuses[i%len(statuses)] == "ended" {
+		if status == "ended" {
 			start = time.Now().UTC().Add(-20 * 24 * time.Hour)
 			end = time.Now().UTC().Add(-24 * time.Hour)
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,30,5,$17) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchantIndex], categoryIDs[category], subcategoryIDs[category][template.Subcategory%len(subcategoryIDs[category])], title, short, detail, highlights, included, terms, faq, instructions, i%4 == 0, statuses[i%len(statuses)], start, end, i*3).Scan(&deals[i].ID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,30,5,$17) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchantIndex], categoryIDs[category], subcategoryIDs[category][template.Subcategory%len(subcategoryIDs[category])], title, short, detail, highlights, included, terms, faq, instructions, i%4 == 0, status, start, end, i*3).Scan(&deals[i].ID); err != nil {
 			return err
 		}
 		deals[i].MerchantID, deals[i].LocationID, deals[i].Title = merchantIDs[merchantIndex], locationIDs[merchantIndex][0], title

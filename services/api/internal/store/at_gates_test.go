@@ -170,6 +170,10 @@ func TestMerchantRedemptionHistoryScopesCashierAndMasksBuyer(t *testing.T) {
 		t.Fatal(err)
 	}
 	cashierID := seededID(t, env.fixture, `SELECT id FROM users WHERE email='cashier@local.test'`)
+	var cashierBefore int64
+	if err := env.fixture.pool.QueryRow(env.ctx, `SELECT count(*) FROM redemptions WHERE merchant_id=$1 AND staff_user_id=$2`, merchantID, cashierID).Scan(&cashierBefore); err != nil {
+		t.Fatal(err)
+	}
 	ownerID := seededID(t, env.fixture, `SELECT id FROM users WHERE email='owner@local.test'`)
 	repo := store.NewRedemptionRepository(env.fixture.pool, store.NewCommerceRepository(env.fixture.pool), store.NewCatalogRepository(env.fixture.pool))
 	for _, actorID := range []uuid.UUID{cashierID, ownerID} {
@@ -182,7 +186,7 @@ func TestMerchantRedemptionHistoryScopesCashierAndMasksBuyer(t *testing.T) {
 	service := redemption.NewService(repo, nil, time.Now)
 	page := catalog.Page{Number: 1, Size: 20}
 	cashier, err := service.History(env.ctx, merchantID, merchant.Actor{UserID: cashierID, Role: merchant.RoleCashier}, page)
-	if err != nil || cashier.Total != 1 || cashier.Items[0].Buyer != "Alisher U." {
+	if err != nil || cashier.Total != cashierBefore+1 || cashier.Items[0].Buyer != "Alisher U." {
 		t.Fatalf("cashier history: %+v err=%v", cashier, err)
 	}
 	owner, err := service.History(env.ctx, merchantID, merchant.Actor{UserID: ownerID, Role: merchant.RoleOwner}, page)
