@@ -7,3 +7,7 @@
   background: var(--brand-tint);
   color: var(--ink);
 }
+
+body {
+  font-family: var(--font-app), 'Inter', Arial, Helvetica, sans-serif;
+}
