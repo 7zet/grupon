@@ -225,9 +225,7 @@
     "qrAlt": "Authenticator enrollment QR code",
     "recoveryTitle": "Save your recovery codes",
     "recoveryHint": "Each code works once. Store these codes somewhere safe.",
-    "continue": "Continue",
-    "demoAccounts": "Demo accounts",
-    "demoAccountsHint": "Select a number to fill in the sign-in form."
+    "continue": "Continue"
   },
   "Account": {
     "title": "My account",

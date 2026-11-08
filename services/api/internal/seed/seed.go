@@ -270,6 +270,25 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,'merchant_owner',$3),($2,'merchant_cashier',$3),($4,'merchant_manager',$3)`, userIDs[1], userIDs[2], merchantIDs[0], userIDs[10]); err != nil {
 		return err
 	}
+	// Every business gets its own owner, manager and cashier so any of them can be signed in as.
+	// Phone +998912MMRPP: MM is the business number (01-30), R is 1 owner, 2 manager, 3 cashier.
+	for i, merchantID := range merchantIDs {
+		for role, kind := range map[int]string{1: "merchant_owner", 2: "merchant_manager", 3: "merchant_cashier"} {
+			phone := fmt.Sprintf("+998912%02d%d00", i+1, role)
+			email := fmt.Sprintf("m%02d-%s@local.test", i+1, strings.TrimPrefix(kind, "merchant_"))
+			name := fmt.Sprintf("%s — %s", data.Catalog.Merchants[i].Name, strings.TrimPrefix(kind, "merchant_"))
+			var userID string
+			if err := tx.QueryRow(ctx, `INSERT INTO users(email,name,locale,currency,email_verified_at,phone) VALUES($1,$2,'uz','UZS',now(),$3) RETURNING id`, email, name, phone).Scan(&userID); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'user')`, userID); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,$2,$3)`, userID, kind, merchantID); err != nil {
+				return err
+			}
+		}
+	}
 	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'superadmin')`, userIDs[3]); err != nil {
 		return err
 	}
