@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Link } from '@/i18n/navigation';
+import { usePathname } from 'next/navigation';
 import { fetchMe, resetMe } from '@/lib/me';
 import { maskPhone } from '@/lib/phone';
 
@@ -28,7 +29,9 @@ export function AccountMenu({ labels }: { labels: Labels }) {
   const [user, setUser] = useState<User | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
+  // Re-check on every page change: signing in or out does not remount the header.
   useEffect(() => {
     fetchMe().then((value) => {
       setUser(value);
@@ -36,7 +39,7 @@ export function AccountMenu({ labels }: { labels: Labels }) {
         fetch('/api/bff/merchant/business', { cache: 'no-store' }).then((response) => response.ok ? response.json() : null).then(setBusiness).catch(() => undefined);
       }
     }).catch(() => undefined);
-  }, []);
+  }, [pathname]);
 
   if (!user) return <Link className="hidden rounded-control-ui p-2 text-ink-muted hover:bg-page hover:text-brand sm:block" href="/login" prefetch={false} aria-label={labels.account}><UserRound /></Link>;
 

@@ -9,6 +9,10 @@ export function fetchMe(): Promise<Me | null> {
     .then((response) => (response.ok ? (response.json() as Promise<Me>) : null))
     .catch(() => null);
   pending = { at: Date.now(), promise };
+  // A signed-out answer must not linger: the visitor may sign in a moment later.
+  void promise.then((value) => {
+    if (!value) pending = null;
+  });
   return promise;
 }
 

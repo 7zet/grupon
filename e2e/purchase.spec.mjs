@@ -11,7 +11,7 @@ async function sellableVoucherDeal() {
     const optionIndex = deal.options.findIndex((item) => item.is_active && item.stock_total - item.stock_sold - item.stock_reserved > 0);
     if (optionIndex >= 0) {
       const option = deal.options[optionIndex];
-      return { slug: deal.slug, title: deal.title.uz, optionIndex, optionName: option.name.uz, unitPrice: option.deal_price.amount };
+      return { slug: deal.slug, title: deal.title.uz, optionIndex, optionName: option.title.uz, unitPrice: option.deal_price.amount };
     }
   }
   throw new Error('no sellable voucher deal in seed data');
