@@ -39,6 +39,34 @@ type seedData struct {
 	} `json:"categories"`
 	MerchantNames []string          `json:"merchantNames"`
 	ReviewTexts   map[string]string `json:"reviewTexts"`
+	Catalog       catalogData       `json:"-"`
+}
+
+// catalogData is the curated demo content in seed/catalog.json: realistic businesses and deal templates.
+type catalogData struct {
+	MerchantDescriptions map[string]localized `json:"merchantDescriptions"`
+	Merchants            []struct {
+		Name      string   `json:"name"`
+		Category  string   `json:"category"`
+		Addresses []string `json:"addresses"`
+		Offers    []int    `json:"offers"`
+	} `json:"merchants"`
+	Deals map[string][]dealTemplate `json:"deals"`
+}
+
+type dealTemplate struct {
+	Title       localized   `json:"title"`
+	Short       localized   `json:"short"`
+	Description localized   `json:"description"`
+	Highlights  []localized `json:"highlights"`
+	Included    []localized `json:"included"`
+	Options     []struct {
+		Name     localized `json:"name"`
+		Original int64     `json:"original"`
+		Percent  int64     `json:"percent"`
+	} `json:"options"`
+	Subcategory int   `json:"subcategory"`
+	Images      []int `json:"images"`
 }
 
 type imageSeed struct {
@@ -133,6 +161,13 @@ func loadSeed(root string) (seedData, []imageSeed, error) {
 	if err := json.Unmarshal(raw, &images); err != nil {
 		return data, nil, err
 	}
+	raw, err = os.ReadFile(filepath.Join(root, "seed", "catalog.json"))
+	if err != nil {
+		return data, nil, err
+	}
+	if err := json.Unmarshal(raw, &data.Catalog); err != nil {
+		return data, nil, err
+	}
 	return data, images, nil
 }
 
@@ -205,18 +240,16 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			return err
 		}
 	}
+	if len(data.Catalog.Merchants) != 30 {
+		return errors.New("seed catalog must hold 30 merchants")
+	}
 	merchantIDs := make([]string, 30)
 	locationIDs := make([][]string, 30)
-	description, _ := json.Marshal(localized{"uz": "Mahalliy ishonchli biznes", "ru": "Надёжный местный бизнес", "en": "A trusted local business"})
 	hours := `{"mon":["09:00","20:00"],"tue":["09:00","20:00"],"wed":["09:00","20:00"],"thu":["09:00","20:00"],"fri":["09:00","20:00"],"sat":["10:00","18:00"],"sun":null}`
 	for i := range merchantIDs {
-		name := fmt.Sprintf("%s %d", data.MerchantNames[i%len(data.MerchantNames)], i+1)
-		if i == 0 {
-			name = "Lotus Spa"
-		}
-		if i == 1 {
-			name = "Urban Grill"
-		}
+		entry := data.Catalog.Merchants[i]
+		name := entry.Name
+		description, _ := json.Marshal(data.Catalog.MerchantDescriptions[entry.Category])
 		slug := fmt.Sprintf("seed-merchant-%02d", i+1)
 		if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps,review_status) VALUES($1,$2,$2,$3,$4,$5,1500,'approved') RETURNING id`, slug, name, description, fmt.Sprintf("+99890100%04d", i), "https://local.test/business/"+slug).Scan(&merchantIDs[i]); err != nil {
 			return err
@@ -225,10 +258,10 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if _, err := tx.Exec(ctx, `INSERT INTO merchant_documents(merchant_id,kind,storage_key,content_type,size_bytes,uploaded_by) VALUES($1,'price_proof',$2,'application/pdf',$3,$4)`, merchantIDs[i], merchant.DemoDocumentKey(slug), len(demoProof), userIDs[1]); err != nil {
 			return err
 		}
-		for j := 0; j < 1+i%3; j++ {
+		for j, address := range entry.Addresses {
 			var id string
 			city := 0 // Toshkent: the only open city in the pilot (cities are listed in seed/data.json)
-			if err := tx.QueryRow(ctx, `INSERT INTO merchant_locations(merchant_id,city_id,address,lat,lng,opening_hours,phone) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`, merchantIDs[i], cityIDs[city], fmt.Sprintf("Seed ko'chasi %d, %d", i+1, j+1), data.Cities[city].Lat+float64(j)/1000, data.Cities[city].Lng+float64(j)/1000, hours, fmt.Sprintf("+99890100%04d", i)).Scan(&id); err != nil {
+			if err := tx.QueryRow(ctx, `INSERT INTO merchant_locations(merchant_id,city_id,address,lat,lng,opening_hours,phone) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`, merchantIDs[i], cityIDs[city], address+", Toshkent", data.Cities[city].Lat+float64(i%7)/500+float64(j)/1000, data.Cities[city].Lng+float64(i%5)/500+float64(j)/1000, hours, fmt.Sprintf("+99890100%04d", i)).Scan(&id); err != nil {
 				return err
 			}
 			locationIDs[i] = append(locationIDs[i], id)
@@ -256,58 +289,109 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$3,now()),($2,$3,now())`, userIDs[3], userIDs[7], "JBSWY3DPEHPK3PXP"); err != nil {
 		return err
 	}
-	deals := make([]dealSeed, 100)
 	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "paused", "ended", "draft"}
+	// One deal per (business, offer) pair, so no business repeats a deal and every deal matches its business.
+	// Categories take turns so that every page of the catalog mixes them.
+	dealCategories := []string{"beauty-and-spas", "food-and-drink", "things-to-do", "health-and-fitness"}
+	categoryIndex := map[string]int{}
+	for i, category := range data.Categories {
+		categoryIndex[category.Slug] = i
+	}
+	type planned struct{ merchant, template int }
+	queues := map[string][]planned{}
+	for round := 0; round < 8; round++ {
+		for i, entry := range data.Catalog.Merchants {
+			if round < len(entry.Offers) {
+				queues[entry.Category] = append(queues[entry.Category], planned{i, entry.Offers[round]})
+			}
+		}
+	}
+	type dealPlan struct {
+		category string
+		planned
+	}
+	var plan []dealPlan
+	for remaining := true; remaining; {
+		remaining = false
+		for _, slug := range dealCategories {
+			if len(queues[slug]) > 0 {
+				plan = append(plan, dealPlan{slug, queues[slug][0]})
+				queues[slug] = queues[slug][1:]
+				remaining = true
+			}
+		}
+	}
+	deals := make([]dealSeed, len(plan))
+	terms, _ := json.Marshal(localized{"uz": "Kupon 30 kun amal qiladi. Tashrifdan oldin telefon orqali yoziling. Boshqa chegirmalar bilan qo'shilmaydi.", "ru": "Купон действует 30 дней. Перед визитом запишитесь по телефону. Не суммируется с другими скидками.", "en": "The voucher is valid for 30 days. Book by phone before your visit. It cannot be combined with other offers."})
+	instructions, _ := json.Marshal(localized{"uz": "Kassirga QR-kodni yoki kupon kodini ko'rsating.", "ru": "Покажите кассиру QR-код или код купона.", "en": "Show the QR code or voucher code to the cashier."})
+	faq, _ := json.Marshal([]map[string]localized{
+		{"q": {"uz": "Kuponni qanday ishlataman?", "ru": "Как использовать купон?", "en": "How do I use the voucher?"}, "a": {"uz": "Joyda QR-kodni ko'rsating.", "ru": "Покажите QR-код на месте.", "en": "Show the QR code on site."}},
+		{"q": {"uz": "Pulni qaytarish mumkinmi?", "ru": "Можно ли вернуть деньги?", "en": "Can I get a refund?"}, "a": {"uz": "Ishlatilmagan kupon 14 kun ichida qaytariladi.", "ru": "Неиспользованный купон можно вернуть в течение 14 дней.", "en": "An unused voucher is refundable within 14 days."}},
+	})
 	for i := range deals {
-		merchant := i % len(merchantIDs)
-		category := i % len(categoryIDs)
-		titleMap := localized{"uz": fmt.Sprintf("%s uchun maxsus taklif %d", data.Categories[category].Name["uz"], i+1), "ru": fmt.Sprintf("Специальное предложение %d", i+1), "en": fmt.Sprintf("Special local offer %d", i+1)}
-		title, _ := json.Marshal(titleMap)
-		short, _ := json.Marshal(localized{"uz": "Cheklangan muddatli foydali taklif", "ru": "Выгодное предложение на ограниченное время", "en": "A valuable limited-time local offer"})
-		detail, _ := json.Marshal(localized{"uz": "Xizmat tafsilotlari va foydalanish shartlari to'liq ko'rsatilgan.", "ru": "Полное описание услуги и условий использования.", "en": "Complete service details and redemption terms."})
-		highlights := `[{"uz":"Sifatli xizmat","ru":"Качественный сервис","en":"Quality service"},{"uz":"Qulay vaqt","ru":"Удобное время","en":"Convenient timing"},{"uz":"Tekshirilgan hamkor","ru":"Проверенный партнёр","en":"Verified partner"}]`
-		faq := `[{"q":{"uz":"Qanday foydalanaman?","ru":"Как использовать?","en":"How do I use it?"},"a":{"uz":"Kuponni ko'rsating.","ru":"Покажите купон.","en":"Show the voucher."}}]`
+		slug := plan[i].category
+		templates := data.Catalog.Deals[slug]
+		if plan[i].template >= len(templates) {
+			return fmt.Errorf("seed catalog has no deal template %d for %s", plan[i].template, slug)
+		}
+		merchantIndex := plan[i].merchant
+		template := templates[plan[i].template]
+		category := categoryIndex[slug]
+		title, _ := json.Marshal(template.Title)
+		short, _ := json.Marshal(template.Short)
+		detail, _ := json.Marshal(template.Description)
+		highlights, _ := json.Marshal(template.Highlights)
+		included, _ := json.Marshal(template.Included)
+		status := statuses[i%len(statuses)]
+		if i%20 == 9 {
+			status = "in_review" // a few deals wait in the moderation queue for the demo
+		}
 		start := time.Now().UTC().Add(-24 * time.Hour)
 		end := start.Add(time.Duration(10+i%20) * 24 * time.Hour)
-		if statuses[i%len(statuses)] == "scheduled" {
+		if status == "scheduled" {
 			start = time.Now().UTC().Add(48 * time.Hour)
 			end = start.Add(10 * 24 * time.Hour)
 		}
-		if statuses[i%len(statuses)] == "ended" {
+		if status == "ended" {
 			start = time.Now().UTC().Add(-20 * 24 * time.Hour)
 			end = time.Now().UTC().Add(-24 * time.Hour)
 		}
-		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$8,$7,$9,$7,$10,$11,$12,$13,30,5,$14) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchant], categoryIDs[category], subcategoryIDs[category][i%len(subcategoryIDs[category])], title, short, detail, highlights, faq, i%4 == 0, statuses[i%len(statuses)], start, end, i*3).Scan(&deals[i].ID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO deals(slug,merchant_id,category_id,subcategory_id,title,short_description,description,highlights,whats_included,terms,faq,redemption_instructions,booking_required,status,starts_at,ends_at,voucher_valid_days,max_per_user,sold_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,30,5,$17) RETURNING id`, fmt.Sprintf("seed-deal-%03d", i+1), merchantIDs[merchantIndex], categoryIDs[category], subcategoryIDs[category][template.Subcategory%len(subcategoryIDs[category])], title, short, detail, highlights, included, terms, faq, instructions, i%4 == 0, status, start, end, i*3).Scan(&deals[i].ID); err != nil {
 			return err
 		}
-		deals[i].MerchantID, deals[i].LocationID, deals[i].Title = merchantIDs[merchant], locationIDs[merchant][0], title
-		for _, locationID := range locationIDs[merchant] {
+		deals[i].MerchantID, deals[i].LocationID, deals[i].Title = merchantIDs[merchantIndex], locationIDs[merchantIndex][0], title
+		for _, locationID := range locationIDs[merchantIndex] {
 			if _, err := tx.Exec(ctx, `INSERT INTO deal_locations(deal_id,merchant_location_id) VALUES($1,$2)`, deals[i].ID, locationID); err != nil {
 				return err
 			}
 		}
-		for j := 0; j < 1+i%3; j++ {
-			original := int64(100000+(i%12)*25000+j*10000) * tiyinPerSom
-			price := original * int64(55+i%30) / 100
+		for j, option := range template.Options {
+			original := option.Original * tiyinPerSom
+			// Deal prices are rounded to 500 so'm so they read like real prices.
+			price := (original*(100-option.Percent)/100 + 25000) / 50000 * 50000
+			optionTitle, _ := json.Marshal(option.Name)
 			var optionID string
-			if err := tx.QueryRow(ctx, `INSERT INTO deal_options(deal_id,title,original_price,deal_price,stock_total,stock_sold,sort_order) VALUES($1,$2,$3,$4,500,$5,$6) RETURNING id`, deals[i].ID, title, original, price, i*3, j).Scan(&optionID); err != nil {
+			if err := tx.QueryRow(ctx, `INSERT INTO deal_options(deal_id,title,original_price,deal_price,stock_total,stock_sold,sort_order) VALUES($1,$2,$3,$4,500,$5,$6) RETURNING id`, deals[i].ID, optionTitle, original, price, i*3, j).Scan(&optionID); err != nil {
 				return err
 			}
 			if j == 0 {
 				deals[i].OptionID, deals[i].Price = optionID, price
 			}
 		}
-		for j := 0; j < 3; j++ {
-			if _, err := tx.Exec(ctx, `INSERT INTO deal_media(deal_id,url,alt,sort_order,width,height,blurhash) VALUES($1,$2,$3,$4,1200,900,'L6PZfSi_.AyE_3t7t7R**0o#DgR4')`, deals[i].ID, images[(i+j)%len(images)].URL+"?auto=format&fit=crop&w=1200&q=80", title, j); err != nil {
+		// Photos come only from the template's own category-matched list; each photo appears once per deal.
+		photos := min(len(template.Images), 3)
+		for j := 0; j < photos; j++ {
+			image := images[template.Images[(i+j)%len(template.Images)]%len(images)]
+			if _, err := tx.Exec(ctx, `INSERT INTO deal_media(deal_id,url,alt,sort_order,width,height,blurhash) VALUES($1,$2,$3,$4,1200,900,'L6PZfSi_.AyE_3t7t7R**0o#DgR4')`, deals[i].ID, image.URL+"?auto=format&fit=crop&w=1200&q=80", title, j); err != nil {
 				return err
 			}
 		}
 	}
 	for i := 0; i < 400; i++ {
-		deal := deals[i%80]
+		deal := deals[i%len(deals)]
 		userID := userIDs[4+i%(len(userIDs)-4)]
 		var orderID, itemID, voucherID string
-		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-interval '2 days') RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1)).Scan(&orderID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at,created_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-make_interval(days => $4::int),now()-make_interval(days => $4::int)) RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1), 1+(i*7)%27).Scan(&orderID); err != nil {
 			return err
 		}
 		if err := tx.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,terms_snapshot,quantity) SELECT $1,$2,$3,$4,$5,o.original_price,d.terms,1 FROM deal_options o JOIN deals d ON d.id=o.deal_id WHERE o.id=$3 RETURNING id`, orderID, deal.ID, deal.OptionID, deal.Title, deal.Price).Scan(&itemID); err != nil {
@@ -321,8 +405,13 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if _, err := tx.Exec(ctx, `UPDATE vouchers SET redemptions_used = 1 WHERE id = $1`, voucherID); err != nil {
 			return err
 		}
+		// The demo cashier scanned the Lotus Spa vouchers, so their history is not empty.
+		staffID := userIDs[1]
+		if deal.MerchantID == merchantIDs[0] {
+			staffID = userIDs[2]
+		}
 		var redemptionID string
-		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, userIDs[1], deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, staffID, deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
 			return err
 		}
 		queries := sqlc.New(tx)
@@ -334,17 +423,35 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		locale := []string{"uz", "ru", "en"}[i%3]
 		var reviewID string
-		if err := tx.QueryRow(ctx, `INSERT INTO reviews(deal_id,merchant_id,user_id,voucher_id,rating,text,locale,status) VALUES($1,$2,$3,$4,$5,$6,$7,'published') RETURNING id`, deal.ID, deal.MerchantID, userID, voucherID, 3+i%3, data.ReviewTexts[locale], locale).Scan(&reviewID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO reviews(deal_id,merchant_id,user_id,voucher_id,rating,text,locale,status) VALUES($1,$2,$3,$4,$5,$6,$7,'published') RETURNING id`, deal.ID, deal.MerchantID, userID, voucherID, 3+i%3, reviewVariants[locale][(i/3)%len(reviewVariants[locale])], locale).Scan(&reviewID); err != nil {
 			return err
 		}
 		if i%5 == 0 {
-			if _, err := tx.Exec(ctx, `INSERT INTO review_replies(review_id,merchant_user_id,text) VALUES($1,$2,$3)`, reviewID, userIDs[1], "Fikringiz uchun rahmat! / Спасибо! / Thank you!"); err != nil {
+			if _, err := tx.Exec(ctx, `INSERT INTO review_replies(review_id,merchant_user_id,text) VALUES($1,$2,$3)`, reviewID, userIDs[1], reviewReplies[locale]); err != nil {
 				return err
 			}
 		}
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO homepage_sections(key,title,type,deal_ids,sort_order) VALUES('featured',$1,'deals',$2,1),('popular',$1,'deals',$2,2),('limited',$1,'deals',$2,3)`, description, []string{deals[0].ID, deals[1].ID, deals[2].ID}); err != nil {
-		return err
+	// Each homepage section lists its own eight active deals, so no deal repeats between sections.
+	var active []string
+	for i := range deals {
+		if statuses[i%len(statuses)] == "active" {
+			active = append(active, deals[i].ID)
+		}
+	}
+	sections := []struct {
+		key   string
+		title localized
+		from  int
+	}{
+		{"featured", localized{"uz": "Tanlangan takliflar", "ru": "Рекомендуем", "en": "Featured deals"}, 0},
+		{"popular", localized{"uz": "Yaqin atrofda mashhur", "ru": "Популярное рядом", "en": "Popular near you"}, 8},
+	}
+	for order, section := range sections {
+		title, _ := json.Marshal(section.title)
+		if _, err := tx.Exec(ctx, `INSERT INTO homepage_sections(key,title,type,deal_ids,sort_order) VALUES($1,$2,'deals',$3,$4)`, section.key, title, active[section.from:section.from+8], order+1); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -354,6 +461,41 @@ func envOr(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// reviewVariants are short buyer reviews per language; seeded reviews cycle through them.
+var reviewVariants = map[string][]string{
+	"uz": {
+		"Xizmat juda yoqdi, xodimlar e'tiborli va hammasi kelishilganidek bo'ldi.",
+		"Narxiga arziydi. Kuponni ko'rsatdim, hech qanday muammo bo'lmadi.",
+		"Joy toza va qulay, yana kelaman.",
+		"Yozilish oson bo'ldi, kutib o'tirmadim.",
+		"Tavsifdagidek, lekin band vaqt tanlash biroz qiyin bo'ldi.",
+		"Do'stlarimga ham tavsiya qildim.",
+	},
+	"ru": {
+		"Очень понравилось: персонал внимательный, всё прошло как договаривались.",
+		"Стоит своих денег. Показал купон, никаких проблем.",
+		"Чисто и уютно, обязательно приду ещё.",
+		"Записаться было легко, ждать не пришлось.",
+		"Всё как в описании, но выбрать удобное время было непросто.",
+		"Порекомендовал друзьям.",
+	},
+	"en": {
+		"Really enjoyed it. Friendly staff and everything went as agreed.",
+		"Worth the price. I showed the voucher and there were no problems.",
+		"Clean and comfortable, I will come back.",
+		"Booking was easy and I did not have to wait.",
+		"As described, though finding a convenient time slot took a while.",
+		"I recommended it to my friends.",
+	},
+}
+
+// reviewReplies are short merchant replies in the language of the review.
+var reviewReplies = map[string]string{
+	"uz": "Fikringiz uchun rahmat, sizni yana kutamiz!",
+	"ru": "Спасибо за отзыв, будем рады видеть вас снова!",
+	"en": "Thank you for the kind words, we hope to see you again!",
 }
 
 // tiyinPerSom converts so'm amounts in seed data to minor units. Money is stored in tiyin (ADR-0003).

@@ -51,11 +51,16 @@ export function DealCard({
           </p>
           <p className="mt-2 line-clamp-1 text-small text-ink-muted">
             {deal.merchant.display_name} ·{' '}
-            {localized(deal.merchant.locations?.[0]?.city.name ?? deal.category.name, locale)} ·{' '}
-            <Star className="inline size-4 fill-rating text-rating" aria-hidden />{' '}
-            {deal.rating_avg.toFixed(1)}
+            {localized(deal.merchant.locations?.[0]?.city.name ?? deal.category.name, locale)}
+            {deal.rating_count > 0 && (
+              <>
+                {' · '}
+                <Star className="inline size-4 fill-rating text-rating" aria-hidden />{' '}
+                {deal.rating_avg.toFixed(1)}
+              </>
+            )}
           </p>
-          <div className="mt-4 tabular-nums text-subtitle font-bold text-ink">
+          <div className="mt-4 whitespace-nowrap tabular-nums text-body font-bold text-ink sm:text-subtitle">
             {formatMoney(option.deal_price.amount, locale, currency)}
           </div>
           <div className="tabular-nums text-small text-ink-muted line-through">

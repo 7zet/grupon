@@ -38,7 +38,7 @@ export default async function MyDealsPage({
   const pages = Math.max(1, Math.ceil(list.total / list.page_size));
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-title font-bold">{t('myDealsTitle')}</h1>
         <Link

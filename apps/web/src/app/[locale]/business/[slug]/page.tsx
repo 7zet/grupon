@@ -41,10 +41,12 @@ export default async function BusinessPage({
           )}
           <div className="pb-2">
             <h1 className="text-title-small font-bold">{merchant.display_name}</h1>
-            <p className="mt-1 flex items-center gap-1 text-small text-ink-muted">
-              <Star className="size-4 fill-rating text-rating" />
-              {merchant.rating_avg.toFixed(1)} ({merchant.rating_count})
-            </p>
+            {merchant.rating_count > 0 && (
+              <p className="mt-1 flex items-center gap-1 text-small text-ink-muted">
+                <Star className="size-4 fill-rating text-rating" />
+                {merchant.rating_avg.toFixed(1)} ({merchant.rating_count})
+              </p>
+            )}
           </div>
         </div>
         <section className="py-10">

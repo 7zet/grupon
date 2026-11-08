@@ -40,6 +40,7 @@
 }
 
 @theme inline {
+  --font-sans: var(--font-app), 'Inter', Arial, Helvetica, sans-serif;
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-tint: var(--brand-tint);

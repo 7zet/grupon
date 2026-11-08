@@ -21,7 +21,7 @@ export default async function AuditPage({ params }: { params: Promise<{ locale: 
   const log = await accountGet<AuditPage>('/admin/audit-logs');
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('auditTitle')}</h1>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">

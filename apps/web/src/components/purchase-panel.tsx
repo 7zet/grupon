@@ -30,7 +30,7 @@ export function PurchasePanel({
   const cartLine = () => ({
     optionId: option.id,
     quantity,
-    title: localized(option.title, locale),
+    title: `${localized(deal.title, locale)} · ${localized(option.title, locale)}`,
     dealSlug: deal.slug,
     unitPrice: option.deal_price.amount,
     originalPrice: option.original_price.amount,
@@ -87,16 +87,7 @@ export function PurchasePanel({
           {t('onlyLeft', { count: remaining })}
         </p>
       )}
-      <button
-        data-buy-now
-        className="mt-2 h-11 w-full rounded-control-ui bg-deal text-small font-semibold text-surface hover:bg-deal-hover disabled:bg-ink-faint sm:mt-4 sm:h-12"
-        disabled={unavailable}
-        onClick={buy}
-        type="button"
-      >
-        {unavailable ? (deal.status === 'ended' ? t('ended') : t('soldOut')) : t('buyNow')}
-      </button>
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between sm:mt-4">
         <span className="text-small font-semibold">{t('quantity')}</span>
         <div className="flex items-center rounded-control-ui border">
           <button
@@ -120,6 +111,15 @@ export function PurchasePanel({
           </button>
         </div>
       </div>
+      <button
+        data-buy-now
+        className="mt-3 h-11 w-full rounded-control-ui bg-deal text-small font-semibold text-surface hover:bg-deal-hover disabled:bg-ink-faint sm:mt-4 sm:h-12"
+        disabled={unavailable}
+        onClick={buy}
+        type="button"
+      >
+        {unavailable ? (deal.status === 'ended' ? t('ended') : t('soldOut')) : t('buyNow')}
+      </button>
     </aside>
   );
 }

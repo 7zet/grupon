@@ -1,0 +1,2793 @@
+{
+ "merchantDescriptions": {
+  "beauty-and-spas": {
+   "uz": "Tajribali ustalar, toza xona va oldindan yozilish.",
+   "ru": "Опытные мастера, чистые кабинеты и запись заранее.",
+   "en": "Experienced specialists, clean rooms and booking in advance."
+  },
+  "food-and-drink": {
+   "uz": "Yangi mahsulotlardan tayyorlangan taomlar va qulay muhit.",
+   "ru": "Блюда из свежих продуктов и уютная атмосфера.",
+   "en": "Dishes made from fresh ingredients in a comfortable setting."
+  },
+  "things-to-do": {
+   "uz": "Do'stlar va oila bilan dam olish uchun joy.",
+   "ru": "Место для отдыха с друзьями и семьёй.",
+   "en": "A place to spend time with friends and family."
+  },
+  "health-and-fitness": {
+   "uz": "Suzish, mashg'ulot va sog'lom turmush uchun maydon.",
+   "ru": "Площадка для плавания, тренировок и здорового образа жизни.",
+   "en": "A place for swimming, training and a healthy routine."
+  }
+ },
+ "merchants": [
+  {
+   "name": "Lotus Spa",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Amir Temur ko'chasi 15",
+    "Shota Rustaveli ko'chasi 32",
+    "Mirzo Ulug'bek ko'chasi 48"
+   ],
+   "offers": [
+    0,
+    4,
+    7,
+    5
+   ]
+  },
+  {
+   "name": "Urban Grill",
+   "category": "food-and-drink",
+   "addresses": [
+    "Navoiy ko'chasi 28",
+    "Bunyodkor shoh ko'chasi 7"
+   ],
+   "offers": [
+    1
+   ]
+  },
+  {
+   "name": "Family Cafe",
+   "category": "food-and-drink",
+   "addresses": [
+    "Chilonzor 9-kvartal, Bunyodkor ko'chasi 3",
+    "Yunusobod 4-kvartal, Amir Temur ko'chasi 91",
+    "Mustaqillik ko'chasi 44"
+   ],
+   "offers": [
+    2,
+    3,
+    7
+   ]
+  },
+  {
+   "name": "Beauty House",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Yunusobod 11-kvartal, Ahmad Donish ko'chasi 5",
+    "Furqat ko'chasi 12"
+   ],
+   "offers": [
+    1,
+    6,
+    3,
+    4
+   ]
+  },
+  {
+   "name": "Oqtepa Barber Club",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Mirobod, Taras Shevchenko ko'chasi 21"
+   ],
+   "offers": [
+    2
+   ]
+  },
+  {
+   "name": "Sirli Orol Massage",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Sayilgoh ko'chasi 17",
+    "Labzak ko'chasi 9"
+   ],
+   "offers": [
+    0,
+    7
+   ]
+  },
+  {
+   "name": "Nilufar Beauty Studio",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Chilonzor, Muqimiy ko'chasi 60",
+    "Qatortol ko'chasi 33"
+   ],
+   "offers": [
+    3,
+    4,
+    1
+   ]
+  },
+  {
+   "name": "Hammom Sharq",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Eski shahar, Zarqaynar ko'chasi 4"
+   ],
+   "offers": [
+    5
+   ]
+  },
+  {
+   "name": "Gul Salon",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Yunusobod, Shahrisabz ko'chasi 8",
+    "Mustaqillik ko'chasi 101"
+   ],
+   "offers": [
+    1,
+    6
+   ]
+  },
+  {
+   "name": "Dilkusho Spa",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Oybek ko'chasi 24"
+   ],
+   "offers": [
+    0,
+    5,
+    4
+   ]
+  },
+  {
+   "name": "Mashrab Nail Lab",
+   "category": "beauty-and-spas",
+   "addresses": [
+    "Amir Temur ko'chasi 107",
+    "Bobur ko'chasi 19"
+   ],
+   "offers": [
+    3
+   ]
+  },
+  {
+   "name": "Samarqand Darvoza",
+   "category": "food-and-drink",
+   "addresses": [
+    "Islom Karimov ko'chasi 85",
+    "Beruniy ko'chasi 40"
+   ],
+   "offers": [
+    0,
+    6
+   ]
+  },
+  {
+   "name": "Plov Markazi Besh Qozon",
+   "category": "food-and-drink",
+   "addresses": [
+    "Qorasaroy ko'chasi 1"
+   ],
+   "offers": [
+    0
+   ]
+  },
+  {
+   "name": "Tandir Kitchen",
+   "category": "food-and-drink",
+   "addresses": [
+    "Shota Rustaveli ko'chasi 15",
+    "Chilonzor, Bunyodkor ko'chasi 27"
+   ],
+   "offers": [
+    1,
+    6
+   ]
+  },
+  {
+   "name": "Bahor Choyxonasi",
+   "category": "food-and-drink",
+   "addresses": [
+    "Mirobod, Nukus ko'chasi 69"
+   ],
+   "offers": [
+    6,
+    0
+   ]
+  },
+  {
+   "name": "Pizza Napoli Tashkent",
+   "category": "food-and-drink",
+   "addresses": [
+    "Amir Temur ko'chasi 60",
+    "Yunusobod, Amir Temur ko'chasi 129"
+   ],
+   "offers": [
+    4
+   ]
+  },
+  {
+   "name": "Sushi Sakura",
+   "category": "food-and-drink",
+   "addresses": [
+    "Mustaqillik ko'chasi 59"
+   ],
+   "offers": [
+    5
+   ]
+  },
+  {
+   "name": "Qahva Hovli",
+   "category": "food-and-drink",
+   "addresses": [
+    "Furqat ko'chasi 3",
+    "Labzak ko'chasi 14"
+   ],
+   "offers": [
+    2,
+    3
+   ]
+  },
+  {
+   "name": "Shirin Pazandachilik",
+   "category": "food-and-drink",
+   "addresses": [
+    "Chilonzor, Katta Darxon ko'chasi 6"
+   ],
+   "offers": [
+    7,
+    3
+   ]
+  },
+  {
+   "name": "Orzu Quest Rooms",
+   "category": "things-to-do",
+   "addresses": [
+    "Mirzo Ulug'bek ko'chasi 11",
+    "Bunyodkor shoh ko'chasi 40"
+   ],
+   "offers": [
+    0,
+    6
+   ]
+  },
+  {
+   "name": "Turbo Karting Tashkent",
+   "category": "things-to-do",
+   "addresses": [
+    "Buyuk Ipak Yo'li 120"
+   ],
+   "offers": [
+    1,
+    7
+   ]
+  },
+  {
+   "name": "Strike Bowling Club",
+   "category": "things-to-do",
+   "addresses": [
+    "Amir Temur ko'chasi 138",
+    "Sayilgoh ko'chasi 29"
+   ],
+   "offers": [
+    2
+   ]
+  },
+  {
+   "name": "Yulduz Planetarium Tours",
+   "category": "things-to-do",
+   "addresses": [
+    "Mustaqillik maydoni, Navoiy ko'chasi 1"
+   ],
+   "offers": [
+    3
+   ]
+  },
+  {
+   "name": "Zarafshan Aqua Park",
+   "category": "things-to-do",
+   "addresses": [
+    "Qibray, Toshkent halqa yo'li 14"
+   ],
+   "offers": [
+    4
+   ]
+  },
+  {
+   "name": "Chorsu Walks",
+   "category": "things-to-do",
+   "addresses": [
+    "Eski shahar, Chorsu bozori"
+   ],
+   "offers": [
+    5
+   ]
+  },
+  {
+   "name": "Atlas Fitness",
+   "category": "health-and-fitness",
+   "addresses": [
+    "Chilonzor, Bunyodkor ko'chasi 12",
+    "Yunusobod, Amir Temur ko'chasi 75"
+   ],
+   "offers": [
+    0,
+    4,
+    6
+   ]
+  },
+  {
+   "name": "Dolphin Swim Club",
+   "category": "health-and-fitness",
+   "addresses": [
+    "Mirobod, Shahrisabz ko'chasi 5"
+   ],
+   "offers": [
+    0,
+    2,
+    5
+   ]
+  },
+  {
+   "name": "Nur Wellness Club",
+   "category": "health-and-fitness",
+   "addresses": [
+    "Mirzo Ulug'bek ko'chasi 90"
+   ],
+   "offers": [
+    7,
+    1
+   ]
+  },
+  {
+   "name": "Aqua Life Pools",
+   "category": "health-and-fitness",
+   "addresses": [
+    "Sergeli, Yangi Sergeli ko'chasi 22"
+   ],
+   "offers": [
+    0,
+    1,
+    3
+   ]
+  },
+  {
+   "name": "Bekzod Sport Complex",
+   "category": "health-and-fitness",
+   "addresses": [
+    "Shayxontohur, Navoiy ko'chasi 112"
+   ],
+   "offers": [
+    4,
+    6,
+    3
+   ]
+  }
+ ],
+ "deals": {
+  "beauty-and-spas": [
+   {
+    "title": {
+     "uz": "60 daqiqalik tinchlantiruvchi massaj",
+     "ru": "Расслабляющий массаж 60 минут",
+     "en": "60-minute relaxing massage"
+    },
+    "short": {
+     "uz": "Charchoqni olib tashlaydigan klassik massaj.",
+     "ru": "Классический массаж для снятия усталости.",
+     "en": "Classic massage to ease tension after a long week."
+    },
+    "description": {
+     "uz": "Mutaxassis massajchi bo'yin, yelka va bel mushaklari bilan ishlaydi, aromamoy tanlash mumkin.",
+     "ru": "Массажист работает с мышцами шеи, плеч и спины, масло можно выбрать по аромату.",
+     "en": "A therapist works on neck, shoulder and back muscles; you can choose the aroma oil."
+    },
+    "highlights": [
+     {
+      "uz": "Tajribali massajchi",
+      "ru": "Опытный массажист",
+      "en": "Experienced therapist"
+     },
+     {
+      "uz": "Aromamoy tanlovi",
+      "ru": "Выбор ароматического масла",
+      "en": "Choice of aroma oil"
+     },
+     {
+      "uz": "Yozilish bilan qabul",
+      "ru": "Приём по записи",
+      "en": "By appointment"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Massaj 60 daqiqa",
+      "ru": "Массаж 60 минут",
+      "en": "60-minute massage"
+     },
+     {
+      "uz": "Choy va suv",
+      "ru": "Чай и вода",
+      "en": "Tea and water"
+     },
+     {
+      "uz": "Issiq sochiq",
+      "ru": "Тёплое полотенце",
+      "en": "Warm towel"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "60 daqiqa",
+       "ru": "60 минут",
+       "en": "60 minutes"
+      },
+      "original": 220000,
+      "percent": 40
+     },
+     {
+      "name": {
+       "uz": "90 daqiqa",
+       "ru": "90 минут",
+       "en": "90 minutes"
+      },
+      "original": 320000,
+      "percent": 42
+     }
+    ],
+    "subcategory": 3,
+    "images": [
+     0,
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Soch olish va uslub berish",
+     "ru": "Стрижка и укладка",
+     "en": "Haircut and styling"
+    },
+    "short": {
+     "uz": "Ayollar uchun soch olish, yuvish va uslub berish.",
+     "ru": "Женская стрижка с мытьём головы и укладкой.",
+     "en": "Women's haircut with wash and styling."
+    },
+    "description": {
+     "uz": "Usta sizning soch turingizga mos shaklni tanlaydi va oxirida uslub beradi.",
+     "ru": "Мастер подбирает форму под тип волос и заканчивает укладкой.",
+     "en": "The stylist picks a cut that suits your hair type and finishes with styling."
+    },
+    "highlights": [
+     {
+      "uz": "Soch turiga mos shakl",
+      "ru": "Форма под тип волос",
+      "en": "Cut matched to hair type"
+     },
+     {
+      "uz": "Professional vositalar",
+      "ru": "Профессиональная косметика",
+      "en": "Professional products"
+     },
+     {
+      "uz": "Maslahat bepul",
+      "ru": "Консультация бесплатно",
+      "en": "Free consultation"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Soch yuvish",
+      "ru": "Мытьё головы",
+      "en": "Hair wash"
+     },
+     {
+      "uz": "Soch olish",
+      "ru": "Стрижка",
+      "en": "Haircut"
+     },
+     {
+      "uz": "Uslub berish",
+      "ru": "Укладка",
+      "en": "Styling"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Qisqa soch",
+       "ru": "Короткие волосы",
+       "en": "Short hair"
+      },
+      "original": 150000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "Uzun soch",
+       "ru": "Длинные волосы",
+       "en": "Long hair"
+      },
+      "original": 210000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Erkaklar soch olishi va soqol parvarishi",
+     "ru": "Мужская стрижка и уход за бородой",
+     "en": "Men's haircut and beard trim"
+    },
+    "short": {
+     "uz": "Klassik yoki zamonaviy soch olish, soqol shakllantirish.",
+     "ru": "Классическая или современная стрижка с оформлением бороды.",
+     "en": "Classic or modern haircut with beard shaping."
+    },
+    "description": {
+     "uz": "Barber mashinka va ustara bilan ishlaydi, oxirida issiq sochiq va parvarish vositasi qo'llanadi.",
+     "ru": "Барбер работает машинкой и бритвой, в конце — горячее полотенце и средство для ухода.",
+     "en": "The barber uses clippers and a razor and finishes with a hot towel and care product."
+    },
+    "highlights": [
+     {
+      "uz": "Tajribali barber",
+      "ru": "Опытный барбер",
+      "en": "Experienced barber"
+     },
+     {
+      "uz": "Issiq sochiq",
+      "ru": "Горячее полотенце",
+      "en": "Hot towel finish"
+     },
+     {
+      "uz": "Qulay vaqt",
+      "ru": "Удобное время",
+      "en": "Flexible time slots"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Soch olish",
+      "ru": "Стрижка",
+      "en": "Haircut"
+     },
+     {
+      "uz": "Soqol shakli",
+      "ru": "Оформление бороды",
+      "en": "Beard shaping"
+     },
+     {
+      "uz": "Uslub vositasi",
+      "ru": "Средство для укладки",
+      "en": "Styling product"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Soch olish",
+       "ru": "Стрижка",
+       "en": "Haircut only"
+      },
+      "original": 90000,
+      "percent": 33
+     },
+     {
+      "name": {
+       "uz": "Soch + soqol",
+       "ru": "Стрижка и борода",
+       "en": "Haircut and beard"
+      },
+      "original": 140000,
+      "percent": 36
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Manikyur va pedikyur",
+     "ru": "Маникюр и педикюр",
+     "en": "Manicure and pedicure"
+    },
+    "short": {
+     "uz": "Gel-lak bilan to'liq qo'l va oyoq parvarishi.",
+     "ru": "Полный уход за руками и ногами с покрытием гель-лаком.",
+     "en": "Full hand and foot care with gel polish."
+    },
+    "description": {
+     "uz": "Asboblar har mijozdan keyin sterilizatsiya qilinadi, rangni katalogdan tanlaysiz.",
+     "ru": "Инструменты стерилизуются после каждого клиента, цвет выбирается из каталога.",
+     "en": "Tools are sterilised after every client and you pick the colour from a catalogue."
+    },
+    "highlights": [
+     {
+      "uz": "Steril asboblar",
+      "ru": "Стерильные инструменты",
+      "en": "Sterile tools"
+     },
+     {
+      "uz": "100 dan ortiq rang",
+      "ru": "Более 100 оттенков",
+      "en": "100+ colours"
+     },
+     {
+      "uz": "Mustahkam qoplama",
+      "ru": "Стойкое покрытие",
+      "en": "Long-lasting finish"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Manikyur",
+      "ru": "Маникюр",
+      "en": "Manicure"
+     },
+     {
+      "uz": "Gel-lak qoplamasi",
+      "ru": "Покрытие гель-лаком",
+      "en": "Gel polish"
+     },
+     {
+      "uz": "Qo'l kremi",
+      "ru": "Крем для рук",
+      "en": "Hand cream"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Manikyur",
+       "ru": "Маникюр",
+       "en": "Manicure"
+      },
+      "original": 120000,
+      "percent": 40
+     },
+     {
+      "name": {
+       "uz": "Manikyur + pedikyur",
+       "ru": "Маникюр и педикюр",
+       "en": "Manicure + pedicure"
+      },
+      "original": 230000,
+      "percent": 43
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Yuz tozalash va namlantirish",
+     "ru": "Чистка лица и увлажнение",
+     "en": "Facial cleansing and hydration"
+    },
+    "short": {
+     "uz": "Kosmetolog bilan chuqur tozalash va niqob.",
+     "ru": "Глубокая чистка и маска у косметолога.",
+     "en": "Deep cleansing and a mask with a beautician."
+    },
+    "description": {
+     "uz": "Teri turi aniqlanadi, so'ng tozalash, tonik va mos niqob tanlanadi.",
+     "ru": "Определяется тип кожи, затем чистка, тоник и подходящая маска.",
+     "en": "Your skin type is assessed, then cleansing, toner and a matching mask follow."
+    },
+    "highlights": [
+     {
+      "uz": "Teri tahlili",
+      "ru": "Анализ кожи",
+      "en": "Skin analysis"
+     },
+     {
+      "uz": "Sertifikatlangan kosmetika",
+      "ru": "Сертифицированная косметика",
+      "en": "Certified cosmetics"
+     },
+     {
+      "uz": "Parvarish bo'yicha maslahat",
+      "ru": "Советы по уходу",
+      "en": "Home-care advice"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Yuzni tozalash",
+      "ru": "Чистка лица",
+      "en": "Cleansing"
+     },
+     {
+      "uz": "Niqob",
+      "ru": "Маска",
+      "en": "Face mask"
+     },
+     {
+      "uz": "Namlantiruvchi krem",
+      "ru": "Увлажняющий крем",
+      "en": "Moisturiser"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Standart",
+       "ru": "Стандарт",
+       "en": "Standard"
+      },
+      "original": 260000,
+      "percent": 40
+     },
+     {
+      "name": {
+       "uz": "Chuqur tozalash",
+       "ru": "Глубокая чистка",
+       "en": "Deep cleansing"
+      },
+      "original": 360000,
+      "percent": 41
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Hammom va skrab",
+     "ru": "Хаммам и скраб",
+     "en": "Hammam with scrub"
+    },
+    "short": {
+     "uz": "Sharqona hammomda bug', skrab va ko'pikli massaj.",
+     "ru": "Паровой хаммам, скраб и пенный массаж.",
+     "en": "Steam hammam with scrub and foam massage."
+    },
+    "description": {
+     "uz": "Issiq marmar ustida terini tozalash, so'ng ko'pikli massaj va dam olish.",
+     "ru": "Очищение кожи на тёплом мраморе, затем пенный массаж и отдых.",
+     "en": "Skin cleansing on warm marble followed by a foam massage and a rest."
+    },
+    "highlights": [
+     {
+      "uz": "Marmar issiq stol",
+      "ru": "Тёплый мраморный стол",
+      "en": "Warm marble table"
+     },
+     {
+      "uz": "Individual xona",
+      "ru": "Отдельная комната",
+      "en": "Private room"
+     },
+     {
+      "uz": "Tabiiy skrab",
+      "ru": "Натуральный скраб",
+      "en": "Natural scrub"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Hammom 90 daqiqa",
+      "ru": "Хаммам 90 минут",
+      "en": "90 minutes in the hammam"
+     },
+     {
+      "uz": "Skrab",
+      "ru": "Скраб",
+      "en": "Scrub"
+     },
+     {
+      "uz": "Ko'pikli massaj",
+      "ru": "Пенный массаж",
+      "en": "Foam massage"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "For one"
+      },
+      "original": 280000,
+      "percent": 40
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For two"
+      },
+      "original": 520000,
+      "percent": 42
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4,
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Soch bo'yash",
+     "ru": "Окрашивание волос",
+     "en": "Hair colouring"
+    },
+    "short": {
+     "uz": "Bir rangga yoki ombre usulida bo'yash.",
+     "ru": "Однотонное окрашивание или омбре.",
+     "en": "Single-colour or ombre colouring."
+    },
+    "description": {
+     "uz": "Rang oldindan maslahatlashiladi, bo'yoq tarkibi ammiaksiz variantlarni o'z ichiga oladi.",
+     "ru": "Цвет согласуется заранее, доступны составы без аммиака.",
+     "en": "The shade is agreed beforehand and ammonia-free dyes are available."
+    },
+    "highlights": [
+     {
+      "uz": "Ammiaksiz bo'yoqlar",
+      "ru": "Краски без аммиака",
+      "en": "Ammonia-free dyes"
+     },
+     {
+      "uz": "Rang maslahati",
+      "ru": "Подбор оттенка",
+      "en": "Shade consultation"
+     },
+     {
+      "uz": "Parvarish niqobi",
+      "ru": "Маска для ухода",
+      "en": "Care mask"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Bo'yash",
+      "ru": "Окрашивание",
+      "en": "Colouring"
+     },
+     {
+      "uz": "Parvarish niqobi",
+      "ru": "Маска для волос",
+      "en": "Hair mask"
+     },
+     {
+      "uz": "Uslub berish",
+      "ru": "Укладка",
+      "en": "Styling"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Bir rang",
+       "ru": "Один тон",
+       "en": "Single colour"
+      },
+      "original": 320000,
+      "percent": 38
+     },
+     {
+      "name": {
+       "uz": "Ombre",
+       "ru": "Омбре",
+       "en": "Ombre"
+      },
+      "original": 480000,
+      "percent": 40
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     0
+    ]
+   },
+   {
+    "title": {
+     "uz": "Bosh va bo'yin massaji",
+     "ru": "Массаж головы и шеи",
+     "en": "Head and neck massage"
+    },
+    "short": {
+     "uz": "Qisqa, lekin samarali bosh va bo'yin massaji.",
+     "ru": "Короткий, но эффективный массаж головы и шеи.",
+     "en": "A short but effective head and neck massage."
+    },
+    "description": {
+     "uz": "Kompyuter ortida ko'p ishlaydiganlar uchun mos: bosh og'rig'i va bo'yin qotishini kamaytiradi.",
+     "ru": "Подходит тем, кто много работает за компьютером: снимает головную боль и скованность шеи.",
+     "en": "Good for desk workers: it eases headaches and a stiff neck."
+    },
+    "highlights": [
+     {
+      "uz": "Ofis xodimlari uchun",
+      "ru": "Для офисных сотрудников",
+      "en": "For desk workers"
+     },
+     {
+      "uz": "Kiyim yechish shart emas",
+      "ru": "Раздеваться не нужно",
+      "en": "No need to undress"
+     },
+     {
+      "uz": "Qisqa vaqt",
+      "ru": "Короткая процедура",
+      "en": "Short session"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Massaj 30 daqiqa",
+      "ru": "Массаж 30 минут",
+      "en": "30-minute massage"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea"
+     },
+     {
+      "uz": "Maslahat",
+      "ru": "Рекомендации",
+      "en": "Posture advice"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "30 daqiqa",
+       "ru": "30 минут",
+       "en": "30 minutes"
+      },
+      "original": 110000,
+      "percent": 36
+     },
+     {
+      "name": {
+       "uz": "45 daqiqa",
+       "ru": "45 минут",
+       "en": "45 minutes"
+      },
+      "original": 150000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 3,
+    "images": [
+     0,
+     4
+    ]
+   }
+  ],
+  "food-and-drink": [
+   {
+    "title": {
+     "uz": "Plov to'plami 4 kishiga",
+     "ru": "Набор плова на 4 персоны",
+     "en": "Plov set for four"
+    },
+    "short": {
+     "uz": "An'anaviy qozonda pishirilgan to'y plovi, salat va non.",
+     "ru": "Свадебный плов из казана, салат и лепёшки.",
+     "en": "Wedding-style plov cooked in a kazan, with salad and bread."
+    },
+    "description": {
+     "uz": "Plov mol go'shti va sariq sabzi bilan pishiriladi, har bir mehmonga alohida likopcha beriladi.",
+     "ru": "Плов готовят с говядиной и жёлтой морковью, каждому гостю — отдельная тарелка.",
+     "en": "The plov is cooked with beef and yellow carrots and served on a separate plate for each guest."
+    },
+    "highlights": [
+     {
+      "uz": "Qozonda pishirilgan",
+      "ru": "Готовится в казане",
+      "en": "Cooked in a kazan"
+     },
+     {
+      "uz": "Yangi non",
+      "ru": "Свежие лепёшки",
+      "en": "Fresh bread"
+     },
+     {
+      "uz": "Oilaviy zal",
+      "ru": "Семейный зал",
+      "en": "Family hall"
+     }
+    ],
+    "included": [
+     {
+      "uz": "4 porsiya plov",
+      "ru": "4 порции плова",
+      "en": "4 portions of plov"
+     },
+     {
+      "uz": "Achichuk salat",
+      "ru": "Салат ачичук",
+      "en": "Achichuk salad"
+     },
+     {
+      "uz": "Choy va non",
+      "ru": "Чай и лепёшки",
+      "en": "Tea and bread"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "4 kishi",
+       "ru": "4 человека",
+       "en": "For 4"
+      },
+      "original": 240000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "6 kishi",
+       "ru": "6 человек",
+       "en": "For 6"
+      },
+      "original": 340000,
+      "percent": 37
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     1,
+     5
+    ]
+   },
+   {
+    "title": {
+     "uz": "Grill menyusi 2 kishiga",
+     "ru": "Гриль-меню на двоих",
+     "en": "Grill menu for two"
+    },
+    "short": {
+     "uz": "Mol go'shti steyki, tovuq va garnirlar.",
+     "ru": "Стейк из говядины, курица и гарниры.",
+     "en": "Beef steak, chicken and sides."
+    },
+    "description": {
+     "uz": "Go'sht ko'mirda pishiriladi, garnir sifatida kartoshka va sabzavotlar beriladi.",
+     "ru": "Мясо готовится на углях, гарнир — картофель и овощи.",
+     "en": "The meat is charcoal-grilled and served with potatoes and vegetables."
+    },
+    "highlights": [
+     {
+      "uz": "Ko'mirda pishirilgan",
+      "ru": "На углях",
+      "en": "Charcoal grilled"
+     },
+     {
+      "uz": "Sabzavot garniri",
+      "ru": "Овощной гарнир",
+      "en": "Vegetable sides"
+     },
+     {
+      "uz": "Kechki soatlarda ham",
+      "ru": "И по вечерам",
+      "en": "Also in the evening"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Mol go'shti steyki",
+      "ru": "Стейк из говядины",
+      "en": "Beef steak"
+     },
+     {
+      "uz": "Tovuq shashlik",
+      "ru": "Куриный шашлык",
+      "en": "Chicken skewers"
+     },
+     {
+      "uz": "2 ta ichimlik",
+      "ru": "2 напитка",
+      "en": "2 drinks"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For 2"
+      },
+      "original": 380000,
+      "percent": 38
+     },
+     {
+      "name": {
+       "uz": "4 kishi",
+       "ru": "4 человека",
+       "en": "For 4"
+      },
+      "original": 700000,
+      "percent": 40
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     1,
+     5
+    ]
+   },
+   {
+    "title": {
+     "uz": "Nonushta to'plami",
+     "ru": "Комплексный завтрак",
+     "en": "Breakfast set"
+    },
+    "short": {
+     "uz": "Tuxum, bo'tqa, pishiriq va kofe yoki choy.",
+     "ru": "Яйца, каша, выпечка и кофе или чай.",
+     "en": "Eggs, porridge, pastry and coffee or tea."
+    },
+    "description": {
+     "uz": "Har kuni soat 8 dan 12 gacha beriladi, tuxum turini o'zingiz tanlaysiz.",
+     "ru": "Подаётся ежедневно с 8 до 12, способ приготовления яиц выбираете сами.",
+     "en": "Served daily from 8 to 12; you choose how the eggs are cooked."
+    },
+    "highlights": [
+     {
+      "uz": "Soat 8 dan 12 gacha",
+      "ru": "С 8 до 12",
+      "en": "Served 8 to 12"
+     },
+     {
+      "uz": "Yangi pishiriqlar",
+      "ru": "Свежая выпечка",
+      "en": "Fresh pastries"
+     },
+     {
+      "uz": "Kofe tanlovi",
+      "ru": "Выбор кофе",
+      "en": "Choice of coffee"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Tuxumli taom",
+      "ru": "Блюдо из яиц",
+      "en": "Egg dish"
+     },
+     {
+      "uz": "Pishiriq",
+      "ru": "Выпечка",
+      "en": "Pastry"
+     },
+     {
+      "uz": "Kofe yoki choy",
+      "ru": "Кофе или чай",
+      "en": "Coffee or tea"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "For one"
+      },
+      "original": 85000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For two"
+      },
+      "original": 160000,
+      "percent": 33
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     3
+    ]
+   },
+   {
+    "title": {
+     "uz": "Kofe va desert juftligi",
+     "ru": "Кофе и десерт на двоих",
+     "en": "Coffee and dessert for two"
+    },
+    "short": {
+     "uz": "Ikkita kofe va ikkita desert.",
+     "ru": "Два кофе и два десерта.",
+     "en": "Two coffees and two desserts."
+    },
+    "description": {
+     "uz": "Barista tayyorlagan kofe va kunlik yangi desertlar ro'yxatidan tanlov.",
+     "ru": "Кофе от баристы и десерты дня на выбор.",
+     "en": "Barista-made coffee and a choice from the desserts of the day."
+    },
+    "highlights": [
+     {
+      "uz": "Barista kofesi",
+      "ru": "Кофе от баристы",
+      "en": "Barista coffee"
+     },
+     {
+      "uz": "Kunlik desertlar",
+      "ru": "Десерты дня",
+      "en": "Daily desserts"
+     },
+     {
+      "uz": "Qulay muhit",
+      "ru": "Уютная атмосфера",
+      "en": "Cosy atmosphere"
+     }
+    ],
+    "included": [
+     {
+      "uz": "2 ta kofe",
+      "ru": "2 кофе",
+      "en": "2 coffees"
+     },
+     {
+      "uz": "2 ta desert",
+      "ru": "2 десерта",
+      "en": "2 desserts"
+     },
+     {
+      "uz": "Suv",
+      "ru": "Вода",
+      "en": "Water"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Klassik",
+       "ru": "Классика",
+       "en": "Classic"
+      },
+      "original": 95000,
+      "percent": 32
+     },
+     {
+      "name": {
+       "uz": "Maxsus",
+       "ru": "Особый",
+       "en": "Signature"
+      },
+      "original": 130000,
+      "percent": 35
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     3
+    ]
+   },
+   {
+    "title": {
+     "uz": "Pitsa va ichimliklar",
+     "ru": "Пицца и напитки",
+     "en": "Pizza and drinks"
+    },
+    "short": {
+     "uz": "Katta pitsa, salat va ikkita ichimlik.",
+     "ru": "Большая пицца, салат и два напитка.",
+     "en": "A large pizza, salad and two drinks."
+    },
+    "description": {
+     "uz": "Pitsa tosh pechda pishiriladi; to'ldirmani menyudan tanlaysiz.",
+     "ru": "Пицца печётся в каменной печи, начинку выбираете из меню.",
+     "en": "The pizza is baked in a stone oven and you choose the topping from the menu."
+    },
+    "highlights": [
+     {
+      "uz": "Tosh pechda pishadi",
+      "ru": "Печь на камне",
+      "en": "Stone-oven baked"
+     },
+     {
+      "uz": "To'ldirma tanlovi",
+      "ru": "Выбор начинки",
+      "en": "Choice of topping"
+     },
+     {
+      "uz": "Olib ketish mumkin",
+      "ru": "Можно забрать с собой",
+      "en": "Takeaway available"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Katta pitsa",
+      "ru": "Большая пицца",
+      "en": "Large pizza"
+     },
+     {
+      "uz": "Salat",
+      "ru": "Салат",
+      "en": "Salad"
+     },
+     {
+      "uz": "2 ta ichimlik",
+      "ru": "2 напитка",
+      "en": "2 drinks"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Margarita",
+       "ru": "Маргарита",
+       "en": "Margherita"
+      },
+      "original": 150000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "Assorti",
+       "ru": "Ассорти",
+       "en": "Assorted"
+      },
+      "original": 190000,
+      "percent": 37
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     1,
+     5
+    ]
+   },
+   {
+    "title": {
+     "uz": "Sushi to'plami",
+     "ru": "Суши-сет",
+     "en": "Sushi set"
+    },
+    "short": {
+     "uz": "Rollar va nigirilar to'plami.",
+     "ru": "Набор роллов и нигири.",
+     "en": "A set of rolls and nigiri."
+    },
+    "description": {
+     "uz": "Rollar buyurtma bilan yangi tayyorlanadi, soya sousi va vasabi qo'shiladi.",
+     "ru": "Роллы готовятся при заказе, подаются с соевым соусом и васаби.",
+     "en": "Rolls are made to order and come with soy sauce and wasabi."
+    },
+    "highlights": [
+     {
+      "uz": "Yangi baliq",
+      "ru": "Свежая рыба",
+      "en": "Fresh fish"
+     },
+     {
+      "uz": "Buyurtma bilan tayyorlanadi",
+      "ru": "Готовится при заказе",
+      "en": "Made to order"
+     },
+     {
+      "uz": "Vegetarian variant",
+      "ru": "Вегетарианский вариант",
+      "en": "Vegetarian option"
+     }
+    ],
+    "included": [
+     {
+      "uz": "24 dona rollar",
+      "ru": "24 штуки роллов",
+      "en": "24 pieces of rolls"
+     },
+     {
+      "uz": "Nigiri",
+      "ru": "Нигири",
+      "en": "Nigiri"
+     },
+     {
+      "uz": "Imbir va vasabi",
+      "ru": "Имбирь и васаби",
+      "en": "Ginger and wasabi"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "24 dona",
+       "ru": "24 штуки",
+       "en": "24 pieces"
+      },
+      "original": 210000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "40 dona",
+       "ru": "40 штук",
+       "en": "40 pieces"
+      },
+      "original": 340000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     5,
+     1
+    ]
+   },
+   {
+    "title": {
+     "uz": "Choyxona tushligi",
+     "ru": "Обед в чайхане",
+     "en": "Teahouse lunch"
+    },
+    "short": {
+     "uz": "Lag'mon, somsa va choy.",
+     "ru": "Лагман, самса и чай.",
+     "en": "Lagman, samsa and tea."
+    },
+    "description": {
+     "uz": "Qo'lda cho'zilgan lag'mon va tandirda pishgan somsa bilan to'yimli tushlik.",
+     "ru": "Сытный обед: лагман ручной вытяжки и самса из тандыра.",
+     "en": "A filling lunch of hand-pulled lagman and tandoor-baked samsa."
+    },
+    "highlights": [
+     {
+      "uz": "Qo'lda cho'zilgan lag'mon",
+      "ru": "Лагман ручной вытяжки",
+      "en": "Hand-pulled lagman"
+     },
+     {
+      "uz": "Tandir somsa",
+      "ru": "Самса из тандыра",
+      "en": "Tandoor samsa"
+     },
+     {
+      "uz": "Cheksiz choy",
+      "ru": "Чай без ограничений",
+      "en": "Unlimited tea"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Lag'mon",
+      "ru": "Лагман",
+      "en": "Lagman"
+     },
+     {
+      "uz": "2 ta somsa",
+      "ru": "2 самсы",
+      "en": "2 samsas"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "For one"
+      },
+      "original": 90000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For two"
+      },
+      "original": 170000,
+      "percent": 33
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     1,
+     5
+    ]
+   },
+   {
+    "title": {
+     "uz": "Shirinliklar assorti",
+     "ru": "Ассорти десертов",
+     "en": "Dessert platter"
+    },
+    "short": {
+     "uz": "Sharq shirinliklari va pishiriqlar to'plami.",
+     "ru": "Набор восточных сладостей и выпечки.",
+     "en": "A platter of oriental sweets and pastries."
+    },
+    "description": {
+     "uz": "Yangi pishgan paxlava, chak-chak va kunlik pirojniylar choy bilan beriladi.",
+     "ru": "Свежая пахлава, чак-чак и пирожные дня подаются к чаю.",
+     "en": "Fresh baklava, chak-chak and cakes of the day served with tea."
+    },
+    "highlights": [
+     {
+      "uz": "Qo'lda tayyorlangan",
+      "ru": "Ручная работа",
+      "en": "Handmade"
+     },
+     {
+      "uz": "Choy bilan",
+      "ru": "Подаётся с чаем",
+      "en": "Served with tea"
+     },
+     {
+      "uz": "Sovg'aga qadoqlash",
+      "ru": "Подарочная упаковка",
+      "en": "Gift boxing available"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Paxlava",
+      "ru": "Пахлава",
+      "en": "Baklava"
+     },
+     {
+      "uz": "Chak-chak",
+      "ru": "Чак-чак",
+      "en": "Chak-chak"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Kichik",
+       "ru": "Малое",
+       "en": "Small"
+      },
+      "original": 80000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "Katta",
+       "ru": "Большое",
+       "en": "Large"
+      },
+      "original": 140000,
+      "percent": 34
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     3,
+     5
+    ]
+   }
+  ],
+  "things-to-do": [
+   {
+    "title": {
+     "uz": "Qo'rqinchli kvest xonasi",
+     "ru": "Хоррор-квест",
+     "en": "Horror quest room"
+    },
+    "short": {
+     "uz": "60 daqiqalik kvest, 2 dan 5 kishigacha.",
+     "ru": "Квест на 60 минут для 2–5 человек.",
+     "en": "A 60-minute quest for 2 to 5 players."
+    },
+    "description": {
+     "uz": "Jamoa topishmoqlarni yechib xonadan chiqishi kerak; o'yinni ma'mur kuzatib boradi.",
+     "ru": "Команда решает загадки и выбирается из комнаты, за игрой следит администратор.",
+     "en": "A team solves puzzles to escape the room while a host follows the game."
+    },
+    "highlights": [
+     {
+      "uz": "Jamoaviy o'yin",
+      "ru": "Командная игра",
+      "en": "Team game"
+     },
+     {
+      "uz": "Ma'mur yordami",
+      "ru": "Помощь администратора",
+      "en": "Host support"
+     },
+     {
+      "uz": "Rasmga olish mumkin",
+      "ru": "Можно фотографироваться",
+      "en": "Photos allowed"
+     }
+    ],
+    "included": [
+     {
+      "uz": "60 daqiqa o'yin",
+      "ru": "60 минут игры",
+      "en": "60 minutes of play"
+     },
+     {
+      "uz": "Ma'mur",
+      "ru": "Администратор",
+      "en": "Game host"
+     },
+     {
+      "uz": "Xotira surati",
+      "ru": "Памятное фото",
+      "en": "Souvenir photo"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "2-3 kishi",
+       "ru": "2–3 человека",
+       "en": "2–3 players"
+      },
+      "original": 220000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "4-5 kishi",
+       "ru": "4–5 человек",
+       "en": "4–5 players"
+      },
+      "original": 320000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Karting: 10 daqiqalik poyga",
+     "ru": "Картинг: заезд 10 минут",
+     "en": "Karting: 10-minute race"
+    },
+    "short": {
+     "uz": "Yopiq trekda karting poygasi.",
+     "ru": "Заезд на картинге по крытой трассе.",
+     "en": "A karting race on an indoor track."
+    },
+    "description": {
+     "uz": "Instruktor xavfsizlik qoidalarini tushuntiradi, dubulg'a va qo'lqop beriladi.",
+     "ru": "Инструктор объясняет правила безопасности, выдаются шлем и перчатки.",
+     "en": "An instructor explains the safety rules; helmet and gloves are provided."
+    },
+    "highlights": [
+     {
+      "uz": "Yopiq trek",
+      "ru": "Крытая трасса",
+      "en": "Indoor track"
+     },
+     {
+      "uz": "Dubulg'a beriladi",
+      "ru": "Шлем выдаётся",
+      "en": "Helmet provided"
+     },
+     {
+      "uz": "Vaqt natijasi",
+      "ru": "Результаты заезда",
+      "en": "Lap-time results"
+     }
+    ],
+    "included": [
+     {
+      "uz": "10 daqiqa poyga",
+      "ru": "10 минут заезда",
+      "en": "10-minute race"
+     },
+     {
+      "uz": "Dubulg'a va qo'lqop",
+      "ru": "Шлем и перчатки",
+      "en": "Helmet and gloves"
+     },
+     {
+      "uz": "Instruktaj",
+      "ru": "Инструктаж",
+      "en": "Safety briefing"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 poyga",
+       "ru": "1 заезд",
+       "en": "1 race"
+      },
+      "original": 90000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "2 poyga",
+       "ru": "2 заезда",
+       "en": "2 races"
+      },
+      "original": 160000,
+      "percent": 34
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Boulingda 1 soat",
+     "ru": "Боулинг: 1 час",
+     "en": "Bowling for one hour"
+    },
+    "short": {
+     "uz": "Boling yo'lakchasi va poyabzal ijarasi.",
+     "ru": "Дорожка для боулинга и прокат обуви.",
+     "en": "A bowling lane with shoe rental."
+    },
+    "description": {
+     "uz": "Bir yo'lakda 6 kishigacha o'ynash mumkin, poyabzal ijarasi narxga kiritilgan.",
+     "ru": "На одной дорожке до 6 человек, прокат обуви включён.",
+     "en": "Up to 6 players per lane, shoe rental is included."
+    },
+    "highlights": [
+     {
+      "uz": "6 kishigacha",
+      "ru": "До 6 человек",
+      "en": "Up to 6 players"
+     },
+     {
+      "uz": "Poyabzal ijarasi kiritilgan",
+      "ru": "Прокат обуви включён",
+      "en": "Shoe rental included"
+     },
+     {
+      "uz": "Bolalar uchun yengil sharlar",
+      "ru": "Лёгкие шары для детей",
+      "en": "Light balls for kids"
+     }
+    ],
+    "included": [
+     {
+      "uz": "1 soat yo'lakcha",
+      "ru": "1 час дорожки",
+      "en": "1 hour of lane time"
+     },
+     {
+      "uz": "Poyabzal ijarasi",
+      "ru": "Прокат обуви",
+      "en": "Shoe rental"
+     },
+     {
+      "uz": "Hisob yuritish",
+      "ru": "Электронный счёт",
+      "en": "Automatic scoring"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Ish kunlari",
+       "ru": "Будни",
+       "en": "Weekdays"
+      },
+      "original": 120000,
+      "percent": 40
+     },
+     {
+      "name": {
+       "uz": "Dam olish kunlari",
+       "ru": "Выходные",
+       "en": "Weekends"
+      },
+      "original": 150000,
+      "percent": 33
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Planetariy: ko'rsatuv va ekskursiya",
+     "ru": "Планетарий: сеанс и экскурсия",
+     "en": "Planetarium show and tour"
+    },
+    "short": {
+     "uz": "Yulduzli osmon haqida ko'rsatuv.",
+     "ru": "Сеанс о звёздном небе.",
+     "en": "A show about the night sky."
+    },
+    "description": {
+     "uz": "Gumbaz ostida 45 daqiqalik film va gid hikoyasi; oilalar uchun mos.",
+     "ru": "45-минутный фильм под куполом и рассказ гида, подходит для семей.",
+     "en": "A 45-minute dome film and a guide's talk, suitable for families."
+    },
+    "highlights": [
+     {
+      "uz": "Gumbaz ekrani",
+      "ru": "Купольный экран",
+      "en": "Dome screen"
+     },
+     {
+      "uz": "Gid hikoyasi",
+      "ru": "Рассказ гида",
+      "en": "Guided talk"
+     },
+     {
+      "uz": "Oilalar uchun",
+      "ru": "Для семей",
+      "en": "Family friendly"
+     }
+    ],
+    "included": [
+     {
+      "uz": "45 daqiqalik ko'rsatuv",
+      "ru": "Сеанс 45 минут",
+      "en": "45-minute show"
+     },
+     {
+      "uz": "Gid",
+      "ru": "Экскурсовод",
+      "en": "Guide"
+     },
+     {
+      "uz": "Yulduzlar xaritasi",
+      "ru": "Карта звёздного неба",
+      "en": "Star map"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Kattalar",
+       "ru": "Взрослый",
+       "en": "Adult"
+      },
+      "original": 70000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "Bolalar",
+       "ru": "Детский",
+       "en": "Child"
+      },
+      "original": 45000,
+      "percent": 30
+     }
+    ],
+    "subcategory": 3,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Akvapark: kunlik kirish",
+     "ru": "Аквапарк: дневной билет",
+     "en": "Aqua park day ticket"
+    },
+    "short": {
+     "uz": "Suv sirpanchiqlari va hovuzlar.",
+     "ru": "Водные горки и бассейны.",
+     "en": "Water slides and pools."
+    },
+    "description": {
+     "uz": "Kun davomida cheksiz foydalanish; shkafcha va dush narxga kiritilgan.",
+     "ru": "Безлимитное посещение в течение дня, шкафчик и душ включены.",
+     "en": "Unlimited use all day with a locker and shower included."
+    },
+    "highlights": [
+     {
+      "uz": "Cheksiz sirpanchiqlar",
+      "ru": "Безлимитные горки",
+      "en": "Unlimited slides"
+     },
+     {
+      "uz": "Shkafcha kiritilgan",
+      "ru": "Шкафчик включён",
+      "en": "Locker included"
+     },
+     {
+      "uz": "Bolalar hovuzi",
+      "ru": "Детский бассейн",
+      "en": "Children's pool"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Kunlik kirish",
+      "ru": "Дневной вход",
+      "en": "All-day entry"
+     },
+     {
+      "uz": "Shkafcha",
+      "ru": "Шкафчик",
+      "en": "Locker"
+     },
+     {
+      "uz": "Dush",
+      "ru": "Душ",
+      "en": "Shower"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "Kattalar",
+       "ru": "Взрослый",
+       "en": "Adult"
+      },
+      "original": 140000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "Bolalar",
+       "ru": "Детский",
+       "en": "Child"
+      },
+      "original": 90000,
+      "percent": 35
+     }
+    ],
+    "subcategory": 3,
+    "images": [
+     4,
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Eski shahar bo'ylab piyoda sayr",
+     "ru": "Пешая прогулка по старому городу",
+     "en": "Old city walking tour"
+    },
+    "short": {
+     "uz": "Gid bilan 2 soatlik sayohat.",
+     "ru": "Двухчасовая экскурсия с гидом.",
+     "en": "A two-hour tour with a local guide."
+    },
+    "description": {
+     "uz": "Chorsu, madrasa va hunarmandlar ko'chasi bo'ylab yurish; guruh 10 kishigacha.",
+     "ru": "Маршрут по Чорсу, медресе и улице ремесленников, группа до 10 человек.",
+     "en": "A route through Chorsu, a madrasa and a crafts street; groups of up to 10."
+    },
+    "highlights": [
+     {
+      "uz": "Mahalliy gid",
+      "ru": "Местный гид",
+      "en": "Local guide"
+     },
+     {
+      "uz": "Kichik guruh",
+      "ru": "Малая группа",
+      "en": "Small group"
+     },
+     {
+      "uz": "Tarixiy joylar",
+      "ru": "Исторические места",
+      "en": "Historic sites"
+     }
+    ],
+    "included": [
+     {
+      "uz": "2 soatlik sayr",
+      "ru": "Прогулка 2 часа",
+      "en": "2-hour walk"
+     },
+     {
+      "uz": "Gid xizmati",
+      "ru": "Услуги гида",
+      "en": "Guide service"
+     },
+     {
+      "uz": "Suv",
+      "ru": "Вода",
+      "en": "Bottle of water"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "1 person"
+      },
+      "original": 100000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "2 people"
+      },
+      "original": 180000,
+      "percent": 33
+     }
+    ],
+    "subcategory": 3,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Kvest: detektiv",
+     "ru": "Квест «Детектив»",
+     "en": "Detective quest"
+    },
+    "short": {
+     "uz": "Kattalar uchun mantiqiy kvest.",
+     "ru": "Логический квест для взрослых.",
+     "en": "A logic quest for adults."
+    },
+    "description": {
+     "uz": "Hikoya asosida jinoyatni tergov qilasiz; maslahatlar ma'mur tomonidan beriladi.",
+     "ru": "Вы расследуете преступление по сюжету, подсказки даёт администратор.",
+     "en": "You investigate a crime story, with hints from the host."
+    },
+    "highlights": [
+     {
+      "uz": "Hikoyaviy o'yin",
+      "ru": "Сюжетная игра",
+      "en": "Story-driven game"
+     },
+     {
+      "uz": "Mantiqiy topishmoqlar",
+      "ru": "Логические загадки",
+      "en": "Logic puzzles"
+     },
+     {
+      "uz": "Maslahatlar",
+      "ru": "Подсказки",
+      "en": "Hints available"
+     }
+    ],
+    "included": [
+     {
+      "uz": "60 daqiqa o'yin",
+      "ru": "60 минут игры",
+      "en": "60 minutes of play"
+     },
+     {
+      "uz": "Ma'mur",
+      "ru": "Администратор",
+      "en": "Game host"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea afterwards"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "2-3 kishi",
+       "ru": "2–3 человека",
+       "en": "2–3 players"
+      },
+      "original": 200000,
+      "percent": 33
+     },
+     {
+      "name": {
+       "uz": "4-5 kishi",
+       "ru": "4–5 человек",
+       "en": "4–5 players"
+      },
+      "original": 290000,
+      "percent": 36
+     }
+    ],
+    "subcategory": 0,
+    "images": [
+     2
+    ]
+   },
+   {
+    "title": {
+     "uz": "Bolalar uchun karting",
+     "ru": "Детский картинг",
+     "en": "Kids' karting"
+    },
+    "short": {
+     "uz": "7 yoshdan oshgan bolalar uchun xavfsiz karting.",
+     "ru": "Безопасный карting для детей от 7 лет.",
+     "en": "Safe karting for children from age 7."
+    },
+    "description": {
+     "uz": "Past tezlikdagi kartlar va ota-onalar uchun kuzatuv zonasi.",
+     "ru": "Картинги с ограничением скорости и зона наблюдения для родителей.",
+     "en": "Speed-limited karts and a viewing area for parents."
+    },
+    "highlights": [
+     {
+      "uz": "7 yoshdan",
+      "ru": "От 7 лет",
+      "en": "From age 7"
+     },
+     {
+      "uz": "Tezlik cheklangan",
+      "ru": "Ограничение скорости",
+      "en": "Speed-limited karts"
+     },
+     {
+      "uz": "Ota-onalar zonasi",
+      "ru": "Зона для родителей",
+      "en": "Parents' viewing area"
+     }
+    ],
+    "included": [
+     {
+      "uz": "10 daqiqa poyga",
+      "ru": "10 минут заезда",
+      "en": "10-minute race"
+     },
+     {
+      "uz": "Dubulg'a",
+      "ru": "Шлем",
+      "en": "Helmet"
+     },
+     {
+      "uz": "Sertifikat",
+      "ru": "Сертификат участника",
+      "en": "Participant certificate"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 poyga",
+       "ru": "1 заезд",
+       "en": "1 race"
+      },
+      "original": 70000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "2 poyga",
+       "ru": "2 заезда",
+       "en": "2 races"
+      },
+      "original": 120000,
+      "percent": 34
+     }
+    ],
+    "subcategory": 1,
+    "images": [
+     2
+    ]
+   }
+  ],
+  "health-and-fitness": [
+   {
+    "title": {
+     "uz": "Basseynga kunlik kirish",
+     "ru": "Разовое посещение бассейна",
+     "en": "Swimming pool day pass"
+    },
+    "short": {
+     "uz": "Bir martalik kirish, 90 daqiqa suzish.",
+     "ru": "Разовое посещение, 90 минут плавания.",
+     "en": "Single visit with 90 minutes of swimming."
+    },
+    "description": {
+     "uz": "25 metrlik hovuz, dush va shkafcha; suzish qalpoqchasi talab qilinadi.",
+     "ru": "Бассейн 25 метров, душ и шкафчик; нужна шапочка для плавания.",
+     "en": "A 25-metre pool with shower and locker; a swim cap is required."
+    },
+    "highlights": [
+     {
+      "uz": "25 metrlik hovuz",
+      "ru": "Бассейн 25 м",
+      "en": "25-metre pool"
+     },
+     {
+      "uz": "Dush va shkafcha",
+      "ru": "Душ и шкафчик",
+      "en": "Shower and locker"
+     },
+     {
+      "uz": "Qulay yo'laklar",
+      "ru": "Удобные дорожки",
+      "en": "Marked lanes"
+     }
+    ],
+    "included": [
+     {
+      "uz": "90 daqiqa suzish",
+      "ru": "90 минут плавания",
+      "en": "90 minutes of swimming"
+     },
+     {
+      "uz": "Shkafcha",
+      "ru": "Шкафчик",
+      "en": "Locker"
+     },
+     {
+      "uz": "Dush",
+      "ru": "Душ",
+      "en": "Shower"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 marta",
+       "ru": "1 раз",
+       "en": "1 visit"
+      },
+      "original": 70000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "3 marta",
+       "ru": "3 раза",
+       "en": "3 visits"
+      },
+      "original": 180000,
+      "percent": 35
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Akva-aerobika: 4 mashg'ulot",
+     "ru": "Аквааэробика: 4 занятия",
+     "en": "Aqua aerobics: 4 classes"
+    },
+    "short": {
+     "uz": "Suvda yengil mashg'ulotlar, trener bilan.",
+     "ru": "Лёгкие занятия в воде с тренером.",
+     "en": "Gentle classes in the water with a coach."
+    },
+    "description": {
+     "uz": "Bo'g'imlarga yuk kam; guruhda 12 kishigacha, mashg'ulot 50 daqiqa.",
+     "ru": "Малая нагрузка на суставы; в группе до 12 человек, занятие 50 минут.",
+     "en": "Low impact on joints; groups of up to 12 and 50-minute classes."
+    },
+    "highlights": [
+     {
+      "uz": "Bo'g'imlarga yengil",
+      "ru": "Бережно для суставов",
+      "en": "Easy on joints"
+     },
+     {
+      "uz": "Trener nazorati",
+      "ru": "Под наблюдением тренера",
+      "en": "Coached classes"
+     },
+     {
+      "uz": "Kichik guruh",
+      "ru": "Малая группа",
+      "en": "Small group"
+     }
+    ],
+    "included": [
+     {
+      "uz": "4 mashg'ulot",
+      "ru": "4 занятия",
+      "en": "4 classes"
+     },
+     {
+      "uz": "Basseyn",
+      "ru": "Бассейн",
+      "en": "Pool access"
+     },
+     {
+      "uz": "Shkafcha",
+      "ru": "Шкафчик",
+      "en": "Locker"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "4 mashg'ulot",
+       "ru": "4 занятия",
+       "en": "4 classes"
+      },
+      "original": 200000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "8 mashg'ulot",
+       "ru": "8 занятий",
+       "en": "8 classes"
+      },
+      "original": 360000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Bolalar suzish darsi",
+     "ru": "Уроки плавания для детей",
+     "en": "Kids' swimming lessons"
+    },
+    "short": {
+     "uz": "5-12 yoshli bolalar uchun suzishni o'rganish.",
+     "ru": "Обучение плаванию для детей 5–12 лет.",
+     "en": "Learn-to-swim lessons for ages 5 to 12."
+    },
+    "description": {
+     "uz": "Guruhlar yosh va darajaga qarab tuziladi, trener har darsdan keyin ota-onaga fikr bildiradi.",
+     "ru": "Группы формируются по возрасту и уровню, тренер даёт родителям обратную связь после занятий.",
+     "en": "Groups are formed by age and level and the coach gives parents feedback after each class."
+    },
+    "highlights": [
+     {
+      "uz": "Yosh bo'yicha guruhlar",
+      "ru": "Группы по возрасту",
+      "en": "Age-based groups"
+     },
+     {
+      "uz": "Malakali trener",
+      "ru": "Квалифицированный тренер",
+      "en": "Qualified coach"
+     },
+     {
+      "uz": "Xavfsiz muhit",
+      "ru": "Безопасная среда",
+      "en": "Safe environment"
+     }
+    ],
+    "included": [
+     {
+      "uz": "4 dars",
+      "ru": "4 урока",
+      "en": "4 lessons"
+     },
+     {
+      "uz": "Basseyn",
+      "ru": "Бассейн",
+      "en": "Pool access"
+     },
+     {
+      "uz": "Sertifikat",
+      "ru": "Сертификат",
+      "en": "Progress certificate"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "4 dars",
+       "ru": "4 урока",
+       "en": "4 lessons"
+      },
+      "original": 220000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "8 dars",
+       "ru": "8 уроков",
+       "en": "8 lessons"
+      },
+      "original": 400000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Basseyn va sauna kechasi",
+     "ru": "Бассейн и сауна вечером",
+     "en": "Evening pool and sauna"
+    },
+    "short": {
+     "uz": "Kechki soatlarda basseyn va sauna.",
+     "ru": "Бассейн и сауна в вечерние часы.",
+     "en": "Pool and sauna in the evening."
+    },
+    "description": {
+     "uz": "Soat 19:00 dan keyin tinch muhit; sauna 15 daqiqalik seanslarga bo'lingan.",
+     "ru": "После 19:00 спокойная атмосфера; сауна по сеансам 15 минут.",
+     "en": "A calm atmosphere after 7 pm; the sauna runs in 15-minute sessions."
+    },
+    "highlights": [
+     {
+      "uz": "Kechki soatlar",
+      "ru": "Вечернее время",
+      "en": "Evening hours"
+     },
+     {
+      "uz": "Sauna kiritilgan",
+      "ru": "Сауна включена",
+      "en": "Sauna included"
+     },
+     {
+      "uz": "Kam odam",
+      "ru": "Мало посетителей",
+      "en": "Quiet crowd"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Basseyn 90 daqiqa",
+      "ru": "Бассейн 90 минут",
+      "en": "90 minutes in the pool"
+     },
+     {
+      "uz": "Sauna",
+      "ru": "Сауна",
+      "en": "Sauna"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "For one"
+      },
+      "original": 120000,
+      "percent": 35
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For two"
+      },
+      "original": 220000,
+      "percent": 38
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Oylik basseyn abonementi",
+     "ru": "Абонемент в бассейн на месяц",
+     "en": "Monthly pool membership"
+    },
+    "short": {
+     "uz": "Bir oy davomida haftada 3 marta.",
+     "ru": "Месяц, 3 раза в неделю.",
+     "en": "A month, 3 visits per week."
+    },
+    "description": {
+     "uz": "Abonement shaxsiy; vaqt yo'laklari ertalab va kechqurun mavjud.",
+     "ru": "Абонемент именной; дорожки доступны утром и вечером.",
+     "en": "The membership is personal, with morning and evening lane slots."
+    },
+    "highlights": [
+     {
+      "uz": "Haftada 3 marta",
+      "ru": "3 раза в неделю",
+      "en": "3 visits a week"
+     },
+     {
+      "uz": "Ertalab va kechqurun",
+      "ru": "Утром и вечером",
+      "en": "Morning and evening slots"
+     },
+     {
+      "uz": "Bir oy muddat",
+      "ru": "Срок 1 месяц",
+      "en": "Valid for one month"
+     }
+    ],
+    "included": [
+     {
+      "uz": "12 tashrif",
+      "ru": "12 посещений",
+      "en": "12 visits"
+     },
+     {
+      "uz": "Shkafcha",
+      "ru": "Шкафчик",
+      "en": "Locker"
+     },
+     {
+      "uz": "Dush",
+      "ru": "Душ",
+      "en": "Shower"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "12 tashrif",
+       "ru": "12 посещений",
+       "en": "12 visits"
+      },
+      "original": 420000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "Cheksiz",
+       "ru": "Безлимит",
+       "en": "Unlimited"
+      },
+      "original": 650000,
+      "percent": 32
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Suzish bo'yicha shaxsiy dars",
+     "ru": "Персональная тренировка по плаванию",
+     "en": "Personal swimming coaching"
+    },
+    "short": {
+     "uz": "Trener bilan yakkama-yakka suzish darsi.",
+     "ru": "Индивидуальное занятие по плаванию с тренером.",
+     "en": "One-to-one swimming coaching."
+    },
+    "description": {
+     "uz": "Texnikani video orqali tahlil qilish va shaxsiy tavsiyalar.",
+     "ru": "Разбор техники по видео и личные рекомендации.",
+     "en": "Video review of your technique and personal recommendations."
+    },
+    "highlights": [
+     {
+      "uz": "Yakkama-yakka",
+      "ru": "Один на один",
+      "en": "One-to-one"
+     },
+     {
+      "uz": "Texnika tahlili",
+      "ru": "Разбор техники",
+      "en": "Technique review"
+     },
+     {
+      "uz": "Maqsadga yo'naltirilgan",
+      "ru": "Под вашу цель",
+      "en": "Goal-focused"
+     }
+    ],
+    "included": [
+     {
+      "uz": "Dars 50 daqiqa",
+      "ru": "Занятие 50 минут",
+      "en": "50-minute session"
+     },
+     {
+      "uz": "Video tahlil",
+      "ru": "Видеоразбор",
+      "en": "Video review"
+     },
+     {
+      "uz": "Basseyn",
+      "ru": "Бассейн",
+      "en": "Pool access"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 dars",
+       "ru": "1 занятие",
+       "en": "1 session"
+      },
+      "original": 150000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "5 dars",
+       "ru": "5 занятий",
+       "en": "5 sessions"
+      },
+      "original": 650000,
+      "percent": 35
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Sauna va dam olish zonasi",
+     "ru": "Сауна и зона отдыха",
+     "en": "Sauna and relaxation area"
+    },
+    "short": {
+     "uz": "Sauna, jakuzi va dam olish zonasi.",
+     "ru": "Сауна, джакузи и зона отдыха.",
+     "en": "Sauna, jacuzzi and a lounge."
+    },
+    "description": {
+     "uz": "Ikki soatlik tashrif: sauna, jakuzi va choy bilan dam olish.",
+     "ru": "Двухчасовое посещение: сауна, джакузи и отдых с чаем.",
+     "en": "A two-hour visit: sauna, jacuzzi and a tea lounge."
+    },
+    "highlights": [
+     {
+      "uz": "Jakuzi bor",
+      "ru": "Есть джакузи",
+      "en": "Jacuzzi included"
+     },
+     {
+      "uz": "Choy kiritilgan",
+      "ru": "Чай включён",
+      "en": "Tea included"
+     },
+     {
+      "uz": "Ikki soat",
+      "ru": "Два часа",
+      "en": "Two hours"
+     }
+    ],
+    "included": [
+     {
+      "uz": "2 soat sauna",
+      "ru": "2 часа сауны",
+      "en": "2 hours of sauna"
+     },
+     {
+      "uz": "Jakuzi",
+      "ru": "Джакузи",
+      "en": "Jacuzzi"
+     },
+     {
+      "uz": "Choy",
+      "ru": "Чай",
+      "en": "Tea"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 kishi",
+       "ru": "1 человек",
+       "en": "For one"
+      },
+      "original": 110000,
+      "percent": 33
+     },
+     {
+      "name": {
+       "uz": "2 kishi",
+       "ru": "2 человека",
+       "en": "For two"
+      },
+      "original": 200000,
+      "percent": 36
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   },
+   {
+    "title": {
+     "uz": "Suv ostida sog'lomlashtirish seansi",
+     "ru": "Оздоровительный сеанс в бассейне",
+     "en": "Pool wellness session"
+    },
+    "short": {
+     "uz": "Yengil suzish va cho'zilish mashqlari.",
+     "ru": "Лёгкое плавание и упражнения на растяжку.",
+     "en": "Easy swimming and stretching exercises."
+    },
+    "description": {
+     "uz": "Trener bilan 60 daqiqa: nafas mashqlari, cho'zilish va yengil suzish.",
+     "ru": "60 минут с тренером: дыхательные упражнения, растяжка и лёгкое плавание.",
+     "en": "60 minutes with a coach: breathing exercises, stretching and easy swimming."
+    },
+    "highlights": [
+     {
+      "uz": "Nafas mashqlari",
+      "ru": "Дыхательные упражнения",
+      "en": "Breathing exercises"
+     },
+     {
+      "uz": "Cho'zilish",
+      "ru": "Растяжка",
+      "en": "Stretching"
+     },
+     {
+      "uz": "Boshlovchilar uchun",
+      "ru": "Для начинающих",
+      "en": "Beginner friendly"
+     }
+    ],
+    "included": [
+     {
+      "uz": "60 daqiqa seans",
+      "ru": "Сеанс 60 минут",
+      "en": "60-minute session"
+     },
+     {
+      "uz": "Basseyn",
+      "ru": "Бассейн",
+      "en": "Pool access"
+     },
+     {
+      "uz": "Shkafcha",
+      "ru": "Шкафчик",
+      "en": "Locker"
+     }
+    ],
+    "options": [
+     {
+      "name": {
+       "uz": "1 seans",
+       "ru": "1 сеанс",
+       "en": "1 session"
+      },
+      "original": 90000,
+      "percent": 30
+     },
+     {
+      "name": {
+       "uz": "4 seans",
+       "ru": "4 сеанса",
+       "en": "4 sessions"
+      },
+      "original": 320000,
+      "percent": 33
+     }
+    ],
+    "subcategory": 2,
+    "images": [
+     4
+    ]
+   }
+  ]
+ }
+}

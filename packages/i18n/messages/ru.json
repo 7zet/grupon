@@ -103,7 +103,9 @@
     "validity": "Срок действия купона",
     "booking": "Нужно бронировать заранее",
     "addSuccess": "Добавлено в корзину",
-    "paymentNote": "Оплата списывается в сумах."
+    "paymentNote": "Оплата списывается в сумах.",
+    "validityDays": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
+    "closed": "Выходной"
   },
   "Coupons": {
     "title": "Купоны",
@@ -283,7 +285,6 @@
     "savings": "Вы экономите: {amount}",
     "total": "Итого (в сумах)",
     "paymentNote": "Оплата производится в сумах.",
-    "shippingTitle": "Адрес доставки",
     "line1": "Адрес",
     "city": "Город",
     "phone": "Телефон",
@@ -390,7 +391,8 @@
     "navMedia": "Медиатека",
     "navCreateDeal": "Новая акция",
     "navRedeem": "Погашение",
-    "navDeals": "Мои акции"
+    "navDeals": "Мои акции",
+    "navLabel": "Разделы бизнеса"
   },
   "Deals": {
     "mediaTitle": "Медиатека",

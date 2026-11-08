@@ -103,7 +103,9 @@
     "validity": "Voucher validity",
     "booking": "Advance booking required",
     "addSuccess": "Added to your cart",
-    "paymentNote": "Payment is charged in so'm."
+    "paymentNote": "Payment is charged in so'm.",
+    "validityDays": "{count, plural, one {# day} other {# days}}",
+    "closed": "Closed"
   },
   "Coupons": {
     "title": "Coupons",
@@ -283,7 +285,6 @@
     "savings": "You save {amount}",
     "total": "Total (in so'm)",
     "paymentNote": "Payment is charged in so'm.",
-    "shippingTitle": "Shipping address",
     "line1": "Address",
     "city": "City",
     "phone": "Phone",
@@ -390,7 +391,8 @@
     "navMedia": "Media library",
     "navCreateDeal": "New deal",
     "navRedeem": "Redeem voucher",
-    "navDeals": "My deals"
+    "navDeals": "My deals",
+    "navLabel": "Business sections"
   },
   "Deals": {
     "mediaTitle": "Media library",

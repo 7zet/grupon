@@ -19,7 +19,7 @@ export default async function FraudSignalsPage({ params }: { params: Promise<{ l
   const signals = await accountGet<SignalPage>('/admin/fraud-signals');
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('title')}</h1>
       {signals.items.length === 0 ? (
         <p className="text-ink-muted">{t('empty')}</p>

@@ -103,7 +103,9 @@
     "validity": "Kupon amal qilish muddati",
     "booking": "Oldindan band qilish kerak",
     "addSuccess": "Savatga qo‘shildi",
-    "paymentNote": "To‘lov so‘mda yechiladi."
+    "paymentNote": "To‘lov so‘mda yechiladi.",
+    "validityDays": "{count} kun",
+    "closed": "Dam olish kuni"
   },
   "Coupons": {
     "title": "Kuponlar",
@@ -283,7 +285,6 @@
     "savings": "Siz tejaysiz: {amount}",
     "total": "Jami (so‘mda)",
     "paymentNote": "To‘lov so‘mda amalga oshiriladi.",
-    "shippingTitle": "Yetkazib berish manzili",
     "line1": "Manzil",
     "city": "Shahar",
     "phone": "Telefon",
@@ -390,7 +391,8 @@
     "navMedia": "Media kutubxona",
     "navCreateDeal": "Yangi aksiya",
     "navRedeem": "Vaucher ishlatish",
-    "navDeals": "Mening aksiyalarim"
+    "navDeals": "Mening aksiyalarim",
+    "navLabel": "Biznes bo'limlari"
   },
   "Deals": {
     "mediaTitle": "Media kutubxona",

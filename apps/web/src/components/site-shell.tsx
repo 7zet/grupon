@@ -67,7 +67,7 @@ export async function SiteShell({ children, config, locale }: Props) {
           </div>
         </div>
         <nav className="hidden border-t lg:block">
-          <div className="mx-auto flex max-w-layout items-center gap-6 overflow-x-auto px-8 py-3">
+          <div className="mx-auto flex max-w-layout items-center gap-6 flex-wrap px-8 py-3">
             {config.categories.map((category) => (
               <div className="group relative shrink-0" key={category.id}>
                 <Link

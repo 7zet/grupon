@@ -22,7 +22,7 @@ export default async function StaffPage({ params }: { params: Promise<{ locale: 
   );
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('staffTitle')}</h1>
       <MerchantStaffInvite />
       {list.items.length === 0 ? (

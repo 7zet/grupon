@@ -36,7 +36,7 @@ export default async function NewDealPage({ params }: { params: Promise<{ locale
   }));
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-title font-bold">{t('createTitle')}</h1>
       <DealWizard categories={categories} locations={options} media={media.items} />
     </div>
