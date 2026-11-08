@@ -15,11 +15,6 @@ type LocaleLayoutProps = PropsWithChildren<{
   params: Promise<{ locale: string }>;
 }>;
 
-/** Nothing is built ahead of time, so `next build` does not need the API. Pages are rendered on first visit and cached. */
-export function generateStaticParams() {
-  return [];
-}
-
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
   const { locale } = await params;
 
