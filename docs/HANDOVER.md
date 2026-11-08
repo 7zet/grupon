@@ -10,7 +10,7 @@ Stack: Go API and worker (`services/api`), Next.js web (`apps/web`: buyer site, 
 |---|---|---|
 | DEV-01 | Go API + Next.js web instead of Django + DRF + aiogram + Django Admin. | The admin panel is part of the Next.js app. |
 | DEV-02 | No real PSP, fiscal receipt, MXIK or package code. A mock provider (demo only), a manual-confirmation mode and a PSP port exist. | A real provider is the first launch task. |
-| DEV-03 | Hosting is Vercel + Render + Neon, outside Uzbekistan. | Fine for a demo with no real personal data; a real launch must host in Uzbekistan. |
+| DEV-03 | No hosting at all. The demo runs on the owner's PC and is shared with an ngrok tunnel. | Hosting is not included. A real launch needs a server and a domain, in Uzbekistan for personal data (see below). |
 | DEV-04 | Legal gates G1–G9 do not apply. | Demo only. |
 | DEV-05 | Support is contacts only (phone, Telegram, email from settings). No ticket system or SLA (FR-08.4). | |
 | DEV-06 | No Telegram Mini App and no Telegram bot. | Dropped by decision. The unfinished work is kept only at tag `archive/telegram-wip`. |
@@ -28,7 +28,7 @@ Stack: Go API and worker (`services/api`), Next.js web (`apps/web`: buyer site, 
 - **409 and 422 (S-10).** 409 means the request conflicts with the current state (for example `invalid_deal_state`, `voucher_on_hold`, `merchant_not_approved`, `documents_locked`). 422 means the input or a rule is violated (validation errors, an expired or refunded voucher at redemption). Errors are `application/problem+json` with a stable `code`.
 - **Money.** `int64` tiyin, UZS only. The ledger is append-only and double-entry. `audit_logs` is append-only too (database trigger).
 - **Price proof.** Submitting a deal needs the business to have a price proof document. Demo merchants get a generated placeholder PDF marked DEMO, so the demo needs no upload.
-- **Rate limits and Origin check.** Cookie-authenticated changes from a browser origin other than `WEB_PUBLIC_URL` are refused (`origin_not_allowed`).
+- **Rate limits and Origin check.** Cookie-authenticated changes from a browser origin other than `SITE_URL` or `ALLOWED_ORIGINS` are refused (`origin_not_allowed`).
 
 ## Not included (interfaces ready)
 
@@ -47,22 +47,26 @@ Everything marked ➖ in `docs/AUDIT.md` is in this list or in the deviation tab
 
 - The payout hold from the burst fraud rule stops the whole merchant's payouts, not only the burst amount.
 - Fraud rules `off_hours` and `distance` only record signals (visible on the admin fraud page); only the burst rule holds payouts.
-- Uploaded media and documents live on the API host's disk. On Render's free plan that disk is erased on redeploy.
-- The free hosting sleeps when idle, and background jobs pause while it sleeps.
+- Uploaded media and documents live on the local disk of the machine that runs the API. A real deployment needs persistent storage or object storage.
+- The demo is only reachable while the owner's PC is on and the demo script is running.
 - Some chargeback and order/voucher states exist in the enums but no flow moves into them.
 
-## Running the hosted demo vs. a real production
+## Hosting is not included
 
-The hosted demo stays in demo mode: `DEMO_MODE=true`, `APP_ENV` not `production`, `SMS_PROVIDER=log`, no Redis. Rate limits are then off, which is acceptable only because there are no real users.
+There is no Vercel, Render or Neon setup any more (the old guide is in `docs/archive/`). The next owner chooses a server and a domain. Personal data of people in Uzbekistan must be stored in Uzbekistan, so pick a local provider or data centre. The API and the web app are plain native programs (`go build`, `next build` + `next start`) with a PostgreSQL database; the Docker files are optional and unverified.
+
+## Running the demo vs. a real production
+
+The demo runs in demo mode: `DEMO_MODE=true`, `APP_ENV` not `production`, `SMS_PROVIDER=log`, no Redis. Rate limits are then off, which is acceptable only because there are no real users. Start it with `scripts/demo.ps1`; share it with `scripts/share.ps1` and `docs/SHARE.md`.
 
 A real production must:
 
 1. Set `APP_ENV=production`. The API then refuses to start without `DATABASE_URL`, strong secrets and **`REDIS_URL`**; OTP rate limits fail closed (requests are refused when the limiter is unavailable).
 2. Set `DEMO_MODE=false` and use a real SMS provider (`SMS_PROVIDER=eskiz` with its credentials). `SMS_PROVIDER=log` is refused outside demo mode.
-3. Set `WEB_PUBLIC_URL` to the exact web origin.
-4. Replace the mock payment with a real PSP, add fiscal receipts, and host in Uzbekistan.
+3. Set `SITE_URL` to the exact public web address (and `ALLOWED_ORIGINS` for any extra origin).
+4. Choose a server and domain in Uzbekistan, replace the mock payment with a real PSP, and add fiscal receipts.
 5. Finish legal work (contracts, privacy, regulation), set up backups and monitoring.
 
 ## Next steps for a real launch
 
-PSP and reconciliation → SMS provider → hosting in Uzbekistan with persistent storage → legal gates → bank-change protection → ticket system → notifications by SMS/email.
+PSP and reconciliation → SMS provider → server and domain in Uzbekistan with persistent storage → legal gates → bank-change protection → ticket system → notifications by SMS/email.

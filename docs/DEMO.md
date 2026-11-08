@@ -1,9 +1,10 @@
 # Demo accounts
 
-Run `go run ./cmd/bootstrap` against the demo database before the walkthrough. In
+Start the demo with `scripts\demo.ps1` (it loads the demo data on the first run; `-Reset` reloads it). The site is
+at <http://localhost:3000/uz>, or at your ngrok address when shared (see `docs/SHARE.md`). In
 `DEMO_MODE=true`, the six-digit OTP is shown on the login page. Staff accounts also
 require the authenticator code documented in `docs/ENVIRONMENT.md`; do not use that
-development factor for a hosted demo.
+development factor outside your own PC.
 
 | Account | Role / business | Phone | Demonstrates |
 | --- | --- | --- | --- |

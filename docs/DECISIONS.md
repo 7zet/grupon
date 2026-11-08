@@ -323,3 +323,15 @@ The older entries above are kept as history. Where they disagree with the code, 
 ### Open questions (owner)
 
 - Demo photos: only six verified free-license Unsplash photos are in `seed/images.json` (spa, restaurant, road, coffee, resort pool, dishes), so deals show 1–3 photos and some repeat. I could not search Unsplash/Pexels (no API access here). Please supply a list of photo IDs per category (3–5 per deal template, ideally 60+ in total, including gym, bowling, karting, barber, manicure) or an API key; the pool is one JSON file.
+
+## Local demo, no hosting (November 2026)
+
+- Hosting (Vercel, Render, Neon) is dropped. The demo runs on the owner's PC with `scripts/demo.ps1` and is shared
+  through one ngrok HTTPS tunnel to the web app (`docs/SHARE.md`). Old hosting docs are in `docs/archive/`.
+- `SITE_URL` and `ALLOWED_ORIGINS` (API and web) replace `WEB_PUBLIC_URL`/`NEXT_PUBLIC_SITE_URL` for the Origin check,
+  links and metadata. `WEB_PUBLIC_URL` still works when `SITE_URL` is unset.
+- Public pages are cached (60 s): the `currency` cookie was removed (money is UZS only) so the layout no longer reads
+  cookies; home, deal and business pages are ISR. Link prefetch is off on card grids and menus.
+- Search expands a query through a small synonym table (`domain/catalog/synonyms.go`) and also matches subcategory names;
+  subcategory names are translated in `seed/catalog.json`.
+- Every business has its own seeded owner, manager and cashier (`+998912MMRPP`); the login page no longer lists demo accounts.

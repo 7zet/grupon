@@ -19,7 +19,7 @@ This is the single source of truth for delivery status. Acceptance evidence live
 
 **Finish line:** Demo-only switches work, the full Docker smoke/backup-restore run is verified, and one documented free hosting setup can deploy the web, API/worker, and database.
 
-**Status:** Code done (`v0.4`); deployment in progress — manual, done by the owner with `docs/DEPLOY.md`.
+**Status:** Code done (`v0.4`); hosting was dropped later (November 2026): the demo runs locally, see README.md and docs/SHARE.md.
 
 **Done:**
 
