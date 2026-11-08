@@ -313,3 +313,13 @@ The older entries above are kept as history. Where they disagree with the code, 
 - `fraud_hold` is set by the burst rule (`redemption_burst`).
 - Merchant `suspended` and `terminated`, and deal `paused` and `archived`, are reachable now (G4).
 - The sign-in code sender `log` runs only with `DEMO_MODE=true`.
+
+## Stage 4b — design and demo content (2026-11-08)
+
+- Demo catalog lives in `seed/catalog.json`; each business lists the deal templates it offers, so a deal always matches its business. Bootstrap stays re-runnable. Seeded deals are 60 (was 100); the e2e deal slug moved to `seed-deal-001`.
+- Seed adds a few `in_review` deals (moderation demo), reviews in the buyer's language with varied texts, sales spread over 27 days, and Lotus Spa redemptions made by the demo cashier.
+- Homepage: Featured and Popular come from `homepage_sections` (8 different active deals each); "Recently viewed" was removed because nothing tracks views.
+
+### Open questions (owner)
+
+- Demo photos: only six verified free-license Unsplash photos are in `seed/images.json` (spa, restaurant, road, coffee, resort pool, dishes), so deals show 1–3 photos and some repeat. I could not search Unsplash/Pexels (no API access here). Please supply a list of photo IDs per category (3–5 per deal template, ideally 60+ in total, including gym, bowling, karting, barber, manicure) or an API key; the pool is one JSON file.

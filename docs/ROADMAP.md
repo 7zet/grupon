@@ -1,5 +1,7 @@
 # Grupon roadmap
 
+NEXT: Stage 4b is on `feat/stage-4b`, CI green; waiting for the owner's "merge" (then tag `v0.8`) and "bootstrap done". After that start Stage 5 on `feat/stage-5` from main (see `docs/FINISH-PLAN.md` section 5).
+
 This is the single source of truth for delivery status. Acceptance evidence lives in
 `docs/ACCEPTANCE.md`; durable product decisions live in `docs/DECISIONS.md`.
 
@@ -67,3 +69,5 @@ This is the single source of truth for delivery status. Acceptance evidence live
 **Status:** Not started.
 
 **2026-11-07 — Stage 4a G3/G4:** log SMS only with `DEMO_MODE`; production requires Redis and fails OTP limits closed; Origin check on cookie sessions; `audit_logs` append-only (migration `00032_audit_logs_append_only.sql`); CI security job; masked phones. Merchant sees the rejection reason; deal pause/resume/archive; merchant suspend/terminate/reinstate; admin overview and fraud-signal pages; price proof required on submit (demo merchants are seeded with a placeholder); discount over 70% flagged; calculator warns on negative net income.
+
+**2026-11-08 — Stage 4b:** Inter font loads everywhere; curated demo catalog (`seed/catalog.json`: 30 real-sounding businesses with Tashkent addresses, 32 deal templates, one deal per business and offer, distinct option names and texts, 60 deals); homepage sections show different deals in whole rows; category icons; empty ratings hidden; validity in days; weekly grouped opening hours; quantity stepper above Buy; role-aware merchant panel nav and correct role badge; mobile overflow fixes; message-key tests. No new migrations since v0.7.
