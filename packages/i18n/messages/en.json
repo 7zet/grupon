@@ -392,7 +392,8 @@
     "navMedia": "Media library",
     "navCreateDeal": "New deal",
     "navRedeem": "Redeem voucher",
-    "navDeals": "My deals"
+    "navDeals": "My deals",
+    "navLabel": "Business sections"
   },
   "Deals": {
     "mediaTitle": "Media library",

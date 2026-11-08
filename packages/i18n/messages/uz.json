@@ -392,7 +392,8 @@
     "navMedia": "Media kutubxona",
     "navCreateDeal": "Yangi aksiya",
     "navRedeem": "Vaucher ishlatish",
-    "navDeals": "Mening aksiyalarim"
+    "navDeals": "Mening aksiyalarim",
+    "navLabel": "Biznes bo'limlari"
   },
   "Deals": {
     "mediaTitle": "Media kutubxona",

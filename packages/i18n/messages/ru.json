@@ -392,7 +392,8 @@
     "navMedia": "Медиатека",
     "navCreateDeal": "Новая акция",
     "navRedeem": "Погашение",
-    "navDeals": "Мои акции"
+    "navDeals": "Мои акции",
+    "navLabel": "Разделы бизнеса"
   },
   "Deals": {
     "mediaTitle": "Медиатека",

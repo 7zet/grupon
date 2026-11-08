@@ -387,7 +387,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		deal := deals[i%len(deals)]
 		userID := userIDs[4+i%(len(userIDs)-4)]
 		var orderID, itemID, voucherID string
-		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-interval '2 days') RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1)).Scan(&orderID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at,created_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-make_interval(days => $4::int),now()-make_interval(days => $4::int)) RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1), 1+(i*7)%27).Scan(&orderID); err != nil {
 			return err
 		}
 		if err := tx.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,terms_snapshot,quantity) SELECT $1,$2,$3,$4,$5,o.original_price,d.terms,1 FROM deal_options o JOIN deals d ON d.id=o.deal_id WHERE o.id=$3 RETURNING id`, orderID, deal.ID, deal.OptionID, deal.Title, deal.Price).Scan(&itemID); err != nil {
@@ -401,8 +401,13 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if _, err := tx.Exec(ctx, `UPDATE vouchers SET redemptions_used = 1 WHERE id = $1`, voucherID); err != nil {
 			return err
 		}
+		// The demo cashier scanned the Lotus Spa vouchers, so their history is not empty.
+		staffID := userIDs[1]
+		if deal.MerchantID == merchantIDs[0] {
+			staffID = userIDs[2]
+		}
 		var redemptionID string
-		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, userIDs[1], deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, staffID, deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
 			return err
 		}
 		queries := sqlc.New(tx)
@@ -414,11 +419,11 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		}
 		locale := []string{"uz", "ru", "en"}[i%3]
 		var reviewID string
-		if err := tx.QueryRow(ctx, `INSERT INTO reviews(deal_id,merchant_id,user_id,voucher_id,rating,text,locale,status) VALUES($1,$2,$3,$4,$5,$6,$7,'published') RETURNING id`, deal.ID, deal.MerchantID, userID, voucherID, 3+i%3, data.ReviewTexts[locale], locale).Scan(&reviewID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO reviews(deal_id,merchant_id,user_id,voucher_id,rating,text,locale,status) VALUES($1,$2,$3,$4,$5,$6,$7,'published') RETURNING id`, deal.ID, deal.MerchantID, userID, voucherID, 3+i%3, reviewVariants[locale][(i/3)%len(reviewVariants[locale])], locale).Scan(&reviewID); err != nil {
 			return err
 		}
 		if i%5 == 0 {
-			if _, err := tx.Exec(ctx, `INSERT INTO review_replies(review_id,merchant_user_id,text) VALUES($1,$2,$3)`, reviewID, userIDs[1], "Fikringiz uchun rahmat! / Спасибо! / Thank you!"); err != nil {
+			if _, err := tx.Exec(ctx, `INSERT INTO review_replies(review_id,merchant_user_id,text) VALUES($1,$2,$3)`, reviewID, userIDs[1], reviewReplies[locale]); err != nil {
 				return err
 			}
 		}
@@ -452,6 +457,41 @@ func envOr(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// reviewVariants are short buyer reviews per language; seeded reviews cycle through them.
+var reviewVariants = map[string][]string{
+	"uz": {
+		"Xizmat juda yoqdi, xodimlar e'tiborli va hammasi kelishilganidek bo'ldi.",
+		"Narxiga arziydi. Kuponni ko'rsatdim, hech qanday muammo bo'lmadi.",
+		"Joy toza va qulay, yana kelaman.",
+		"Yozilish oson bo'ldi, kutib o'tirmadim.",
+		"Tavsifdagidek, lekin band vaqt tanlash biroz qiyin bo'ldi.",
+		"Do'stlarimga ham tavsiya qildim.",
+	},
+	"ru": {
+		"Очень понравилось: персонал внимательный, всё прошло как договаривались.",
+		"Стоит своих денег. Показал купон, никаких проблем.",
+		"Чисто и уютно, обязательно приду ещё.",
+		"Записаться было легко, ждать не пришлось.",
+		"Всё как в описании, но выбрать удобное время было непросто.",
+		"Порекомендовал друзьям.",
+	},
+	"en": {
+		"Really enjoyed it. Friendly staff and everything went as agreed.",
+		"Worth the price. I showed the voucher and there were no problems.",
+		"Clean and comfortable, I will come back.",
+		"Booking was easy and I did not have to wait.",
+		"As described, though finding a convenient time slot took a while.",
+		"I recommended it to my friends.",
+	},
+}
+
+// reviewReplies are short merchant replies in the language of the review.
+var reviewReplies = map[string]string{
+	"uz": "Fikringiz uchun rahmat, sizni yana kutamiz!",
+	"ru": "Спасибо за отзыв, будем рады видеть вас снова!",
+	"en": "Thank you for the kind words, we hope to see you again!",
 }
 
 // tiyinPerSom converts so'm amounts in seed data to minor units. Money is stored in tiyin (ADR-0003).
