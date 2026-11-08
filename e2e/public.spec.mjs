@@ -26,7 +26,7 @@ for (const viewport of [
 ]) {
   test(`deal first screen ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto('/uz/deal/seed-deal-096', { waitUntil: 'domcontentloaded' });
+    await page.goto('/uz/deal/seed-deal-001', { waitUntil: 'domcontentloaded' });
     const buy =
       viewport.height === 640
         ? page.getByTestId('sticky-buy')

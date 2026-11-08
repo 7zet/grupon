@@ -1,6 +1,21 @@
 import { publicApi } from '@grupon/api-client';
 import { localized, type Locale } from '@grupon/config';
-import { ArrowRight, Search, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Car,
+  Drama,
+  Dumbbell,
+  Gift,
+  Heart,
+  House,
+  Plane,
+  Search,
+  Sparkles,
+  Ticket,
+  Utensils,
+  type LucideIcon,
+} from 'lucide-react';
 import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DealGrid } from '@/components/deal-grid';
@@ -10,6 +25,26 @@ import { Link } from '@/i18n/navigation';
 import { getCurrency } from '@/lib/preferences';
 
 const homeRenderTime = Date.now();
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
+  utensils: Utensils,
+  ticket: Ticket,
+  dumbbell: Dumbbell,
+  car: Car,
+  book: BookOpen,
+  theatre: Drama,
+  home: House,
+  plane: Plane,
+  gift: Gift,
+  heart: Heart,
+};
+
+/** Keeps whole rows only (multiples of four), so a grid never ends with a half-empty row. */
+function wholeRows<T>(items: T[], max = 8): T[] {
+  const count = Math.min(items.length, max);
+  return items.slice(0, count - (count % 4));
+}
 
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
@@ -21,15 +56,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
     publicApi.deals(new URLSearchParams({ city: 'tashkent', sort: 'popular', page: '1' })),
     getCurrency(),
   ]);
-  const featured =
-    homepage.sections.find((section) => section.key === 'featured')?.deals ??
-    allDeals.items.slice(0, 8);
-  const popular =
-    homepage.sections.find((section) => section.key === 'popular')?.deals ??
-    allDeals.items.slice(8, 16);
-  const limited = allDeals.items
-    .filter((deal) => new Date(deal.ends_at).getTime() < homeRenderTime + 3 * 86400000)
-    .slice(0, 4);
+  const featuredAll =
+    homepage.sections.find((section) => section.key === 'featured')?.deals ?? allDeals.items;
+  const featured = wholeRows(featuredAll.length >= 4 ? featuredAll : allDeals.items);
+  const used = new Set(featured.map((deal) => deal.id));
+  const popularAll =
+    homepage.sections.find((section) => section.key === 'popular')?.deals ?? allDeals.items;
+  const popular = wholeRows(popularAll.filter((deal) => !used.has(deal.id)));
+  popular.forEach((deal) => used.add(deal.id));
+  const limited = wholeRows(
+    allDeals.items
+      .filter((deal) => !used.has(deal.id))
+      .filter((deal) => new Date(deal.ends_at).getTime() < homeRenderTime + 3 * 86400000),
+    4,
+  );
+  limited.forEach((deal) => used.add(deal.id));
+  const recommended = wholeRows(allDeals.items.filter((deal) => !used.has(deal.id)));
   return (
     <>
       <section className="overflow-hidden border-b bg-surface">
@@ -59,7 +101,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
                   placeholder={(await getTranslations('Navigation'))('searchPlaceholder')}
                 />
                 <button
-                  className="absolute bottom-1.5 right-1.5 top-1.5 rounded-control-ui bg-deal px-5 text-small font-semibold text-surface"
+                  className="absolute bottom-1.5 right-1.5 top-1.5 rounded-control-ui bg-brand px-5 text-small font-semibold text-surface"
                   type="submit"
                 >
                   {(await getTranslations('Navigation'))('search')}
@@ -103,14 +145,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           <SectionHeading title={t('featured')} href="/tashkent" />
           <DealGrid deals={featured} locale={locale} currency={currency} />
         </section>
-        <section>
-          <SectionHeading title={t('popular')} href="/tashkent?sort=popular" />
-          <DealGrid deals={popular} locale={locale} currency={currency} />
-        </section>
+        {popular.length > 0 && (
+          <section>
+            <SectionHeading title={t('popular')} href="/tashkent?sort=popular" />
+            <DealGrid deals={popular} locale={locale} currency={currency} />
+          </section>
+        )}
         <section>
           <SectionHeading title={t('categories')} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {config.categories.map((category, index) => (
+            {config.categories.map((category) => {
+              const Icon = CATEGORY_ICONS[category.icon] ?? Sparkles;
+              return (
               <Link
                 className="group relative min-h-36 overflow-hidden rounded-card-ui border bg-surface p-5"
                 href={`/${category.slug}`}
@@ -118,13 +164,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-tint to-surface opacity-70" />
                 <div className="relative flex h-full flex-col justify-between">
-                  <span className="text-title-small font-bold text-brand/20">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
+                  <Icon className="size-8 text-brand" aria-hidden="true" />
                   <span className="font-semibold">{localized(category.name, locale)}</span>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
         {limited.length > 0 && (
@@ -133,14 +178,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
             <DealGrid deals={limited} locale={locale} currency={currency} />
           </section>
         )}
-        <section>
-          <SectionHeading title={t('recommended')} />
-          <DealGrid deals={allDeals.items.slice(4, 12)} locale={locale} currency={currency} />
-        </section>
-        <section>
-          <SectionHeading title={t('recent')} />
-          <DealGrid deals={allDeals.items.slice(16, 20)} locale={locale} currency={currency} />
-        </section>
+        {recommended.length > 0 && (
+          <section>
+            <SectionHeading title={t('recommended')} />
+            <DealGrid deals={recommended} locale={locale} currency={currency} />
+          </section>
+        )}
         <section className="grid overflow-hidden rounded-panel-ui bg-brand text-surface lg:grid-cols-2">
           <div className="p-8 sm:p-12">
             <p className="text-small font-semibold uppercase tracking-widest text-surface/70">
