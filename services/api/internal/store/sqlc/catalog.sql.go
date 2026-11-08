@@ -38,13 +38,15 @@ WHERE d.deleted_at IS NULL
         WHERE dl.deal_id = d.id AND ci.slug = $4::text
       ))
   AND ($5::text IS NULL OR (
-        d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent($5::text))
-        OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent($5::text))
-        OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent($5::text))
+        d.title_uz_search @@ websearch_to_tsquery('simple', immutable_unaccent($5::text))
+        OR d.title_ru_search @@ websearch_to_tsquery('russian', immutable_unaccent($5::text))
+        OR d.title_en_search @@ websearch_to_tsquery('english', immutable_unaccent($5::text))
         OR word_similarity(immutable_unaccent($5::text),
              immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
         OR word_similarity(immutable_unaccent($5::text),
              immutable_unaccent(m.display_name)) >= 0.35
+        OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
+           @@ websearch_to_tsquery('simple', immutable_unaccent($5::text))
       ))
   AND ($6::bigint IS NULL OR pr.min_price >= $6::bigint)
   AND ($7::bigint IS NULL OR pr.min_price <= $7::bigint)
@@ -915,13 +917,15 @@ WITH candidates AS (
           WHERE dl.deal_id = d.id AND ci.slug = $7::text
         ))
     AND ($8::text IS NULL OR (
-          d.title_uz_search @@ plainto_tsquery('simple', immutable_unaccent($8::text))
-          OR d.title_ru_search @@ plainto_tsquery('russian', immutable_unaccent($8::text))
-          OR d.title_en_search @@ plainto_tsquery('english', immutable_unaccent($8::text))
+          d.title_uz_search @@ websearch_to_tsquery('simple', immutable_unaccent($8::text))
+          OR d.title_ru_search @@ websearch_to_tsquery('russian', immutable_unaccent($8::text))
+          OR d.title_en_search @@ websearch_to_tsquery('english', immutable_unaccent($8::text))
           OR word_similarity(immutable_unaccent($8::text),
                immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
           OR word_similarity(immutable_unaccent($8::text),
                immutable_unaccent(m.display_name)) >= 0.35
+          OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
+             @@ websearch_to_tsquery('simple', immutable_unaccent($8::text))
         ))
     AND ($9::bigint IS NULL OR pr.min_price >= $9::bigint)
     AND ($10::bigint IS NULL OR pr.min_price <= $10::bigint)

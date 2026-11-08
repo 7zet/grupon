@@ -46,6 +46,9 @@ function wholeRows<T>(items: T[], max = 8): T[] {
   return items.slice(0, count - (count % 4));
 }
 
+/** Public catalog pages are cached and rebuilt at most once a minute. */
+export const revalidate = 60;
+
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -117,6 +120,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
                     className="rounded-round-ui border bg-surface px-3 py-1.5 text-small hover:bg-brand-tint hover:text-brand"
                     href={`/tashkent/${category.slug}`}
                     key={category.id}
+                    prefetch={false}
                   >
                     {localized(category.name, locale)}
                   </Link>
@@ -164,6 +168,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
                 className="group relative min-h-36 overflow-hidden rounded-card-ui border bg-surface p-5"
                 href={`/${category.slug}`}
                 key={category.id}
+                prefetch={false}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-tint to-surface opacity-70" />
                 <div className="relative flex h-full flex-col justify-between">

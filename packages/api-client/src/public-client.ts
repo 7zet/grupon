@@ -41,7 +41,7 @@ function withQuery(path: string, query?: URLSearchParams): string {
 export const publicApi = {
   config: () => request<PublicConfig>('/config', cached(3600)),
   homepage: (city: string) =>
-    request<Homepage>(withQuery('/homepage', new URLSearchParams({ city })), cached(300)),
+    request<Homepage>(withQuery('/homepage', new URLSearchParams({ city })), cached(60)),
   deals: (query?: URLSearchParams) => request<DealPage>(withQuery('/deals', query), cached(60)),
   deal: (slug: string) => request<Deal>(`/deals/${encodeURIComponent(slug)}`, cached(60)),
   reviews: (slug: string) =>

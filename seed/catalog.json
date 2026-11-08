@@ -2789,5 +2789,142 @@
     ]
    }
   ]
+ },
+ "subcategories": {
+  "salons": {
+   "uz": "Go'zallik salonlari",
+   "ru": "Салоны красоты",
+   "en": "Beauty salons"
+  },
+  "barbers": {
+   "uz": "Sartaroshxonalar",
+   "ru": "Барбершопы",
+   "en": "Barbershops"
+  },
+  "spa": {
+   "uz": "Spa",
+   "ru": "Спа",
+   "en": "Spa"
+  },
+  "massage": {
+   "uz": "Massaj",
+   "ru": "Массаж",
+   "en": "Massage"
+  },
+  "restaurants": {
+   "uz": "Restoranlar",
+   "ru": "Рестораны",
+   "en": "Restaurants"
+  },
+  "cafes": {
+   "uz": "Kafelar",
+   "ru": "Кафе",
+   "en": "Cafes"
+  },
+  "set-menus": {
+   "uz": "Setlar va menyular",
+   "ru": "Сеты и меню",
+   "en": "Set menus"
+  },
+  "quests": {
+   "uz": "Kvestlar",
+   "ru": "Квесты",
+   "en": "Escape rooms"
+  },
+  "karting": {
+   "uz": "Karting",
+   "ru": "Картинг",
+   "en": "Karting"
+  },
+  "bowling": {
+   "uz": "Bouling",
+   "ru": "Боулинг",
+   "en": "Bowling"
+  },
+  "attractions": {
+   "uz": "Ko'ngilochar joylar",
+   "ru": "Развлечения",
+   "en": "Attractions"
+  },
+  "gyms": {
+   "uz": "Sport zallari",
+   "ru": "Спортзалы",
+   "en": "Gyms"
+  },
+  "yoga": {
+   "uz": "Yoga",
+   "ru": "Йога",
+   "en": "Yoga"
+  },
+  "pools": {
+   "uz": "Basseynlar",
+   "ru": "Бассейны",
+   "en": "Swimming pools"
+  },
+  "car-wash": {
+   "uz": "Avtomoyka",
+   "ru": "Автомойки",
+   "en": "Car wash"
+  },
+  "detailing": {
+   "uz": "Detaling",
+   "ru": "Детейлинг",
+   "en": "Detailing"
+  },
+  "masterclasses": {
+   "uz": "Master-klasslar",
+   "ru": "Мастер-классы",
+   "en": "Masterclasses"
+  },
+  "courses": {
+   "uz": "Kurslar",
+   "ru": "Курсы",
+   "en": "Courses"
+  },
+  "theatre": {
+   "uz": "Teatr",
+   "ru": "Театр",
+   "en": "Theatre"
+  },
+  "concerts": {
+   "uz": "Konsertlar",
+   "ru": "Концерты",
+   "en": "Concerts"
+  },
+  "cleaning": {
+   "uz": "Tozalash",
+   "ru": "Уборка",
+   "en": "Cleaning"
+  },
+  "repair": {
+   "uz": "Ta'mirlash",
+   "ru": "Ремонт",
+   "en": "Repair"
+  },
+  "hotels": {
+   "uz": "Mehmonxonalar",
+   "ru": "Отели",
+   "en": "Hotels"
+  },
+  "excursions": {
+   "uz": "Ekskursiyalar",
+   "ru": "Экскурсии",
+   "en": "Excursions"
+  },
+  "flowers": {
+   "uz": "Gullar",
+   "ru": "Цветы",
+   "en": "Flowers"
+  },
+  "cakes": {
+   "uz": "Tortlar",
+   "ru": "Торты",
+   "en": "Cakes"
+  },
+  "diagnostics": {
+   "uz": "Diagnostika",
+   "ru": "Диагностика",
+   "en": "Diagnostics"
+  }
  }
 }

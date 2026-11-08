@@ -26,8 +26,9 @@ const nextConfig: NextConfig = {
       { protocol: 'http', hostname: '127.0.0.1', port: '8080', pathname: '/media/**' },
       ...(apiMediaPattern ? [apiMediaPattern] : []),
     ],
-    // Development serves media from localhost; production media is on a public host.
-    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
+    // The local demo serves media from localhost through the Next image optimizer. A real production
+    // deployment (APP_ENV=production) must serve media from a public host instead.
+    dangerouslyAllowLocalIP: process.env.APP_ENV !== 'production',
   },
   experimental: { useTypeScriptCli: true, workerThreads: true },
   typescript: { ignoreBuildErrors: true },

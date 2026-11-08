@@ -131,3 +131,28 @@ func mapEnvironment(values map[string]string) lookupEnv {
 		return value, ok
 	}
 }
+
+func TestLoadAllowedOrigins(t *testing.T) {
+	t.Parallel()
+
+	got, err := load(mapEnvironment(map[string]string{
+		"DEMO_MODE":       "true",
+		"SITE_URL":        "https://demo.ngrok.app/",
+		"ALLOWED_ORIGINS": "http://localhost:3000, https://other.example/",
+	}))
+	if err != nil {
+		t.Fatalf("load() error = %v", err)
+	}
+	want := []string{"https://demo.ngrok.app", "http://localhost:3000", "https://other.example"}
+	if len(got.Auth.AllowedOrigins) != len(want) {
+		t.Fatalf("AllowedOrigins = %v, want %v", got.Auth.AllowedOrigins, want)
+	}
+	for i := range want {
+		if got.Auth.AllowedOrigins[i] != want[i] {
+			t.Errorf("AllowedOrigins[%d] = %q, want %q", i, got.Auth.AllowedOrigins[i], want[i])
+		}
+	}
+	if _, err := load(mapEnvironment(map[string]string{"DEMO_MODE": "true", "ALLOWED_ORIGINS": "not-a-url"})); err == nil {
+		t.Error("ALLOWED_ORIGINS without a scheme was accepted")
+	}
+}

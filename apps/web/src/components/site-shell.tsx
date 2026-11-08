@@ -38,13 +38,14 @@ export async function SiteShell({ children, config, locale }: Props) {
                   className="block border-b px-2 py-3 font-semibold"
                   href={`/${category.slug}`}
                   key={category.id}
+                  prefetch={false}
                 >
                   {localized(category.name, locale)}
                 </Link>
               ))}
             </nav>
           </details>
-          <Link className="shrink-0 text-subtitle font-bold tracking-tight text-brand" href="/">
+          <Link className="shrink-0 text-subtitle font-bold tracking-tight text-brand" href="/" prefetch={false}>
             {brandConfig.name}
           </Link>
           {config.demo_mode && <span className="rounded-full bg-brand-tint px-2 py-1 text-label font-semibold text-brand">Demo</span>}
@@ -73,20 +74,24 @@ export async function SiteShell({ children, config, locale }: Props) {
                 <Link
                   className="text-small font-semibold text-ink-muted hover:text-brand"
                   href={`/${category.slug}`}
+                  prefetch={false}
                 >
                   {localized(category.name, locale)}
                 </Link>
                 {category.subcategories.length > 0 && (
-                  <div className="invisible absolute left-0 top-full z-50 mt-3 grid min-w-64 translate-y-2 gap-1 rounded-card-ui border bg-surface p-3 opacity-0 shadow-floating-ui transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                    {category.subcategories.map((sub) => (
-                      <Link
-                        className="rounded-control-ui px-3 py-2 text-small hover:bg-brand-tint hover:text-brand"
-                        href={`/tashkent/${category.slug}?subcategory=${sub.slug}`}
-                        key={sub.id}
-                      >
-                        {localized(sub.name, locale)}
-                      </Link>
-                    ))}
+                  <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                    <div className="grid min-w-64 gap-1 rounded-card-ui border bg-surface p-3 shadow-floating-ui">
+                      {category.subcategories.map((sub) => (
+                        <Link
+                          className="rounded-control-ui px-3 py-2 text-small hover:bg-brand-tint hover:text-brand"
+                          href={`/tashkent/${category.slug}?subcategory=${sub.slug}`}
+                          key={sub.id}
+                          prefetch={false}
+                        >
+                          {localized(sub.name, locale)}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -161,6 +166,7 @@ function MobileLink({ href, label, children }: PropsWithChildren<{ href: string;
     <Link
       className="flex min-h-16 flex-col items-center justify-center gap-1 text-[12px] text-ink-muted"
       href={href}
+      prefetch={false}
     >
       {children}
       <span>{label}</span>

@@ -80,8 +80,11 @@ type AuthConfig struct {
 	JWTSecret       string
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
-	// WebPublicURL is the public web origin used in links sent by email.
+	// WebPublicURL is the public web origin used in links sent by email (SITE_URL, or WEB_PUBLIC_URL).
 	WebPublicURL string
+	// AllowedOrigins are the web origins that may send cookie-authenticated changes: WebPublicURL
+	// plus ALLOWED_ORIGINS (comma separated), for example an ngrok https URL.
+	AllowedOrigins []string
 	// BrandName appears in email subjects.
 	BrandName string
 }
@@ -383,8 +386,22 @@ func loadAuth(lookup lookupEnv, environment string) (AuthConfig, error) {
 	if err != nil {
 		return AuthConfig{}, err
 	}
+	if site := optionalString(lookup, "SITE_URL"); site != "" {
+		webURL = site
+	}
+	origins := []string{strings.TrimSuffix(webURL, "/")}
+	for _, origin := range strings.Split(optionalString(lookup, "ALLOWED_ORIGINS"), ",") {
+		origin = strings.TrimSuffix(strings.TrimSpace(origin), "/")
+		if origin == "" {
+			continue
+		}
+		if parsed, err := url.Parse(origin); err != nil || parsed.Scheme == "" || parsed.Host == "" {
+			return AuthConfig{}, fmt.Errorf("ALLOWED_ORIGINS must hold absolute URLs, got %q", origin)
+		}
+		origins = append(origins, origin)
+	}
 	if parsed, err := url.Parse(webURL); err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return AuthConfig{}, fmt.Errorf("WEB_PUBLIC_URL must be an absolute URL")
+		return AuthConfig{}, fmt.Errorf("SITE_URL must be an absolute URL")
 	}
 	brand, err := stringValue(lookup, "BRAND_NAME", defaultBrandName)
 	if err != nil {
@@ -396,6 +413,7 @@ func loadAuth(lookup lookupEnv, environment string) (AuthConfig, error) {
 		AccessTokenTTL:  accessTTL,
 		RefreshTokenTTL: refreshTTL,
 		WebPublicURL:    strings.TrimSuffix(webURL, "/"),
+		AllowedOrigins:  origins,
 		BrandName:       brand,
 	}, nil
 }

@@ -45,6 +45,7 @@ type seedData struct {
 // catalogData is the curated demo content in seed/catalog.json: realistic businesses and deal templates.
 type catalogData struct {
 	MerchantDescriptions map[string]localized `json:"merchantDescriptions"`
+	Subcategories        map[string]localized `json:"subcategories"`
 	Merchants            []struct {
 		Name      string   `json:"name"`
 		Category  string   `json:"category"`
@@ -209,8 +210,11 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			return err
 		}
 		for j, slug := range category.Subcategories {
-			title := strings.ReplaceAll(slug, "-", " ")
-			translated, _ := json.Marshal(localized{"uz": title, "ru": title, "en": title})
+			names, ok := data.Catalog.Subcategories[slug]
+			if !ok {
+				return fmt.Errorf("seed catalog has no subcategory names for %s", slug)
+			}
+			translated, _ := json.Marshal(names)
 			var id string
 			if err := tx.QueryRow(ctx, `INSERT INTO subcategories(category_id,slug,name,sort_order) VALUES($1,$2,$3,$4) RETURNING id`, categoryIDs[i], category.Slug+"-"+slug, translated, j).Scan(&id); err != nil {
 				return err

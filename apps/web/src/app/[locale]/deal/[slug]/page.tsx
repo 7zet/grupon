@@ -37,6 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+/** Public catalog pages are cached and rebuilt at most once a minute. */
+export const revalidate = 60;
+
+/** No page is built ahead of time; each one is rendered on first visit, then cached. */
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function DealPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);

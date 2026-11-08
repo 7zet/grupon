@@ -1,6 +1,7 @@
-import { isCurrency, type Currency } from '@grupon/config';
-import { cookies } from 'next/headers';
+import type { Currency } from '@grupon/config';
+
+/** Prices are UZS only, so the currency is a constant. It is not read from a cookie: reading cookies
+ * would make every public page dynamic and defeat caching. */
 export async function getCurrency(): Promise<Currency> {
-  const value = (await cookies()).get('currency')?.value;
-  return isCurrency(value) ? value : 'UZS';
+  return 'UZS';
 }

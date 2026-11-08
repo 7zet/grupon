@@ -113,7 +113,7 @@ func (a *CatalogAPI) ListDeals(w http.ResponseWriter, r *http.Request, params ge
 		City:        stringValue(params.City),
 		Category:    stringValue(params.Category),
 		Subcategory: stringValue(params.Subcategory),
-		Query:       query,
+		Query:       catalog.ExpandSearch(query),
 		MinPrice:    params.MinPrice,
 		MaxPrice:    params.MaxPrice,
 		MinDiscount: params.MinDiscount,

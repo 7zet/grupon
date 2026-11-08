@@ -9,7 +9,10 @@ async function sellableVoucherDeal() {
   for (const deal of page.items) {
     if (deal.status !== 'active') continue;
     const optionIndex = deal.options.findIndex((item) => item.is_active && item.stock_total - item.stock_sold - item.stock_reserved > 0);
-    if (optionIndex >= 0) return { slug: deal.slug, title: deal.title.uz, optionIndex };
+    if (optionIndex >= 0) {
+      const option = deal.options[optionIndex];
+      return { slug: deal.slug, title: deal.title.uz, optionIndex, optionName: option.name.uz, unitPrice: option.deal_price.amount };
+    }
   }
   throw new Error('no sellable voucher deal in seed data');
 }
@@ -28,6 +31,7 @@ test('browse → login mid-flow → buy → voucher visible', async ({ page }) =
   await page.goto(`/uz/deal/${deal.slug}`);
   await page.waitForLoadState('networkidle');
   await page.getByRole('radio').nth(deal.optionIndex).check();
+  await page.getByRole('button', { name: '+' }).first().click();
   await page.getByRole('button', { name: /Hozir xarid qilish/ }).click();
 
   // Checkout requires a session, so the visitor lands on login with the return path.
@@ -44,6 +48,11 @@ test('browse → login mid-flow → buy → voucher visible', async ({ page }) =
 
   // Back on checkout with the cart preserved.
   await expect(page).toHaveURL(/\/uz\/checkout$/);
+  // The deal, the chosen option and the quantity survive the login detour.
+  const summary = page.locator('#summary-heading').locator('xpath=..');
+  await expect(summary).toContainText(deal.title);
+  await expect(summary).toContainText(deal.optionName);
+  await expect(summary).toContainText(/Miqdor:\s*2/);
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: /To.lovga o.tish/ }).click();
 

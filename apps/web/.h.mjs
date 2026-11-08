@@ -1,0 +1,13 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch({ channel: 'msedge' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto('http://localhost:3000/uz/tashkent/beauty-and-spas', { waitUntil: 'load' });
+await p.waitForTimeout(1500);
+await p.locator('header nav >> a:visible', { hasText: 'Go' }).first().hover();
+await p.waitForTimeout(800);
+await p.screenshot({ path: process.argv[2] + '/hover.png', clip: { x: 0, y: 0, width: 1440, height: 520 } });
+const r = await p.goto('http://localhost:3000/ru/bu-sahifa-yoq');
+await p.waitForTimeout(2500);
+console.log('404 status', r.status(), await p.locator('h1').first().innerText());
+await p.screenshot({ path: process.argv[2] + '/404.png' });
+await b.close();

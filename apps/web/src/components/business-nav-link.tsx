@@ -5,6 +5,7 @@ import { Briefcase } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Link } from '@/i18n/navigation';
+import { fetchMe } from '@/lib/me';
 
 /** Shows the business-owner entry only to accounts with a merchant role. Everyone else sees no trace of it. */
 export function BusinessNavLink({ variant = 'icon' }: { variant?: 'icon' | 'text' }) {
@@ -13,8 +14,7 @@ export function BusinessNavLink({ variant = 'icon' }: { variant?: 'icon' | 'text
 
   useEffect(() => {
     let active = true;
-    fetch('/api/bff/me', { cache: 'no-store' })
-      .then((response) => (response.ok ? (response.json() as Promise<{ roles: string[] }>) : null))
+    fetchMe()
       .then((user) => {
         if (active && user?.roles.some((role) => role.startsWith('merchant_'))) setIsMerchant(true);
       })
