@@ -17,3 +17,18 @@ export function hoursLines(hours: Record<string, unknown> | undefined, locale: s
     return { day, label, open: parts.length === 2 && parts[0] && parts[1] ? `${parts[0]}–${parts[1]}` : null };
   });
 }
+
+/** Merges consecutive days with the same hours: "Mon–Fri 09:00–20:00", "Sat 10:00–18:00", "Sun closed". */
+export function groupedHours(lines: HoursLine[]): { key: string; label: string; open: string | null }[] {
+  const groups: { key: string; label: string; open: string | null; last: string }[] = [];
+  for (const line of lines) {
+    const previous = groups[groups.length - 1];
+    if (previous && previous.open === line.open) {
+      previous.last = line.label;
+      previous.label = `${previous.label.split('–')[0]}–${line.label}`;
+    } else {
+      groups.push({ key: line.day, label: line.label, open: line.open, last: line.label });
+    }
+  }
+  return groups.map(({ key, label, open }) => ({ key, label, open }));
+}

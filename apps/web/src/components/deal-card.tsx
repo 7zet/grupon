@@ -60,7 +60,7 @@ export function DealCard({
               </>
             )}
           </p>
-          <div className="mt-4 tabular-nums text-subtitle font-bold text-ink">
+          <div className="mt-4 whitespace-nowrap tabular-nums text-body font-bold text-ink sm:text-subtitle">
             {formatMoney(option.deal_price.amount, locale, currency)}
           </div>
           <div className="tabular-nums text-small text-ink-muted line-through">

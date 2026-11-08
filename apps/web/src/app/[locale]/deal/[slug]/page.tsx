@@ -1,4 +1,4 @@
-import { hoursLines } from '@/lib/hours';
+import { groupedHours, hoursLines } from '@/lib/hours';
 import { publicApi } from '@grupon/api-client';
 import { localized, type Locale } from '@grupon/config';
 import { Check, Clock3, MapPin, Star } from 'lucide-react';
@@ -161,8 +161,8 @@ export default async function DealPage({ params }: Props) {
                       <strong>{localized(location.city.name, locale)}</strong>
                       <p className="mt-1 text-small text-ink-muted">{location.address}</p>
                       <ul className="mt-2 grid gap-0.5 text-small">
-                        {hoursLines(location.opening_hours, locale).map((line) => (
-                          <li className="flex justify-between gap-4" key={line.day}>
+                        {groupedHours(hoursLines(location.opening_hours, locale)).map((line) => (
+                          <li className="flex justify-between gap-4" key={line.key}>
                             <span className="text-ink-muted">{line.label}</span>
                             <span>{line.open ?? t('closed')}</span>
                           </li>

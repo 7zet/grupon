@@ -97,14 +97,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
                 <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-muted" />
                 <input
                   name="q"
-                  className="h-14 w-full rounded-card-ui border bg-page pl-12 pr-32 shadow-floating-ui"
+                  className="h-14 w-full rounded-card-ui border bg-page pl-12 pr-16 shadow-floating-ui sm:pr-40"
                   placeholder={(await getTranslations('Navigation'))('searchPlaceholder')}
                 />
                 <button
                   className="absolute bottom-1.5 right-1.5 top-1.5 rounded-control-ui bg-brand px-5 text-small font-semibold text-surface"
                   type="submit"
                 >
-                  {(await getTranslations('Navigation'))('search')}
+                  <Search className="size-5 sm:hidden" aria-hidden="true" />
+                  <span className="sr-only sm:not-sr-only">
+                    {(await getTranslations('Navigation'))('search')}
+                  </span>
                 </button>
               </form>
               <div data-hero className="mt-5 flex flex-wrap items-center gap-2">
