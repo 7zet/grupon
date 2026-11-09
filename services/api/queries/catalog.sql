@@ -118,6 +118,11 @@ WITH candidates AS (
                immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
           OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
                immutable_unaccent(m.display_name)) >= 0.35
+          OR EXISTS (
+            SELECT 1 FROM deal_locations dl
+            JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+            WHERE dl.deal_id = d.id
+              AND immutable_unaccent(ml.address) ILIKE '%' || immutable_unaccent(sqlc.narg('query')::text) || '%')
           OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
              @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
         ))
@@ -176,6 +181,11 @@ WHERE d.deleted_at IS NULL
              immutable_unaccent(concat_ws(' ', d.title->>'uz', d.title->>'ru', d.title->>'en'))) >= 0.35
         OR word_similarity(immutable_unaccent(sqlc.narg('query')::text),
              immutable_unaccent(m.display_name)) >= 0.35
+        OR EXISTS (
+          SELECT 1 FROM deal_locations dl
+          JOIN merchant_locations ml ON ml.id = dl.merchant_location_id
+          WHERE dl.deal_id = d.id
+            AND immutable_unaccent(ml.address) ILIKE '%' || immutable_unaccent(sqlc.narg('query')::text) || '%')
         OR to_tsvector('simple', immutable_unaccent(concat_ws(' ', sub.name->>'uz', sub.name->>'ru', sub.name->>'en')))
            @@ websearch_to_tsquery('simple', immutable_unaccent(sqlc.narg('query')::text))
       ))
