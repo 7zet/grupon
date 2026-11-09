@@ -1141,8 +1141,8 @@ components:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Voucher'}}}}]
     MerchantRedemption:
       type: object
-      required: [id, time, deal, option, buyer, branch, cashier, reversed]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
+      required: [id, voucher_id, time, deal, option, buyer, branch, cashier, reversed]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
     MerchantRedemptionPage:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantRedemption'}}}}]
     ReviewInput:

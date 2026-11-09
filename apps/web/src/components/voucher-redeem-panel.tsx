@@ -34,7 +34,12 @@ function problemKey(code: string | undefined): ProblemKey {
     : 'errorGeneric';
 }
 
-async function call(
+/** Shows only the first letter of the buyer's name on the counter screen. */
+function maskName(name: string | null | undefined) {
+  return name ? `${name.charAt(0).toUpperCase()}***` : '***';
+}
+
+export async function call(
   path: string,
   body: unknown,
 ): Promise<{ ok: true; voucher: Voucher } | { ok: false; code?: string }> {
@@ -50,17 +55,21 @@ async function call(
 export function VoucherRedeemPanel({
   locations,
   locale,
+  kassa = false,
 }: {
   locations: Location[];
   locale: string;
+  /** Cashier screen: the camera starts at once, one location, masked buyer and a large confirm button. */
+  kassa?: boolean;
 }) {
   const t = useTranslations('Redeem');
+  const w = useTranslations('Workspace');
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [code, setCode] = useState('');
   const [locationId, setLocationId] = useState(locations[0]?.id ?? '');
   const [voucher, setVoucher] = useState<Voucher | null>(null);
-  const [scanning, setScanning] = useState(false);
+  const [scanning, setScanning] = useState(kassa);
   const [message, setMessage] = useState<ProblemKey | null>(null);
   const [done, setDone] = useState(false);
   const [online, setOnline] = useState(true);
@@ -134,20 +143,24 @@ export function VoucherRedeemPanel({
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
       <section className="grid min-w-0 max-w-xl grid-cols-[minmax(0,1fr)] gap-3">
-        <label className="grid gap-1 text-sm">
-          {t('locationLabel')}
-          <select
-            className={inputClass}
-            value={locationId}
-            onChange={(event) => setLocationId(event.target.value)}
-          >
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {kassa ? (
+          <p className="text-small text-ink-muted">{locations[0]?.label}</p>
+        ) : (
+          <label className="grid gap-1 text-sm">
+            {t('locationLabel')}
+            <select
+              className={inputClass}
+              value={locationId}
+              onChange={(event) => setLocationId(event.target.value)}
+            >
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <form
           className="grid gap-3"
           onSubmit={(event) => {
@@ -177,7 +190,7 @@ export function VoucherRedeemPanel({
               onClick={() => setScanning((on) => !on)}
               className="rounded-control-ui border border-border px-5 py-3 font-semibold"
             >
-              {scanning ? t('stopScan') : t('scan')}
+              {scanning ? t('stopScan') : kassa ? w('scanQr') : t('scan')}
             </button>
           </div>
         </form>
@@ -210,6 +223,12 @@ export function VoucherRedeemPanel({
             {pickText(voucher.deal.title, locale)}
           </h2>
           <p className="text-sm text-ink-muted">{pickText(voucher.option.title, locale)}</p>
+          {kassa && (
+            <p className="text-sm">
+              {w('buyer')}: <span className="font-semibold">{maskName(voucher.buyer_first_name)}</span> · {w('visitsLeft')}:{' '}
+              <span className="font-semibold">{voucher.status === 'active' ? 1 : 0}</span>
+            </p>
+          )}
           <p className="text-sm">
             {t('code')}: <span className="font-semibold">{voucher.code}</span>
           </p>

@@ -60,14 +60,15 @@ type Redemption struct {
 }
 
 type HistoryItem struct {
-	ID       uuid.UUID
-	Time     time.Time
-	Deal     catalog.Text
-	Option   catalog.Text
-	Buyer    string
-	Branch   string
-	Cashier  string
-	Reversed bool
+	ID        uuid.UUID
+	VoucherID uuid.UUID
+	Time      time.Time
+	Deal      catalog.Text
+	Option    catalog.Text
+	Buyer     string
+	Branch    string
+	Cashier   string
+	Reversed  bool
 }
 
 type HistoryPage struct {

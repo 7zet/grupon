@@ -1,5 +1,5 @@
 -- name: ListMerchantRedemptionHistory :many
-SELECT r.id, r.created_at, d.title AS deal_title, o.title AS option_title,
+SELECT r.id, v.id AS voucher_id, r.created_at, d.title AS deal_title, o.title AS option_title,
        buyer.name AS buyer_name, ml.address AS branch, cashier.name AS cashier_name,
        CASE WHEN r.reversed_at IS NOT NULL THEN true ELSE false END AS reversed
 FROM redemptions r

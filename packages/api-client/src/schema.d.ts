@@ -2075,6 +2075,7 @@ export interface components {
     };
     MerchantRedemption: {
       id: components['schemas']['Uuid'];
+      voucher_id: components['schemas']['Uuid'];
       /** Format: date-time */
       time: string;
       deal: components['schemas']['LocalizedText'];

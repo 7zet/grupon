@@ -312,6 +312,11 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$3,now()),($2,$3,now())`, userIDs[3], userIDs[7], "JBSWY3DPEHPK3PXP"); err != nil {
 		return err
 	}
+	// Staff accounts must use 2FA. Every seeded staff member gets the same development factor, so the demo
+	// roles (moderator, support, finance) can sign in; see docs/DEMO.md.
+	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$5,now()),($2,$5,now()),($3,$5,now()),($4,$5,now())`, userIDs[11], userIDs[12], userIDs[13], userIDs[14], "JBSWY3DPEHPK3PXP"); err != nil {
+		return err
+	}
 	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "paused", "ended", "draft"}
 	// One deal per (business, offer) pair, so no business repeats a deal and every deal matches its business.
 	// Categories take turns so that every page of the catalog mixes them.

@@ -1,5 +1,4 @@
-import { publicApi } from '@grupon/api-client';
-import { brandConfig, isLocale, type Currency } from '@grupon/config';
+import { brandConfig, isLocale } from '@grupon/config';
 import { BaseLayout, appFont } from '@grupon/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,7 +8,6 @@ import type { PropsWithChildren } from 'react';
 
 import '../globals.css';
 import { Providers } from '../providers';
-import { SiteShell } from '@/components/site-shell';
 
 type LocaleLayoutProps = PropsWithChildren<{
   params: Promise<{ locale: string }>;
@@ -31,6 +29,10 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   };
 }
 
+/**
+ * Root layout: the document, translations and the base theme. Each workspace adds its own shell in a
+ * route group: (shop) for buyers, (business) for merchant staff, (admin) for platform staff.
+ */
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
@@ -40,19 +42,13 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const currency: Currency = 'UZS';
-  const config = await publicApi.config();
 
   return (
     <html lang={locale}>
       <body className={appFont.variable}>
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <BaseLayout>
-              <SiteShell config={config} locale={locale} currency={currency}>
-                {children}
-              </SiteShell>
-            </BaseLayout>
+            <BaseLayout>{children}</BaseLayout>
           </Providers>
         </NextIntlClientProvider>
       </body>

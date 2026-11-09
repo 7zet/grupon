@@ -828,5 +828,29 @@
     "rules": {
       "redemption_burst": "Bir daqiqada ko'p marta ishlatish"
     }
+  },
+  "Workspace": {
+    "business": "{brand} Business",
+    "kassa": "{brand} Kassa",
+    "admin": "{brand} Admin",
+    "viewMarketplace": "Marketplace'ni ko'rish",
+    "switchWorkspace": "Ish maydonini almashtirish",
+    "noAccessTitle": "Bu bo'limga kirish yo'q",
+    "noAccessText": "Bu sahifa sizning rolingiz uchun emas.",
+    "backHome": "Mening bo'limimga qaytish",
+    "more": "Ko'proq",
+    "menu": "Menyu",
+    "close": "Yopish",
+    "workspace": "Ish maydoni",
+    "branch": "Filial",
+    "scanQr": "QR kodni skanerlash",
+    "enterCode": "Kodni kiriting",
+    "confirm": "Tasdiqlash",
+    "cancelRedemption": "Bekor qilish",
+    "cancelWindow": "10 daqiqa ichida bekor qilish mumkin",
+    "visitsLeft": "Qolgan tashriflar",
+    "buyer": "Xaridor",
+    "todayRedemptions": "Bugungi tasdiqlashlar",
+    "cancelReason": "Kassir bekor qildi"
   }
 }

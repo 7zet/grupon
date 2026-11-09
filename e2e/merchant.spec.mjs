@@ -184,13 +184,15 @@ test('owner creates, admin approves, buyer buys, cashier redeems and sees own hi
   await expect(page.getByRole('heading', { name: 'E2E aksiya' })).toBeVisible();
   await page.getByRole('button', { name: /Ishlatilganini tasdiqlash/ }).click();
   await expect(page.getByRole('status')).toHaveText(/Vaucher ishlatildi/);
-  await expect(page.getByRole('row').filter({ hasText: 'E2E aksiya' }).first()).toBeVisible();
+  // The cashier screen lists today's redemptions as cards, not a table.
+  await expect(page.getByRole('heading', { name: /Bugungi tasdiqlashlar/ })).toBeVisible();
+  await expect(page.locator('li').filter({ hasText: 'E2E aksiya' }).first()).toBeVisible();
 
   // Cashiers have no payouts or platform-finance access, including direct URLs.
   await page.goto(`${WEB}/uz/merchant/payouts`);
-  await expect(page.getByRole('heading', { name: /Bu sahifani topa olmadik/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Bu bo'limga kirish yo'q/ })).toBeVisible();
   await page.goto(`${WEB}/uz/admin/finance`);
-  await expect(page.getByRole('heading', { name: /Bu sahifani topa olmadik/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Bu bo'limga kirish yo'q/ })).toBeVisible();
 
   // The same voucher cannot be used twice.
   const cashier = await login('cashier-b@local.test');

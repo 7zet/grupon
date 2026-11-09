@@ -828,5 +828,29 @@
     "rules": {
       "redemption_burst": "Много погашений за одну минуту"
     }
+  },
+  "Workspace": {
+    "business": "{brand} Business",
+    "kassa": "{brand} Касса",
+    "admin": "{brand} Admin",
+    "viewMarketplace": "Открыть маркетплейс",
+    "switchWorkspace": "Сменить рабочее место",
+    "noAccessTitle": "Нет доступа к этому разделу",
+    "noAccessText": "Эта страница недоступна для вашей роли.",
+    "backHome": "Вернуться в мой раздел",
+    "more": "Ещё",
+    "menu": "Меню",
+    "close": "Закрыть",
+    "workspace": "Рабочее место",
+    "branch": "Филиал",
+    "scanQr": "Сканировать QR",
+    "enterCode": "Введите код",
+    "confirm": "Подтвердить",
+    "cancelRedemption": "Отменить",
+    "cancelWindow": "Отмена возможна в течение 10 минут",
+    "visitsLeft": "Осталось визитов",
+    "buyer": "Покупатель",
+    "todayRedemptions": "Сегодняшние подтверждения",
+    "cancelReason": "Отменено кассиром"
   }
 }

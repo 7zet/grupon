@@ -1,13 +1,13 @@
 import type { PublicConfig } from '@grupon/api-client';
 import { brandConfig, localized, type Currency, type Locale } from '@grupon/config';
-import { Home, Menu, Search, Ticket, UserRound } from 'lucide-react';
+import { Home, Menu, Search, Ticket } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { PropsWithChildren } from 'react';
 import { Link } from '@/i18n/navigation';
 import { BusinessNavLink } from './business-nav-link';
 import { LanguageSelect } from './preferences';
 import { SearchBox } from './search-box';
-import { AccountMenu } from './account-menu';
+import { AccountMenu } from '@/components/account-menu';
 import { SupportContacts } from './support-contacts';
 import { getSupportContacts } from '@/lib/support';
 
@@ -17,6 +17,28 @@ export async function SiteShell({ children, config, locale }: Props) {
   const t = await getTranslations('Navigation');
   const footer = await getTranslations('Footer');
   const identity = await getTranslations('Identity');
+  const workspace = await getTranslations('Workspace');
+  const accountLabels = {
+    account: t('account'),
+    coupons: t('coupons'),
+    logout: t('logout'),
+    switchWorkspace: workspace('switchWorkspace'),
+    viewMarketplace: workspace('viewMarketplace'),
+    buyer: identity('buyer'),
+    owner: identity('owner'),
+    manager: identity('manager'),
+    cashier: identity('cashier'),
+    admin: identity('admin'),
+    moderator: identity('moderator'),
+    support: identity('support'),
+    finance: identity('finance'),
+    superadmin: identity('superadmin'),
+    workspaces: {
+      business: workspace('business', { brand: brandConfig.name }),
+      kassa: workspace('kassa', { brand: brandConfig.name }),
+      admin: workspace('admin', { brand: brandConfig.name }),
+    },
+  };
   const contacts = getSupportContacts();
   return (
     <>
@@ -64,7 +86,7 @@ export async function SiteShell({ children, config, locale }: Props) {
             </select>
             <LanguageSelect value={locale} />
             <BusinessNavLink />
-            <AccountMenu labels={{ account: t('account'), coupons: t('coupons'), logout: t('logout'), buyer: identity('buyer'), owner: identity('owner'), manager: identity('manager'), cashier: identity('cashier'), admin: identity('admin'), moderator: identity('moderator'), support: identity('support'), finance: identity('finance'), superadmin: identity('superadmin') }} />
+            <AccountMenu labels={accountLabels} />
           </div>
         </div>
         <nav className="hidden border-t lg:block">
@@ -153,9 +175,7 @@ export async function SiteShell({ children, config, locale }: Props) {
         <MobileLink href="/account/coupons" label={t('coupons')}>
           <Ticket />
         </MobileLink>
-        <MobileLink href="/login" label={t('account')}>
-          <UserRound />
-        </MobileLink>
+        <AccountMenu labels={accountLabels} variant="mobile" />
       </nav>
     </>
   );

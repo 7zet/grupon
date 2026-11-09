@@ -140,7 +140,7 @@ func (r *RedemptionRepository) History(ctx context.Context, merchantID uuid.UUID
 		if err != nil {
 			return nil, 0, err
 		}
-		items = append(items, redemption.HistoryItem{ID: toUUID(row.ID), Time: row.CreatedAt.Time, Deal: deal, Option: option, Buyer: row.BuyerName, Branch: row.Branch, Cashier: row.CashierName, Reversed: row.Reversed})
+		items = append(items, redemption.HistoryItem{ID: toUUID(row.ID), VoucherID: toUUID(row.VoucherID), Time: row.CreatedAt.Time, Deal: deal, Option: option, Buyer: row.BuyerName, Branch: row.Branch, Cashier: row.CashierName, Reversed: row.Reversed})
 	}
 	return items, total, nil
 }

@@ -828,5 +828,29 @@
     "rules": {
       "redemption_burst": "Many redemptions in one minute"
     }
+  },
+  "Workspace": {
+    "business": "{brand} Business",
+    "kassa": "{brand} Kassa",
+    "admin": "{brand} Admin",
+    "viewMarketplace": "View marketplace",
+    "switchWorkspace": "Switch workspace",
+    "noAccessTitle": "No access",
+    "noAccessText": "This page is not available for your role.",
+    "backHome": "Go to my workspace",
+    "more": "More",
+    "menu": "Menu",
+    "close": "Close",
+    "workspace": "Workspace",
+    "branch": "Branch",
+    "scanQr": "Scan QR",
+    "enterCode": "Enter code",
+    "confirm": "Confirm",
+    "cancelRedemption": "Cancel",
+    "cancelWindow": "Cancel is possible within 10 minutes",
+    "visitsLeft": "Visits left",
+    "buyer": "Buyer",
+    "todayRedemptions": "Today's confirmations",
+    "cancelReason": "Cancelled by the cashier"
   }
 }
