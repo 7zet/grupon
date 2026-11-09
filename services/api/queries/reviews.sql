@@ -24,3 +24,10 @@ WHERE id = sqlc.arg(id) AND user_id = sqlc.arg(user_id) AND deleted_at IS NULL;
 INSERT INTO review_reports (review_id, reporter_user_id, reason)
 VALUES (sqlc.arg(review_id), sqlc.arg(reporter_user_id), sqlc.arg(reason))
 ON CONFLICT (review_id, reporter_user_id) DO NOTHING;
+
+-- name: ListUserReviews :many
+SELECT id, deal_id, merchant_id, user_id, voucher_id, rating, text, locale, status, created_at, deleted_at
+FROM reviews
+WHERE user_id = sqlc.arg(user_id) AND deleted_at IS NULL
+ORDER BY created_at DESC, id DESC
+LIMIT 200;

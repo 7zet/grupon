@@ -173,6 +173,7 @@ type Querier interface {
 	ListRelatedDealIDs(ctx context.Context, arg ListRelatedDealIDsParams) ([]pgtype.UUID, error)
 	ListSubcategories(ctx context.Context) ([]ListSubcategoriesRow, error)
 	ListUnreleasedReservations(ctx context.Context, orderID pgtype.UUID) ([]ListUnreleasedReservationsRow, error)
+	ListUserReviews(ctx context.Context, userID pgtype.UUID) ([]ListUserReviewsRow, error)
 	ListUserRoles(ctx context.Context, userID pgtype.UUID) ([]RoleAssignment, error)
 	ListVouchersForUser(ctx context.Context, arg ListVouchersForUserParams) ([]ListVouchersForUserRow, error)
 	LocationAttachedToDeal(ctx context.Context, arg LocationAttachedToDealParams) (bool, error)

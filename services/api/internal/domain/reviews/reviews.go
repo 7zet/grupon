@@ -70,6 +70,7 @@ type Repository interface {
 	Voucher(ctx context.Context, voucherID uuid.UUID) (VoucherOwner, error)
 	Insert(ctx context.Context, owner VoucherOwner, voucherID, userID uuid.UUID, in Input) (Review, error)
 	Find(ctx context.Context, reviewID uuid.UUID) (Review, error)
+	ListByUser(ctx context.Context, userID uuid.UUID) ([]Review, error)
 	Update(ctx context.Context, reviewID, userID uuid.UUID, in Input) (bool, error)
 	SoftDelete(ctx context.Context, reviewID, userID uuid.UUID) (bool, error)
 	Report(ctx context.Context, reviewID, reporterID uuid.UUID, reason string) error
@@ -99,6 +100,11 @@ func (s *Service) Create(ctx context.Context, userID, voucherID uuid.UUID, in In
 		return Review{}, ErrNotRedeemed
 	}
 	return s.repo.Insert(ctx, owner, voucherID, userID, in)
+}
+
+// ListOwn returns the reviews the user wrote, newest first. Deleted reviews are not listed.
+func (s *Service) ListOwn(ctx context.Context, userID uuid.UUID) ([]Review, error) {
+	return s.repo.ListByUser(ctx, userID)
 }
 
 // Update changes the text or rating of a review the user wrote.

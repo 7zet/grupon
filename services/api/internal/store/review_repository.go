@@ -98,6 +98,30 @@ func (r *ReviewRepository) Find(ctx context.Context, reviewID uuid.UUID) (review
 	}, nil
 }
 
+// ListByUser returns the user's reviews that are not deleted, newest first.
+func (r *ReviewRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]reviews.Review, error) {
+	rows, err := sqlc.New(r.pool).ListUserReviews(ctx, toPgUUID(userID))
+	if err != nil {
+		return nil, fmt.Errorf("list user reviews: %w", err)
+	}
+	out := make([]reviews.Review, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, reviews.Review{
+			ID:         toUUID(row.ID),
+			DealID:     toUUID(row.DealID),
+			MerchantID: toUUID(row.MerchantID),
+			UserID:     toUUID(row.UserID),
+			VoucherID:  toUUID(row.VoucherID),
+			Rating:     int(row.Rating),
+			Text:       row.Text,
+			Locale:     string(row.Locale),
+			Status:     string(row.Status),
+			CreatedAt:  row.CreatedAt.Time,
+		})
+	}
+	return out, nil
+}
+
 // Update changes rating, text and locale of a review the user wrote.
 func (r *ReviewRepository) Update(ctx context.Context, reviewID, userID uuid.UUID, in reviews.Input) (bool, error) {
 	rows, err := sqlc.New(r.pool).UpdateOwnReview(ctx, sqlc.UpdateOwnReviewParams{
