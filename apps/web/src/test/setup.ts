@@ -9,7 +9,10 @@ vi.mock('next/image', () => ({
     return React.createElement('img', imageProps);
   },
 }));
-vi.mock('next/font/google', () => ({ Inter: () => ({ className: '', variable: '--font-app' }) }));
+vi.mock('next/font/google', () => ({
+  Inter: () => ({ className: '', variable: '--font-app' }),
+  Manrope: () => ({ className: '', variable: '--font-manrope' }),
+}));
 vi.mock('@/i18n/navigation', async () => {
   const React = await import('react');
   return {
