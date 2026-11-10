@@ -1,5 +1,5 @@
 import { brandConfig, isLocale } from '@dealo/config';
-import { BaseLayout, appFont } from '@dealo/ui';
+import { BaseLayout, appFont, displayFont } from '@dealo/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
@@ -45,7 +45,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <html lang={locale}>
-      <body className={appFont.variable}>
+      <body className={`${appFont.variable} ${displayFont.variable}`}>
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <BaseLayout>{children}</BaseLayout>

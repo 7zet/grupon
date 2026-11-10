@@ -63,7 +63,9 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        m.website AS merchant_website, m.instagram AS merchant_instagram, m.telegram AS merchant_telegram,
        m.rating_avg::float8 AS merchant_rating_avg,
        m.rating_count AS merchant_rating_count, m.commission_bps AS merchant_commission_bps,
-       c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon
+       c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon,
+       CAST(COALESCE((SELECT ml.address FROM merchant_locations ml WHERE ml.merchant_id = m.id
+                 ORDER BY ml.created_at, ml.id LIMIT 1), '') AS text) AS area
 FROM deals d
 JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories c ON c.id = d.category_id
@@ -266,7 +268,7 @@ LIMIT sqlc.arg(page_limit);
 -- name: SuggestCategories :many
 SELECT slug, name
 FROM categories
-WHERE is_active = true
+WHERE searchable = true
   AND (
     strpos(lower(immutable_unaccent(concat_ws(' ', name->>'uz', name->>'ru', name->>'en'))),
            lower(immutable_unaccent(sqlc.arg(query)::text))) > 0
@@ -283,3 +285,12 @@ WHERE is_active = true
   AND (starts_at IS NULL OR starts_at <= now())
   AND (ends_at IS NULL OR ends_at > now())
 ORDER BY sort_order, key;
+
+-- name: SuggestAddresses :many
+SELECT ml.address
+FROM merchant_locations ml
+JOIN merchants m ON m.id = ml.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
+WHERE strpos(lower(immutable_unaccent(ml.address)), lower(immutable_unaccent(sqlc.arg(query)::text))) > 0
+GROUP BY ml.address
+ORDER BY ml.address
+LIMIT sqlc.arg(page_limit);

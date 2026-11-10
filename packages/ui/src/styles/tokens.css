@@ -1,24 +1,43 @@
 :root {
   color-scheme: light;
 
-  --brand: #26328c;
-  --brand-hover: #1e2870;
-  --brand-tint: #eef0fa;
+  /* Dealo brand scale (green). Components use the semantic names below, never raw hex. */
+  --brand-900: #064e3b;
+  --brand-800: #065f46;
+  --brand-700: #047857;
+  --brand-100: #d1fae5;
+  --brand-50: #ecfdf5;
+
+  --brand: var(--brand-700);
+  --brand-hover: var(--brand-800);
+  --brand-dark: var(--brand-900);
+  --brand-tint: var(--brand-100);
+  --brand-soft: var(--brand-50);
+
   --deal: #dc2626;
   --deal-hover: #b91c1c;
-  --deal-tint: #feecec;
-  --save: #15803d;
-  --save-tint: #ecfdf3;
+  --deal-tint: #fef2f2;
+
+  --save: var(--brand-700);
+  --save-tint: var(--brand-50);
   --rating: #f59e0b;
+
   --error: #9f1239;
   --error-tint: #fff1f2;
-  --ink: #18181b;
-  --ink-muted: #71717a;
-  --ink-faint: #a1a1aa;
-  --border: #e7e5e4;
-  --bg: #fafaf9;
+
+  --ink: #111827;
+  --ink-muted: #6b7280;
+  --ink-faint: #9ca3af; /* borders, decorative marks only: 2.5:1 on white, never text */
+  --border: #e5e7eb;
+  --bg: #f7f9f8;
   --surface: #ffffff;
 
+  /* Shape and shadow */
+  --shadow-card: 0 1px 2px rgb(17 24 39 / 6%), 0 4px 16px rgb(17 24 39 / 6%);
+  --shadow-lift: 0 2px 4px rgb(17 24 39 / 6%), 0 12px 28px rgb(17 24 39 / 10%);
+  --shadow-floating: 0 8px 30px rgb(17 24 39 / 10%);
+
+  /* Type scale (px: 12 14 16 18 22 28 36 48), spacing grid 4 px, layout and shape */
   --font-family-sans: var(--font-app), 'Inter', 'Arial', sans-serif;
   --font-size-12: 0.75rem;
   --font-size-14: 0.875rem;
@@ -32,16 +51,21 @@
   --space-unit: 0.25rem;
   --layout-max-width: 72rem;
   --header-height: 4.5rem;
-  --radius-control: 0.5rem;
-  --radius-card: 0.75rem;
-  --radius-panel: 1rem;
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
   --radius-round: 9999px;
-  --shadow-floating: 0 0.5rem 1.875rem rgb(24 24 27 / 8%);
 }
 
 @theme inline {
   --font-sans: var(--font-app), 'Inter', Arial, Helvetica, sans-serif;
+  --font-display: var(--font-manrope), 'Manrope', var(--font-app), sans-serif;
   --color-brand: var(--brand);
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-50: var(--brand-50);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
   --color-brand-hover: var(--brand-hover);
   --color-brand-tint: var(--brand-tint);
   --color-deal: var(--deal);

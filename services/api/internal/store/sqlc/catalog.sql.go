@@ -530,7 +530,9 @@ SELECT d.id, d.slug, d.title, d.status, d.sold_count, d.rating_avg::float8 AS ra
        m.website AS merchant_website, m.instagram AS merchant_instagram, m.telegram AS merchant_telegram,
        m.rating_avg::float8 AS merchant_rating_avg,
        m.rating_count AS merchant_rating_count, m.commission_bps AS merchant_commission_bps,
-       c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon
+       c.id AS category_id, c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon,
+       CAST(COALESCE((SELECT ml.address FROM merchant_locations ml WHERE ml.merchant_id = m.id
+                 ORDER BY ml.created_at, ml.id LIMIT 1), '') AS text) AS area
 FROM deals d
 JOIN merchants m ON m.id = d.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
 JOIN categories c ON c.id = d.category_id
@@ -566,6 +568,7 @@ type ListDealSummaryRowsRow struct {
 	CategorySlug          string             `json:"category_slug"`
 	CategoryName          []byte             `json:"category_name"`
 	CategoryIcon          string             `json:"category_icon"`
+	Area                  string             `json:"area"`
 }
 
 func (q *Queries) ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID) ([]ListDealSummaryRowsRow, error) {
@@ -605,6 +608,7 @@ func (q *Queries) ListDealSummaryRows(ctx context.Context, dealIds []pgtype.UUID
 			&i.CategorySlug,
 			&i.CategoryName,
 			&i.CategoryIcon,
+			&i.Area,
 		); err != nil {
 			return nil, err
 		}
@@ -1009,10 +1013,45 @@ func (q *Queries) SearchPublishedDealIDs(ctx context.Context, arg SearchPublishe
 	return items, nil
 }
 
+const suggestAddresses = `-- name: SuggestAddresses :many
+SELECT ml.address
+FROM merchant_locations ml
+JOIN merchants m ON m.id = ml.merchant_id AND m.review_status = 'approved' AND m.deleted_at IS NULL
+WHERE strpos(lower(immutable_unaccent(ml.address)), lower(immutable_unaccent($1::text))) > 0
+GROUP BY ml.address
+ORDER BY ml.address
+LIMIT $2
+`
+
+type SuggestAddressesParams struct {
+	Query     string `json:"query"`
+	PageLimit int32  `json:"page_limit"`
+}
+
+func (q *Queries) SuggestAddresses(ctx context.Context, arg SuggestAddressesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, suggestAddresses, arg.Query, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var address string
+		if err := rows.Scan(&address); err != nil {
+			return nil, err
+		}
+		items = append(items, address)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const suggestCategories = `-- name: SuggestCategories :many
 SELECT slug, name
 FROM categories
-WHERE is_active = true
+WHERE searchable = true
   AND (
     strpos(lower(immutable_unaccent(concat_ws(' ', name->>'uz', name->>'ru', name->>'en'))),
            lower(immutable_unaccent($1::text))) > 0

@@ -247,6 +247,7 @@ type Querier interface {
 	StaffAssignmentForMerchant(ctx context.Context, arg StaffAssignmentForMerchantParams) (StaffAssignmentForMerchantRow, error)
 	SubcategoryCategoryID(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error)
 	SubmitMerchantForReview(ctx context.Context, arg SubmitMerchantForReviewParams) (SubmitMerchantForReviewRow, error)
+	SuggestAddresses(ctx context.Context, arg SuggestAddressesParams) ([]string, error)
 	SuggestCategories(ctx context.Context, arg SuggestCategoriesParams) ([]SuggestCategoriesRow, error)
 	SuggestDeals(ctx context.Context, arg SuggestDealsParams) ([]SuggestDealsRow, error)
 	SuggestMerchants(ctx context.Context, arg SuggestMerchantsParams) ([]SuggestMerchantsRow, error)

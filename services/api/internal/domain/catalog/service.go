@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -136,6 +137,7 @@ type Repository interface {
 	SuggestDeals(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
 	SuggestMerchants(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
 	SuggestCategories(ctx context.Context, query, locale string, limit int) ([]SuggestionRow, error)
+	SuggestAddresses(ctx context.Context, query string, limit int) ([]SuggestionRow, error)
 
 	HomepageRows(ctx context.Context) ([]HomepageRow, error)
 }
@@ -383,8 +385,12 @@ func (s *Service) Suggestions(ctx context.Context, rawQuery, locale string) ([]S
 	if err != nil {
 		return nil, fmt.Errorf("suggest categories: %w", err)
 	}
+	addresses, err := s.repo.SuggestAddresses(ctx, query, 3)
+	if err != nil {
+		return nil, fmt.Errorf("suggest addresses: %w", err)
+	}
 	items := make([]Suggestion, 0, maxSuggestions)
-	for _, row := range append(append(deals, merchants...), categories...) {
+	for _, row := range append(append(append(deals, merchants...), addresses...), categories...) {
 		items = append(items, Suggestion{Type: row.Type, Label: row.Label, Href: suggestionHref(row)})
 		if len(items) == maxSuggestions {
 			break
@@ -399,6 +405,9 @@ func suggestionHref(row SuggestionRow) string {
 		return "/deal/" + row.Slug
 	case "merchant":
 		return "/business/" + row.Slug
+	case "address":
+		// An address is a search: the results page matches merchant addresses.
+		return "/search?q=" + url.QueryEscape(row.Label)
 	default:
 		return "/" + row.Slug
 	}

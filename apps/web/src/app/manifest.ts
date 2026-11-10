@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/uz/merchant/redeem',
     display: 'standalone',
     background_color: '#ffffff',
-    theme_color: '#0f766e',
+    theme_color: '#047857',
     icons: [{ src: '/icons/scanner.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
   };
 }

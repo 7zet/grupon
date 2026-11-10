@@ -27,10 +27,13 @@ for (const viewport of [
   test(`deal first screen ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/uz/deal/seed-deal-001', { waitUntil: 'domcontentloaded' });
-    const buy =
-      viewport.height === 640
-        ? page.getByTestId('sticky-buy')
-        : page.locator('button:visible').filter({ hasText: 'Hozir xarid qilish' }).first();
+    // On a short phone screen the sticky bar appears only once the purchase button scrolls out of view.
+    const inlineBuy = page.locator('button:visible').filter({ hasText: 'Hozir xarid qilish' }).first();
+    const inlineBox = await inlineBuy.boundingBox();
+    const inlineVisible = Boolean(inlineBox && inlineBox.y + inlineBox.height <= viewport.height);
+    const buy = viewport.height === 640 && !inlineVisible
+      ? page.getByTestId('sticky-buy')
+      : page.locator('button:visible').filter({ hasText: 'Hozir xarid qilish' }).first();
     await expect(buy).toBeVisible();
     const box = await buy.boundingBox();
     expect(box).not.toBeNull();

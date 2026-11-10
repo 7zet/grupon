@@ -8,6 +8,11 @@
   color: var(--ink);
 }
 
+h1, h2, h3, .font-display {
+  font-family: var(--font-manrope), "Manrope", var(--font-app), sans-serif;
+  font-weight: 700;
+}
+
 body {
   font-family: var(--font-app), 'Inter', Arial, Helvetica, sans-serif;
 }

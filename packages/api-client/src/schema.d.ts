@@ -1826,6 +1826,8 @@ export interface components {
     DealSummary: {
       id: components['schemas']['Uuid'];
       slug: string;
+      /** @description Address of the first business location, for the card line. */
+      area?: string;
       merchant: components['schemas']['Merchant'];
       category: components['schemas']['Category'];
       title: components['schemas']['LocalizedText'];
@@ -1898,7 +1900,7 @@ export interface components {
     };
     Suggestion: {
       /** @enum {string} */
-      type: 'deal' | 'merchant' | 'category';
+      type: 'deal' | 'merchant' | 'category' | 'address';
       label: string;
       href: string;
     };

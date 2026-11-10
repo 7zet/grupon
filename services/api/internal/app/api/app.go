@@ -13,7 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/google/uuid"
 	"github.com/dealo/dealo/services/api/internal/app/commerceapp"
 	workerapp "github.com/dealo/dealo/services/api/internal/app/worker"
 	"github.com/dealo/dealo/services/api/internal/domain/catalog"
@@ -34,6 +33,7 @@ import (
 	"github.com/dealo/dealo/services/api/internal/platform/sms"
 	"github.com/dealo/dealo/services/api/internal/platform/storage"
 	"github.com/dealo/dealo/services/api/internal/store"
+	"github.com/google/uuid"
 )
 
 // Run connects to PostgreSQL and Redis, serves the HTTP API, and blocks until the server stops

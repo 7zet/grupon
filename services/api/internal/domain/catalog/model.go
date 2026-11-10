@@ -138,6 +138,7 @@ type Media struct {
 type DealSummary struct {
 	ID          uuid.UUID  `json:"id"`
 	Slug        string     `json:"slug"`
+	Area        string     `json:"area"`
 	Merchant    Merchant   `json:"merchant"`
 	Category    Category   `json:"category"`
 	Title       Text       `json:"title"`

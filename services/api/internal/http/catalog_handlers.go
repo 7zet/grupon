@@ -424,6 +424,7 @@ func mapDealSummary(deal catalog.DealSummary) gen.DealSummary {
 	return gen.DealSummary{
 		Id:          gen.Uuid(deal.ID),
 		Slug:        deal.Slug,
+		Area:        stringPtr(deal.Area),
 		Merchant:    mapMerchant(deal.Merchant),
 		Category:    mapCategory(deal.Category),
 		Title:       mapText(deal.Title),

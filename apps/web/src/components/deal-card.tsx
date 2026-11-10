@@ -5,6 +5,7 @@ import { localized, type Currency, type Locale } from '@dealo/config';
 import { discountPercent, formatMoney } from '@dealo/ui';
 import { Clock3, Heart, Star } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
@@ -22,36 +23,47 @@ export function DealCard({
 }) {
   const t = useTranslations('Common');
   const reduced = useReducedMotion();
+  const [saved, setSaved] = useState(false);
   const option = deal.options[0];
   const image = deal.media[0];
   if (!option || !image) return null;
   const days = Math.ceil((new Date(deal.ends_at).getTime() - cardRenderTime) / 86400000);
   return (
     <motion.article
-      {...(!reduced ? { whileHover: { y: -2 } } : {})}
-      transition={{ duration: 0.18 }}
-      className="group relative h-full overflow-hidden rounded-card-ui border bg-surface hover:shadow-floating-ui"
+      {...(!reduced ? { whileHover: { y: -4 } } : {})}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="group relative h-full overflow-hidden rounded-card-ui border bg-surface shadow-card transition-shadow duration-200 hover:shadow-lift"
     >
       <Link className="flex h-full flex-col" href={`/deal/${deal.slug}`} prefetch={false}>
         <div className="relative aspect-[4/3] overflow-hidden bg-brand-tint">
           <Image
-            className="object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
+            className="object-cover transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04] motion-reduce:transition-none"
             src={image.url}
             alt={localized(image.alt, locale)}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
-          <span className="absolute left-3 top-3 rounded-control-ui bg-deal px-2 py-1 text-small font-semibold text-surface">
+          <motion.span
+            initial={reduced ? false : { scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute left-3 top-3 rounded-control-ui bg-deal px-2 py-1 text-small font-semibold tabular-nums text-surface"
+          >
             -{discountPercent(option.original_price.amount, option.deal_price.amount)}%
-          </span>
+          </motion.span>
         </div>
         <div className="flex flex-1 flex-col p-4">
           <p className="line-clamp-2 min-h-12 font-semibold leading-6 text-ink">
             {localized(deal.title, locale)}
           </p>
+          {deal.area && (
+            <p className="mt-1 line-clamp-1 text-label text-ink-muted" title={deal.area}>
+              {deal.area}
+            </p>
+          )}
           <p className="mt-2 line-clamp-1 text-small text-ink-muted">
             {deal.merchant.display_name} ·{' '}
-            {localized(deal.merchant.locations?.[0]?.city.name ?? deal.category.name, locale)}
+            {localized(deal.category.name, locale)}
             {deal.rating_count > 0 && (
               <>
                 {' · '}
@@ -60,7 +72,7 @@ export function DealCard({
               </>
             )}
           </p>
-          <div className="mt-4 whitespace-nowrap tabular-nums text-body font-bold text-ink sm:text-subtitle">
+          <div className="mt-4 whitespace-nowrap font-display tabular-nums text-body font-extrabold text-ink sm:text-subtitle">
             {formatMoney(option.deal_price.amount, locale, currency)}
           </div>
           <div className="tabular-nums text-small text-ink-muted line-through">
@@ -78,13 +90,17 @@ export function DealCard({
           </div>
         </div>
       </Link>
-      <button
-        className="absolute right-3 top-3 rounded-round-ui bg-surface p-2 text-ink-muted shadow-floating-ui hover:text-deal"
+      <motion.button
+        className={`absolute right-3 top-3 min-h-11 min-w-11 rounded-round-ui bg-surface p-2 shadow-floating-ui ${saved ? 'text-deal' : 'text-ink-muted hover:text-deal'}`}
         aria-label={t('save')}
+        aria-pressed={saved}
         type="button"
+        onClick={() => setSaved((value) => !value)}
+        {...(reduced ? {} : { whileTap: { scale: 0.85 }, animate: { scale: saved ? [1, 1.25, 1] : 1 } })}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Heart className="size-5" />
-      </button>
+        <Heart className={`size-5 ${saved ? 'fill-current' : ''}`} />
+      </motion.button>
     </motion.article>
   );
 }

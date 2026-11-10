@@ -39,7 +39,7 @@ export default async function MerchantLanding({ params }: { params: Promise<{ lo
                 <div className="flex size-11 items-center justify-center rounded-control-ui bg-brand-tint text-brand">
                   <Icon />
                 </div>
-                <span className="mt-5 block text-label font-semibold text-ink-faint">
+                <span className="mt-5 block text-label font-semibold text-ink-muted">
                   0{index + 1}
                 </span>
                 <h3 className="mt-2 text-lead font-bold">{t(title)}</h3>
