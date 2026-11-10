@@ -35,7 +35,14 @@
     "recent": "Recently viewed",
     "merchantTitle": "Grow your local business",
     "merchantText": "Reach new customers with a deal built around your goals.",
-    "merchantCta": "Start selling"
+    "merchantCta": "Start selling",
+    "howTitle": "How Dealo works",
+    "howStep1Title": "Pick a deal",
+    "howStep1Text": "Browse restaurants, salons, sport and leisure offers in your city.",
+    "howStep2Title": "Pay online",
+    "howStep2Text": "Pay the discounted price; the voucher appears in your account at once.",
+    "howStep3Title": "Show the QR code",
+    "howStep3Text": "Visit the place and show the cashier the QR code or the voucher code."
   },
   "Common": {
     "viewAll": "View all",

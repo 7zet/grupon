@@ -4,9 +4,11 @@ import type { components } from '@dealo/api-client';
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { pickText } from '@/lib/localized';
+
+import { ErrorShake, ScanButton, ScanFrame, SuccessOverlay } from './kassa-effects';
 
 type Voucher = components['schemas']['Voucher'];
 type Location = { id: string; label: string };
@@ -59,7 +61,7 @@ export function VoucherRedeemPanel({
 }: {
   locations: Location[];
   locale: string;
-  /** Cashier screen: the camera starts at once, one location, masked buyer and a large confirm button. */
+  /** Cashier screen: a large scan button, one location, masked buyer, a large confirm button and a success screen. */
   kassa?: boolean;
 }) {
   const t = useTranslations('Redeem');
@@ -69,7 +71,9 @@ export function VoucherRedeemPanel({
   const [code, setCode] = useState('');
   const [locationId, setLocationId] = useState(locations[0]?.id ?? '');
   const [voucher, setVoucher] = useState<Voucher | null>(null);
-  const [scanning, setScanning] = useState(kassa);
+  const [scanning, setScanning] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const endCelebrate = useCallback(() => setCelebrate(false), []);
   const [message, setMessage] = useState<ProblemKey | null>(null);
   const [done, setDone] = useState(false);
   const [online, setOnline] = useState(true);
@@ -136,6 +140,7 @@ export function VoucherRedeemPanel({
     }
     setVoucher(result.voucher);
     setDone(true);
+    if (kassa) setCelebrate(true);
     router.refresh();
   }
 
@@ -162,6 +167,19 @@ export function VoucherRedeemPanel({
             </select>
           </label>
         )}
+        {kassa && !scanning && <ScanButton label={w('scanQr')} onClick={() => setScanning(true)} />}
+        {kassa && scanning && (
+          <div className="grid gap-3">
+            <ScanFrame videoRef={videoRef} />
+            <button
+              type="button"
+              onClick={() => setScanning(false)}
+              className="min-h-11 rounded-control-ui border border-border px-5 py-3 font-semibold"
+            >
+              {t('stopScan')}
+            </button>
+          </div>
+        )}
         <form
           className="grid gap-3"
           onSubmit={(event) => {
@@ -186,16 +204,18 @@ export function VoucherRedeemPanel({
             >
               {t('check')}
             </button>
-            <button
-              type="button"
-              onClick={() => setScanning((on) => !on)}
-              className="rounded-control-ui border border-border px-5 py-3 font-semibold"
-            >
-              {scanning ? t('stopScan') : kassa ? w('scanQr') : t('scan')}
-            </button>
+            {!kassa && (
+              <button
+                type="button"
+                onClick={() => setScanning((on) => !on)}
+                className="rounded-control-ui border border-border px-5 py-3 font-semibold"
+              >
+                {scanning ? t('stopScan') : t('scan')}
+              </button>
+            )}
           </div>
         </form>
-        {scanning && (
+        {!kassa && scanning && (
           <video
             ref={videoRef}
             className="aspect-square w-full rounded-card bg-ink object-cover"
@@ -205,7 +225,8 @@ export function VoucherRedeemPanel({
         )}
       </section>
 
-      {message && (
+      {message && kassa && <ErrorShake shakeKey={message}>{t(message)}</ErrorShake>}
+      {message && !kassa && (
         <p
           role="alert"
           className="flex max-w-xl items-start gap-2 rounded-control-ui bg-error-tint p-3 text-error"
@@ -214,6 +235,7 @@ export function VoucherRedeemPanel({
           <span>{t(message)}</span>
         </p>
       )}
+      {celebrate && <SuccessOverlay label={t('redeemedNow')} onClose={endCelebrate} />}
 
       {voucher && (
         <section

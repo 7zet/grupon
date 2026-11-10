@@ -35,7 +35,14 @@
     "recent": "Yaqinda ko‘rilgan",
     "merchantTitle": "Mahalliy biznesingizni rivojlantiring",
     "merchantText": "Maqsadlaringizga mos taklif bilan yangi mijozlarga yetib boring.",
-    "merchantCta": "Sotishni boshlash"
+    "merchantCta": "Sotishni boshlash",
+    "howTitle": "Dealo qanday ishlaydi",
+    "howStep1Title": "Taklifni tanlang",
+    "howStep1Text": "Shahringizdagi restoran, salon, sport va dam olish takliflarini ko'ring.",
+    "howStep2Title": "Onlayn to'lang",
+    "howStep2Text": "Chegirmali narxni to'lang, kupon darhol hisobingizda paydo bo'ladi.",
+    "howStep3Title": "QR kodni ko'rsating",
+    "howStep3Text": "Joyga borib, kassirga QR kod yoki kupon kodini ko'rsating."
   },
   "Common": {
     "viewAll": "Barchasini ko‘rish",

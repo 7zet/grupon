@@ -16,3 +16,39 @@ h1, h2, h3, .font-display {
 body {
   font-family: var(--font-app), 'Inter', Arial, Helvetica, sans-serif;
 }
+
+/* Motion. Only transform and opacity change; nothing moves when the visitor asks for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .kassa-pulse {
+    animation: kassa-pulse 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+  .kassa-scanline {
+    animation: kassa-scanline 1.8s ease-in-out infinite alternate;
+  }
+  .hero-blob {
+    animation: hero-blob 18s ease-in-out infinite alternate;
+  }
+  .hero-float {
+    animation: hero-float 6s ease-in-out infinite;
+  }
+}
+
+@keyframes kassa-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes kassa-scanline {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(calc(min(100vw, 48rem) - 6rem)); }
+}
+
+@keyframes hero-blob {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(3rem, -2rem, 0) scale(1.15); }
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

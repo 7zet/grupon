@@ -104,7 +104,10 @@ export async function BusinessShell({
       </header>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <NavLinks items={sidebar} label={w('workspace')} variant="sidebar" />
+          <div className="sticky top-24 rounded-card-ui bg-brand-dark p-3 shadow-card">
+            <p className="px-3 pb-3 pt-1 text-label font-semibold uppercase tracking-widest text-surface/70">{businessName}</p>
+            <NavLinks items={sidebar} label={w('workspace')} variant="sidebar" tone="dark" />
+          </div>
         </aside>
         <main className="min-w-0 pb-28 lg:pb-0">{children}</main>
       </div>
