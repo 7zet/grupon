@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // Fraud rules that only raise signals for review (PRD §12.1). They do not hold payouts by themselves.

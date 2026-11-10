@@ -3,7 +3,7 @@ package identity
 import (
 	"fmt"
 
-	"github.com/grupon/grupon/services/api/internal/platform/mail"
+	"github.com/dealo/dealo/services/api/internal/platform/mail"
 )
 
 // emailCopy holds the translated mail text. Templates live in Go because the API sends the mail;

@@ -1,5 +1,5 @@
-import type { Locale } from '@grupon/config';
-import type { Messages } from '@grupon/i18n';
+import type { Locale } from '@dealo/config';
+import type { Messages } from '@dealo/i18n';
 
 declare module 'next-intl' {
   interface AppConfig {

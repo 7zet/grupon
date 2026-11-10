@@ -1,6 +1,6 @@
-# Grupon — local deals marketplace (demo)
+# Dealo — local deals marketplace (demo)
 
-Grupon is a demo of a local-deals voucher marketplace for Tashkent: buyers pay (test payment), get a QR
+Dealo is a demo of a local-deals voucher marketplace for Tashkent: buyers pay (test payment), get a QR
 voucher, and a business cashier redeems it. It has a buyer site, a business panel (`/merchant`) and an admin
 panel (`/admin`), in Uzbek, Russian and English. There is no real money and no hosting: the demo runs on
 your own Windows PC and can be shown to others through an ngrok tunnel ([`docs/SHARE.md`](./docs/SHARE.md)).

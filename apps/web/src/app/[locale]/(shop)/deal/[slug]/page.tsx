@@ -1,6 +1,6 @@
 import { groupedHours, hoursLines } from '@/lib/hours';
-import { publicApi } from '@grupon/api-client';
-import { localized, type Locale } from '@grupon/config';
+import { publicApi } from '@dealo/api-client';
+import { localized, type Locale } from '@dealo/config';
 import { Check, Clock3, MapPin, Star } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';

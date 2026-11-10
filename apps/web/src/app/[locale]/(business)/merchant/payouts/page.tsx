@@ -1,7 +1,7 @@
 import { businessGate } from '@/components/workspace/gate';
-import type { components } from '@grupon/api-client';
-import { formatMoney } from '@grupon/ui';
-import type { Currency, Locale } from '@grupon/config';
+import type { components } from '@dealo/api-client';
+import { formatMoney } from '@dealo/ui';
+import type { Currency, Locale } from '@dealo/config';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

@@ -44,7 +44,7 @@ func (s *EskizSender) send(ctx context.Context, phone, code string) error {
 	if err != nil {
 		return err
 	}
-	v := url.Values{"mobile_phone": {strings.TrimPrefix(phone, "+")}, "message": {"Grupon: tasdiqlash kodi " + code}, "from": {s.sender}}
+	v := url.Values{"mobile_phone": {strings.TrimPrefix(phone, "+")}, "message": {"Dealo: tasdiqlash kodi " + code}, "from": {s.sender}}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/message/sms/send", strings.NewReader(v.Encode()))
 	if err != nil {
 		return err

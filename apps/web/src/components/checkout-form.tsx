@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatMoney } from '@grupon/ui';
+import { formatMoney } from '@dealo/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore } from 'react';
 import { useForm } from 'react-hook-form';

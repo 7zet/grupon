@@ -1,5 +1,5 @@
-import { publicApi } from '@grupon/api-client';
-import { localized, type Locale } from '@grupon/config';
+import { publicApi } from '@dealo/api-client';
+import { localized, type Locale } from '@dealo/config';
 import { ChevronRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Starts the whole Grupon demo on this PC: database check, migrations, demo data, API and web (production mode).
+  Starts the whole Dealo demo on this PC: database check, migrations, demo data, API and web (production mode).
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\demo.ps1
   powershell -ExecutionPolicy Bypass -File scripts\demo.ps1 -Reset      # wipe and re-seed the demo data
@@ -69,9 +69,9 @@ try {
   # 4. API ----------------------------------------------------------------------------------------
   Say 'Building and starting the API (with background worker)'
   New-Item -ItemType Directory -Force -Path bin | Out-Null
-  go build -o bin\grupon-api.exe ./services/api/cmd/api
+  go build -o bin\dealo-api.exe ./services/api/cmd/api
   if ($LASTEXITCODE -ne 0) { throw 'API build failed' }
-  $children += Start-Process -FilePath (Join-Path $root 'bin\grupon-api.exe') -NoNewWindow -PassThru
+  $children += Start-Process -FilePath (Join-Path $root 'bin\dealo-api.exe') -NoNewWindow -PassThru
   for ($i = 0; $i -lt 60; $i++) {
     try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:8080/healthz -TimeoutSec 2).StatusCode -eq 200) { break } } catch { Start-Sleep -Seconds 1 }
   }
@@ -92,7 +92,7 @@ try {
 
   # 6. Summary --------------------------------------------------------------------------------------
   Write-Host ''
-  Write-Host 'Grupon demo is running' -ForegroundColor Green
+  Write-Host 'Dealo demo is running' -ForegroundColor Green
   Write-Host "  Site:   $siteUrl/uz   (also /ru, /en)"
   Write-Host '  API:    http://localhost:8080/api/v1'
   Write-Host ''

@@ -1,6 +1,6 @@
 import { businessGate } from '@/components/workspace/gate';
-import type { components } from '@grupon/api-client';
-import { formatMoney } from '@grupon/ui';
+import type { components } from '@dealo/api-client';
+import { formatMoney } from '@dealo/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 
 import { DealCard } from '@/components/deal-card';

@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // MerchantStaffAPI manages the people who work in a business (PRD FR-01.6). The owner decides; everyone

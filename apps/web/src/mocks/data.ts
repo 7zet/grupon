@@ -1,4 +1,4 @@
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import seed from '../../../../seed/data.json';
 
 type City = components['schemas']['City'];

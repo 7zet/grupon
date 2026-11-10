@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
 )
 
 // Windows from the PRD. Amounts are tiyin.

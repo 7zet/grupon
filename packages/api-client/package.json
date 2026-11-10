@@ -1,5 +1,5 @@
 {
-  "name": "@grupon/api-client",
+  "name": "@dealo/api-client",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@grupon/tsconfig": "workspace:*",
+    "@dealo/tsconfig": "workspace:*",
     "openapi-typescript": "7.13.0",
     "prettier": "3.9.10",
     "typescript": "catalog:",

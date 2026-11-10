@@ -5,7 +5,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { useState } from 'react';
 
 import type { MediaAsset } from '@/components/merchant-media-library';
-import { tiyinFromSom } from '@grupon/ui';
+import { tiyinFromSom } from '@dealo/ui';
 
 type Localized = { uz: string; ru: string; en: string };
 type Location = { id: string; label: string };

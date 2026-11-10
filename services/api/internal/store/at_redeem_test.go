@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // redeemRace makes `attempts` concurrent scans of one voucher and returns how many succeeded.

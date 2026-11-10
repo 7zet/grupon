@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { publicApi } from '@grupon/api-client';
+import { publicApi } from '@dealo/api-client';
 
 import { RetryPaymentButton } from '@/components/retry-payment-button';
 import { Link } from '@/i18n/navigation';

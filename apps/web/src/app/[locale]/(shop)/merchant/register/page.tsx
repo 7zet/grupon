@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
-import { publicApi } from '@grupon/api-client';
+import { publicApi } from '@dealo/api-client';
 import { MerchantRegisterForm } from '@/components/merchant-register-form';
 import { pickText } from '@/lib/localized';
 

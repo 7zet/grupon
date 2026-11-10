@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/finance"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/finance"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // FinanceRepository performs settlement, payout, refund, dispute, breakage and reconciliation writes.

@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import '@grupon/ui/styles/tokens.css';
+@import '@dealo/ui/styles/tokens.css';
 
 @source '../../../../packages/ui/src';
 

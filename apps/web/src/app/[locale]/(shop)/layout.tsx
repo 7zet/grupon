@@ -1,5 +1,5 @@
-import { publicApi } from '@grupon/api-client';
-import { isLocale, type Currency } from '@grupon/config';
+import { publicApi } from '@dealo/api-client';
+import { isLocale, type Currency } from '@dealo/config';
 import { notFound } from 'next/navigation';
 import type { PropsWithChildren } from 'react';
 

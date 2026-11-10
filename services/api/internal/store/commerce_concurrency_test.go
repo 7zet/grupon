@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	"github.com/grupon/grupon/services/api/internal/platform/mail"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	"github.com/dealo/dealo/services/api/internal/platform/mail"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // TestOverSellingIsImpossible is the stock guarantee in CLAUDE.md: 100 buyers race for 10 units and

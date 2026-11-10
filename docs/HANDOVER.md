@@ -1,6 +1,6 @@
-# Grupon handover
+# Dealo handover
 
-Grupon is a polished **demonstration** of a local-deals voucher marketplace for Tashkent, based on the Dealo PRD (`docs/DEALO-REQUIREMENTS.md`). It has no real users, no real money and no legal or compliance delivery. One owner can try every role: buyer, merchant owner, manager, cashier and admin (see `docs/DEMO.md`).
+Dealo is a polished **demonstration** of a local-deals voucher marketplace for Tashkent, based on the Dealo PRD (`docs/DEALO-REQUIREMENTS.md`). It has no real users, no real money and no legal or compliance delivery. One owner can try every role: buyer, merchant owner, manager, cashier and admin (see `docs/DEMO.md`).
 
 Stack: Go API and worker (`services/api`), Next.js web (`apps/web`: buyer site, `/merchant/*`, `/admin/*`), PostgreSQL, OpenAPI contract in `packages/api-spec/openapi.yaml`.
 

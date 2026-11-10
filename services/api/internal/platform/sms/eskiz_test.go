@@ -31,7 +31,7 @@ func TestEskizSenderSendsAndRefreshesToken(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	sender, err := NewEskizSender(server.URL, "mail@example.test", "password", "GRUPON")
+	sender, err := NewEskizSender(server.URL, "mail@example.test", "password", "DEALO")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestEskizSenderReturnsProviderError(t *testing.T) {
 		w.WriteHeader(http.StatusBadGateway)
 	}))
 	defer server.Close()
-	sender, err := NewEskizSender(server.URL, "mail@example.test", "password", "GRUPON")
+	sender, err := NewEskizSender(server.URL, "mail@example.test", "password", "DEALO")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-import { isCategorySlug, isCitySlug, type Locale } from '@grupon/config';
+import { isCategorySlug, isCitySlug, type Locale } from '@dealo/config';
 import { notFound } from 'next/navigation';
 import { ListingPage } from '@/components/listing-page';
 export default async function CategoryPage({

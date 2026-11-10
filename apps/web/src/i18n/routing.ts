@@ -1,4 +1,4 @@
-import { defaultLocale, localeCookieName, locales } from '@grupon/config';
+import { defaultLocale, localeCookieName, locales } from '@dealo/config';
 import { defineRouting } from 'next-intl/routing';
 
 export const routing = defineRouting({

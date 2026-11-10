@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/domain/identity/identitytest"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/domain/identity/identitytest"
 )
 
 const otpSecret = "phone-otp-test-secret-that-is-long-enough"

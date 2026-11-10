@@ -1,4 +1,4 @@
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import type { ReactNode } from 'react';
 
 import { BusinessShell } from '@/components/workspace/business-shell';
@@ -10,7 +10,7 @@ type Merchant = components['schemas']['Merchant'];
 type LocationList = components['schemas']['LocationList'];
 
 /**
- * Merchant workspace. Owners and managers get "Grupon Business"; a cashier gets "Grupon Kassa". Anyone
+ * Merchant workspace. Owners and managers get "Dealo Business"; a cashier gets "Dealo Kassa". Anyone
  * else sees the "No access" page. Each page also checks its own section (see businessGate).
  */
 export default async function MerchantWorkspaceLayout({

@@ -1,5 +1,5 @@
 'use client';
-import { publicApi } from '@grupon/api-client';
+import { publicApi } from '@dealo/api-client';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';

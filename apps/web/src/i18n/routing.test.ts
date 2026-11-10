@@ -1,4 +1,4 @@
-import { defaultLocale, locales } from '@grupon/config';
+import { defaultLocale, locales } from '@dealo/config';
 import { describe, expect, it } from 'vitest';
 
 import { routing } from './routing';

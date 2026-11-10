@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { publicApi } from '@grupon/api-client';
+import { publicApi } from '@dealo/api-client';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

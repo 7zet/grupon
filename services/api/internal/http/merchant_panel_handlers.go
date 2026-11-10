@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // MerchantPanelAPI serves the merchant panel pages that read and answer business data: payouts,

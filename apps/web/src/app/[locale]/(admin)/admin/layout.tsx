@@ -6,7 +6,7 @@ import { NoAccess } from '@/components/workspace/no-access';
 import { currentUser, loadForVisitor } from '@/lib/account-api';
 import { isStaff } from '@/lib/roles';
 
-/** Platform console ("Grupon Admin") for moderator, support, finance and superadmin. */
+/** Platform console ("Dealo Admin") for moderator, support, finance and superadmin. */
 export default async function AdminWorkspaceLayout({
   children,
   params,

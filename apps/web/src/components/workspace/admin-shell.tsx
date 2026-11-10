@@ -1,4 +1,4 @@
-import { brandConfig } from '@grupon/config';
+import { brandConfig } from '@dealo/config';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -17,7 +17,7 @@ const HREF: Record<AdminSection, string> = {
   audit: '/admin/audit',
 };
 
-/** "Grupon Admin": the platform console. Each staff role sees only its own sections. */
+/** "Dealo Admin": the platform console. Each staff role sees only its own sections. */
 export async function AdminShell({
   children,
   roles,

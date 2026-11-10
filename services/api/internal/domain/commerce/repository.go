@@ -2,12 +2,12 @@ package commerce
 
 import (
 	"context"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
 )
 
 // Repository is the persistence port. Store methods used outside InTx run as single statements;

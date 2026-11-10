@@ -50,10 +50,10 @@ Every role has its own workspace. After sign-in (or when opening `/` while signe
 | Role (demo account) | Lands on | Menu it sees | Show |
 | --- | --- | --- | --- |
 | Buyer, `+998900000001` | `/uz` marketplace | Marketplace only; no staff or business links | Buy a deal, pay, see the voucher QR. |
-| Business owner, `+99891227100` (business 27) | `/uz/merchant/dashboard` ("Grupon Business") | Dashboard, deals, new deal, orders, redeem, payouts, customers, analytics, reviews, calculator, staff, business, settings | Dashboard totals, payouts, staff. On a phone the bottom bar has Dashboard, Deals, Redeem, Orders and More. |
+| Business owner, `+99891227100` (business 27) | `/uz/merchant/dashboard` ("Dealo Business") | Dashboard, deals, new deal, orders, redeem, payouts, customers, analytics, reviews, calculator, staff, business, settings | Dashboard totals, payouts, staff. On a phone the bottom bar has Dashboard, Deals, Redeem, Orders and More. |
 | Manager, `+99891227200` | `/uz/merchant/dashboard` | The owner menu without payouts, staff, business and settings | Deals, orders and reviews; payouts and staff show "No access". |
-| Cashier, `+99891227300` | `/uz/merchant/redeem` ("Grupon Kassa") | Only the scanner, the code field and today's own redemptions | Scan or type a code, confirm, cancel within 10 minutes. |
-| Moderator, `+998910000011` | `/uz/admin/moderation` ("Grupon Admin") | Deal moderation, businesses, fraud signals, review reports | Approve or reject a deal in the queue. |
+| Cashier, `+99891227300` | `/uz/merchant/redeem` ("Dealo Kassa") | Only the scanner, the code field and today's own redemptions | Scan or type a code, confirm, cancel within 10 minutes. |
+| Moderator, `+998910000011` | `/uz/admin/moderation` ("Dealo Admin") | Deal moderation, businesses, fraud signals, review reports | Approve or reject a deal in the queue. |
 | Support, `+998910000012` | `/uz/admin/finance` | Finance desk, showing refunds and disputes only | Dispute and refund queue. Payouts are not shown. |
 | Finance, `+998910000013` | `/uz/admin/finance` | Finance desk: payouts, refunds, disputes | Payout approval (two people: finance prepares, a second person approves). |
 | Superadmin, `+998900000004` | `/uz/admin` (overview) | Every admin section, including audit | Totals, fraud signals, business suspend and reinstate, audit log. |

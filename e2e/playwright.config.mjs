@@ -7,7 +7,7 @@ export default defineConfig({
   // CI installs Playwright Chromium explicitly; do not depend on an image-specific Edge build.
   use: { baseURL: 'http://127.0.0.1:3000', browserName: 'chromium', trace: 'retain-on-failure' },
   webServer: {
-    command: 'corepack pnpm --filter @grupon/web start',
+    command: 'corepack pnpm --filter @dealo/web start',
     url: 'http://127.0.0.1:3000/uz',
     reuseExistingServer: true,
     timeout: 120000,

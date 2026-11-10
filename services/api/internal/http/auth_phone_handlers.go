@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // RequestPhoneCode sends a one-time sign-in code to the phone. The response never reveals whether

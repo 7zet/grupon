@@ -9,13 +9,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/finance"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
-	"github.com/grupon/grupon/services/api/internal/domain/moderation"
-	"github.com/grupon/grupon/services/api/internal/domain/outbox"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	"github.com/grupon/grupon/services/api/internal/store"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/finance"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/moderation"
+	"github.com/dealo/dealo/services/api/internal/domain/outbox"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/store"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 	"github.com/jackc/pgx/v5"
 )
 

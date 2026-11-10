@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/outbox"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/outbox"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // OutboxRepository implements outbox.Store on PostgreSQL.

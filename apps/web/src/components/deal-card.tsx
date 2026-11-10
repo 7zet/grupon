@@ -1,8 +1,8 @@
 'use client';
 
-import type { DealSummary } from '@grupon/api-client';
-import { localized, type Currency, type Locale } from '@grupon/config';
-import { discountPercent, formatMoney } from '@grupon/ui';
+import type { DealSummary } from '@dealo/api-client';
+import { localized, type Currency, type Locale } from '@dealo/config';
+import { discountPercent, formatMoney } from '@dealo/ui';
 import { Clock3, Heart, Star } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import Image from 'next/image';

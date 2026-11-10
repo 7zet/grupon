@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/moderation"
-	"github.com/grupon/grupon/services/api/internal/domain/reviews"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/moderation"
+	"github.com/dealo/dealo/services/api/internal/domain/reviews"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // AdminReportRepository reads review reports for moderators, closes them, and reads the audit trail.

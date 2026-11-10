@@ -220,16 +220,16 @@ importers:
 
   apps/web:
     dependencies:
-      '@grupon/api-client':
+      '@dealo/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@grupon/config':
+      '@dealo/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@grupon/i18n':
+      '@dealo/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
-      '@grupon/ui':
+      '@dealo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@hookform/resolvers':
@@ -293,10 +293,10 @@ importers:
         specifier: 5.0.16
         version: 5.0.16(@types/react@19.3.0)(react@19.3.1)
     devDependencies:
-      '@grupon/eslint-config':
+      '@dealo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@grupon/tsconfig':
+      '@dealo/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
       '@tailwindcss/postcss':
@@ -344,7 +344,7 @@ importers:
 
   packages/api-client:
     devDependencies:
-      '@grupon/tsconfig':
+      '@dealo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       openapi-typescript:
@@ -368,10 +368,10 @@ importers:
 
   packages/config:
     devDependencies:
-      '@grupon/eslint-config':
+      '@dealo/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@grupon/tsconfig':
+      '@dealo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       '@types/node':
@@ -404,14 +404,14 @@ importers:
 
   packages/i18n:
     dependencies:
-      '@grupon/config':
+      '@dealo/config':
         specifier: workspace:*
         version: link:../config
     devDependencies:
-      '@grupon/eslint-config':
+      '@dealo/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@grupon/tsconfig':
+      '@dealo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       typescript:
@@ -425,14 +425,14 @@ importers:
 
   packages/ui:
     dependencies:
-      '@grupon/config':
+      '@dealo/config':
         specifier: workspace:*
         version: link:../config
     devDependencies:
-      '@grupon/eslint-config':
+      '@dealo/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@grupon/tsconfig':
+      '@dealo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       '@types/react':

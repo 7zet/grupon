@@ -1,4 +1,4 @@
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import { getTranslations, getFormatter } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

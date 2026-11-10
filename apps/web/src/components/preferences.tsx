@@ -6,7 +6,7 @@ import {
   locales,
   type Currency,
   type Locale,
-} from '@grupon/config';
+} from '@dealo/config';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/navigation';
 

@@ -1,5 +1,5 @@
-import { brandConfig, isLocale } from '@grupon/config';
-import { BaseLayout, appFont } from '@grupon/ui';
+import { brandConfig, isLocale } from '@dealo/config';
+import { BaseLayout, appFont } from '@dealo/ui';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';

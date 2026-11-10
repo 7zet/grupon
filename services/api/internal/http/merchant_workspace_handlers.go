@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // MerchantWorkspaceAPI serves the merchant overview, business profile and branches. Every operation

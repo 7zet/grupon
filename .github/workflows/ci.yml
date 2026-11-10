@@ -160,13 +160,13 @@ jobs:
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
-      - run: go build -o bin/grupon-api ./services/api/cmd/api
+      - run: go build -o bin/dealo-api ./services/api/cmd/api
       - run: bash scripts/bootstrap-demo.sh
-      - run: pnpm --filter @grupon/web build
+      - run: pnpm --filter @dealo/web build
       - name: Start API and web
         run: |
-          ./bin/grupon-api > api.log 2>&1 &
-          pnpm --filter @grupon/web start --port 3000 > web.log 2>&1 &
+          ./bin/dealo-api > api.log 2>&1 &
+          pnpm --filter @dealo/web start --port 3000 > web.log 2>&1 &
       - name: Wait for native services
         shell: bash
         run: |

@@ -1,5 +1,5 @@
 {
-  "extends": "@grupon/tsconfig/nextjs.json",
+  "extends": "@dealo/tsconfig/nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]

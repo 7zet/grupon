@@ -8,8 +8,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/reviews"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/reviews"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // ReviewAPI serves buyer reviews and review reports. Every write is limited to the signed-in user.

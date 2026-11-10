@@ -11,9 +11,9 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/seed"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/seed"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // catalogFixture is a freshly seeded database with the public catalog service wired to it.

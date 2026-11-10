@@ -1,6 +1,6 @@
 'use client';
-import { formatMoney } from '@grupon/ui';
-import type { Currency, Locale } from '@grupon/config';
+import { formatMoney } from '@dealo/ui';
+import type { Currency, Locale } from '@dealo/config';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 export function StickyBuy({

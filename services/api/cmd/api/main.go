@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	apiapp "github.com/grupon/grupon/services/api/internal/app/api"
-	"github.com/grupon/grupon/services/api/internal/platform/config"
-	"github.com/grupon/grupon/services/api/internal/platform/logging"
+	apiapp "github.com/dealo/dealo/services/api/internal/app/api"
+	"github.com/dealo/dealo/services/api/internal/platform/config"
+	"github.com/dealo/dealo/services/api/internal/platform/logging"
 )
 
 func main() {

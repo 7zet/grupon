@@ -10,16 +10,16 @@ import (
 func TestRenderEncodesSubjectAndUsesCRLF(t *testing.T) {
 	t.Parallel()
 
-	raw, err := render("Grupon <no-reply@grupon.local>", Message{
+	raw, err := render("Dealo <no-reply@dealo.local>", Message{
 		To:      "buyer@example.test",
-		Subject: "Grupon: восстановление пароля",
+		Subject: "Dealo: восстановление пароля",
 		Body:    "line one\nline two",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	text := string(raw)
-	if strings.Contains(text, "Subject: Grupon: восстановление пароля") {
+	if strings.Contains(text, "Subject: Dealo: восстановление пароля") {
 		t.Error("non-ASCII subject was not encoded")
 	}
 	if !strings.Contains(text, "Subject: =?utf-8?") {
@@ -33,7 +33,7 @@ func TestRenderEncodesSubjectAndUsesCRLF(t *testing.T) {
 func TestRenderRejectsHeaderInjection(t *testing.T) {
 	t.Parallel()
 
-	_, err := render("from@grupon.local", Message{To: "a@example.test\r\nBcc: victim@example.test", Subject: "s"})
+	_, err := render("from@dealo.local", Message{To: "a@example.test\r\nBcc: victim@example.test", Subject: "s"})
 	if err == nil {
 		t.Fatal("render() accepted a CRLF in the recipient")
 	}

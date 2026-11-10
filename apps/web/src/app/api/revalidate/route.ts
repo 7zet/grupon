@@ -3,7 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { CATALOG_CACHE_TAG } from '@grupon/api-client';
+import { CATALOG_CACHE_TAG } from '@dealo/api-client';
 
 /** Tags the Go API is allowed to revalidate. Anything else is rejected. */
 const KNOWN_TAGS = [CATALOG_CACHE_TAG] as const;

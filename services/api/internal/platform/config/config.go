@@ -29,9 +29,9 @@ const (
 	developmentQRSecret          = "dev-only-insecure-qr-secret-0123456789"
 	developmentMockWebhookSecret = "dev-only-insecure-mock-webhook-0123456789"
 	defaultWebPublicURL          = "http://localhost:3000"
-	defaultBrandName             = "Grupon"
+	defaultBrandName             = "Dealo"
 	defaultSMTPPort              = 1025
-	defaultSMTPFrom              = "Grupon <no-reply@grupon.local>"
+	defaultSMTPFrom              = "Dealo <no-reply@dealo.local>"
 	defaultAccessTokenTTL        = 15 * time.Minute
 	defaultRefreshTokenTTL       = 30 * 24 * time.Hour
 )

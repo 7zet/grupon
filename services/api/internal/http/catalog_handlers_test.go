@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
 )
 
 // stubRepository serves one published deal and one city; methods the tests do not reach are unused.

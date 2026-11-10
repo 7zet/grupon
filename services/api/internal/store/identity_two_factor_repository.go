@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
 )
 
 func (r *IdentityRepository) CreateTwoFactorChallenge(ctx context.Context, userID uuid.UUID, hash string, expires time.Time) error {

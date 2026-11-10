@@ -1,4 +1,4 @@
-import type { Locale } from '@grupon/config';
+import type { Locale } from '@dealo/config';
 import { setRequestLocale } from 'next-intl/server';
 
 import { StaticPage } from '@/components/static-page';

@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
-	platformmail "github.com/grupon/grupon/services/api/internal/platform/mail"
+	platformmail "github.com/dealo/dealo/services/api/internal/platform/mail"
 )
 
 // Lifetimes and branding used by the service.

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/grupon/grupon/services/api/internal/payments"
-	"github.com/grupon/grupon/services/api/internal/platform/mail"
+	"github.com/dealo/dealo/services/api/internal/payments"
+	"github.com/dealo/dealo/services/api/internal/platform/mail"
 )
 
 // Dependencies are the collaborators of the commerce service.

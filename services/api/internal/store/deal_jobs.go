@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // DealJobs runs the deal lifecycle and counter sweeps. Every step is idempotent, so repeated or

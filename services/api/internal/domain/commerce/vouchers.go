@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
 )
 
 // Voucher status filters accepted by the account listing. Empty means all.

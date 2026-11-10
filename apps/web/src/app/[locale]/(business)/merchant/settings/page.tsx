@@ -1,5 +1,5 @@
 import { businessGate } from '@/components/workspace/gate';
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import { getTranslations } from 'next-intl/server';
 
 import { MerchantSettingsForm } from '@/components/merchant-settings-form';

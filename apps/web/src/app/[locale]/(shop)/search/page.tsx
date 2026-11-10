@@ -1,4 +1,4 @@
-import type { Locale } from '@grupon/config';
+import type { Locale } from '@dealo/config';
 import { ListingPage } from '@/components/listing-page';
 export default async function SearchPage({
   params,

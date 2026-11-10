@@ -1,6 +1,6 @@
 # Architecture (plain language)
 
-Grupon is a marketplace for local deals in Uzbekistan. Buyers purchase vouchers, merchants publish deals, staff check vouchers at the counter, and platform admins approve deals and handle reports.
+Dealo is a marketplace for local deals in Uzbekistan. Buyers purchase vouchers, merchants publish deals, staff check vouchers at the counter, and platform admins approve deals and handle reports.
 
 ## The pieces
 

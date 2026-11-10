@@ -1,4 +1,4 @@
-import { locales } from '@grupon/config';
+import { locales } from '@dealo/config';
 import { describe, expect, it } from 'vitest';
 
 import { messages } from './index';

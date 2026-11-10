@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // MerchantDealRepository persists merchant-owned deals. Each write runs in one transaction with its audit row.

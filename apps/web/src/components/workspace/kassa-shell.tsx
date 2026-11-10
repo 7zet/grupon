@@ -1,4 +1,4 @@
-import { brandConfig } from '@grupon/config';
+import { brandConfig } from '@dealo/config';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -6,7 +6,7 @@ import { workspacesFor } from '@/lib/roles';
 
 import { type WorkspaceLink, WorkspaceMenu } from './workspace-menu';
 
-/** "Grupon Kassa": a full-screen cashier workspace. Only the redeem screen lives here. */
+/** "Dealo Kassa": a full-screen cashier workspace. Only the redeem screen lives here. */
 export async function KassaShell({
   children,
   roles,

@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // CatalogRepository implements the public catalog read model on top of sqlc queries.

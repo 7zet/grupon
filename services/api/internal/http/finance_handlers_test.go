@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/grupon/grupon/services/api/internal/domain/finance"
+	"github.com/dealo/dealo/services/api/internal/domain/finance"
 )
 
 func TestDisputeErrorsMapToStableHTTPProblems(t *testing.T) {

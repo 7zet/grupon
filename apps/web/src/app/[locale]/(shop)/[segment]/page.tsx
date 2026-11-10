@@ -1,4 +1,4 @@
-import { isCategorySlug, isCitySlug, type Locale } from '@grupon/config';
+import { isCategorySlug, isCitySlug, type Locale } from '@dealo/config';
 import { notFound, redirect } from 'next/navigation';
 import { ListingPage } from '@/components/listing-page';
 export default async function SegmentPage({

@@ -1,4 +1,4 @@
-module github.com/grupon/grupon
+module github.com/dealo/dealo
 
 go 1.26.0
 

@@ -1,6 +1,6 @@
 'use client';
 
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useState } from 'react';

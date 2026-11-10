@@ -8,11 +8,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/finance"
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/finance"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // FinanceAPI serves reversals, refunds, disputes and payouts. Every write is audited or ledgered

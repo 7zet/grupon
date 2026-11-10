@@ -1,4 +1,4 @@
-import { brandConfig } from '@grupon/config';
+import { brandConfig } from '@dealo/config';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -28,7 +28,7 @@ const HREF: Record<BusinessSection, string> = {
 /** Items on the phone tab bar. Everything else sits under "More". */
 const TABS: BusinessSection[] = ['dashboard', 'deals', 'redeem', 'orders'];
 
-/** "Grupon Business": the owner and manager workspace, with its own header, sidebar and phone tab bar. */
+/** "Dealo Business": the owner and manager workspace, with its own header, sidebar and phone tab bar. */
 export async function BusinessShell({
   children,
   roles,
