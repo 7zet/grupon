@@ -541,7 +541,8 @@
       "reversed": "Bekor qilingan"
     },
     "yes": "Ha",
-    "no": "Yo'q"
+    "no": "Yo'q",
+    "cameraUnavailable": "Kamera ochilmadi. Brauzerga kamera ruxsatini bering yoki kodni qo'lda kiriting."
   },
   "Reviews": {
     "formTitle": "Sharh qoldiring",

@@ -26,7 +26,7 @@ const PROBLEM_KEYS = [
   'location_not_found',
 ] as const;
 
-type ProblemKey = (typeof PROBLEM_KEYS)[number] | 'errorGeneric';
+type ProblemKey = (typeof PROBLEM_KEYS)[number] | 'errorGeneric' | 'cameraUnavailable';
 
 function problemKey(code: string | undefined): ProblemKey {
   return (PROBLEM_KEYS as readonly string[]).includes(code ?? '')
@@ -113,8 +113,9 @@ export function VoucherRedeemPanel({
         if (stopped) value.stop();
       })
       .catch(() => {
+        // No camera, no permission or no HTTPS: say so, the code field still works.
         setScanning(false);
-        setMessage('errorGeneric');
+        setMessage('cameraUnavailable');
       });
     return () => {
       stopped = true;

@@ -34,7 +34,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
         {metrics.map(({ label, metric, format: render }) => (
           <div key={label} className="rounded-card border border-border bg-surface p-4">
             <p className="text-sm text-ink-muted">{label}</p>
-            <p className="mt-2 text-subtitle font-bold tabular-nums text-ink">{render(metric.value)}</p>
+            <p className="mt-2 whitespace-nowrap font-display text-lead font-extrabold tabular-nums text-ink">{render(metric.value)}</p>
             <p className="mt-1 text-sm text-ink-muted">
               {t('vsPrevious', { percent: metric.change_percent.toFixed(1) })}
             </p>

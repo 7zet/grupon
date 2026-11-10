@@ -541,7 +541,8 @@
       "reversed": "Reversed"
     },
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "cameraUnavailable": "The camera did not open. Allow camera access in the browser or type the code."
   },
   "Reviews": {
     "formTitle": "Leave a review",
