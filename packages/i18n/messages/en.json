@@ -19,7 +19,8 @@
     "close": "Close",
     "skipToContent": "Skip to main content",
     "sell": "List your business",
-    "logout": "Log out"
+    "logout": "Log out",
+    "demoBadge": "Demo"
   },
   "Home": {
     "eyebrow": "Make more of your city",
@@ -859,6 +860,9 @@
     "visitsLeft": "Visits left",
     "buyer": "Buyer",
     "todayRedemptions": "Today's confirmations",
-    "cancelReason": "Cancelled by the cashier"
+    "cancelReason": "Cancelled by the cashier",
+    "groupSales": "Sales",
+    "groupDeals": "Deals",
+    "groupBusiness": "Business"
   }
 }

@@ -35,6 +35,7 @@ it is git-ignored).
 - [`docs/DEMO.md`](./docs/DEMO.md) — demo accounts and a 10-minute script
 - [`docs/SHARE.md`](./docs/SHARE.md) — show the demo to others with ngrok
 - [`docs/HANDOVER.md`](./docs/HANDOVER.md) — what is and is not included, next steps for a real launch
+- [`CHANGELOG.md`](./CHANGELOG.md) — what each version added, v0.1 to v1.0
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md), [`docs/ENVIRONMENT.md`](./docs/ENVIRONMENT.md)
 - [`AGENTS.md`](./AGENTS.md) — instructions for coding agents
 

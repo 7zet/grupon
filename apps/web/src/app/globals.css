@@ -52,3 +52,28 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
+/* Hero chip marquee: two copies of the list slide left; reduced motion shows one static row. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-marquee-track {
+    animation: hero-marquee 28s linear infinite;
+  }
+  .hero-marquee:hover .hero-marquee-track,
+  .hero-marquee:focus-within .hero-marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-marquee-copy {
+    display: none;
+  }
+  .hero-marquee-track {
+    flex-wrap: wrap;
+  }
+}
+
+@keyframes hero-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

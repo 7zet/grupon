@@ -108,8 +108,9 @@ export default async function FinancePage({ params }: { params: Promise<{ locale
                 className="grid gap-2 rounded-card border border-border bg-surface p-4"
               >
                 <p className="text-small">
-                  {item.voucher_code} · {item.merchant_name} · {money(item.amount)} ·{' '}
-                  {t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.open')}
+                  {[item.voucher_code, item.merchant_name, money(item.amount), t(STATUS_KEYS[item.status as keyof typeof STATUS_KEYS] ?? 'status.open')]
+                    .filter((part) => part && String(part).trim())
+                    .join(' · ')}
                 </p>
                 <p className="text-small text-ink-muted">{item.reason}</p>
                 <FinanceActions

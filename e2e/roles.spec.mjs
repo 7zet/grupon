@@ -95,6 +95,15 @@ for (const viewport of VIEWPORTS) {
         for (const label of expected.shows ?? []) await expect(page.getByRole('link', { name: label }).first()).toBeVisible();
         for (const label of expected.hides ?? []) await expect(page.getByRole('link', { name: label, exact: true })).toHaveCount(0);
       }
+      // Scroll through once, like a visitor, so sections that reveal on scroll are in the full-page shot.
+      await page.evaluate(async () => {
+        for (let y = 0; y < document.body.scrollHeight; y += 500) {
+          window.scrollTo(0, y);
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        window.scrollTo(0, 0);
+      });
+      await page.waitForTimeout(700);
       await page.screenshot({ path: join(SHOT_DIR, `${role}-${viewport.width}.png`), fullPage: true, animations: 'disabled' });
       await context.close();
     });

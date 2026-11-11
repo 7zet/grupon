@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { publicApi } from '@dealo/api-client';
 import { localized, type Locale } from '@dealo/config';
+import { discountPercent, formatMoney } from '@dealo/ui';
 import {
   ArrowRight,
   BookOpen,
@@ -53,6 +54,24 @@ function wholeRows<T>(items: T[], max = 8): T[] {
   return items.slice(0, count - (count % 4));
 }
 
+type HomeDeal = { id: string; media: { url: string }[] };
+
+/**
+ * Orders deals so that each row of four shows four different photos where the photo pool allows it.
+ * The demo has few photos, so the same picture side by side looked like a bug.
+ */
+function spreadPhotos<T extends HomeDeal>(items: T[]): T[] {
+  const pool = [...items];
+  const out: T[] = [];
+  while (pool.length > 0) {
+    const row = out.slice(out.length - (out.length % 4));
+    const seen = new Set(row.map((deal) => deal.media[0]?.url));
+    const index = pool.findIndex((deal) => !seen.has(deal.media[0]?.url));
+    out.push(pool.splice(index === -1 ? 0 : index, 1)[0]!);
+  }
+  return out;
+}
+
 /** Public catalog pages are cached and rebuilt at most once a minute. */
 export const revalidate = 60;
 
@@ -72,11 +91,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   ]);
   const featuredAll =
     homepage.sections.find((section) => section.key === 'featured')?.deals ?? allDeals.items;
-  const featured = wholeRows(featuredAll.length >= 4 ? featuredAll : allDeals.items);
+  const featured = spreadPhotos(wholeRows(featuredAll.length >= 4 ? featuredAll : allDeals.items));
   const used = new Set(featured.map((deal) => deal.id));
   const popularAll =
     homepage.sections.find((section) => section.key === 'popular')?.deals ?? allDeals.items;
-  const popular = wholeRows(popularAll.filter((deal) => !used.has(deal.id)));
+  const popular = spreadPhotos(wholeRows(popularAll.filter((deal) => !used.has(deal.id))));
   popular.forEach((deal) => used.add(deal.id));
   const limited = wholeRows(
     allDeals.items
@@ -85,7 +104,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
     4,
   );
   limited.forEach((deal) => used.add(deal.id));
-  const recommended = wholeRows(allDeals.items.filter((deal) => !used.has(deal.id)));
+  const recommended = spreadPhotos(wholeRows(allDeals.items.filter((deal) => !used.has(deal.id))));
+  // The hero shows a photo that is not in the first row below it.
+  const firstRow = new Set(featured.slice(0, 4).map((deal) => deal.media[0]?.url));
+  const heroDeal = allDeals.items.find((deal) => deal.media[0] && !firstRow.has(deal.media[0].url)) ?? featured[0]!;
+  const floating = allDeals.items
+    .filter((deal) => deal.id !== heroDeal.id && deal.media[0]?.url !== heroDeal.media[0]?.url)
+    .slice(0, 2);
   return (
     <>
       <section className="relative overflow-hidden border-b bg-surface">
@@ -126,36 +151,73 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
                 </button>
               </form>
               </HeroItem>
-              <HeroItem index={4} className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="text-small text-ink-muted">{t('searches')}:</span>
-                {config.categories.slice(1, 5).map((category) => (
-                  <Link
-                    className="rounded-round-ui border bg-surface px-3 py-1.5 text-small hover:bg-brand-tint hover:text-brand"
-                    href={`/tashkent/${category.slug}`}
-                    key={category.id}
-                    prefetch={false}
-                  >
-                    {localized(category.name, locale)}
-                  </Link>
-                ))}
+              <HeroItem index={4} className="mt-5 flex max-w-xl items-center gap-3">
+                <span className="shrink-0 text-small text-ink-muted">{t('searches')}:</span>
+                {/* Category chips drift slowly; hover pauses them. With reduced motion they simply wrap. */}
+                <div className="hero-marquee relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+                  <div className="hero-marquee-track flex w-max gap-2">
+                    {[0, 1].map((copy) =>
+                      config.categories.map((category) => (
+                        <Link
+                          className={`shrink-0 rounded-round-ui border bg-surface px-3 py-1.5 text-small hover:bg-brand-tint hover:text-brand ${copy === 1 ? 'hero-marquee-copy' : ''}`}
+                          href={`/tashkent/${category.slug}`}
+                          key={`${copy}-${category.id}`}
+                          prefetch={false}
+                          {...(copy === 1 ? { 'aria-hidden': true, tabIndex: -1 } : {})}
+                        >
+                          {localized(category.name, locale)}
+                        </Link>
+                      )),
+                    )}
+                  </div>
+                </div>
               </HeroItem>
             </div>
-            <HeroItem
-              index={5}
-              className="relative hidden aspect-[4/3] overflow-hidden rounded-panel-ui shadow-lift lg:block"
-            >
-              <Image
-                className="object-cover"
-                src={featured[0]!.media[0]!.url}
-                alt={localized(featured[0]!.media[0]!.alt, locale)}
-                fill
-                priority
-                sizes="45vw"
-              />
-              <div className="hero-float absolute bottom-5 left-5 flex items-center gap-3 rounded-card-ui bg-surface/95 px-4 py-3 shadow-floating-ui">
-                <Sparkles className="text-brand" />
-                <span className="font-semibold">{localized(featured[0]!.title, locale)}</span>
+            <HeroItem index={5} className="relative hidden lg:block">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-panel-ui shadow-lift">
+                <Image
+                  className="object-cover"
+                  src={heroDeal.media[0]!.url}
+                  alt={localized(heroDeal.media[0]!.alt, locale)}
+                  fill
+                  priority
+                  sizes="45vw"
+                />
+                <Link
+                  href={`/deal/${heroDeal.slug}`}
+                  prefetch={false}
+                  className="absolute bottom-5 left-5 flex items-center gap-3 rounded-card-ui bg-surface/95 px-4 py-3 shadow-floating-ui"
+                >
+                  <Sparkles className="text-brand" aria-hidden="true" />
+                  <span className="font-semibold">{localized(heroDeal.title, locale)}</span>
+                </Link>
               </div>
+              {/* Two real deals float beside the photo. */}
+              {floating.map((deal, index) => (
+                <Link
+                  key={deal.id}
+                  href={`/deal/${deal.slug}`}
+                  prefetch={false}
+                  className={`hero-float absolute flex w-56 items-center gap-3 rounded-card-ui border bg-surface p-2 pr-3 shadow-lift ${
+                    index === 0 ? '-left-10 top-8' : '-right-6 -bottom-6 [animation-delay:-3s]'
+                  }`}
+                >
+                  <span className="relative size-14 shrink-0 overflow-hidden rounded-control-ui">
+                    <Image className="object-cover" src={deal.media[0]!.url} alt="" fill sizes="56px" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-1 text-small font-semibold text-ink">{localized(deal.title, locale)}</span>
+                    <span className="mt-0.5 flex items-center gap-2 text-small">
+                      <span className="font-display font-extrabold tabular-nums text-ink">
+                        {formatMoney(deal.options[0]!.deal_price.amount, locale, currency)}
+                      </span>
+                      <span className="rounded-control-ui bg-deal px-1.5 text-label font-semibold text-surface">
+                        -{discountPercent(deal.options[0]!.original_price.amount, deal.options[0]!.deal_price.amount)}%
+                      </span>
+                    </span>
+                  </span>
+                </Link>
+              ))}
             </HeroItem>
           </div>
         </div>

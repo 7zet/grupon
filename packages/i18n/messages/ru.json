@@ -19,7 +19,8 @@
     "close": "Закрыть",
     "skipToContent": "К основному содержанию",
     "sell": "Разместить бизнес",
-    "logout": "Выйти"
+    "logout": "Выйти",
+    "demoBadge": "Демо"
   },
   "Home": {
     "eyebrow": "Больше возможностей в вашем городе",
@@ -659,9 +660,9 @@
   "AdminFinance": {
     "title": "Очередь финансов",
     "empty": "Открытых финансовых задач нет.",
-    "payouts": "Выплаты (payout)",
-    "refunds": "Возвраты (refund)",
-    "disputes": "Споры (dispute)",
+    "payouts": "Выплаты",
+    "refunds": "Возвраты",
+    "disputes": "Споры",
     "approve": "Подтвердить",
     "propose": "Передать в финансы",
     "reconcile": "Сверить с банком",
@@ -859,6 +860,9 @@
     "visitsLeft": "Осталось визитов",
     "buyer": "Покупатель",
     "todayRedemptions": "Сегодняшние подтверждения",
-    "cancelReason": "Отменено кассиром"
+    "cancelReason": "Отменено кассиром",
+    "groupSales": "Продажи",
+    "groupDeals": "Акции",
+    "groupBusiness": "Бизнес"
   }
 }

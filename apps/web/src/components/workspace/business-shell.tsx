@@ -1,4 +1,21 @@
 import { brandConfig } from '@dealo/config';
+import {
+  BarChart3,
+  Building2,
+  Calculator,
+  ClipboardList,
+  Images,
+  LayoutDashboard,
+  MessageSquare,
+  PlusCircle,
+  QrCode,
+  Settings,
+  Tag,
+  UserCog,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -24,6 +41,30 @@ const HREF: Record<BusinessSection, string> = {
   payouts: '/merchant/payouts',
   settings: '/merchant/settings',
 };
+
+const ICON: Record<BusinessSection, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  deals: Tag,
+  createDeal: PlusCircle,
+  media: Images,
+  orders: ClipboardList,
+  customers: Users,
+  analytics: BarChart3,
+  reviews: MessageSquare,
+  calculator: Calculator,
+  redeem: QrCode,
+  business: Building2,
+  staff: UserCog,
+  payouts: Wallet,
+  settings: Settings,
+};
+
+/** Sidebar groups. Redeem is not listed: it is the large button at the top of the sidebar. */
+const GROUPS: { key: 'groupSales' | 'groupDeals' | 'groupBusiness'; sections: BusinessSection[] }[] = [
+  { key: 'groupSales', sections: ['dashboard', 'orders', 'customers', 'analytics', 'reviews'] },
+  { key: 'groupDeals', sections: ['deals', 'createDeal', 'media', 'calculator'] },
+  { key: 'groupBusiness', sections: ['business', 'staff', 'payouts', 'settings'] },
+];
 
 /** Items on the phone tab bar. Everything else sits under "More". */
 const TABS: BusinessSection[] = ['dashboard', 'deals', 'redeem', 'orders'];
@@ -62,8 +103,14 @@ export async function BusinessShell({
     payouts: m('navPayouts'),
     settings: m('navSettings'),
   };
-  const item = (section: BusinessSection): NavItem => ({ href: HREF[section], label: labels[section] });
-  const sidebar = sections.map(item);
+  const item = (section: BusinessSection): NavItem => {
+    const Icon = ICON[section];
+    return { href: HREF[section], label: labels[section], icon: <Icon className="size-[18px] shrink-0" aria-hidden="true" /> };
+  };
+  const groups = GROUPS.map((group) => ({ key: group.key, items: group.sections.filter((s) => sections.includes(s)).map(item) })).filter(
+    (group) => group.items.length > 0,
+  );
+  const canRedeem = sections.includes('redeem');
   const tabs = TABS.filter((section) => sections.includes(section)).map(item);
   const more = sections.filter((section) => !TABS.includes(section)).map(item);
   const role = roles.includes('merchant_owner') ? identity('owner') : identity('manager');
@@ -105,8 +152,25 @@ export async function BusinessShell({
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-card-ui bg-brand-dark p-3 shadow-card">
-            <p className="px-3 pb-3 pt-1 text-label font-semibold uppercase tracking-widest text-surface/70">{businessName}</p>
-            <NavLinks items={sidebar} label={w('workspace')} variant="sidebar" tone="dark" />
+            <p className="truncate px-3 pb-3 pt-1 text-label font-semibold uppercase tracking-widest text-surface/70">{businessName}</p>
+            {canRedeem && (
+              <Link
+                href="/merchant/redeem"
+                prefetch={false}
+                className="mb-3 flex min-h-12 items-center justify-center gap-2 rounded-control-ui bg-surface px-3 font-semibold text-brand-dark transition-colors hover:bg-brand-50"
+              >
+                <QrCode className="size-5" aria-hidden="true" />
+                {labels.redeem}
+              </Link>
+            )}
+            <div className="grid gap-4">
+              {groups.map((group) => (
+                <div key={group.key}>
+                  <p className="px-3 pb-1 text-label font-semibold uppercase tracking-wider text-surface/70">{w(group.key)}</p>
+                  <NavLinks items={group.items} label={w(group.key)} variant="sidebar" tone="dark" />
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
         <main className="min-w-0 pb-28 lg:pb-0">{children}</main>
