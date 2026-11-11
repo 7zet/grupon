@@ -1,73 +1,57 @@
 # Dealo roadmap
 
-NEXT: Stage 4b is on `feat/stage-4b`, CI green; waiting for the owner's "merge" (then tag `v0.8`) and "bootstrap done". After that start Stage 5 on `feat/stage-5` from main (see `docs/FINISH-PLAN.md` section 5).
+Status as of `v1.0` (2026-11-11). This is the single source of truth for delivery status. Acceptance evidence is in
+`docs/ACCEPTANCE.md`, product decisions in `docs/DECISIONS.md`, version history in `CHANGELOG.md`.
 
-This is the single source of truth for delivery status. Acceptance evidence lives in
-`docs/ACCEPTANCE.md`; durable product decisions live in `docs/DECISIONS.md`.
+**Next:** open items are at the end of this page. The original PRD gaps are listed in `docs/HANDOVER.md`.
 
-## Stage 0 — Repository order
+## Stage 0 — Repository order (`v0.1`)
 
-**Status:** Done. Reference material, local database tooling, isolated E2E accounts, and the `v0.1` baseline are in place.
+**Done.** Reference material, local database tooling, isolated E2E accounts, the first baseline.
 
-## Stage 1 — Demo-ready product
+## Stage 1 — Demo-ready product (`v0.2`)
 
-**Status:** Done. Buyer, merchant, cashier, admin, voucher, finance, category, dispute, and wizard workflows are covered; AT-08 is deferred to the excluded real-payment work and AT-17 to the excluded bank-protection work.
+**Done.** Buyer, merchant, cashier, admin, voucher, finance, category, dispute and wizard flows. AT-08 needs a real PSP
+and AT-17 needs bank-change protection; both are outside the demo.
 
-## Stage 2 — Finish: demo mode, Docker verification, free hosting preparation
+## Stage 2 — Demo mode (`v0.3`, `v0.4`)
 
-**Goal:** Make a polished, safe-to-demo build that one owner can run and hand over.
+**Done.** `DEMO_MODE` gates the sign-in code on the page, mock payments and the header badge; native Playwright runs
+in CI. The free-hosting part was dropped in November 2026: the demo runs locally (`scripts/demo.ps1`, `docs/SHARE.md`).
 
-**Finish line:** Demo-only switches work, the full Docker smoke/backup-restore run is verified, and one documented free hosting setup can deploy the web, API/worker, and database.
+## Stage 3 — Support contacts and SMS (`v0.6`)
 
-**Status:** Code done (`v0.4`); hosting was dropped later (November 2026): the demo runs locally, see README.md and docs/SHARE.md.
+**Done.** Support contacts from configuration; Eskiz SMS adapter with limits (default stays log delivery). Telegram was
+dropped by decision (archived at tag `archive/telegram-wip`).
 
-**Done:**
+## Stage 4 — Polish and demo quality (`v0.5`, `v0.7`, `v0.8`, `v0.9`)
 
-- 2026-11-04: `DEMO_MODE` now gates OTP echo, mock payment provider/actions, and the public header badge; `SMS_PROVIDER=log` remains the default.
-- 2026-11-05: Native purchase/merchant Playwright runs in CI as advisory after two failed attempts; readiness succeeds, but its test failure remains recorded in CI logs.
+**Done.**
 
-## Stage 3 — Support contacts and SMS adapter
+- `v0.5`: account menu, role badges, `docs/DEMO.md`.
+- `v0.7` (audit fixes): QR refresh, refund four-eyes, voucher sequence, branch check on redeem, payout receivable
+  offset, demo-only SMS log, Redis in production, Origin check, append-only audit log, CI security scans, phone
+  masking, deal pause/resume/archive, business suspend/reinstate, fraud and overview pages, price proof, calculator.
+  Migrations `00029`–`00032`.
+- `v0.8`: curated Tashkent catalog (30 businesses, 60 deals), homepage rows, mobile fixes, translation tests.
+- `v0.9`: hosting removed; one-command local demo; cached public pages; search synonyms; translated subcategories.
 
-**Goal:** Give demo users visible support contacts and an optional real-SMS adapter.
+## Stage 5 — Handover (`v1.0`)
 
-**Finish line:** Configured contacts and the Eskiz adapter are complete and tested; the default stays local log delivery.
+**Done.**
 
-**Status:** Done (`v0.6`). Telegram dropped.
+- Product renamed to Dealo.
+- Role workspaces (Dealo Business, Dealo Kassa, Dealo Admin), each role on its own home.
+- Green design, motion, layout smoke tests.
+- Search by street address, with addresses on deal cards.
+- Demo story in the seed.
+- Docs: README, DEMO, HANDOVER, CHANGELOG, AUDIT recheck.
+- No new migrations since `v0.7`.
 
-**Ordered tasks:**
+## Open items
 
-1. Support contacts from configuration in the footer, help page, and voucher page — done.
-2. Eskiz SMS adapter with cooldown, rate limits, daily caps, and fake-server tests — done.
-3. Telegram bot, Telegram OTP, notifications and Mini App — dropped by decision; WIP is archived at `archive/telegram-wip`.
-
-## Stage 4 — Polish and demo quality
-
-**Goal:** Make every role’s walkthrough clear, reliable, localized, and presentation-ready.
-
-**Finish line:** Demo scripts, visual polish, edge states, and cross-role browser tests are complete.
-
-**Status:** In progress — Stage 4a: G0–G4 done, G5 docs in progress. Follow `docs/FINISH-PLAN.md`.
-
-**Current work:** G0 was released as `v0.5` and Stage 3b as `v0.6`; G1–G4 are on `feat/stage-4a-fixes`.
-
-**Delivery order (2026-11-06):**
-
-1. `feat/stage-4a` G0: account menu, identity badges, demo-account picker, clear seed names, and `docs/DEMO.md`; green CI, merge to `main`, tag `v0.5`.
-2. Rebase `feat/stage-3b` on that `main`; finish Eskiz SMS wiring/daily caps, Telegram cleanup, and documentation; green CI, merge to `main`, tag `v0.6`.
-3. Create a new branch from updated `main` for audit groups G1 through G5.
-
-**2026-11-07 — Stage 4a G1:** QR refresh follows server token expiry; checkout accepts one variant only; late and dispute refunds require support proposal then a different finance approver; finance denial/self-approval is audited; native Playwright is blocking and installs Chromium in CI. Migration: `00029_refund_proposals.sql`.
-
-**2026-11-07 — Stage 4a G2:** voucher issuance is sequenced and unique per order item; redemption requires a branch attached to the deal; partial and recently expired vouchers refund only their remaining floor-split value and commission remainder goes to the final visit; a reversal after payout becomes merchant receivable and is offset from the next payout. Migrations: `00030_voucher_sequence.sql`, `00031_payout_receivable_offset.sql`.
-
-## Stage 5 — SEO, final documentation, handover, v1.0
-
-**Goal:** Package the project for a maintainable v1.0 handover.
-
-**Finish line:** SEO essentials, final operational documentation, a handover checklist, and `v1.0` are complete.
-
-**Status:** Not started.
-
-**2026-11-07 — Stage 4a G3/G4:** log SMS only with `DEMO_MODE`; production requires Redis and fails OTP limits closed; Origin check on cookie sessions; `audit_logs` append-only (migration `00032_audit_logs_append_only.sql`); CI security job; masked phones. Merchant sees the rejection reason; deal pause/resume/archive; merchant suspend/terminate/reinstate; admin overview and fraud-signal pages; price proof required on submit (demo merchants are seeded with a placeholder); discount over 70% flagged; calculator warns on negative net income.
-
-**2026-11-08 — Stage 4b:** Inter font loads everywhere; curated demo catalog (`seed/catalog.json`: 30 real-sounding businesses with Tashkent addresses, 32 deal templates, one deal per business and offer, distinct option names and texts, 60 deals); homepage sections show different deals in whole rows; category icons; empty ratings hidden; validity in days; weekly grouped opening hours; quantity stepper above Buy; role-aware merchant panel nav and correct role badge; mobile overflow fixes; message-key tests. No new migrations since v0.7.
+- **SEO:** no `sitemap`, `robots`, `hreflang` alternates or Open Graph images yet. Page titles and descriptions exist.
+- **Not built from the PRD:** see "Not yet built" in `docs/HANDOVER.md` (for example expiry reminders,
+  prohibited-offer rules, bank-change protection, admin screens for categories, cities and commission).
+- **Real launch:** PSP, SMS provider, server and domain in Uzbekistan, Redis and `APP_ENV=production`, legal work
+  (`docs/HANDOVER.md`, "Next steps").

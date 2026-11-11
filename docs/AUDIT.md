@@ -211,7 +211,7 @@ Rules:
 | API-07 | Outbox: hodisalar bir marta yuboriladi; Idempotency-Key 24 soat saq… | 🟡 | outbox/outbox.go; worker/app.go:48,68 | At-least-once, log-only publisher; no 24h Idempotency-Key expiry |
 | **18. Bildirishnomalar va Telegram** | | | | |
 | T-01 | Kirish kodi SMS va Telegram orqali yuboriladi; SMS provayderi sozla… | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision; SMS log adapter + Eskiz adapter exist |
-| T-02 | Telegram bot: /start (til tanlash), /help, /support; token bo'lmasa… | 🟡 | telegram/bot.go:46-57; bot.go:22 | /start,/help,/support work, token-less = off; /start does not store a language (uncommitted, no tests) |
+| T-02 | Telegram bot: /start (til tanlash), /help, /support; token bo'lmasa… | ➖ | HANDOVER.md DEV-06 | Docs sync: Telegram dropped by decision; the bot code is not in the repository (tag `archive/telegram-wip`) |
 | T-03 | Hisobni Telegram'ga ulash (bir martalik havola) va uzish. | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision |
 | T-04 | Xabarlar: vaucher chiqarildi; vaucher ishlatildi + "Bu men emasman"… | 🟡 | migrations/00013 (kind only voucher_redeemed) | In-app only; no Telegram messages, no 'issued' message |
 | T-05 | Muddat eslatmalari (7 va 1 kun), takrorlanmaydi. | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision (reminders: see FR-04.6) |
@@ -230,7 +230,7 @@ Rules:
 | NFR-02 | Qidiruv/deal API tez (Dealo: p95 ≤ 800/400 ms). | ❔ | platform/cache/redis.go | No benchmark; run k6/hey against seeded API |
 | NFR-04 | Redeem: 100 parallel urinish → aynan 1 muvaffaqiyat. | ✅ | at_redeem_test.go TestAT02 | DB test (skipped here) |
 | NFR-05 | Mobil LCP ≤ 2.5 s. | ❔ | apps/web/lighthouserc.cjs (desktop preset, not in CI) | Run Lighthouse mobile |
-| NFR-08 | Tillar to'liq tarjima qilingan (UI'da tarjimasiz kalit yo'q). | 🟡 | all 3 catalogs have identical keys (checked); messages.test.ts checks only top-level namespaces | Dead 'shipping' strings; Telegram bot replies Uzbek only |
+| NFR-08 | Tillar to'liq tarjima qilingan (UI'da tarjimasiz kalit yo'q). | 🟡 | all 3 catalogs have identical keys (checked); messages.test.ts checks only top-level namespaces | Docs sync: the dead 'shipping' strings and the Telegram bot are gone; the test still compares only top-level namespaces |
 | NFR-09 | Asosiy oqimlar WCAG 2.2 AA (klaviatura, kontrast, label'lar). | ❔ | no axe in tests/CI | Run axe/Lighthouse a11y |
 | NFR-10 | Audit jurnali o'zgarmas. | ✅ | migrations/00032_audit_logs_append_only.sql (trigger) | v1.0: audit_logs append-only like the ledger |
 | NFR-12 | Domen yadrosi (to'lov, vaucher, ledger) testlar bilan qoplangan (De… | 🟡 | go test ./...: domain pkgs pass; 38 store tests skipped (no Docker) | finance/telegram pkgs have no unit tests; coverage not measured |
@@ -361,9 +361,9 @@ Rechecked against the code on branch `feat/v1-polish`. Only rows with new eviden
 | Status | Count |
 |---|---|
 | ✅ done | 105 |
-| 🟡 partial | 67 |
+| 🟡 partial | 66 |
 | ❌ not built | 9 |
-| ➖ excluded by decision | 14 |
+| ➖ excluded by decision | 15 |
 | ❔ not checkable in code | 4 |
 | **Total** | **199** |
 
@@ -372,3 +372,5 @@ became ➖ (Telegram dropped); DEV-01, DEV-03, DEV-05, DEV-06, DEV-07, DEV-08, D
 HANDOVER.md). Still ❌: C-06 prohibited-offer rules, FR-02.5 category term templates, FR-04.6 expiry reminders, FR-06.3 and
 FR-06.6 refund cases, FR-06.8 refund abuse rule, FR-07.5 negative balance recovery, FR-09.5 marketing consent, SEC-07 new
 account limit. They are listed under "Not yet built" in HANDOVER.md.
+
+Docs sync (2026-11-11): T-02 became ➖ (the Telegram bot code is no longer in the repository); NFR-08 note updated.

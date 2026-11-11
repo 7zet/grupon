@@ -16,7 +16,7 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 - Do not spawn subagents. Keep context compact and use `rg` before broad scans.
 - Preserve unrelated changes. Never commit `Grupon_hisobot.pdf` or generated E2E screenshots.
 - Record durable product decisions in `docs/DECISIONS.md`; update `docs/ROADMAP.md` when stage work changes.
-- `docs/FINISH-PLAN.md` is the task list and wins over this file. There is no hosting: the demo runs on the owner's PC (localhost) and is shared with ngrok. Push to feature branches freely; merge to `main` only after CI is green and the owner says "merge". You may run migrations and bootstrap against the LOCAL database only (`C:\dev\grupon-pgdata`); never touch any remote database. Commits include `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
+- `docs/ROADMAP.md` holds the current status and open items (`docs/FINISH-PLAN.md` is completed). There is no hosting: the demo runs on the owner's PC (localhost) and is shared with ngrok. Push to feature branches freely; merge to `main` only after CI is green and the owner says "merge". You may run migrations and bootstrap against the LOCAL database only (`C:\dev\grupon-pgdata`); never touch any remote database. Commits include `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Contract first: update `packages/api-spec/openapi.yaml`, regenerate with `corepack pnpm --filter @dealo/api-client run gen`, then run `go generate ./...` in `services/api`. Never hand-edit generated types.
 - Go layers are handler → domain → store/sqlc. Money is `int64` tiyin, UZS only. Ledger entries are append-only and double-entry.
 - Sensitive merchant/admin actions must audit in the same transaction. Stock reservation is transactional and conditional. Errors use `problem+json` with stable codes.
@@ -31,4 +31,4 @@ Do not treat archived files as active instructions. Read `../dealo-docs` only wh
 
 ## Current stage
 
-Follow `docs/FINISH-PLAN.md` from section 1 at the start of every session. Stages 4a and 4b are merged (v0.7, v0.8). Current work: section 6 (local demo, no hosting), then Stage 5 (handover, v1.0). Verify each audit finding in `docs/AUDIT.md` before changing it; record an incorrect finding in `docs/DECISIONS.md`.
+`v1.0` is released (2026-11-11); `docs/FINISH-PLAN.md` is completed and kept as a record. Read `docs/ROADMAP.md` (status and open items), `docs/HANDOVER.md` (what is and is not built) and the end of `docs/DECISIONS.md` before new work. Verify an audit finding in `docs/AUDIT.md` against the code before changing it.

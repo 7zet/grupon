@@ -1,5 +1,9 @@
 # FINISH PLAN — from the current point to v1.0
 
+> **Status: completed at `v1.0` (2026-11-11).** Kept as the record of how the project was finished. Current status is
+> in `docs/ROADMAP.md`; later decisions (Dealo name, role workspaces with "Switch workspace", local demo) are in
+> `docs/DECISIONS.md` and win over this file. Still open from this plan: SEO (section 5).
+
 You (Claude Code) take over this project from another agent (Codex) and finish it to v1.0.
 This file is your task list. Re-read it at the start of every session.
 

@@ -335,3 +335,31 @@ The older entries above are kept as history. Where they disagree with the code, 
 - Search expands a query through a small synonym table (`domain/catalog/synonyms.go`) and also matches subcategory names;
   subcategory names are translated in `seed/catalog.json`.
 - Every business has its own seeded owner, manager and cashier (`+998912MMRPP`); the login page no longer lists demo accounts.
+
+## v1.0 — role workspaces, Dealo, design (2026-11-09 to 2026-11-11)
+
+- **Name:** the product is Dealo (brand, Go module `github.com/dealo/dealo`, `@dealo/*` packages, order numbers
+  `DL-…`). Kept on purpose: the local database folder `C:\dev\grupon-pgdata`, `../grupon-artifacts`, archived docs.
+  The GitHub repository name is the owner's to change.
+- **Workspaces:** route groups `(shop)`, `(business)/merchant`, `(admin)/admin`, each with its own layout. A cashier gets
+  Dealo Kassa inside the merchant group. Roles and sections are defined once in `apps/web/src/lib/roles.ts`; the API
+  still enforces every rule. This replaces the older "no role switcher" line: an account with several roles has
+  "Switch workspace" in its menu (no one-click demo login was added).
+- **Support** works the finance desk (refunds and disputes); payouts are hidden from support. Review reports stay with
+  moderators. There is no separate support ticket queue.
+- **Staff two-factor in the demo:** moderator, support and finance get the same development authenticator key as the
+  superadmins, so every role can sign in.
+- **Kassa:** the camera starts when the cashier presses the big scan button, not on page load (a refused camera
+  permission would otherwise open the page on an error). Undo is limited to the cashier's own redemption within 10
+  minutes; history rows carry `voucher_id` (contract change).
+- **Search by location:** the deal search also matches merchant addresses; suggestions include addresses; deal cards
+  show the first location's address (`DealSummary.area`). The browser gets suggestions through the same-origin
+  `/api/suggest` route because the API sends no CORS headers.
+- **Caching correction:** the home page reads the session to send staff to their workspace, so it is rendered per
+  request (its API calls are still cached for 60 s). Deal and business pages stay ISR (`revalidate = 60`).
+- **Design tokens:** green brand scale (`--brand-900/800/700/100/50`), red only for discounts, Buy and urgency,
+  `--ink-faint` never for text (fails contrast). Layout tokens (space unit, type scale, radii) live in the same file;
+  `e2e/layout.spec.mjs` fails if they go missing again.
+- **Toolchain:** `go.mod` pins `toolchain go1.26.11` (GO-2026-6859 in `net/http`).
+- Superseded: "The hosted demo stays on DEMO_MODE=true …" above — there is no hosted demo; the local demo uses the same
+  demo settings.
