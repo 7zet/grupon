@@ -30,7 +30,7 @@ func (q *Queries) CountMerchantRedemptionHistory(ctx context.Context, arg CountM
 }
 
 const listMerchantRedemptionHistory = `-- name: ListMerchantRedemptionHistory :many
-SELECT r.id, r.created_at, d.title AS deal_title, o.title AS option_title,
+SELECT r.id, v.id AS voucher_id, r.created_at, d.title AS deal_title, o.title AS option_title,
        buyer.name AS buyer_name, ml.address AS branch, cashier.name AS cashier_name,
        CASE WHEN r.reversed_at IS NOT NULL THEN true ELSE false END AS reversed
 FROM redemptions r
@@ -55,6 +55,7 @@ type ListMerchantRedemptionHistoryParams struct {
 
 type ListMerchantRedemptionHistoryRow struct {
 	ID          pgtype.UUID        `json:"id"`
+	VoucherID   pgtype.UUID        `json:"voucher_id"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	DealTitle   []byte             `json:"deal_title"`
 	OptionTitle []byte             `json:"option_title"`
@@ -80,6 +81,7 @@ func (q *Queries) ListMerchantRedemptionHistory(ctx context.Context, arg ListMer
 		var i ListMerchantRedemptionHistoryRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.VoucherID,
 			&i.CreatedAt,
 			&i.DealTitle,
 			&i.OptionTitle,

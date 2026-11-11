@@ -1,5 +1,7 @@
 import 'server-only';
 
+import type { components } from '@dealo/api-client';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -59,4 +61,17 @@ export async function accountGetOrNull<T>(path: string): Promise<T | null> {
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`account request ${path} failed: ${response.status}`);
   return (await response.json()) as T;
+}
+
+/** The signed-in user, requested once per page render (layouts and pages share the result). */
+export const currentUser = cache(() => accountGetOrNull<components['schemas']['User']>('/me'));
+
+/** The signed-in user, or null for an anonymous or expired session. Never redirects. */
+export async function optionalUser() {
+  try {
+    return await currentUser();
+  } catch (error) {
+    if (error instanceof SessionRequiredError) return null;
+    return null;
+  }
 }

@@ -8,10 +8,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // MerchantRedemptionAPI serves voucher lookup and redemption at the counter. Cashiers may use it.
@@ -85,7 +85,7 @@ func (a *MerchantRedemptionAPI) ListMerchantRedemptions(w http.ResponseWriter, r
 	}
 	items := make([]gen.MerchantRedemption, 0, len(result.Items))
 	for _, item := range result.Items {
-		items = append(items, gen.MerchantRedemption{Id: gen.Uuid(item.ID), Time: item.Time, Deal: mapText(item.Deal), Option: mapText(item.Option), Buyer: item.Buyer, Branch: item.Branch, Cashier: item.Cashier, Reversed: item.Reversed})
+		items = append(items, gen.MerchantRedemption{Id: gen.Uuid(item.ID), VoucherId: gen.Uuid(item.VoucherID), Time: item.Time, Deal: mapText(item.Deal), Option: mapText(item.Option), Buyer: item.Buyer, Branch: item.Branch, Cashier: item.Cashier, Reversed: item.Reversed})
 	}
 	writeJSON(w, http.StatusOK, gen.MerchantRedemptionPage{Items: items, Page: result.Page.Number, PageSize: result.Page.Size, Total: result.Total})
 }

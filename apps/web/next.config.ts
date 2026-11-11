@@ -17,7 +17,7 @@ const apiMediaPattern = apiURL
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ['127.0.0.1'],
-  transpilePackages: ['@grupon/api-client', '@grupon/config', '@grupon/i18n', '@grupon/ui'],
+  transpilePackages: ['@dealo/api-client', '@dealo/config', '@dealo/i18n', '@dealo/ui'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },

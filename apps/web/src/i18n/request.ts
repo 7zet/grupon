@@ -1,5 +1,5 @@
-import { isLocale } from '@grupon/config';
-import { getMessages } from '@grupon/i18n';
+import { isLocale } from '@dealo/config';
+import { getMessages } from '@dealo/i18n';
 import { getRequestConfig } from 'next-intl/server';
 
 import { routing } from './routing';

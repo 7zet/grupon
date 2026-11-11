@@ -1,4 +1,4 @@
-import type { Locale } from '@grupon/config';
+import type { Locale } from '@dealo/config';
 
 import en from '../messages/en.json';
 import ru from '../messages/ru.json';

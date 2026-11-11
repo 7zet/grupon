@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // PostEntry writes a balanced entry inside the caller's transaction. It returns false when an entry

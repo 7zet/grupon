@@ -1007,7 +1007,7 @@ components:
     DealSummary:
       type: object
       required: [id, slug, merchant, category, title, status, options, media, sold_count, rating_avg, rating_count, ends_at]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, merchant: {$ref: '#/components/schemas/Merchant'}, category: {$ref: '#/components/schemas/Category'}, title: {$ref: '#/components/schemas/LocalizedText'}, status: {$ref: '#/components/schemas/DealStatus'}, options: {type: array, minItems: 1, items: {$ref: '#/components/schemas/DealOption'}}, media: {type: array, items: {$ref: '#/components/schemas/DealMedia'}}, sold_count: {type: integer, minimum: 0}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, starts_at: {type: [string, 'null'], format: date-time}, ends_at: {type: string, format: date-time}}
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, slug: {type: string}, area: {type: string, description: 'Address of the first business location, for the card line.'}, merchant: {$ref: '#/components/schemas/Merchant'}, category: {$ref: '#/components/schemas/Category'}, title: {$ref: '#/components/schemas/LocalizedText'}, status: {$ref: '#/components/schemas/DealStatus'}, options: {type: array, minItems: 1, items: {$ref: '#/components/schemas/DealOption'}}, media: {type: array, items: {$ref: '#/components/schemas/DealMedia'}}, sold_count: {type: integer, minimum: 0}, rating_avg: {type: number, minimum: 0, maximum: 5}, rating_count: {type: integer, minimum: 0}, starts_at: {type: [string, 'null'], format: date-time}, ends_at: {type: string, format: date-time}}
     FaqItem:
       type: object
       required: [q, a]
@@ -1037,7 +1037,7 @@ components:
     Suggestion:
       type: object
       required: [type, label, href]
-      properties: {type: {type: string, enum: [deal, merchant, category]}, label: {type: string}, href: {type: string}}
+      properties: {type: {type: string, enum: [deal, merchant, category, address]}, label: {type: string}, href: {type: string}}
     SuggestionList:
       type: object
       required: [items]
@@ -1141,8 +1141,8 @@ components:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/Voucher'}}}}]
     MerchantRedemption:
       type: object
-      required: [id, time, deal, option, buyer, branch, cashier, reversed]
-      properties: {id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
+      required: [id, voucher_id, time, deal, option, buyer, branch, cashier, reversed]
+      properties: {id: {$ref: '#/components/schemas/Uuid'}, voucher_id: {$ref: '#/components/schemas/Uuid'}, time: {type: string, format: date-time}, deal: {$ref: '#/components/schemas/LocalizedText'}, option: {$ref: '#/components/schemas/LocalizedText'}, buyer: {type: string}, branch: {type: string}, cashier: {type: string}, reversed: {type: boolean}}
     MerchantRedemptionPage:
       allOf: [{$ref: '#/components/schemas/PageMeta'}, {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/MerchantRedemption'}}}}]
     ReviewInput:

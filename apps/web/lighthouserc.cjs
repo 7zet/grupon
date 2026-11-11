@@ -1,7 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'pnpm --filter @grupon/web start',
+      startServerCommand: 'pnpm --filter @dealo/web start',
       startServerReadyPattern: 'Ready',
       url: [
         'http://localhost:3000/uz',

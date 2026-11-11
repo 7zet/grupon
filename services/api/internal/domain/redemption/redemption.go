@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
 )
 
 // Voucher states shown to staff. Stored statuses are active, redeemed, refunded and cancelled; expired is derived from time.
@@ -60,14 +60,15 @@ type Redemption struct {
 }
 
 type HistoryItem struct {
-	ID       uuid.UUID
-	Time     time.Time
-	Deal     catalog.Text
-	Option   catalog.Text
-	Buyer    string
-	Branch   string
-	Cashier  string
-	Reversed bool
+	ID        uuid.UUID
+	VoucherID uuid.UUID
+	Time      time.Time
+	Deal      catalog.Text
+	Option    catalog.Text
+	Buyer     string
+	Branch    string
+	Cashier   string
+	Reversed  bool
 }
 
 type HistoryPage struct {

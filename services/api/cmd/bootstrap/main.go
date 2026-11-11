@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/grupon/grupon/services/api/internal/seed"
+	"github.com/dealo/dealo/services/api/internal/seed"
 )
 
 func main() {

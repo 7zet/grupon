@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
 )
 
 // ErrNoMerchant reports that the signed-in account holds no merchant role.

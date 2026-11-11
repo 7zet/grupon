@@ -1,5 +1,5 @@
 {
-  "extends": "@grupon/tsconfig/base.json",
+  "extends": "@dealo/tsconfig/base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "rootDir": "src"

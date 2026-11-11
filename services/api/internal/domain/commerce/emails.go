@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/grupon/grupon/services/api/internal/platform/mail"
+	"github.com/dealo/dealo/services/api/internal/platform/mail"
 )
 
 // emailCopy holds translated order confirmation text. Templates live in Go because the API sends

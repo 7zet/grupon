@@ -4,15 +4,15 @@ package workerapp
 import (
 	"context"
 	"fmt"
-	"github.com/grupon/grupon/services/api/internal/domain/finance"
-	"github.com/grupon/grupon/services/api/internal/domain/outbox"
+	"github.com/dealo/dealo/services/api/internal/domain/finance"
+	"github.com/dealo/dealo/services/api/internal/domain/outbox"
 	"log/slog"
 	"time"
 
-	"github.com/grupon/grupon/services/api/internal/app/commerceapp"
-	"github.com/grupon/grupon/services/api/internal/platform/config"
-	"github.com/grupon/grupon/services/api/internal/platform/database"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/app/commerceapp"
+	"github.com/dealo/dealo/services/api/internal/platform/config"
+	"github.com/dealo/dealo/services/api/internal/platform/database"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 const (

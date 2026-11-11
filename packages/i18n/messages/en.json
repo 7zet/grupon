@@ -19,7 +19,8 @@
     "close": "Close",
     "skipToContent": "Skip to main content",
     "sell": "List your business",
-    "logout": "Log out"
+    "logout": "Log out",
+    "demoBadge": "Demo"
   },
   "Home": {
     "eyebrow": "Make more of your city",
@@ -35,7 +36,14 @@
     "recent": "Recently viewed",
     "merchantTitle": "Grow your local business",
     "merchantText": "Reach new customers with a deal built around your goals.",
-    "merchantCta": "Start selling"
+    "merchantCta": "Start selling",
+    "howTitle": "How Dealo works",
+    "howStep1Title": "Pick a deal",
+    "howStep1Text": "Browse restaurants, salons, sport and leisure offers in your city.",
+    "howStep2Title": "Pay online",
+    "howStep2Text": "Pay the discounted price; the voucher appears in your account at once.",
+    "howStep3Title": "Show the QR code",
+    "howStep3Text": "Visit the place and show the cashier the QR code or the voucher code."
   },
   "Common": {
     "viewAll": "View all",
@@ -541,7 +549,8 @@
       "reversed": "Reversed"
     },
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "cameraUnavailable": "The camera did not open. Allow camera access in the browser or type the code."
   },
   "Reviews": {
     "formTitle": "Leave a review",
@@ -828,5 +837,32 @@
     "rules": {
       "redemption_burst": "Many redemptions in one minute"
     }
+  },
+  "Workspace": {
+    "business": "{brand} Business",
+    "kassa": "{brand} Kassa",
+    "admin": "{brand} Admin",
+    "viewMarketplace": "View marketplace",
+    "switchWorkspace": "Switch workspace",
+    "noAccessTitle": "No access",
+    "noAccessText": "This page is not available for your role.",
+    "backHome": "Go to my workspace",
+    "more": "More",
+    "menu": "Menu",
+    "close": "Close",
+    "workspace": "Workspace",
+    "branch": "Branch",
+    "scanQr": "Scan QR",
+    "enterCode": "Enter code",
+    "confirm": "Confirm",
+    "cancelRedemption": "Cancel",
+    "cancelWindow": "Cancel is possible within 10 minutes",
+    "visitsLeft": "Visits left",
+    "buyer": "Buyer",
+    "todayRedemptions": "Today's confirmations",
+    "cancelReason": "Cancelled by the cashier",
+    "groupSales": "Sales",
+    "groupDeals": "Deals",
+    "groupBusiness": "Business"
   }
 }

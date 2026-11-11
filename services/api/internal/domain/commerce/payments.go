@@ -5,14 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/payments"
+	"github.com/dealo/dealo/services/api/internal/payments"
 )
 
 // PayOrder starts a payment attempt for an order that still awaits payment and whose reservations

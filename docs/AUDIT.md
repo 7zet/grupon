@@ -34,17 +34,17 @@ Rules:
 | ID | Talab (qisqa) | Holat | Dalil (file:line / test) | Izoh |
 |---|---|---|---|---|
 | **0. Loyiha doirasi va ataylab farqlar** | | | | |
-| DEV-01 | Stek: Dealo'da Django + DRF + aiogram + Django Admin; bizda Go API/… | 🟡 | go.mod; apps/web; services/api/cmd/{api,worker} | Real (Go + Next.js) but not recorded in HANDOVER.md |
+| DEV-01 | Stek: Dealo'da Django + DRF + aiogram + Django Admin; bizda Go API/… | ✅ | HANDOVER.md DEV-01 | v1.0: recorded in HANDOVER |
 | DEV-02 | To'lov: real PSP (Payme/Click/Uzum), fiskal chek, MXIK, paket kodi,… | ✅ | payments/provider.go; payments/mock.go; payments/manual.go; HANDOVER.md | Mock + manual confirm + PSP port exist; documented |
-| DEV-03 | Hosting: Vercel + Render + Neon (O'zbekistondan tashqarida). Faqat… | 🟡 | docs/DEPLOY.md; .env.production.example | Real; HANDOVER.md does not mention hosting abroad / no real PII |
+| DEV-03 | Hosting: Vercel + Render + Neon (O'zbekistondan tashqarida). Faqat… | ✅ | HANDOVER.md DEV-03, docs/SHARE.md | v1.0: no hosting; local demo + ngrok; documented |
 | DEV-04 | Yuridik gate'lar G1–G9 qo'llanilmaydi. | ✅ | HANDOVER.md 'Legal, regulatory... launch gates' | Documented |
-| DEV-05 | Support: ticket tizimi va SLA yo'q; faqat kontaktlar (telefon, Tele… | 🟡 | web support-contacts.tsx; no ticket tables in migrations | Real (contacts only); not in HANDOVER.md |
-| DEV-06 | Telegram Mini App: to'liq initData login yo'q; faqat botdagi "Saytn… | 🟡 | telegram/bot.go has no WebApp/'Open site' button | No initData; 'Open site' button not built yet; not in HANDOVER (ROADMAP task 7 requires it) |
-| DEV-07 | Kategoriya flag'lari faqat kategoriya darajasida (Dealo'da kategori… | 🟡 | migrations/00025_category_capabilities.sql | Flags only on categories (real); not in HANDOVER.md |
-| DEV-08 | Tillar: uz, ru, en (Dealo: uz-Latn, ru, uz-Cyrl avtomatik). uz-Cyrl… | 🟡 | packages/config/src/locales.ts; i18n/messages/{uz,ru,en}.json | uz/ru/en only (real); not in HANDOVER.md |
+| DEV-05 | Support: ticket tizimi va SLA yo'q; faqat kontaktlar (telefon, Tele… | ✅ | HANDOVER.md DEV-05 | v1.0: recorded in HANDOVER |
+| DEV-06 | Telegram Mini App: to'liq initData login yo'q; faqat botdagi "Saytn… | ✅ | HANDOVER.md DEV-06; tag archive/telegram-wip | v1.0: Telegram dropped, recorded |
+| DEV-07 | Kategoriya flag'lari faqat kategoriya darajasida (Dealo'da kategori… | ✅ | HANDOVER.md DEV-07 | v1.0: recorded in HANDOVER |
+| DEV-08 | Tillar: uz, ru, en (Dealo: uz-Latn, ru, uz-Cyrl avtomatik). uz-Cyrl… | ✅ | HANDOVER.md DEV-08 | v1.0: recorded in HANDOVER |
 | DEV-09 | DEMO_MODE: kirish kodi sahifada ko'rinadi, test to'lov tugmalari, "… | 🟡 | config.go:129,403; app.go:197; site-shell.tsx:48; checkout-form.tsx:159 | Gated by DEMO_MODE (OTP echo, mock pay, badge); not in HANDOVER; see A-4 (log sender) |
-| DEV-10 | Sharhlar (Dealo'da R1b/R2) — demo'da bor. | 🟡 | domain/reviews/reviews.go; admin/reports page | Reviews exist (real); not in HANDOVER.md |
-| DEV-11 | Booking (R2), CRM/referral, reklama, loyalty, sovg'a (R2–R3) — yo'q. | 🟡 | no booking/CRM/ads/loyalty/gift code or tables (00009_dealo_removals.sql) | Real; not in HANDOVER.md |
+| DEV-10 | Sharhlar (Dealo'da R1b/R2) — demo'da bor. | ✅ | HANDOVER.md DEV-10 | v1.0: recorded in HANDOVER |
+| DEV-11 | Booking (R2), CRM/referral, reklama, loyalty, sovg'a (R2–R3) — yo'q. | ✅ | HANDOVER.md DEV-11 | v1.0: recorded in HANDOVER |
 | DEV-12 | Docker fayllari bor, lekin "ixtiyoriy, tekshirilmagan". | ✅ | services/api/Dockerfile; apps/web/Dockerfile; docker-compose.prod.yml; HANDOVER.md | Documented unverified; docker daemon not running here either; see B-3 |
 | **1. Doimiy tamoyillar** | | | | |
 | P-01 | Logistika yo'q: Shipment, ShippingAddress, delivery_fee, kuryer, om… | ✅ | migrations/00009_dealo_removals.sql:17; rg shipment/courier = 0 in code | Only unused i18n key 'shippingTitle' left (D) |
@@ -65,7 +65,7 @@ Rules:
 | R-07 | Support: refund taklifi, vaucherni vaqtincha bloklash; refund/payou… | 🟡 | finance.go:392-394,339-343 (supportOrFinance → ApproveRefund) | Support can approve refunds alone; no endpoint to temporarily block a voucher (A-3) |
 | R-08 | Finance operator: reconciliation, payout tayyorlash, refund ijrosi;… | 🟡 | finance.go:400-406; finance.go:151-179 | Operator and approver are the same 'finance' role; split only by user id |
 | R-09 | Finance approver: payout va refund tasdig'i (2-imzo); ledger yozuvi… | ✅ | finance.go:404; 00007:61-70 | Approver cannot change ledger (triggers); same role as operator |
-| R-10 | Trust & fraud analyst: fraud navbati, payout hold, anomaliyalar. (A… | ❌ | no such role in 00001:25; fraud_signals never read by any API/UI | Signals are written (redemption_fraud.go) but nobody can see them |
+| R-10 | Trust & fraud analyst: fraud navbati, payout hold, anomaliyalar. (A… | ✅ | web (admin)/admin/fraud/page.tsx; lib/roles.ts ADMIN_SECTIONS.fraud | v1.0: fraud signals page for moderator/superadmin; burst rule holds payouts |
 | R-11 | Superadmin: rollar, flag'lar; har bir harakati audit qilinadi. | 🟡 | totp.go:27; admin_audit_test.go TestEveryStaffWriteLeavesAnAuditRow | No endpoint to manage roles or flags (ADM-06) |
 | R-12 | Barcha ruxsatlar serverda tekshiriladi (UI'da yashirish yetarli emas). | ✅ | service-level checks: finance.go, redemption.go:371-383, moderation.go; handlers map to 403 | UI hiding is not the only guard |
 | R-13 | Moliyaviy amallar 4-eyes: tayyorlovchi ≠ tasdiqlovchi. | 🟡 | 00007:~74 CHECK approved_by<>prepared_by; finance.go:187; refunds CHECK 00007 | Payout enforced (DB+domain). Refund: only requester≠approver; MarkRefundPaid has no preparer check |
@@ -84,7 +84,7 @@ Rules:
 | FR-01.4 | Oferta elektron qabul: vaqt, IP, versiya va qabul qilgan shaxs saql… | 🟡 | 00010: contract_version, contract_accepted_at, contract_accepted_ip | Accepting person not stored explicitly |
 | FR-01.5 | Bank rekviziti o'zgarishi: owner 2FA → platforma tasdig'i → 72 soat… | ➖ | - | Excluded; HANDOVER.md 'Bank-account change protection' |
 | FR-01.6 | Owner xodimlarni telefon orqali taklif qiladi va filialga biriktiradi. | 🟡 | merchant/staff.go:72-90 | Invites only already-registered users by phone; no branch assignment seen |
-| FR-01.7 | Rad etish sababi merchantga ko'rinadi. | ❌ | 00011 stores rejection_reason; openapi/web expose no reason to merchant | Reason saved but never shown (A-8) |
+| FR-01.7 | Rad etish sababi merchantga ko'rinadi. | ✅ | (business)/merchant/deals/page.tsx:38 (rejection_reason); openapi Deal.rejection_reason | v1.0: reason shown to the business on its deals list |
 | **5. FR-02 Deal Studio** | | | | |
 | FR-02.1 | Maydonlar: kategoriya, sarlavha, tavsif (uz majburiy), kamida 3 ras… | ✅ | merchant/deal.go:98-170 (3 images, highlights, dates, branches, terms) | Stricter: uz+ru+en all required |
 | FR-02.2 | Variant: original_price, deal_price, voucher_type (single/multi), r… | ➖ | merchant/deal.go:154-160 (prices, redemptions_allowed) | Excluded part (MXIK/QQS); core variant fields exist |
@@ -106,7 +106,7 @@ Rules:
 | FR-04.1 | Har bir sotilgan dona uchun bitta vaucher (BR-01: UNIQUE(order_item… | 🟡 | 00001:258 vouchers; only INDEX on order_item_id (no seq, no UNIQUE) | Idempotency relies on payment-state change; no DB unique (A-7) |
 | FR-04.2 | Token 128-bit tasodifiy, DB'da faqat HMAC-hash. (Boshqacha yechim b… | 🟡 | commerce/qr.go:12-90 ('gv2:<voucher id>:<window>' HMAC-SHA256) | Deviation: signed rotating token containing voucher UUID, not 128-bit random + hash; sound but not documented as deviation |
 | FR-04.3 | QR ichida faqat opaque token, PII yo'q; zaxira kod 10 belgi (Crockf… | 🟡 | qr.go:104-114; pricing.go:80 | No PII; 10-char Crockford OK, but derived from voucher id+secret (not stored) |
-| FR-04.4 | QR har 30 soniyada yangilanadi (web'da ham). | ❌ | web coupons/[voucherId]/page.tsx:31 (server-rendered once) | No client refresh; token dies after ~60 s (A-2) |
+| FR-04.4 | QR har 30 soniyada yangilanadi (web'da ham). | ✅ | web components/voucher-qr.tsx qrRefreshDelay; voucher-qr.test.ts | v1.0: QR refetched before the server expiry (30 s window) |
 | FR-04.5 | multi_use: har skanerda redemptions_used + 1; oxirgisida redeemed. | ✅ | queries/redemption_ledger.sql:16-21; at_redeem_test.go |  |
 | FR-04.6 | Muddat tugashidan 7 va 1 kun oldin eslatma. | ❌ | rg reminder/7 days = 0 | No expiry reminders |
 | FR-04.7 | Muddat: min(valid_until, xarid + N kun), Asia/Tashkent 23:59:59 da… | ✅ | commerce/model.go:89-110; voucher_window_test.go |  |
@@ -193,12 +193,12 @@ Rules:
 | SEC-01 | Admin va moliya rollari uchun 2FA (TOTP) majburiy; sessiya ≤ 8 soat. | ✅ | totp.go:27; service.go:249-250 (8h cap); totp_test.go |  |
 | SEC-02 | Xaridor sessiyasi httpOnly cookie; refresh token rotatsiyasi. | ✅ | auth_handlers.go:274-276; TestConcurrentRefreshAllowsExactlyOneRotation | SameSite=Lax; CSRF token not implemented |
 | SEC-03 | OTP: 60 s cooldown, telefon va IP limiti; 5 xato urinishdan keyin 1… | 🟡 | otp.go:20-24; service.go:287-305; app.go:160-163 | Cooldown OK (0 in dev); limits fail open without Redis; no 15-min lock (new code after cooldown) |
-| SEC-04 | Telefon raqami interfeysda maskalangan holda ko'rsatiladi. | ❌ | web account/profile/page.tsx:19 | Full phone shown |
+| SEC-04 | Telefon raqami interfeysda maskalangan holda ko'rsatiladi. | ✅ | web lib/phone.ts maskPhone (+ test); account-menu | v1.0: phone masked in the UI |
 | SEC-05 | Merchant hujjatlari maxfiy saqlanadi, faqat vakolatli rollarga ochi… | ✅ | storage/private.go; merchant_document_handlers.go:85-92 | Private attachment; but 2 files in git (C-5) |
 | SEC-06 | Fraud qoidalari: ish vaqtidan tashqari redeem, 1 daqiqada > 5 redee… | 🟡 | redemption_ledger_repository.go:103-132; redemption_fraud.go:38-62 | Burst → hold OK; off_hours/distance only record a signal |
 | SEC-07 | Yangi akkaunt uchun birinchi kunda xarid limiti. | ❌ | - | No new-account first-day limit |
 | SEC-08 | Har bir admin va sezgir merchant amali audit jurnaliga yoziladi. | ✅ | admin_audit_test.go; audit_logs | DB test (skipped here) |
-| SEC-09 | CI'da bog'liqliklar skaneri va sir (secret) qidiruvi. | ❌ | .github/workflows/ci.yml (no govulncheck/audit/gitleaks) | No scanners |
+| SEC-09 | CI'da bog'liqliklar skaneri va sir (secret) qidiruvi. | ✅ | .github/workflows/ci.yml security job (govulncheck, pnpm audit, gitleaks) | v1.0: runs on every CI run |
 | SEC-10 | Repo'da maxfiy kalit, parol, token yo'q; prod kalitlari dev kalitla… | 🟡 | rg secrets = none; .env.example dev values; git ls-files .data | No real keys; merchant docs tracked; OTP logged |
 | SEC-11 | IP allowlist/VPN admin uchun, tashqi pentest. | ➖ | - | Excluded; not explicit in HANDOVER |
 | **17. API standartlari** | | | | |
@@ -210,14 +210,14 @@ Rules:
 | API-06 | Webhook: imzo tekshiruvi, provider_event_id bo'yicha dedup, takror… | 🟡 | payments/mock.go:62-105; commerce_handlers.go:241 | HMAC OK; dedup by payment state (no provider_event_id) |
 | API-07 | Outbox: hodisalar bir marta yuboriladi; Idempotency-Key 24 soat saq… | 🟡 | outbox/outbox.go; worker/app.go:48,68 | At-least-once, log-only publisher; no 24h Idempotency-Key expiry |
 | **18. Bildirishnomalar va Telegram** | | | | |
-| T-01 | Kirish kodi SMS va Telegram orqali yuboriladi; SMS provayderi sozla… | ❌ | app.go:172; config.go:267-275 | Only 'log' SMS; no Telegram OTP |
+| T-01 | Kirish kodi SMS va Telegram orqali yuboriladi; SMS provayderi sozla… | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision; SMS log adapter + Eskiz adapter exist |
 | T-02 | Telegram bot: /start (til tanlash), /help, /support; token bo'lmasa… | 🟡 | telegram/bot.go:46-57; bot.go:22 | /start,/help,/support work, token-less = off; /start does not store a language (uncommitted, no tests) |
-| T-03 | Hisobni Telegram'ga ulash (bir martalik havola) va uzish. | ❌ | - | No link/unlink |
+| T-03 | Hisobni Telegram'ga ulash (bir martalik havola) va uzish. | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision |
 | T-04 | Xabarlar: vaucher chiqarildi; vaucher ishlatildi + "Bu men emasman"… | 🟡 | migrations/00013 (kind only voucher_redeemed) | In-app only; no Telegram messages, no 'issued' message |
-| T-05 | Muddat eslatmalari (7 va 1 kun), takrorlanmaydi. | ❌ | - | No reminders |
-| T-06 | Botda "Saytni ochish" tugmasi. | ❌ | telegram/bot.go | No 'Open site' button |
+| T-05 | Muddat eslatmalari (7 va 1 kun), takrorlanmaydi. | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision (reminders: see FR-04.6) |
+| T-06 | Botda "Saytni ochish" tugmasi. | ➖ | HANDOVER.md DEV-06 | Telegram dropped by decision |
 | T-07 | Webhook Telegram secret-token sarlavhasi bilan tekshiriladi. | ✅ | bot.go:38-42; telegram_routes.go:29 | Constant-time check; but see C-7 (empty secret in polling mode); no tests |
-| T-08 | SMS xarajatini himoya qilish: kunlik limitlar (IP va umumiy). | ❌ | - | Only 10 req/15 min per IP/phone; no daily caps |
+| T-08 | SMS xarajatini himoya qilish: kunlik limitlar (IP va umumiy). | ✅ | config.go:282-286 SMS_DAILY_CAP_PER_IP / SMS_DAILY_CAP_GLOBAL | v1.0: daily caps per IP and global |
 | T-09 | Telegram Mini App initData login. | ➖ | - | Excluded (DEV-06); not in HANDOVER |
 | **19. Admin (M15)** | | | | |
 | ADM-01 | Deal moderatsiyasi: tasdiqlash, sabab bilan rad etish, changes_requ… | ✅ | moderation.go:124-144; web admin/moderation |  |
@@ -225,14 +225,14 @@ Rules:
 | ADM-03 | Moliya: payout tayyorlash/tasdiqlash/reconcile, refund tasdiqlash,… | ✅ | finance_handlers.go; web admin/finance + finance-actions.tsx |  |
 | ADM-04 | Sharh shikoyatlari va audit jurnali ko'rinishi. | ✅ | admin_reports_handlers.go; web admin/reports, admin/audit |  |
 | ADM-05 | Qo'lda to'lov tasdiqlash (pilot rejim), audit bilan. | ✅ | openapi.yaml:284; commerce_handlers.go:200; TestManualPaymentConfirmationIsIdempotentAndAudited |  |
-| ADM-06 | Foydalanuvchi/merchant bloklash, kategoriya va shaharlarni boshqarish. | ❌ | no block/category/city endpoints in openapi.yaml | Only via seed/DB |
+| ADM-06 | Foydalanuvchi/merchant bloklash, kategoriya va shaharlarni boshqarish. | 🟡 | admin merchants suspend/terminate/reinstate; categories/cities via seed | v1.0: business blocking exists; category/city/user admin screens not built |
 | **20. Nofunksional talablar (demo uchun moslashtirilgan)** | | | | |
 | NFR-02 | Qidiruv/deal API tez (Dealo: p95 ≤ 800/400 ms). | ❔ | platform/cache/redis.go | No benchmark; run k6/hey against seeded API |
 | NFR-04 | Redeem: 100 parallel urinish → aynan 1 muvaffaqiyat. | ✅ | at_redeem_test.go TestAT02 | DB test (skipped here) |
 | NFR-05 | Mobil LCP ≤ 2.5 s. | ❔ | apps/web/lighthouserc.cjs (desktop preset, not in CI) | Run Lighthouse mobile |
 | NFR-08 | Tillar to'liq tarjima qilingan (UI'da tarjimasiz kalit yo'q). | 🟡 | all 3 catalogs have identical keys (checked); messages.test.ts checks only top-level namespaces | Dead 'shipping' strings; Telegram bot replies Uzbek only |
 | NFR-09 | Asosiy oqimlar WCAG 2.2 AA (klaviatura, kontrast, label'lar). | ❔ | no axe in tests/CI | Run axe/Lighthouse a11y |
-| NFR-10 | Audit jurnali o'zgarmas. | ❌ | 00001:325 audit_logs, no trigger | Only ledger is append-only |
+| NFR-10 | Audit jurnali o'zgarmas. | ✅ | migrations/00032_audit_logs_append_only.sql (trigger) | v1.0: audit_logs append-only like the ledger |
 | NFR-12 | Domen yadrosi (to'lov, vaucher, ledger) testlar bilan qoplangan (De… | 🟡 | go test ./...: domain pkgs pass; 38 store tests skipped (no Docker) | finance/telegram pkgs have no unit tests; coverage not measured |
 | NFR-13 | Telefon (390 px) va kompyuter (1440 px) ko'rinishida asosiy sahifal… | 🟡 | e2e/public.spec.mjs:22-27 (390 & desktop); merchant.spec.mjs:160 | Only a few pages; advisory in CI |
 | **21. Qabul sinovlari (AT)** | | | | |
@@ -352,3 +352,23 @@ Rules:
 Jami: 199 band.
 
 Bir jumlada umumiy baho: Core money, voucher, redemption and ledger logic is solid and well tested (DB tests could not be re-run here), but the cart/multi-merchant order hole, the stale voucher QR, support-only refund approval, and the nearly empty Telegram stage mean it is not yet a faithful Dealo demo.
+
+## v1.0 recheck (2026-11-11)
+
+Rechecked against the code on branch `feat/v1-polish`. Only rows with new evidence were changed; each changed row says
+"v1.0:" in its note. Rows not mentioned below were not re-verified and keep their audit status.
+
+| Status | Count |
+|---|---|
+| ✅ done | 105 |
+| 🟡 partial | 67 |
+| ❌ not built | 9 |
+| ➖ excluded by decision | 14 |
+| ❔ not checkable in code | 4 |
+| **Total** | **199** |
+
+Changed in v1.0: R-10, FR-01.7, FR-04.4, SEC-04, SEC-09, T-08, NFR-10 became ✅; ADM-06 became 🟡; T-01, T-03, T-05, T-06
+became ➖ (Telegram dropped); DEV-01, DEV-03, DEV-05, DEV-06, DEV-07, DEV-08, DEV-10, DEV-11 became ✅ (recorded in
+HANDOVER.md). Still ❌: C-06 prohibited-offer rules, FR-02.5 category term templates, FR-04.6 expiry reminders, FR-06.3 and
+FR-06.6 refund cases, FR-06.8 refund abuse rule, FR-07.5 negative balance recovery, FR-09.5 marketing consent, SEC-07 new
+account limit. They are listed under "Not yet built" in HANDOVER.md.

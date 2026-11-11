@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
 )
 
 // Deal statuses used by the review workflow. They mirror the deal_status enum.

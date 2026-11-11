@@ -1,6 +1,6 @@
 'use client';
-import type { components } from '@grupon/api-client';
-import { localized, type Locale } from '@grupon/config';
+import type { components } from '@dealo/api-client';
+import { localized, type Locale } from '@dealo/config';
 import useEmblaCarousel from 'embla-carousel-react';
 import Image from 'next/image';
 import { useCallback } from 'react';

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 // bindingErrorHandler reports malformed path or query input as an RFC 9457 problem.

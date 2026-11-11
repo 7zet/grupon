@@ -16,8 +16,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // phoneSender accepts every sign-in code; tests read the code from the response (development echo).
@@ -67,7 +67,7 @@ func newIdentityFixture(t *testing.T) (*identity.Service, string) {
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 30 * 24 * time.Hour,
 		OTPEcho:         true,
-		BrandName:       "Grupon",
+		BrandName:       "Dealo",
 	})
 	return service, fmt.Sprintf("+99890%07d", time.Now().UnixNano()%10_000_000)
 }

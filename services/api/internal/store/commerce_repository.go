@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // CommerceRepository implements commerce.Repository on top of sqlc queries.

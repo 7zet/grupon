@@ -1,5 +1,4 @@
 'use client';
-import { publicApi } from '@grupon/api-client';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -12,7 +11,11 @@ export function SearchBox({ compact = false }: { compact?: boolean }) {
   const query = useDeferredValue(value.trim());
   const result = useQuery({
     queryKey: ['suggestions', query],
-    queryFn: () => publicApi.suggestions(query),
+    queryFn: async () => {
+      // Same-origin route: the Go API sends no CORS headers, so the browser must not call it directly.
+      const response = await fetch(`/api/suggest?${new URLSearchParams({ q: query })}`);
+      return (await response.json()) as { items: { type: string; label: string; href: string }[] };
+    },
     enabled: query.length >= 2,
   });
   return (

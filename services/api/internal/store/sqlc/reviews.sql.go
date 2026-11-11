@@ -129,6 +129,60 @@ func (q *Queries) InsertReviewReport(ctx context.Context, arg InsertReviewReport
 	return result.RowsAffected(), nil
 }
 
+const listUserReviews = `-- name: ListUserReviews :many
+SELECT id, deal_id, merchant_id, user_id, voucher_id, rating, text, locale, status, created_at, deleted_at
+FROM reviews
+WHERE user_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC, id DESC
+LIMIT 200
+`
+
+type ListUserReviewsRow struct {
+	ID         pgtype.UUID        `json:"id"`
+	DealID     pgtype.UUID        `json:"deal_id"`
+	MerchantID pgtype.UUID        `json:"merchant_id"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	VoucherID  pgtype.UUID        `json:"voucher_id"`
+	Rating     int16              `json:"rating"`
+	Text       string             `json:"text"`
+	Locale     LocaleCode         `json:"locale"`
+	Status     ReviewStatus       `json:"status"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	DeletedAt  pgtype.Timestamptz `json:"deleted_at"`
+}
+
+func (q *Queries) ListUserReviews(ctx context.Context, userID pgtype.UUID) ([]ListUserReviewsRow, error) {
+	rows, err := q.db.Query(ctx, listUserReviews, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUserReviewsRow{}
+	for rows.Next() {
+		var i ListUserReviewsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DealID,
+			&i.MerchantID,
+			&i.UserID,
+			&i.VoucherID,
+			&i.Rating,
+			&i.Text,
+			&i.Locale,
+			&i.Status,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const softDeleteOwnReview = `-- name: SoftDeleteOwnReview :execrows
 UPDATE reviews SET deleted_at = now(), updated_at = now()
 WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL

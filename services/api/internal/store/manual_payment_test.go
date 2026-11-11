@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	"github.com/grupon/grupon/services/api/internal/payments"
-	"github.com/grupon/grupon/services/api/internal/platform/mail"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	"github.com/dealo/dealo/services/api/internal/payments"
+	"github.com/dealo/dealo/services/api/internal/platform/mail"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 func TestManualPaymentConfirmationIsIdempotentAndAudited(t *testing.T) {

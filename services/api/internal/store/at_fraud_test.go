@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	"github.com/grupon/grupon/services/api/internal/payments"
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/payments"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // AT-14: one staff member scans eight vouchers within a minute. The burst rule records a fraud signal, holds

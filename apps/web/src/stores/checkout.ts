@@ -26,6 +26,6 @@ export const useCheckout = create<CheckoutState>()(
       select: (item) => set({ item }),
       clear: () => set({ item: null }),
     }),
-    { name: 'grupon-checkout' },
+    { name: 'dealo-checkout' },
   ),
 );

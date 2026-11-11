@@ -35,7 +35,7 @@ Decisions already made (do NOT reopen them):
 - Read code with `rg` + only the lines you need. Never read node_modules, generated code,
   lockfiles, `.next`. Do not re-read a file you just edited.
 - Contract first: change `openapi.yaml` → regenerate (`go generate ./...` in services/api,
-  `pnpm --filter @grupon/api-client run gen`) → code. Never hand-write API types.
+  `pnpm --filter @dealo/api-client run gen`) → code. Never hand-write API types.
 - Never hardcode UI strings (uz/ru/en, Uzbek Latin with o' g'), colors (tokens), brand name, cities, categories.
 - One branch per stage. Commit after each task with a clear message. Push the branch.
 - After each task: run the related tests. After each group: full checks

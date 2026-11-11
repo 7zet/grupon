@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // CatalogRepository implements the public catalog read model on top of sqlc queries.
@@ -395,6 +395,7 @@ func summaryFromRow(row sqlc.ListDealSummaryRowsRow) (catalog.DealSummary, error
 	return catalog.DealSummary{
 		ID:   toUUID(row.ID),
 		Slug: row.Slug,
+		Area: row.Area,
 		Merchant: catalog.Merchant{
 			ID:            toUUID(row.MerchantID),
 			Slug:          row.MerchantSlug,
@@ -682,4 +683,17 @@ func nonNil[T any](items []T) []T {
 		return []T{}
 	}
 	return items
+}
+
+// SuggestAddresses returns merchant addresses that contain the query, so a street name can be suggested.
+func (r *CatalogRepository) SuggestAddresses(ctx context.Context, query string, limit int) ([]catalog.SuggestionRow, error) {
+	rows, err := r.queries.SuggestAddresses(ctx, sqlc.SuggestAddressesParams{Query: query, PageLimit: int32(limit)})
+	if err != nil {
+		return nil, fmt.Errorf("suggest addresses: %w", err)
+	}
+	result := make([]catalog.SuggestionRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, catalog.SuggestionRow{Type: "address", Label: row})
+	}
+	return result, nil
 }

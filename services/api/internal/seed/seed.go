@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	"github.com/grupon/grupon/services/api/internal/store"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	"github.com/dealo/dealo/services/api/internal/store"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 	"os"
 	"path/filepath"
 	"strings"
@@ -224,6 +224,7 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	}
 	userIDs := make([]string, 24)
 	emails := []string{"user@local.test", "owner@local.test", "cashier@local.test", "admin@local.test", "owner-b@local.test", "owner-c@local.test", "owner-d@local.test", "admin-b@local.test", "cashier-b@local.test", "buyer-b@local.test", "manager@local.test", "moderator@local.test", "support@local.test", "finance-a@local.test", "finance-b@local.test"}
+	buyerNames := []string{"Dilshod Karimov", "Gulnora Yusupova", "Rustam Aliyev", "Nigora Saidova", "Otabek Rahimov", "Kamola Ergasheva", "Anvar Tursunov", "Shahlo Nazarova", "Jamshid Qodirov"}
 	demoNames := []string{
 		"Aziz — xaridor", "Dilnoza — Lotus Spa egasi", "Bekzod — Lotus Spa kassiri (Chilonzor)",
 		"Saida — superadmin", "Jasur — Urban Grill egasi", "Malika — Family Cafe egasi",
@@ -233,7 +234,8 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	}
 	for i := range userIDs {
 		email := fmt.Sprintf("customer%02d@local.test", i)
-		name := fmt.Sprintf("Seed Customer %02d", i)
+		// Buyers who appear in reviews, orders and customer lists get ordinary names, not test labels.
+		name := buyerNames[i%len(buyerNames)]
 		if i < len(emails) {
 			email, name = emails[i], demoNames[i]
 		}
@@ -312,6 +314,11 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$3,now()),($2,$3,now())`, userIDs[3], userIDs[7], "JBSWY3DPEHPK3PXP"); err != nil {
 		return err
 	}
+	// Staff accounts must use 2FA. Every seeded staff member gets the same development factor, so the demo
+	// roles (moderator, support, finance) can sign in; see docs/DEMO.md.
+	if _, err := tx.Exec(ctx, `INSERT INTO user_two_factor(user_id,secret,enabled_at) VALUES($1,$5,now()),($2,$5,now()),($3,$5,now()),($4,$5,now())`, userIDs[11], userIDs[12], userIDs[13], userIDs[14], "JBSWY3DPEHPK3PXP"); err != nil {
+		return err
+	}
 	statuses := []string{"active", "active", "active", "active", "active", "active", "scheduled", "paused", "ended", "draft"}
 	// One deal per (business, offer) pair, so no business repeats a deal and every deal matches its business.
 	// Categories take turns so that every page of the catalog mixes them.
@@ -366,11 +373,15 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		highlights, _ := json.Marshal(template.Highlights)
 		included, _ := json.Marshal(template.Included)
 		status := statuses[i%len(statuses)]
-		if i%20 == 9 {
-			status = "in_review" // a few deals wait in the moderation queue for the demo
+		if i%20 == 9 && i < 40 {
+			status = "in_review" // two deals wait in the moderation queue for the demo
 		}
 		start := time.Now().UTC().Add(-24 * time.Hour)
 		end := start.Add(time.Duration(10+i%20) * 24 * time.Hour)
+		if status == "active" && i < 30 && i%10 == 3 {
+			// Three live deals end within two days, so "Ending soon" has real content.
+			end = time.Now().UTC().Add(time.Duration(20+i) * time.Hour)
+		}
 		if status == "scheduled" {
 			start = time.Now().UTC().Add(48 * time.Hour)
 			end = start.Add(10 * 24 * time.Hour)
@@ -410,11 +421,16 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 			}
 		}
 	}
+	lotusToday := 0
 	for i := 0; i < 400; i++ {
 		deal := deals[i%len(deals)]
+		// Each voucher is used a few hours after it was paid. Five Lotus Spa vouchers were used today (more than
+		// ten minutes ago), so the cashier's "today" list has a short, believable history.
+		paidDays := 1 + (i*7)%27
+		redeemedAt := time.Now().UTC().Add(-time.Duration(paidDays)*24*time.Hour + 3*time.Hour)
 		userID := userIDs[4+i%(len(userIDs)-4)]
 		var orderID, itemID, voucherID string
-		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at,created_at) VALUES('GR-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-make_interval(days => $4::int),now()-make_interval(days => $4::int)) RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1), 1+(i*7)%27).Scan(&orderID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO orders(number,user_id,status,subtotal,total,idempotency_key,paid_at,created_at) VALUES('DL-2026-' || lpad(nextval('order_number_seq')::text, 6, '0'),$1,'paid',$2,$2,$3,now()-make_interval(days => $4::int),now()-make_interval(days => $4::int)) RETURNING id`, userID, deal.Price, fmt.Sprintf("seed-order-%06d", i+1), paidDays).Scan(&orderID); err != nil {
 			return err
 		}
 		if err := tx.QueryRow(ctx, `INSERT INTO order_items(order_id,deal_id,deal_option_id,title_snapshot,unit_price_snapshot,original_price_snapshot,terms_snapshot,quantity) SELECT $1,$2,$3,$4,$5,o.original_price,d.terms,1 FROM deal_options o JOIN deals d ON d.id=o.deal_id WHERE o.id=$3 RETURNING id`, orderID, deal.ID, deal.OptionID, deal.Title, deal.Price).Scan(&itemID); err != nil {
@@ -433,8 +449,15 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if deal.MerchantID == merchantIDs[0] {
 			staffID = userIDs[2]
 		}
+		if deal.MerchantID == merchantIDs[0] && lotusToday < 5 {
+			lotusToday++
+			redeemedAt = time.Now().UTC().Add(-time.Duration(lotusToday*35) * time.Minute)
+		}
+		if _, err := tx.Exec(ctx, `UPDATE vouchers SET redeemed_at = $2 WHERE id = $1`, voucherID, redeemedAt); err != nil {
+			return err
+		}
 		var redemptionID string
-		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission) VALUES($1,$2,$3,$4,1,$5,$6) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, staffID, deal.Price, ledger.Commission(deal.Price, 1500)).Scan(&redemptionID); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO redemptions(voucher_id,merchant_id,merchant_location_id,staff_user_id,sequence,amount,commission,created_at) VALUES($1,$2,$3,$4,1,$5,$6,$7) RETURNING id`, voucherID, deal.MerchantID, deal.LocationID, staffID, deal.Price, ledger.Commission(deal.Price, 1500), redeemedAt).Scan(&redemptionID); err != nil {
 			return err
 		}
 		queries := sqlc.New(tx)
@@ -475,6 +498,53 @@ func populate(ctx context.Context, tx pgx.Tx, data seedData, images []imageSeed)
 		if _, err := tx.Exec(ctx, `INSERT INTO homepage_sections(key,title,type,deal_ids,sort_order) VALUES($1,$2,'deals',$3,$4)`, section.key, title, active[section.from:section.from+8], order+1); err != nil {
 			return err
 		}
+	}
+	return demoStory(ctx, tx, merchantIDs[0], userIDs)
+}
+
+// demoStory adds the pieces the 10-minute demo shows in the admin and business panels: one business waiting
+// for review, one open dispute on a Lotus Spa redemption, and Lotus Spa payout history (two paid, one waiting
+// for the second finance approval).
+func demoStory(ctx context.Context, tx pgx.Tx, lotusID string, userIDs []string) error {
+	var ownerID string
+	if err := tx.QueryRow(ctx, `INSERT INTO users(email,name,locale,currency,email_verified_at,phone) VALUES('applicant@local.test','Laylo Hasanova','uz','UZS',now(),'+998935550099') RETURNING id`).Scan(&ownerID); err != nil {
+		return err
+	}
+	description, _ := json.Marshal(localized{
+		"uz": "Yangi ochilgan oilaviy kafe: nonushta, tushlik va shirinliklar.",
+		"ru": "Новое семейное кафе: завтраки, обеды и десерты.",
+		"en": "A new family cafe: breakfast, lunch and desserts.",
+	})
+	var applicantID string
+	if err := tx.QueryRow(ctx, `INSERT INTO merchants(slug,legal_name,display_name,description,phone,website,commission_bps,review_status,submitted_at) VALUES('yashil-bog-kafe','Yashil Bog MChJ','Yashil Bog Kafe',$1,'+998901000099','https://local.test/business/yashil-bog-kafe',1500,'submitted',now() - interval '3 hours') RETURNING id`, description).Scan(&applicantID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role) VALUES($1,'user')`, ownerID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO role_assignments(user_id,role,merchant_id) VALUES($1,'merchant_owner',$2)`, ownerID, applicantID); err != nil {
+		return err
+	}
+	demoProof := merchant.DemoDocument()
+	if _, err := tx.Exec(ctx, `INSERT INTO merchant_documents(merchant_id,kind,storage_key,content_type,size_bytes,uploaded_by) VALUES($1,'price_proof',$2,'application/pdf',$3,$4)`, applicantID, merchant.DemoDocumentKey("yashil-bog-kafe"), len(demoProof), ownerID); err != nil {
+		return err
+	}
+
+	var redemptionID, buyerID string
+	if err := tx.QueryRow(ctx, `SELECT r.id, v.user_id FROM redemptions r JOIN vouchers v ON v.id = r.voucher_id WHERE r.merchant_id = $1 AND r.reversed_at IS NULL ORDER BY r.created_at DESC, r.id LIMIT 1`, lotusID).Scan(&redemptionID, &buyerID); err != nil {
+		return fmt.Errorf("pick a redemption for the demo dispute: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO disputes(redemption_id,opened_by,reason,status) VALUES($1,$2,'Men bu kuponni ishlatmaganman, lekin u ishlatilgan deb ko''rsatilmoqda.','open')`, redemptionID, buyerID); err != nil {
+		return err
+	}
+
+	// Finance A prepares, finance B approves (four-eyes). The last run waits for that approval.
+	preparer, approver := userIDs[13], userIDs[14]
+	if _, err := tx.Exec(ctx, `INSERT INTO payout_runs(merchant_id,amount,status,prepared_by,approved_by,bank_doc_ref,created_at,updated_at) VALUES
+		($1,184500000,'reconciled',$2,$3,'DEMO-PAY-0001',now() - interval '21 days',now() - interval '20 days'),
+		($1,231000000,'sent',$2,$3,'DEMO-PAY-0002',now() - interval '7 days',now() - interval '6 days'),
+		($1,96750000,'pending_approval',$2,NULL,NULL,now() - interval '2 hours',now() - interval '2 hours')`, lotusID, preparer, approver); err != nil {
+		return err
 	}
 	return nil
 }

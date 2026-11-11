@@ -11,9 +11,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/grupon/grupon/services/api/internal/domain/ledger"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/ledger"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // fraudBurstLimit is how many redemptions one staff member may make in a minute before a signal is raised.

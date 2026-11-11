@@ -1,7 +1,7 @@
 'use client';
-import type { components } from '@grupon/api-client';
-import { localized, type Currency, type Locale } from '@grupon/config';
-import { discountPercent, formatMoney } from '@grupon/ui';
+import type { components } from '@dealo/api-client';
+import { localized, type Currency, type Locale } from '@dealo/config';
+import { discountPercent, formatMoney } from '@dealo/ui';
 import { Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

@@ -10,7 +10,7 @@ import (
 )
 
 // Issuer identifies tokens minted by this API.
-const Issuer = "grupon-api"
+const Issuer = "dealo-api"
 
 // MinSecretBytes is the smallest accepted HS256 signing secret.
 const MinSecretBytes = 32

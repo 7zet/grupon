@@ -1,5 +1,5 @@
 export const brandConfig = {
-  name: 'Grupon',
+  name: 'Dealo',
   supportEmail: 'support@example.com',
 } as const;
 

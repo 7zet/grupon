@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
 )
 
 func TestAT05ExpiredAndRefundedVoucherErrorsMapToUnprocessableProblems(t *testing.T) {

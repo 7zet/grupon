@@ -61,6 +61,7 @@ const ALLOWED: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: new RegExp(`^admin\\/deals\\/${UUID}\\/(approve|reject)$`) },
   { method: 'POST', pattern: /^merchant\/vouchers\/lookup$/ },
   { method: 'POST', pattern: new RegExp(`^merchant\\/vouchers\\/${UUID}\\/redeem$`) },
+  { method: 'POST', pattern: new RegExp(`^merchant\\/vouchers\\/${UUID}\\/reverse$`) },
   { method: 'POST', pattern: new RegExp(`^admin\/review-reports\/${UUID}\/dismiss$`) },
   { method: 'POST', pattern: new RegExp(`^admin\/reviews\/${UUID}\/hide$`) },
   { method: 'POST', pattern: /^reviews$/ },

@@ -22,7 +22,7 @@ const (
 	otpCooldown     = time.Minute
 	otpMaxAttempts  = 5
 	defaultUserName = "Foydalanuvchi"
-	placeholderHost = "phone.grupon.local"
+	placeholderHost = "phone.dealo.local"
 )
 
 // Errors for phone sign-in. The HTTP layer maps them to problem codes.

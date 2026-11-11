@@ -1,8 +1,26 @@
-# Grupon handover
+# Dealo handover
 
-Grupon is a polished **demonstration** of a local-deals voucher marketplace for Tashkent, based on the Dealo PRD (`docs/DEALO-REQUIREMENTS.md`). It has no real users, no real money and no legal or compliance delivery. One owner can try every role: buyer, merchant owner, manager, cashier and admin (see `docs/DEMO.md`).
+Dealo is a polished **demonstration** of a local-deals voucher marketplace for Tashkent, based on the Dealo PRD (`docs/DEALO-REQUIREMENTS.md`). It has no real users, no real money and no legal or compliance delivery. One owner can try every role: buyer, merchant owner, manager, cashier and admin (see `docs/DEMO.md`).
 
 Stack: Go API and worker (`services/api`), Next.js web (`apps/web`: buyer site, `/merchant/*`, `/admin/*`), PostgreSQL, OpenAPI contract in `packages/api-spec/openapi.yaml`.
+
+Start here: `README.md` (run it in 3 steps), `docs/DEMO.md` (accounts and a 10-minute script), `CHANGELOG.md` (what each version added).
+
+## What is done (v1.0)
+
+- **Buyer site** in uz/ru/en: home, categories, filters, search (including Uzbek/Russian spellings and street addresses),
+  deal pages with options, map and reviews, checkout with a test payment, vouchers with a QR code that refreshes every
+  30 seconds, refund request, reviews, notifications, profile.
+- **Phone sign-in** with a one-time code (shown on the page in demo mode); admin roles add an authenticator code.
+- **Dealo Business** (owner, manager): dashboard with a sales chart, deals with a six-step wizard and moderation,
+  media library, orders, customers, analytics, reviews and replies, campaign calculator, staff, payouts, settings.
+- **Dealo Kassa** (cashier): QR scan or code, confirm, undo within 10 minutes, today's own redemptions.
+- **Dealo Admin**: overview, deal moderation, business review (approve, reject, suspend, reinstate), fraud signals,
+  review reports, finance desk (payouts with four-eyes approval, refunds, disputes), audit log. Each staff role sees
+  only its own sections.
+- **Money and safety:** UZS in tiyin, double-entry append-only ledger, append-only audit log, transactional stock
+  reservation, idempotent payments and redemptions, Origin check, security scans in CI.
+- **One-command local demo** (`scripts/demo.ps1`) with a realistic Tashkent catalog and a ready demo story.
 
 ## Deviations from the PRD (DEV-01 … DEV-12)
 
@@ -30,18 +48,27 @@ Stack: Go API and worker (`services/api`), Next.js web (`apps/web`: buyer site, 
 - **Price proof.** Submitting a deal needs the business to have a price proof document. Demo merchants get a generated placeholder PDF marked DEMO, so the demo needs no upload.
 - **Rate limits and Origin check.** Cookie-authenticated changes from a browser origin other than `SITE_URL` or `ALLOWED_ORIGINS` are refused (`origin_not_allowed`).
 
-## Not included (interfaces ready)
+## Not done from the Dealo PRD
 
-- Real PSP integration, reconciliation (AT-08), chargebacks and real-money procedures.
-- Fiscalization, MXIK/VAT data, receipt compliance.
-- Bank-account change protection and its delayed approval (AT-17).
-- Legal, regulatory, privacy and merchant-contract work; a real pilot launch.
-- Telegram bot, Telegram OTP, notifications and Mini App (dropped).
-- Ticket system and SLA, booking, CRM, ads, loyalty, gifts, Cyrillic Uzbek, category × city flags.
-- Admin screens for managing categories, cities and users (these exist only through seed data).
-- Email or SMS notifications for redemptions and expiry reminders (an in-app notification exists).
+**Deliberately excluded** (a demo does not need them, or they need real contracts and accounts):
 
-Everything marked ➖ in `docs/AUDIT.md` is in this list or in the deviation table above.
+- Real PSP (Payme, Click, Uzum), reconciliation (AT-08), chargebacks and real-money procedures (a PSP port exists).
+- Fiscal receipts, MXIK/VAT data.
+- Legal, regulatory, privacy and merchant-contract work; legal gates G1–G9.
+- Telegram bot, Telegram sign-in and Mini App (dropped; kept at tag `archive/telegram-wip`).
+- Hosting (the demo runs locally).
+- Booking, CRM, referrals, ads, loyalty, gift codes, ticket system and SLA, Cyrillic Uzbek, category × city flags.
+
+**Not yet built** (would be needed before a real launch; the ❌ rows in `docs/AUDIT.md`):
+
+- Bank-account change protection with delayed approval (AT-17).
+- Prohibited-offer rules in moderation (alcohol, tobacco, gambling, medicines) (C-06).
+- Category term templates (FR-02.5).
+- Expiry reminders 7 and 1 days before (FR-04.6) and email/SMS notifications (only in-app notifications exist).
+- Refund cases: business closed or did not serve (FR-06.3), partly used multi-visit vouchers (FR-06.6), refund abuse
+  rule (FR-06.8), negative balance recovery (FR-07.5).
+- Marketing consent (FR-09.5), first-day purchase limit for new accounts (SEC-07).
+- Admin screens for categories, cities, users and commission settings (they are seed data now).
 
 ## Known limitations
 

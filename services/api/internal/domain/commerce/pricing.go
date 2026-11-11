@@ -98,7 +98,7 @@ func NewVoucherCode() (string, error) {
 	return string(out[:4]) + "-" + string(out[4:]), nil
 }
 
-// FormatOrderNumber renders the human-readable order number, for example GR-2026-000123.
+// FormatOrderNumber renders the human-readable order number, for example DL-2026-000123 (DL for Dealo).
 func FormatOrderNumber(year int, sequence int64) string {
-	return fmt.Sprintf("GR-%d-%06d", year, sequence)
+	return fmt.Sprintf("DL-%d-%06d", year, sequence)
 }

@@ -19,7 +19,8 @@
     "close": "Yopish",
     "skipToContent": "Asosiy qismga o‘tish",
     "sell": "Biznesingizni joylang",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "demoBadge": "Demo"
   },
   "Home": {
     "eyebrow": "Shahringizdan ko‘proq bahra oling",
@@ -35,7 +36,14 @@
     "recent": "Yaqinda ko‘rilgan",
     "merchantTitle": "Mahalliy biznesingizni rivojlantiring",
     "merchantText": "Maqsadlaringizga mos taklif bilan yangi mijozlarga yetib boring.",
-    "merchantCta": "Sotishni boshlash"
+    "merchantCta": "Sotishni boshlash",
+    "howTitle": "Dealo qanday ishlaydi",
+    "howStep1Title": "Taklifni tanlang",
+    "howStep1Text": "Shahringizdagi restoran, salon, sport va dam olish takliflarini ko'ring.",
+    "howStep2Title": "Onlayn to'lang",
+    "howStep2Text": "Chegirmali narxni to'lang, kupon darhol hisobingizda paydo bo'ladi.",
+    "howStep3Title": "QR kodni ko'rsating",
+    "howStep3Text": "Joyga borib, kassirga QR kod yoki kupon kodini ko'rsating."
   },
   "Common": {
     "viewAll": "Barchasini ko‘rish",
@@ -495,7 +503,7 @@
     "empty": "Tekshiruvdagi aksiyalar yo‘q",
     "approve": "Tasdiqlash",
     "reject": "Rad etish",
-    "reasonLabel": "Rad etish sababi (merchant ko‘radi)",
+    "reasonLabel": "Rad etish sababi (biznes ko‘radi)",
     "reasonError": "Sabab kamida 3 ta belgi bo‘lishi kerak",
     "sendReject": "Rad etishni yuborish",
     "cancel": "Bekor qilish",
@@ -541,7 +549,8 @@
       "reversed": "Bekor qilingan"
     },
     "yes": "Ha",
-    "no": "Yo'q"
+    "no": "Yo'q",
+    "cameraUnavailable": "Kamera ochilmadi. Brauzerga kamera ruxsatini bering yoki kodni qo'lda kiriting."
   },
   "Reviews": {
     "formTitle": "Sharh qoldiring",
@@ -625,7 +634,7 @@
     "approve": "Tasdiqlash",
     "reject": "Rad etish",
     "sendReject": "Rad etishni yuborish",
-    "reasonLabel": "Rad etish sababi (merchant ko‘radi)",
+    "reasonLabel": "Rad etish sababi (biznes ko‘radi)",
     "reasonError": "Sababni kamida 3 ta belgi bilan yozing.",
     "errorTransition": "Bu holatda bu amalni bajarib bo‘lmaydi. Sahifani yangilang.",
     "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring.",
@@ -645,15 +654,15 @@
     "title": "Xabarlar",
     "redeemed": "{merchant} da vaucheringiz ishlatildi.",
     "notMe": "Siz emasmisiz? Bu men emasman",
-    "reported": "Shikoyat qabul qilindi. Ko‘rib chiqilguncha merchant to‘lovi to‘xtatiladi.",
+    "reported": "Shikoyat qabul qilindi. Ko‘rib chiqilguncha biznes to‘lovi to‘xtatiladi.",
     "errorGeneric": "Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring."
   },
   "AdminFinance": {
     "title": "Moliya navbati",
     "empty": "Hozir ochiq moliya ishlari yo‘q.",
-    "payouts": "To‘lovlar (payout)",
-    "refunds": "Qaytarishlar (refund)",
-    "disputes": "Nizolar (dispute)",
+    "payouts": "To‘lovlar",
+    "refunds": "Qaytarishlar",
+    "disputes": "Nizolar",
     "approve": "Tasdiqlash",
     "propose": "Moliya uchun taklif qilish",
     "reconcile": "Bank bilan solishtirish",
@@ -662,7 +671,7 @@
     "startReview": "Ko‘rib chiqishni boshlash",
     "close": "Nizoni yopish",
     "resolveCustomer": "Xaridor foydasiga hal qilish",
-    "resolveMerchant": "Merchant foydasiga hal qilish",
+    "resolveMerchant": "Biznes foydasiga hal qilish",
     "bankDocRef": "Bank hujjati raqami",
     "status": {
       "pending_approval": "Tasdiq kutilmoqda",
@@ -675,7 +684,7 @@
       "awaiting_evidence": "Dalil kutilmoqda",
       "under_review": "Ko‘rib chiqilmoqda",
       "resolved_customer": "Xaridor foydasiga hal qilindi",
-      "resolved_merchant": "Merchant foydasiga hal qilindi"
+      "resolved_merchant": "Biznes foydasiga hal qilindi"
     },
     "error": {
       "generic": "Amalni bajarib bo‘lmadi.",
@@ -828,5 +837,32 @@
     "rules": {
       "redemption_burst": "Bir daqiqada ko'p marta ishlatish"
     }
+  },
+  "Workspace": {
+    "business": "{brand} Business",
+    "kassa": "{brand} Kassa",
+    "admin": "{brand} Admin",
+    "viewMarketplace": "Marketplace'ni ko'rish",
+    "switchWorkspace": "Ish maydonini almashtirish",
+    "noAccessTitle": "Bu bo'limga kirish yo'q",
+    "noAccessText": "Bu sahifa sizning rolingiz uchun emas.",
+    "backHome": "Mening bo'limimga qaytish",
+    "more": "Ko'proq",
+    "menu": "Menyu",
+    "close": "Yopish",
+    "workspace": "Ish maydoni",
+    "branch": "Filial",
+    "scanQr": "QR kodni skanerlash",
+    "enterCode": "Kodni kiriting",
+    "confirm": "Tasdiqlash",
+    "cancelRedemption": "Bekor qilish",
+    "cancelWindow": "10 daqiqa ichida bekor qilish mumkin",
+    "visitsLeft": "Qolgan tashriflar",
+    "buyer": "Xaridor",
+    "todayRedemptions": "Bugungi tasdiqlashlar",
+    "cancelReason": "Kassir bekor qildi",
+    "groupSales": "Savdo",
+    "groupDeals": "Aksiyalar",
+    "groupBusiness": "Biznes"
   }
 }

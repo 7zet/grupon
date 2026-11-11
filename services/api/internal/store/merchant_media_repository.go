@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/merchant"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/merchant"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // MerchantMediaRepository persists media library rows. Every query is scoped to one merchant.

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
-import messages from '@grupon/i18n/messages/en';
+import messages from '@dealo/i18n/messages/en';
 import { deals } from '@/mocks/data';
 import { DealCard } from './deal-card';
 import { ListingControls } from './listing-controls';

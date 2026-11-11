@@ -1,5 +1,5 @@
 'use client';
-import type { components } from '@grupon/api-client';
+import type { components } from '@dealo/api-client';
 import { useEffect, useRef } from 'react';
 type Location = components['schemas']['MerchantLocation'];
 export function MapView({ locations }: { locations: Location[] }) {

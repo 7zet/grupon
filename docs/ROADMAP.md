@@ -1,4 +1,4 @@
-# Grupon roadmap
+# Dealo roadmap
 
 NEXT: Stage 4b is on `feat/stage-4b`, CI green; waiting for the owner's "merge" (then tag `v0.8`) and "bootstrap done". After that start Stage 5 on `feat/stage-5` from main (see `docs/FINISH-PLAN.md` section 5).
 

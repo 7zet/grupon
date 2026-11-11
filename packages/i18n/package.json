@@ -1,5 +1,5 @@
 {
-  "name": "@grupon/i18n",
+  "name": "@dealo/i18n",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,11 +14,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@grupon/config": "workspace:*"
+    "@dealo/config": "workspace:*"
   },
   "devDependencies": {
-    "@grupon/eslint-config": "workspace:*",
-    "@grupon/tsconfig": "workspace:*",
+    "@dealo/eslint-config": "workspace:*",
+    "@dealo/tsconfig": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/grupon/grupon/services/api/internal/payments"
+	"github.com/dealo/dealo/services/api/internal/payments"
 )
 
 var (

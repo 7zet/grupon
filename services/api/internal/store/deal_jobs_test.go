@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grupon/grupon/services/api/internal/store"
+	"github.com/dealo/dealo/services/api/internal/store"
 )
 
 // TestDealSweepsAreIdempotent proves that a second run of the lifecycle sweeps changes no rows, so

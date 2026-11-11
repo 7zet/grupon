@@ -30,6 +30,16 @@ func (f *fakeRepo) Insert(_ context.Context, owner VoucherOwner, voucherID, user
 	return review, nil
 }
 
+func (f *fakeRepo) ListByUser(_ context.Context, userID uuid.UUID) ([]Review, error) {
+	var out []Review
+	for _, review := range f.reviews {
+		if review.UserID == userID {
+			out = append(out, review)
+		}
+	}
+	return out, nil
+}
+
 func (f *fakeRepo) Find(_ context.Context, id uuid.UUID) (Review, error) {
 	review, ok := f.reviews[id]
 	if !ok {

@@ -12,10 +12,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/domain/commerce"
-	"github.com/grupon/grupon/services/api/internal/domain/redemption"
-	sqlc "github.com/grupon/grupon/services/api/internal/store/sqlc"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/domain/commerce"
+	"github.com/dealo/dealo/services/api/internal/domain/redemption"
+	sqlc "github.com/dealo/dealo/services/api/internal/store/sqlc"
 )
 
 // RedemptionRepository reads vouchers for staff and performs the conditional redemption write.
@@ -140,7 +140,7 @@ func (r *RedemptionRepository) History(ctx context.Context, merchantID uuid.UUID
 		if err != nil {
 			return nil, 0, err
 		}
-		items = append(items, redemption.HistoryItem{ID: toUUID(row.ID), Time: row.CreatedAt.Time, Deal: deal, Option: option, Buyer: row.BuyerName, Branch: row.Branch, Cashier: row.CashierName, Reversed: row.Reversed})
+		items = append(items, redemption.HistoryItem{ID: toUUID(row.ID), VoucherID: toUUID(row.VoucherID), Time: row.CreatedAt.Time, Deal: deal, Option: option, Buyer: row.BuyerName, Branch: row.Branch, Cashier: row.CashierName, Reversed: row.Reversed})
 	}
 	return items, total, nil
 }

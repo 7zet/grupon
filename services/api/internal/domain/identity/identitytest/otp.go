@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
 )
 
 type phoneCode struct {

@@ -1,3 +1,3 @@
-import baseConfig from '@grupon/eslint-config';
+import baseConfig from '@dealo/eslint-config';
 
 export default baseConfig;

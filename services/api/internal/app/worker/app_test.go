@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grupon/grupon/services/api/internal/platform/config"
+	"github.com/dealo/dealo/services/api/internal/platform/config"
 )
 
 func TestRunStopsWhenContextIsCanceled(t *testing.T) {

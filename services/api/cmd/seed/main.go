@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/grupon/grupon/services/api/internal/seed"
+	"github.com/dealo/dealo/services/api/internal/seed"
 )
 
 const defaultDatabaseURL = "postgres://app:app_dev_password@localhost:5432/app?sslmode=disable"

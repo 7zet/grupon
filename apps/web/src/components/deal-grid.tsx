@@ -1,5 +1,5 @@
-import type { DealSummary } from '@grupon/api-client';
-import type { Currency, Locale } from '@grupon/config';
+import type { DealSummary } from '@dealo/api-client';
+import type { Currency, Locale } from '@dealo/config';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { DealCard } from './deal-card';

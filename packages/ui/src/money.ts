@@ -1,4 +1,4 @@
-import type { Currency, Locale } from '@grupon/config';
+import type { Currency, Locale } from '@dealo/config';
 
 const localeMap: Record<Locale, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
 

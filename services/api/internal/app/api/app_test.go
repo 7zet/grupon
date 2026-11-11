@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	httpapi "github.com/grupon/grupon/services/api/internal/http"
-	"github.com/grupon/grupon/services/api/internal/platform/config"
+	httpapi "github.com/dealo/dealo/services/api/internal/http"
+	"github.com/dealo/dealo/services/api/internal/platform/config"
 )
 
 func TestServeShutsDownWhenContextIsCanceled(t *testing.T) {

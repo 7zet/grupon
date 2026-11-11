@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/grupon/grupon/services/api/internal/domain/catalog"
-	"github.com/grupon/grupon/services/api/internal/http/gen"
+	"github.com/dealo/dealo/services/api/internal/domain/catalog"
+	"github.com/dealo/dealo/services/api/internal/http/gen"
 )
 
 const defaultLocale = "uz"
@@ -424,6 +424,7 @@ func mapDealSummary(deal catalog.DealSummary) gen.DealSummary {
 	return gen.DealSummary{
 		Id:          gen.Uuid(deal.ID),
 		Slug:        deal.Slug,
+		Area:        stringPtr(deal.Area),
 		Merchant:    mapMerchant(deal.Merchant),
 		Category:    mapCategory(deal.Category),
 		Title:       mapText(deal.Title),

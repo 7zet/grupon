@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grupon/grupon/services/api/internal/domain/identity"
-	"github.com/grupon/grupon/services/api/internal/domain/identity/identitytest"
+	"github.com/dealo/dealo/services/api/internal/domain/identity"
+	"github.com/dealo/dealo/services/api/internal/domain/identity/identitytest"
 )
 
 const (
@@ -54,7 +54,7 @@ func newFixture(t *testing.T, limiter identity.RateLimiter) fixture {
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 30 * 24 * time.Hour,
 		OTPEcho:         true,
-		BrandName:       "Grupon",
+		BrandName:       "Dealo",
 	})
 	return fx
 }
